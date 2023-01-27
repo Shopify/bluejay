@@ -1,0 +1,5 @@
+[workspace]
+members = [
+    "bluejay-parser",
+    "bluejay-core",
+]
