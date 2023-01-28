@@ -17,7 +17,7 @@ use crate::definition::{
     ObjectTypeDefinition,
     FieldsDefinition,
     FieldDefinition,
-    AbstractOutputTypeReference,
+    AbstractBaseOutputTypeReference,
     OutputTypeReference,
 };
 use crate::Argument;
@@ -120,7 +120,7 @@ impl<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>> FieldSelectionMergi
             let mut groups: HashMap<&str, Vec<FieldContext<'a, E, S>>> = HashMap::new();
             
             if let Some(selection_set) = field_a.field.selection_set() {
-                if let Some(scoped_type) = self.schema_definition.get_type(field_a.field_definition.r#type().base_name()) {
+                if let Some(scoped_type) = self.schema_definition.get_type(field_a.field_definition.r#type().as_ref().base().name()) {
                     self.group_fields(&mut groups, selection_set.as_ref().iter(), scoped_type);
                 }
             }
@@ -132,7 +132,7 @@ impl<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>> FieldSelectionMergi
             let mut groups: HashMap<&str, Vec<FieldContext<'a, E, S>>> = HashMap::new();
             
             if let Some(selection_set) = field_b.field.selection_set() {
-                if let Some(scoped_type) = self.schema_definition.get_type(field_b.field_definition.r#type().base_name()) {
+                if let Some(scoped_type) = self.schema_definition.get_type(field_b.field_definition.r#type().as_ref().base().name()) {
                     self.group_fields(&mut groups, selection_set.as_ref().iter(), scoped_type);
                 }
             }
@@ -154,8 +154,8 @@ impl<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>> FieldSelectionMergi
     }
 
     fn types_match_for_same_response_shape(type_a: &S::OutputTypeReference, type_b: &S::OutputTypeReference) -> bool {
-        let mut type_a = type_a.to_concrete();
-        let mut type_b = type_b.to_concrete();
+        let mut type_a = type_a.as_ref();
+        let mut type_b = type_b.as_ref();
 
         let (type_a, type_b) = loop {
             let type_a_non_null = type_a.is_required();
@@ -188,16 +188,16 @@ impl<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>> FieldSelectionMergi
                 }
 
                 if let OutputTypeReference::List(list, _) = type_a {
-                    type_a = *list;
+                    type_a = list.as_ref();
                 }
 
                 if let OutputTypeReference::List(list, _) = type_b {
-                    type_b = *list;
+                    type_b = list.as_ref();
                 }
             }
         };
 
-        if type_a.is_scalar_or_enum() || type_b.is_scalar_or_enum() {
+        if type_a.to_concrete().is_scalar_or_enum() || type_b.to_concrete().is_scalar_or_enum() {
             return type_a.name() == type_b.name()
         }
 

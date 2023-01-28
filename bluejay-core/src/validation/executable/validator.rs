@@ -14,7 +14,7 @@ use crate::definition::{
     ObjectTypeDefinition,
     FieldsDefinition,
     FieldDefinition,
-    AbstractOutputTypeReference,
+    AbstractBaseOutputTypeReference,
 };
 
 pub struct Validator<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>> {
@@ -63,7 +63,7 @@ impl<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>> Validator<'a, E, S>
 
         selection_set.as_ref().iter().for_each(|selection| {
             let contained_selection_set_and_type = match selection.as_ref() {
-                Selection::Field(f) => f.selection_set().and_then(|selection_set| self.schema_definition.query().fields_definition().get_field(f.name()).and_then(|fd| self.schema_definition.get_type(fd.r#type().base_name())).map(|t| (selection_set, t))),
+                Selection::Field(f) => f.selection_set().and_then(|selection_set| self.schema_definition.query().fields_definition().get_field(f.name()).and_then(|fd| self.schema_definition.get_type(fd.r#type().as_ref().base().name())).map(|t| (selection_set, t))),
                 Selection::InlineFragment(i) => {
                     let t = if let Some(type_condition) = i.type_condition() {
                         self.schema_definition.get_type(type_condition)

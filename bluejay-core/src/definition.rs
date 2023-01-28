@@ -34,7 +34,7 @@ pub use interface_implementation::InterfaceImplementation;
 pub use interface_implementations::InterfaceImplementations;
 pub use interface_type_definition::InterfaceTypeDefinition;
 pub use object_type_definition::ObjectTypeDefinition;
-pub use output_type_reference::{BaseOutputTypeReference, AbstractBaseOutputTypeReference, OutputTypeReference, AbstractOutputTypeReference, OutputTypeReferenceFromAbstract, BaseOutputTypeReferenceFromAbstract};
+pub use output_type_reference::{BaseOutputTypeReference, AbstractBaseOutputTypeReference, OutputTypeReference, AbstractOutputTypeReference, BaseOutputTypeReferenceFromAbstract};
 pub use scalar_type_definition::ScalarTypeDefinition;
 pub use schema_definition::SchemaDefinition;
 pub use type_definition_reference::{TypeDefinitionReference, AbstractTypeDefinitionReference, TypeDefinitionReferenceFromAbstract};

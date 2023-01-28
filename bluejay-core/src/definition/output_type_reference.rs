@@ -74,39 +74,32 @@ pub trait AbstractBaseOutputTypeReference {
     type WrappedUnionTypeDefinition: AsRef<Self::UnionTypeDefinition> + Clone;
 
     fn to_concrete(&self) -> BaseOutputTypeReferenceFromAbstract<Self>;
+    fn name(&self) -> &str;
 }
 
 #[derive(Debug, Clone)]
-pub enum OutputTypeReference<CS: ScalarTypeDefinition, CSW: AsRef<CS> + Clone, E: EnumTypeDefinition, EW: AsRef<E> + Clone, O: ObjectTypeDefinition, OW: AsRef<O> + Clone, I: InterfaceTypeDefinition, IW: AsRef<I> + Clone, U: UnionTypeDefinition, UW: AsRef<U> + Clone> {
-    Base(BaseOutputTypeReference<CS, CSW, E, EW, O, OW, I, IW, U, UW>, bool),
-    List(Box<Self>, bool),
+pub enum OutputTypeReference<B: AbstractBaseOutputTypeReference, W: AsRef<Self>> {
+    Base(B, bool),
+    List(W, bool),
 }
 
-impl<CS: ScalarTypeDefinition, CSW: AsRef<CS> + Clone, E: EnumTypeDefinition, EW: AsRef<E> + Clone, O: ObjectTypeDefinition, OW: AsRef<O> + Clone, I: InterfaceTypeDefinition, IW: AsRef<I> + Clone, U: UnionTypeDefinition, UW: AsRef<U> + Clone> OutputTypeReference<CS, CSW, E, EW, O, OW, I, IW, U, UW> {
+impl<B: AbstractBaseOutputTypeReference, W: AsRef<Self>> OutputTypeReference<B, W> {
     pub fn is_required(&self) -> bool {
         match self {
             Self::Base(_, r) => *r,
             Self::List(_, r) => *r,
         }
     }
+
+    pub fn base(&self) -> &B {
+        match self {
+            Self::Base(b, _) => b,
+            Self::List(l, _) => l.as_ref().base(),
+        }
+    }
 }
 
-pub type OutputTypeReferenceFromAbstract<T> = OutputTypeReference<
-    <<T as AbstractOutputTypeReference>::BaseOutputTypeReference as AbstractBaseOutputTypeReference>::CustomScalarTypeDefinition,
-    <<T as AbstractOutputTypeReference>::BaseOutputTypeReference as AbstractBaseOutputTypeReference>::WrappedCustomScalarTypeDefinition,
-    <<T as AbstractOutputTypeReference>::BaseOutputTypeReference as AbstractBaseOutputTypeReference>::EnumTypeDefinition,
-    <<T as AbstractOutputTypeReference>::BaseOutputTypeReference as AbstractBaseOutputTypeReference>::WrappedEnumTypeDefinition,
-    <<T as AbstractOutputTypeReference>::BaseOutputTypeReference as AbstractBaseOutputTypeReference>::ObjectTypeDefinition,
-    <<T as AbstractOutputTypeReference>::BaseOutputTypeReference as AbstractBaseOutputTypeReference>::WrappedObjectTypeDefinition,
-    <<T as AbstractOutputTypeReference>::BaseOutputTypeReference as AbstractBaseOutputTypeReference>::InterfaceTypeDefinition,
-    <<T as AbstractOutputTypeReference>::BaseOutputTypeReference as AbstractBaseOutputTypeReference>::WrappedInterfaceTypeDefinition,
-    <<T as AbstractOutputTypeReference>::BaseOutputTypeReference as AbstractBaseOutputTypeReference>::UnionTypeDefinition,
-    <<T as AbstractOutputTypeReference>::BaseOutputTypeReference as AbstractBaseOutputTypeReference>::WrappedUnionTypeDefinition,
->;
-
-pub trait AbstractOutputTypeReference {
+pub trait AbstractOutputTypeReference: AsRef<OutputTypeReference<Self::BaseOutputTypeReference, Self::Wrapper>> {
     type BaseOutputTypeReference: AbstractBaseOutputTypeReference;
-
-    fn to_concrete(&self) -> OutputTypeReferenceFromAbstract<Self>;
-    fn base_name(&self) -> &str;
+    type Wrapper: AsRef<OutputTypeReference<Self::BaseOutputTypeReference, Self::Wrapper>>;
 }
