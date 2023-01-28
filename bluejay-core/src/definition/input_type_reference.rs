@@ -35,31 +35,39 @@ pub trait AbstractBaseInputTypeReference {
 }
 
 #[derive(Debug, Clone)]
-pub enum InputTypeReference<CS: ScalarTypeDefinition, CSW: AsRef<CS>, I: InputObjectTypeDefinition, IW: AsRef<I>, E: EnumTypeDefinition, EW: AsRef<E>> {
-    Base(BaseInputTypeReference<CS, CSW, I, IW, E, EW>, bool),
-    List(Box<Self>, bool),
+pub enum InputTypeReference<B: AbstractBaseInputTypeReference, W: AsRef<Self>> {
+    Base(B, bool),
+    List(W, bool),
 }
 
-impl<CS: ScalarTypeDefinition, CSW: AsRef<CS>, I: InputObjectTypeDefinition, IW: AsRef<I>, E: EnumTypeDefinition, EW: AsRef<E>> InputTypeReference<CS, CSW, I, IW, E, EW> {
+impl<B: AbstractBaseInputTypeReference, W: AsRef<Self>> InputTypeReference<B, W> {
     pub fn is_required(&self) -> bool {
         match self {
             Self::Base(_, r) => *r,
             Self::List(_, r) => *r,
         }
     }
+
+    pub fn base(&self) -> &B {
+        match self {
+            Self::Base(b, _) => b,
+            Self::List(l, _) => l.as_ref().base(),
+        }
+    }
 }
 
-pub type InputTypeReferenceFromAbstract<T> = InputTypeReference<
-    <<T as AbstractInputTypeReference>::BaseInputTypeReference as AbstractBaseInputTypeReference>::CustomScalarTypeDefinition,
-    <<T as AbstractInputTypeReference>::BaseInputTypeReference as AbstractBaseInputTypeReference>::WrappedCustomScalarTypeDefinition,
-    <<T as AbstractInputTypeReference>::BaseInputTypeReference as AbstractBaseInputTypeReference>::InputObjectTypeDefinition,
-    <<T as AbstractInputTypeReference>::BaseInputTypeReference as AbstractBaseInputTypeReference>::WrappedInputObjectTypeDefinition,
-    <<T as AbstractInputTypeReference>::BaseInputTypeReference as AbstractBaseInputTypeReference>::EnumTypeDefinition,
-    <<T as AbstractInputTypeReference>::BaseInputTypeReference as AbstractBaseInputTypeReference>::WrappedEnumTypeDefinition,
->;
-
-pub trait AbstractInputTypeReference {
+pub trait AbstractInputTypeReference: AsRef<InputTypeReference<Self::BaseInputTypeReference, Self::Wrapper>> {
     type BaseInputTypeReference: AbstractBaseInputTypeReference;
+    type Wrapper: AsRef<InputTypeReference<Self::BaseInputTypeReference, Self::Wrapper>>;
+}
 
-    fn to_concrete(&self) -> InputTypeReferenceFromAbstract<Self>;
+impl<B: AbstractBaseInputTypeReference, W: AsRef<InputTypeReference<B, W>>> AsRef<Self> for InputTypeReference<B, W> {
+    fn as_ref(&self) -> &Self {
+        self
+    }
+}
+
+impl<B: AbstractBaseInputTypeReference, W: AsRef<InputTypeReference<B, W>>> AbstractInputTypeReference for InputTypeReference<B, W> {
+    type BaseInputTypeReference = B;
+    type Wrapper = W;
 }
