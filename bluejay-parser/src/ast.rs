@@ -14,7 +14,7 @@ mod value;
 mod variable;
 
 pub use argument::{Argument, ConstArgument, VariableArgument};
-use arguments::{Arguments, ConstArguments, VariableArguments};
+use arguments::{Arguments, VariableArguments};
 use directive::Directive;
 use directives::{Directives, ConstDirectives, VariableDirectives};
 use from_tokens::FromTokens;

@@ -1,9 +1,13 @@
 [package]
 name = "bluejay-core"
-version = "0.1.0"
+version = "0.1.0-alpha.0"
 edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+license = "MIT"
+repository = "https://github.com/adampetro/bluejay"
+homepage = "https://github.com/adampetro/bluejay"
+keywords = ["graphql"]
+exclude = [".gitignore"]
+description = "Base GraphQL abstractions"
 
 [dependencies]
 strum = { version = "0.24", features = ["derive"] }

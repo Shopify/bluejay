@@ -1,5 +1,5 @@
 use crate::lexical_token::{PunctuatorType, HasSpan};
-use crate::ast::{FromTokens, Tokens, TryFromTokens, IsMatch, Argument, ParseError};
+use crate::ast::{FromTokens, Tokens, IsMatch, Argument, ParseError};
 use crate::Span;
 
 #[derive(Debug)]
@@ -8,7 +8,6 @@ pub struct Arguments<'a, const CONST: bool> {
     span: Span,
 }
 
-pub type ConstArguments<'a> = Arguments<'a, true>;
 pub type VariableArguments<'a> = Arguments<'a, false>;
 
 impl<'a, const CONST: bool> FromTokens<'a> for Arguments<'a, CONST> {
@@ -29,12 +28,6 @@ impl<'a, const CONST: bool> FromTokens<'a> for Arguments<'a, CONST> {
 impl<'a, const CONST: bool> IsMatch<'a> for Arguments<'a, CONST> {
     fn is_match(tokens: &mut impl Tokens<'a>) -> bool {
         tokens.peek_punctuator_matches(0, PunctuatorType::OpenRoundBracket)
-    }
-}
-
-impl<'a, const CONST: bool> Arguments<'a, CONST> {
-    pub(crate) fn inner(&self) -> &[Argument<'a, CONST>] {
-        &self.arguments
     }
 }
 
