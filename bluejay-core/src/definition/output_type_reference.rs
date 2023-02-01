@@ -1,15 +1,23 @@
-use std::marker::PhantomData;
-use crate::BuiltinScalarDefinition;
 use crate::definition::{
-    ScalarTypeDefinition,
-    EnumTypeDefinition,
-    ObjectTypeDefinition,
-    InterfaceTypeDefinition,
+    EnumTypeDefinition, InterfaceTypeDefinition, ObjectTypeDefinition, ScalarTypeDefinition,
     UnionTypeDefinition,
 };
+use crate::BuiltinScalarDefinition;
+use std::marker::PhantomData;
 
 #[derive(Debug)]
-pub enum BaseOutputTypeReference<CS: ScalarTypeDefinition, CSW: AsRef<CS> + Clone, E: EnumTypeDefinition, EW: AsRef<E> + Clone, O: ObjectTypeDefinition, OW: AsRef<O> + Clone, I: InterfaceTypeDefinition, IW: AsRef<I> + Clone, U: UnionTypeDefinition, UW: AsRef<U> + Clone> {
+pub enum BaseOutputTypeReference<
+    CS: ScalarTypeDefinition,
+    CSW: AsRef<CS> + Clone,
+    E: EnumTypeDefinition,
+    EW: AsRef<E> + Clone,
+    O: ObjectTypeDefinition,
+    OW: AsRef<O> + Clone,
+    I: InterfaceTypeDefinition,
+    IW: AsRef<I> + Clone,
+    U: UnionTypeDefinition,
+    UW: AsRef<U> + Clone,
+> {
     BuiltinScalarType(BuiltinScalarDefinition),
     CustomScalarType(CSW, PhantomData<CS>),
     EnumType(EW, PhantomData<E>),
@@ -18,11 +26,25 @@ pub enum BaseOutputTypeReference<CS: ScalarTypeDefinition, CSW: AsRef<CS> + Clon
     UnionType(UW, PhantomData<U>),
 }
 
-impl<CS: ScalarTypeDefinition, CSW: AsRef<CS> + Clone, E: EnumTypeDefinition, EW: AsRef<E> + Clone, O: ObjectTypeDefinition, OW: AsRef<O> + Clone, I: InterfaceTypeDefinition, IW: AsRef<I> + Clone, U: UnionTypeDefinition, UW: AsRef<U> + Clone> Clone for BaseOutputTypeReference<CS, CSW, E, EW, O, OW, I, IW, U, UW> {
+impl<
+        CS: ScalarTypeDefinition,
+        CSW: AsRef<CS> + Clone,
+        E: EnumTypeDefinition,
+        EW: AsRef<E> + Clone,
+        O: ObjectTypeDefinition,
+        OW: AsRef<O> + Clone,
+        I: InterfaceTypeDefinition,
+        IW: AsRef<I> + Clone,
+        U: UnionTypeDefinition,
+        UW: AsRef<U> + Clone,
+    > Clone for BaseOutputTypeReference<CS, CSW, E, EW, O, OW, I, IW, U, UW>
+{
     fn clone(&self) -> Self {
         match self {
             Self::BuiltinScalarType(bstd) => Self::BuiltinScalarType(bstd.clone()),
-            Self::CustomScalarType(csw, _) => Self::CustomScalarType(csw.clone(), Default::default()),
+            Self::CustomScalarType(csw, _) => {
+                Self::CustomScalarType(csw.clone(), Default::default())
+            }
             Self::EnumType(etw, _) => Self::EnumType(etw.clone(), Default::default()),
             Self::ObjectType(otw, _) => Self::ObjectType(otw.clone(), Default::default()),
             Self::InterfaceType(itw, _) => Self::InterfaceType(itw.clone(), Default::default()),
@@ -31,7 +53,19 @@ impl<CS: ScalarTypeDefinition, CSW: AsRef<CS> + Clone, E: EnumTypeDefinition, EW
     }
 }
 
-impl<CS: ScalarTypeDefinition, CSW: AsRef<CS> + Clone, E: EnumTypeDefinition, EW: AsRef<E> + Clone, O: ObjectTypeDefinition, OW: AsRef<O> + Clone, I: InterfaceTypeDefinition, IW: AsRef<I> + Clone, U: UnionTypeDefinition, UW: AsRef<U> + Clone> BaseOutputTypeReference<CS, CSW, E, EW, O, OW, I, IW, U, UW> {
+impl<
+        CS: ScalarTypeDefinition,
+        CSW: AsRef<CS> + Clone,
+        E: EnumTypeDefinition,
+        EW: AsRef<E> + Clone,
+        O: ObjectTypeDefinition,
+        OW: AsRef<O> + Clone,
+        I: InterfaceTypeDefinition,
+        IW: AsRef<I> + Clone,
+        U: UnionTypeDefinition,
+        UW: AsRef<U> + Clone,
+    > BaseOutputTypeReference<CS, CSW, E, EW, O, OW, I, IW, U, UW>
+{
     pub fn name(&self) -> &str {
         match self {
             Self::BuiltinScalarType(bstd) => bstd.name(),
@@ -44,7 +78,10 @@ impl<CS: ScalarTypeDefinition, CSW: AsRef<CS> + Clone, E: EnumTypeDefinition, EW
     }
 
     pub(crate) fn is_scalar_or_enum(&self) -> bool {
-        matches!(self, Self::BuiltinScalarType(_) | Self::CustomScalarType(_, _) | Self::EnumType(_, _))
+        matches!(
+            self,
+            Self::BuiltinScalarType(_) | Self::CustomScalarType(_, _) | Self::EnumType(_, _)
+        )
     }
 }
 
@@ -99,7 +136,9 @@ impl<B: AbstractBaseOutputTypeReference, W: AsRef<Self>> OutputTypeReference<B, 
     }
 }
 
-pub trait AbstractOutputTypeReference: AsRef<OutputTypeReference<Self::BaseOutputTypeReference, Self::Wrapper>> {
+pub trait AbstractOutputTypeReference:
+    AsRef<OutputTypeReference<Self::BaseOutputTypeReference, Self::Wrapper>>
+{
     type BaseOutputTypeReference: AbstractBaseOutputTypeReference;
     type Wrapper: AsRef<OutputTypeReference<Self::BaseOutputTypeReference, Self::Wrapper>>;
 }

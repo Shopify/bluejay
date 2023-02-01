@@ -1,4 +1,4 @@
-use strum::{EnumString, Display, EnumVariantNames, VariantNames};
+use strum::{Display, EnumString, EnumVariantNames, VariantNames};
 
 #[derive(Debug, Clone, Copy, PartialEq, EnumString, Display, EnumVariantNames)]
 #[strum(serialize_all = "camelCase")]

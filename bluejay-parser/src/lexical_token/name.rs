@@ -1,5 +1,5 @@
-use crate::Span;
 use super::HasSpan;
+use crate::Span;
 
 #[derive(PartialEq, Debug, Clone)]
 pub struct Name<'a> {

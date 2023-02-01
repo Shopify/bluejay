@@ -1,25 +1,19 @@
-mod named_operation_name_uniqueness;
-mod lone_anonymous_operation;
-mod subscription_operation_single_root_field;
-mod field_selections;
 mod field_selection_merging;
+mod field_selections;
+mod lone_anonymous_operation;
+mod named_operation_name_uniqueness;
+mod subscription_operation_single_root_field;
 
-use std::iter::Chain;
-use paste::paste;
-use named_operation_name_uniqueness::NamedOperationNameUniqueness;
-use lone_anonymous_operation::LoneAnonymousOperation;
-use subscription_operation_single_root_field::SubscriptionOperationSingleRootField;
-use field_selections::FieldSelections;
+use crate::definition::{SchemaDefinition, TypeDefinitionReferenceFromAbstract};
+use crate::executable::{ExecutableDocument, OperationDefinitionFromExecutableDocument};
+use crate::validation::executable::{Error, Rule, Visitor};
 use field_selection_merging::FieldSelectionMerging;
-use crate::definition::{
-    SchemaDefinition,
-    TypeDefinitionReferenceFromAbstract,
-};
-use crate::executable::{
-    ExecutableDocument,
-    OperationDefinitionFromExecutableDocument,
-};
-use crate::validation::executable::{Rule, Error, Visitor};
+use field_selections::FieldSelections;
+use lone_anonymous_operation::LoneAnonymousOperation;
+use named_operation_name_uniqueness::NamedOperationNameUniqueness;
+use paste::paste;
+use std::iter::Chain;
+use subscription_operation_single_root_field::SubscriptionOperationSingleRootField;
 
 macro_rules! define_rules {
     ( $( $rule:ty ),* $(,)? ) => {
@@ -39,7 +33,7 @@ macro_rules! define_rules {
             impl<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>> IntoIterator for Rules<'a, E, S> {
                 type Item = Error<'a, E, S>;
                 type IntoIter = chain_types!($(<$rule<'a, E, S> as IntoIterator>::IntoIter),*);
-            
+
                 fn into_iter(self) -> Self::IntoIter {
                     chain_iters!($(self.[<$rule:snake>].into_iter()),*)
                 }

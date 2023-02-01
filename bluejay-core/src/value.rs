@@ -1,5 +1,5 @@
-use std::collections::HashMap;
 use crate::Variable;
+use std::collections::HashMap;
 
 pub trait ObjectValue<V> {
     type Key: AsRef<str>;
@@ -55,7 +55,35 @@ impl EnumValue for String {}
 
 pub trait ListValue<V>: AsRef<[V]> {}
 
-pub trait AbstractValue<const CONST: bool>: Into<Value<CONST, Self::Variable, Self::Integer, Self::Float, Self::String, Self::Boolean, Self::Null, Self::Enum, Self::List, Self::Object>> + AsRef<Value<CONST, Self::Variable, Self::Integer, Self::Float, Self::String, Self::Boolean, Self::Null, Self::Enum, Self::List, Self::Object>> {
+pub trait AbstractValue<const CONST: bool>:
+    Into<
+        Value<
+            CONST,
+            Self::Variable,
+            Self::Integer,
+            Self::Float,
+            Self::String,
+            Self::Boolean,
+            Self::Null,
+            Self::Enum,
+            Self::List,
+            Self::Object,
+        >,
+    > + AsRef<
+        Value<
+            CONST,
+            Self::Variable,
+            Self::Integer,
+            Self::Float,
+            Self::String,
+            Self::Boolean,
+            Self::Null,
+            Self::Enum,
+            Self::List,
+            Self::Object,
+        >,
+    >
+{
     type Variable: Variable;
     type Integer: IntegerValue;
     type Float: FloatValue;
@@ -63,15 +91,52 @@ pub trait AbstractValue<const CONST: bool>: Into<Value<CONST, Self::Variable, Se
     type Boolean: BooleanValue;
     type Null;
     type Enum: EnumValue;
-    type List: ListValue<Value<CONST, Self::Variable, Self::Integer, Self::Float, Self::String, Self::Boolean, Self::Null, Self::Enum, Self::List, Self::Object>>;
-    type Object: ObjectValue<Value<CONST, Self::Variable, Self::Integer, Self::Float, Self::String, Self::Boolean, Self::Null, Self::Enum, Self::List, Self::Object>>;
+    type List: ListValue<
+        Value<
+            CONST,
+            Self::Variable,
+            Self::Integer,
+            Self::Float,
+            Self::String,
+            Self::Boolean,
+            Self::Null,
+            Self::Enum,
+            Self::List,
+            Self::Object,
+        >,
+    >;
+    type Object: ObjectValue<
+        Value<
+            CONST,
+            Self::Variable,
+            Self::Integer,
+            Self::Float,
+            Self::String,
+            Self::Boolean,
+            Self::Null,
+            Self::Enum,
+            Self::List,
+            Self::Object,
+        >,
+    >;
 }
 
 pub trait AbstractConstValue: AbstractValue<true> {}
 pub trait AbstractVariableValue: AbstractValue<false> {}
 
 #[derive(Debug, Clone)]
-pub enum Value<const CONST: bool, V: Variable, I: IntegerValue, F: FloatValue, S: StringValue, B: BooleanValue, N, E: EnumValue, L: ListValue<Self>, O: ObjectValue<Self>> {
+pub enum Value<
+    const CONST: bool,
+    V: Variable,
+    I: IntegerValue,
+    F: FloatValue,
+    S: StringValue,
+    B: BooleanValue,
+    N,
+    E: EnumValue,
+    L: ListValue<Self>,
+    O: ObjectValue<Self>,
+> {
     Variable(V),
     Integer(I),
     Float(F),
@@ -83,20 +148,54 @@ pub enum Value<const CONST: bool, V: Variable, I: IntegerValue, F: FloatValue, S
     Object(O),
 }
 
-impl<const CONST: bool, V: Variable, I: IntegerValue, F: FloatValue, S: StringValue, B: BooleanValue, N, E: EnumValue, L: ListValue<Self>, O: ObjectValue<Self>> AsRef<Value<CONST, V, I, F, S, B, N, E, L, O>> for Value<CONST, V, I, F, S, B, N, E, L, O> {
+impl<
+        const CONST: bool,
+        V: Variable,
+        I: IntegerValue,
+        F: FloatValue,
+        S: StringValue,
+        B: BooleanValue,
+        N,
+        E: EnumValue,
+        L: ListValue<Self>,
+        O: ObjectValue<Self>,
+    > AsRef<Value<CONST, V, I, F, S, B, N, E, L, O>> for Value<CONST, V, I, F, S, B, N, E, L, O>
+{
     fn as_ref(&self) -> &Value<CONST, V, I, F, S, B, N, E, L, O> {
         &self
     }
 }
 
-impl<const CONST: bool, V: Variable, I: IntegerValue, F: FloatValue, S: StringValue, B: BooleanValue, N, E: EnumValue, L: ListValue<Self>, O: ObjectValue<Self>> std::cmp::PartialEq for Value<CONST, V, I, F, S, B, N, E, L, O> {
+impl<
+        const CONST: bool,
+        V: Variable,
+        I: IntegerValue,
+        F: FloatValue,
+        S: StringValue,
+        B: BooleanValue,
+        N,
+        E: EnumValue,
+        L: ListValue<Self>,
+        O: ObjectValue<Self>,
+    > std::cmp::PartialEq for Value<CONST, V, I, F, S, B, N, E, L, O>
+{
     fn eq(&self, other: &Self) -> bool {
         match self {
-            Self::Variable(v) => matches!(other, Self::Variable(other_v) if v.name() == other_v.name()),
-            Self::Integer(i) => matches!(other, Self::Integer(other_i) if i.to_i32() == other_i.to_i32()),
-            Self::Float(f) => matches!(other, Self::Float(other_f) if f.to_f64() == other_f.to_f64()),
-            Self::String(s) => matches!(other, Self::String(other_s) if s.as_ref() == other_s.as_ref()),
-            Self::Boolean(b) => matches!(other, Self::Boolean(other_b) if b.to_bool() == other_b.to_bool()),
+            Self::Variable(v) => {
+                matches!(other, Self::Variable(other_v) if v.name() == other_v.name())
+            }
+            Self::Integer(i) => {
+                matches!(other, Self::Integer(other_i) if i.to_i32() == other_i.to_i32())
+            }
+            Self::Float(f) => {
+                matches!(other, Self::Float(other_f) if f.to_f64() == other_f.to_f64())
+            }
+            Self::String(s) => {
+                matches!(other, Self::String(other_s) if s.as_ref() == other_s.as_ref())
+            }
+            Self::Boolean(b) => {
+                matches!(other, Self::Boolean(other_b) if b.to_bool() == other_b.to_bool())
+            }
             Self::Null(_) => matches!(other, Self::Null(_)),
             Self::Enum(e) => matches!(other, Self::Enum(other_e) if e.as_ref() == other_e.as_ref()),
             Self::List(l) => matches!(other, Self::List(other_l) if l.as_ref() == other_l.as_ref()),
@@ -109,7 +208,19 @@ impl<const CONST: bool, V: Variable, I: IntegerValue, F: FloatValue, S: StringVa
     }
 }
 
-impl<const CONST: bool, V: Variable, I: IntegerValue, F: FloatValue, S: StringValue, B: BooleanValue, N, E: EnumValue, L: ListValue<Self>, O: ObjectValue<Self>> AbstractValue<CONST> for Value<CONST, V, I, F, S, B, N, E, L, O> {
+impl<
+        const CONST: bool,
+        V: Variable,
+        I: IntegerValue,
+        F: FloatValue,
+        S: StringValue,
+        B: BooleanValue,
+        N,
+        E: EnumValue,
+        L: ListValue<Self>,
+        O: ObjectValue<Self>,
+    > AbstractValue<CONST> for Value<CONST, V, I, F, S, B, N, E, L, O>
+{
     type Variable = V;
     type Integer = I;
     type Float = F;

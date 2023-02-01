@@ -6,12 +6,16 @@ pub enum ExecutableDefinition<O: AbstractOperationDefinition, F: FragmentDefinit
     Fragment(F),
 }
 
-pub trait AbstractExecutableDefinition: Into<ExecutableDefinition<Self::OperationDefinition, Self::FragmentDefinition>> {
+pub trait AbstractExecutableDefinition:
+    Into<ExecutableDefinition<Self::OperationDefinition, Self::FragmentDefinition>>
+{
     type OperationDefinition: AbstractOperationDefinition;
     type FragmentDefinition: FragmentDefinition;
 }
 
-impl<O: AbstractOperationDefinition, F: FragmentDefinition> AbstractExecutableDefinition for ExecutableDefinition<O, F> {
+impl<O: AbstractOperationDefinition, F: FragmentDefinition> AbstractExecutableDefinition
+    for ExecutableDefinition<O, F>
+{
     type OperationDefinition = O;
     type FragmentDefinition = F;
 }

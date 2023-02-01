@@ -1,5 +1,5 @@
-use crate::{VariableArguments, VariableDirectives};
 use crate::executable::SelectionSet;
+use crate::{VariableArguments, VariableDirectives};
 
 pub trait Field {
     type Arguments: VariableArguments;

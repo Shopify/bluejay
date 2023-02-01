@@ -1,9 +1,11 @@
-use std::num::{ParseIntError, ParseFloatError};
+use std::num::{ParseFloatError, ParseIntError};
 
-use logos::{Logos, Lexer, FilterResult};
+use crate::lexical_token::{
+    FloatValue, IntValue, LexicalToken, Name, Punctuator, PunctuatorType, StringValue,
+};
 use crate::scanner::{ScanError, Scanner};
-use crate::lexical_token::{LexicalToken, Punctuator, PunctuatorType, Name, IntValue, FloatValue, StringValue};
 use crate::Span;
+use logos::{FilterResult, Lexer, Logos};
 
 mod block_string_scanner;
 mod string_scanner;
@@ -49,7 +51,10 @@ pub enum Token<'a> {
     IntValue(Result<i32, ParseIntError>),
 
     // FloatValue
-    #[regex(r"-?(?:0|[1-9]\d*)(?:\.\d+[eE][+-]?\d+|\.\d+|[eE][+-]?\d+)", parse_float)]
+    #[regex(
+        r"-?(?:0|[1-9]\d*)(?:\.\d+[eE][+-]?\d+|\.\d+|[eE][+-]?\d+)",
+        parse_float
+    )]
     FloatValue(Result<f64, ParseFloatError>),
 
     // StringValue
@@ -71,11 +76,11 @@ fn parse_block_string<'a>(lexer: &mut Lexer<'a, Token<'a>>) -> FilterResult<Stri
         Ok((s, bytes_consumed)) => {
             lexer.bump(bytes_consumed);
             FilterResult::Emit(s)
-        },
+        }
         Err(_) => {
             lexer.bump(lexer.remainder().len());
             FilterResult::Error
-        },
+        }
     }
 }
 
@@ -84,9 +89,11 @@ fn parse_string<'a>(lexer: &mut Lexer<'a, Token<'a>>) -> String {
 }
 
 fn validate_number<'a>(lexer: &mut Lexer<'a, Token<'a>>) -> bool {
-    let invalid_trail_bytes = lexer.remainder().chars().position(|c| {
-        !(c.is_ascii_alphanumeric() || matches!(c, '_' | '.'))
-    }).unwrap_or(lexer.remainder().len());
+    let invalid_trail_bytes = lexer
+        .remainder()
+        .chars()
+        .position(|c| !(c.is_ascii_alphanumeric() || matches!(c, '_' | '.')))
+        .unwrap_or(lexer.remainder().len());
 
     lexer.bump(invalid_trail_bytes);
 
@@ -143,7 +150,9 @@ impl<'a> Iterator for LogosScanner<'a> {
                     Err(_) => Err(ScanError::FloatValueTooLarge(span)),
                 },
                 Token::StringValue(s) => Ok(LexicalToken::StringValue(StringValue::new(s, span))),
-                Token::BlockStringValue(s) => Ok(LexicalToken::StringValue(StringValue::new(s, span))),
+                Token::BlockStringValue(s) => {
+                    Ok(LexicalToken::StringValue(StringValue::new(s, span)))
+                }
                 Token::Error => Err(ScanError::UnrecognizedTokenError(span)),
             }
         })
@@ -169,7 +178,7 @@ impl<'a> LogosScanner<'a> {
 
 #[cfg(test)]
 mod tests {
-    use super::{Token, Logos};
+    use super::{Logos, Token};
 
     #[test]
     fn block_string_test() {
@@ -184,14 +193,13 @@ mod tests {
         let mut lexer = Token::lexer(s);
 
         assert_eq!(
-            Some(Token::BlockStringValue(String::from("This is my multiline string!\n\nIsn't it cool?"))),
+            Some(Token::BlockStringValue(String::from(
+                "This is my multiline string!\n\nIsn't it cool?"
+            ))),
             lexer.next(),
         );
 
-        assert_eq!(
-            13..109,
-            lexer.span(),
-        )
+        assert_eq!(13..109, lexer.span(),)
     }
 
     #[test]
@@ -201,7 +209,9 @@ mod tests {
         let mut lexer = Token::lexer(s);
 
         assert_eq!(
-            Some(Token::StringValue(String::from("This is a string with escaped characters and unicode: \u{ABCD}!\n"))),
+            Some(Token::StringValue(String::from(
+                "This is a string with escaped characters and unicode: \u{ABCD}!\n"
+            ))),
             lexer.next(),
         )
     }

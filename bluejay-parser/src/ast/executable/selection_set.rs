@@ -1,5 +1,5 @@
 use crate::ast::executable::Selection;
-use crate::ast::{ParseError, Tokens, FromTokens, IsMatch};
+use crate::ast::{FromTokens, IsMatch, ParseError, Tokens};
 use crate::lexical_token::PunctuatorType;
 
 #[derive(Debug)]
@@ -11,7 +11,10 @@ impl<'a> FromTokens<'a> for SelectionSet<'a> {
     fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
         tokens.expect_punctuator(PunctuatorType::OpenBrace)?;
         let mut selections: Vec<Selection> = Vec::new();
-        while tokens.next_if_punctuator(PunctuatorType::CloseBrace).is_none() {
+        while tokens
+            .next_if_punctuator(PunctuatorType::CloseBrace)
+            .is_none()
+        {
             selections.push(Selection::from_tokens(tokens)?);
         }
         Ok(Self { selections })

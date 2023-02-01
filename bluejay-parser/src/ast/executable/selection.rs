@@ -1,8 +1,9 @@
 use crate::ast::executable::{Field, FragmentSpread, InlineFragment};
-use crate::ast::{ParseError, Tokens, IsMatch, FromTokens};
+use crate::ast::{FromTokens, IsMatch, ParseError, Tokens};
 use crate::lexical_token::PunctuatorType;
 
-pub type Selection<'a> = bluejay_core::executable::Selection<Field<'a>, FragmentSpread<'a>, InlineFragment<'a>>;
+pub type Selection<'a> =
+    bluejay_core::executable::Selection<Field<'a>, FragmentSpread<'a>, InlineFragment<'a>>;
 
 impl<'a> FromTokens<'a> for Selection<'a> {
     fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {

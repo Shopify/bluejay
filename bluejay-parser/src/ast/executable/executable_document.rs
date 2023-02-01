@@ -1,25 +1,9 @@
 use crate::ast::executable::{
-    FragmentSpread,
-    Field,
-    Selection,
-    SelectionSet,
-    InlineFragment,
-    VariableDefinition,
-    VariableDefinitions,
-    ExplicitOperationDefinition,
-    ImplicitOperationDefinition,
-    OperationDefinition,
-    FragmentDefinition,
-    ExecutableDefinition,
+    ExecutableDefinition, ExplicitOperationDefinition, Field, FragmentDefinition, FragmentSpread,
+    ImplicitOperationDefinition, InlineFragment, OperationDefinition, Selection, SelectionSet,
+    VariableDefinition, VariableDefinitions,
 };
-use crate::ast::{
-    Variable,
-    Value,
-    Argument,
-    Arguments,
-    Directive,
-    Directives,
-};
+use crate::ast::{Argument, Arguments, Directive, Directives, Value, Variable};
 
 #[derive(Debug)]
 pub struct ExecutableDocument<'a> {
@@ -28,8 +12,14 @@ pub struct ExecutableDocument<'a> {
 }
 
 impl<'a> ExecutableDocument<'a> {
-    pub(crate) fn new(operation_definitions: Vec<OperationDefinition<'a>>, fragment_definitions: Vec<FragmentDefinition<'a>>) -> Self {
-        Self { operation_definitions, fragment_definitions }
+    pub(crate) fn new(
+        operation_definitions: Vec<OperationDefinition<'a>>,
+        fragment_definitions: Vec<FragmentDefinition<'a>>,
+    ) -> Self {
+        Self {
+            operation_definitions,
+            fragment_definitions,
+        }
     }
 
     pub fn operation_definitions(&self) -> &[OperationDefinition<'a>] {

@@ -8,16 +8,25 @@ mod directive;
 pub mod executable;
 mod operation_type;
 mod type_reference;
-mod value;
 pub mod validation;
+mod value;
 mod variable;
 
-pub use argument::{Argument, ConstArgument, VariableArgument, Arguments, ConstArguments, VariableArguments};
+pub use argument::{
+    Argument, Arguments, ConstArgument, ConstArguments, VariableArgument, VariableArguments,
+};
 pub use as_iter::AsIter;
 pub use builtin_scalar_definition::BuiltinScalarDefinition;
-pub use directive::{Directive, ConstDirective, VariableDirective, Directives, ConstDirectives, VariableDirectives};
+pub use directive::{
+    ConstDirective, ConstDirectives, Directive, Directives, VariableDirective, VariableDirectives,
+};
 pub use operation_type::OperationType;
-pub use type_reference::{TypeReference, NamedTypeReference, ListTypeReference, AbstractTypeReference};
-pub use value::{AbstractValue, AbstractConstValue, AbstractVariableValue, ObjectValue, IntegerValue, FloatValue, StringValue, EnumValue, BooleanValue, ListValue, Value};
-pub use variable::Variable;
 pub use strum::IntoEnumIterator;
+pub use type_reference::{
+    AbstractTypeReference, ListTypeReference, NamedTypeReference, TypeReference,
+};
+pub use value::{
+    AbstractConstValue, AbstractValue, AbstractVariableValue, BooleanValue, EnumValue, FloatValue,
+    IntegerValue, ListValue, ObjectValue, StringValue, Value,
+};
+pub use variable::Variable;

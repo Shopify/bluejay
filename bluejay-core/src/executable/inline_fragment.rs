@@ -1,5 +1,5 @@
-use crate::VariableDirectives;
 use crate::executable::SelectionSet;
+use crate::VariableDirectives;
 
 pub trait InlineFragment {
     type Directives: VariableDirectives;

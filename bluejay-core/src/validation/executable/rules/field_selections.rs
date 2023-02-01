@@ -1,44 +1,50 @@
-use crate::validation::executable::{Visitor, Error, Rule};
-use crate::executable::{
-    ExecutableDocument,
-    Selection,
-    Field,
-};
 use crate::definition::{
-    SchemaDefinition,
-    TypeDefinitionReference,
-    TypeDefinitionReferenceFromAbstract,
-    InterfaceTypeDefinition,
-    ObjectTypeDefinition,
-    FieldsDefinition,
+    FieldsDefinition, InterfaceTypeDefinition, ObjectTypeDefinition, SchemaDefinition,
+    TypeDefinitionReference, TypeDefinitionReferenceFromAbstract,
 };
+use crate::executable::{ExecutableDocument, Field, Selection};
+use crate::validation::executable::{Error, Rule, Visitor};
 
 pub struct FieldSelections<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>> {
     errors: Vec<Error<'a, E, S>>,
 }
 
-impl<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>> Visitor<'a, E, S> for FieldSelections<'a, E, S> {
-    fn visit_selection_set(&mut self, selection_set: &'a E::SelectionSet, r#type: &'a TypeDefinitionReferenceFromAbstract<S::TypeDefinitionReference>) {
+impl<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>> Visitor<'a, E, S>
+    for FieldSelections<'a, E, S>
+{
+    fn visit_selection_set(
+        &mut self,
+        selection_set: &'a E::SelectionSet,
+        r#type: &'a TypeDefinitionReferenceFromAbstract<S::TypeDefinitionReference>,
+    ) {
         let fields_definition = match &r#type {
-            TypeDefinitionReference::BuiltinScalarType(_) | TypeDefinitionReference::CustomScalarType(_, _) | TypeDefinitionReference::EnumType(_, _) | TypeDefinitionReference::UnionType(_, _) | TypeDefinitionReference::InputObjectType(_, _) => { return; },
+            TypeDefinitionReference::BuiltinScalarType(_)
+            | TypeDefinitionReference::CustomScalarType(_, _)
+            | TypeDefinitionReference::EnumType(_, _)
+            | TypeDefinitionReference::UnionType(_, _)
+            | TypeDefinitionReference::InputObjectType(_, _) => {
+                return;
+            }
             TypeDefinitionReference::InterfaceType(itd, _) => itd.as_ref().fields_definition(),
             TypeDefinitionReference::ObjectType(otd, _) => otd.as_ref().fields_definition(),
         };
 
-        self.errors.extend(selection_set.as_ref().iter().filter_map(|selection| {
-            if let Selection::Field(field) = selection.as_ref() {
-                let name = field.name();
-                (!fields_definition.contains_field(name)).then(|| {
-                    Error::FieldDoesNotExistOnType { field, r#type }
-                })
-            } else {
-                None
-            }
-        }))
+        self.errors
+            .extend(selection_set.as_ref().iter().filter_map(|selection| {
+                if let Selection::Field(field) = selection.as_ref() {
+                    let name = field.name();
+                    (!fields_definition.contains_field(name))
+                        .then(|| Error::FieldDoesNotExistOnType { field, r#type })
+                } else {
+                    None
+                }
+            }))
     }
 }
 
-impl<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>> IntoIterator for FieldSelections<'a, E, S> {
+impl<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>> IntoIterator
+    for FieldSelections<'a, E, S>
+{
     type Item = Error<'a, E, S>;
     type IntoIter = std::vec::IntoIter<Error<'a, E, S>>;
 
@@ -47,7 +53,9 @@ impl<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>> IntoIterator for Fi
     }
 }
 
-impl<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>> Rule<'a, E, S> for FieldSelections<'a, E, S> {
+impl<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>> Rule<'a, E, S>
+    for FieldSelections<'a, E, S>
+{
     fn new(_: &'a E, _: &'a S) -> Self {
         Self { errors: Vec::new() }
     }

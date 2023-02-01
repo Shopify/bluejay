@@ -1,5 +1,5 @@
-use crate::lexical_token::{PunctuatorType, Name, HasSpan};
 use crate::ast::{FromTokens, IsMatch, ParseError, Tokens};
+use crate::lexical_token::{HasSpan, Name, PunctuatorType};
 use crate::Span;
 
 #[derive(Debug)]

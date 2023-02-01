@@ -1,4 +1,6 @@
-use crate::ast::{Tokens, ParseError, FromTokens, Variable, TypeReference, ConstValue, ConstDirectives};
+use crate::ast::{
+    ConstDirectives, ConstValue, FromTokens, ParseError, Tokens, TypeReference, Variable,
+};
 use crate::lexical_token::PunctuatorType;
 
 #[derive(Debug)]
@@ -14,13 +16,19 @@ impl<'a> FromTokens<'a> for VariableDefinition<'a> {
         let variable = Variable::from_tokens(tokens)?;
         tokens.expect_punctuator(PunctuatorType::Colon)?;
         let r#type = TypeReference::from_tokens(tokens)?;
-        let default_value: Option<ConstValue> = if tokens.next_if_punctuator(PunctuatorType::Equals).is_some() {
-            Some(ConstValue::from_tokens(tokens)?)
-        } else {
-            None
-        };
+        let default_value: Option<ConstValue> =
+            if tokens.next_if_punctuator(PunctuatorType::Equals).is_some() {
+                Some(ConstValue::from_tokens(tokens)?)
+            } else {
+                None
+            };
         let directives = ConstDirectives::from_tokens(tokens)?;
-        Ok(Self { variable, r#type, default_value, directives })
+        Ok(Self {
+            variable,
+            r#type,
+            default_value,
+            directives,
+        })
     }
 }
 

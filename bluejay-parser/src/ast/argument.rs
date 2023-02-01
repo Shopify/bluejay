@@ -1,5 +1,5 @@
+use crate::ast::{FromTokens, ParseError, Tokens, Value};
 use crate::lexical_token::{Name, PunctuatorType};
-use crate::ast::{FromTokens, Tokens, ParseError, Value};
 
 #[derive(Debug)]
 pub struct Argument<'a, const CONST: bool> {

@@ -1,6 +1,6 @@
-use crate::lexical_token::PunctuatorType;
-use crate::ast::{FromTokens, IsMatch, Tokens, ParseError};
 use crate::ast::executable::VariableDefinition;
+use crate::ast::{FromTokens, IsMatch, ParseError, Tokens};
+use crate::lexical_token::PunctuatorType;
 use crate::Span;
 
 #[derive(Debug)]
@@ -20,7 +20,10 @@ impl<'a> FromTokens<'a> for VariableDefinitions<'a> {
             variable_definitions.push(VariableDefinition::from_tokens(tokens)?);
         };
         let span = open_span.merge(&close_span);
-        Ok(Self { variable_definitions, span })
+        Ok(Self {
+            variable_definitions,
+            span,
+        })
     }
 }
 

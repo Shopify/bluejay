@@ -1,4 +1,4 @@
-use crate::definition::{ArgumentsDefinition, AbstractOutputTypeReference};
+use crate::definition::{AbstractOutputTypeReference, ArgumentsDefinition};
 
 pub trait FieldDefinition {
     type ArgumentsDefinition: ArgumentsDefinition;

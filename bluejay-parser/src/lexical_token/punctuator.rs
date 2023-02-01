@@ -1,5 +1,5 @@
-use crate::Span;
 use super::HasSpan;
+use crate::Span;
 use std::fmt;
 
 #[derive(PartialEq, Debug, Clone, Copy)]

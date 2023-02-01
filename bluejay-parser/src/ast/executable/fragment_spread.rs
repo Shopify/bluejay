@@ -1,6 +1,6 @@
-use crate::lexical_token::{Name, PunctuatorType};
-use crate::ast::{ParseError, Tokens, FromTokens, IsMatch, VariableDirectives};
 use crate::ast::executable::TypeCondition;
+use crate::ast::{FromTokens, IsMatch, ParseError, Tokens, VariableDirectives};
+use crate::lexical_token::{Name, PunctuatorType};
 
 #[derive(Debug)]
 pub struct FragmentSpread<'a> {
@@ -20,7 +20,11 @@ impl<'a> FromTokens<'a> for FragmentSpread<'a> {
 
 impl<'a> IsMatch<'a> for FragmentSpread<'a> {
     fn is_match(tokens: &mut impl Tokens<'a>) -> bool {
-        tokens.peek_punctuator_matches(0, PunctuatorType::Ellipse) && tokens.peek_name(1).map(|n| n.as_ref() != TypeCondition::ON).unwrap_or(false)
+        tokens.peek_punctuator_matches(0, PunctuatorType::Ellipse)
+            && tokens
+                .peek_name(1)
+                .map(|n| n.as_ref() != TypeCondition::ON)
+                .unwrap_or(false)
     }
 }
 

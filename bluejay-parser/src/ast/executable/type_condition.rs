@@ -1,5 +1,5 @@
+use crate::ast::{FromTokens, IsMatch, ParseError, Tokens};
 use crate::lexical_token::Name;
-use crate::ast::{Tokens, ParseError, FromTokens, IsMatch};
 
 #[derive(Debug)]
 pub struct TypeCondition<'a> {

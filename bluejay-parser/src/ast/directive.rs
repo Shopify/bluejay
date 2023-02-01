@@ -1,5 +1,5 @@
-use crate::lexical_token::{PunctuatorType, Name};
-use crate::ast::{FromTokens, TryFromTokens, IsMatch, Tokens, ParseError, Arguments};
+use crate::ast::{Arguments, FromTokens, IsMatch, ParseError, Tokens, TryFromTokens};
+use crate::lexical_token::{Name, PunctuatorType};
 
 #[derive(Debug)]
 pub struct Directive<'a, const CONST: bool> {

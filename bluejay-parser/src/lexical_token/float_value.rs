@@ -1,5 +1,5 @@
-use crate::Span;
 use crate::lexical_token::HasSpan;
+use crate::Span;
 
 #[derive(PartialEq, Debug)]
 pub struct FloatValue {

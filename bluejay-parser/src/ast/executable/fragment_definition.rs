@@ -1,6 +1,6 @@
-use crate::lexical_token::Name;
-use crate::ast::{FromTokens, IsMatch, VariableDirectives, Tokens, ParseError};
 use crate::ast::executable::{SelectionSet, TypeCondition};
+use crate::ast::{FromTokens, IsMatch, ParseError, Tokens, VariableDirectives};
+use crate::lexical_token::Name;
 
 #[derive(Debug)]
 pub struct FragmentDefinition<'a> {
@@ -27,7 +27,12 @@ impl<'a> FromTokens<'a> for FragmentDefinition<'a> {
         let type_condition = TypeCondition::from_tokens(tokens)?;
         let directives = VariableDirectives::from_tokens(tokens)?;
         let selection_set = SelectionSet::from_tokens(tokens)?;
-        Ok(Self { name, type_condition, directives, selection_set })
+        Ok(Self {
+            name,
+            type_condition,
+            directives,
+            selection_set,
+        })
     }
 }
 

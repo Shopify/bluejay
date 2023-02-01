@@ -1,13 +1,16 @@
-use std::marker::PhantomData;
+use crate::definition::{EnumTypeDefinition, InputObjectTypeDefinition, ScalarTypeDefinition};
 use crate::BuiltinScalarDefinition;
-use crate::definition::{
-    ScalarTypeDefinition,
-    InputObjectTypeDefinition,
-    EnumTypeDefinition,
-};
+use std::marker::PhantomData;
 
 #[derive(Debug, Clone)]
-pub enum BaseInputTypeReference<CS: ScalarTypeDefinition, CSW: AsRef<CS>, I: InputObjectTypeDefinition, IW: AsRef<I>, E: EnumTypeDefinition, EW: AsRef<E>> {
+pub enum BaseInputTypeReference<
+    CS: ScalarTypeDefinition,
+    CSW: AsRef<CS>,
+    I: InputObjectTypeDefinition,
+    IW: AsRef<I>,
+    E: EnumTypeDefinition,
+    EW: AsRef<E>,
+> {
     BuiltinScalarType(BuiltinScalarDefinition),
     CustomScalarType(CSW, PhantomData<CS>),
     InputObjectType(IW, PhantomData<I>),
@@ -56,18 +59,24 @@ impl<B: AbstractBaseInputTypeReference, W: AsRef<Self>> InputTypeReference<B, W>
     }
 }
 
-pub trait AbstractInputTypeReference: AsRef<InputTypeReference<Self::BaseInputTypeReference, Self::Wrapper>> {
+pub trait AbstractInputTypeReference:
+    AsRef<InputTypeReference<Self::BaseInputTypeReference, Self::Wrapper>>
+{
     type BaseInputTypeReference: AbstractBaseInputTypeReference;
     type Wrapper: AsRef<InputTypeReference<Self::BaseInputTypeReference, Self::Wrapper>>;
 }
 
-impl<B: AbstractBaseInputTypeReference, W: AsRef<InputTypeReference<B, W>>> AsRef<Self> for InputTypeReference<B, W> {
+impl<B: AbstractBaseInputTypeReference, W: AsRef<InputTypeReference<B, W>>> AsRef<Self>
+    for InputTypeReference<B, W>
+{
     fn as_ref(&self) -> &Self {
         self
     }
 }
 
-impl<B: AbstractBaseInputTypeReference, W: AsRef<InputTypeReference<B, W>>> AbstractInputTypeReference for InputTypeReference<B, W> {
+impl<B: AbstractBaseInputTypeReference, W: AsRef<InputTypeReference<B, W>>>
+    AbstractInputTypeReference for InputTypeReference<B, W>
+{
     type BaseInputTypeReference = B;
     type Wrapper = W;
 }

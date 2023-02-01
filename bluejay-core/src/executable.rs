@@ -9,13 +9,16 @@ mod selection;
 mod selection_set;
 mod variable_definition;
 
-pub use executable_definition::{ExecutableDefinition, AbstractExecutableDefinition};
+pub use executable_definition::{AbstractExecutableDefinition, ExecutableDefinition};
 pub use executable_document::ExecutableDocument;
 pub use field::Field;
 pub use fragment_definition::FragmentDefinition;
 pub use fragment_spread::FragmentSpread;
 pub use inline_fragment::InlineFragment;
-pub use operation_definition::{OperationDefinition, AbstractOperationDefinition, ExplicitOperationDefinition, ImplicitOperationDefinition, OperationDefinitionFromExecutableDocument};
-pub use selection::{Selection, AbstractSelection};
+pub use operation_definition::{
+    AbstractOperationDefinition, ExplicitOperationDefinition, ImplicitOperationDefinition,
+    OperationDefinition, OperationDefinitionFromExecutableDocument,
+};
+pub use selection::{AbstractSelection, Selection};
 pub use selection_set::SelectionSet;
 pub use variable_definition::{VariableDefinition, VariableDefinitions};

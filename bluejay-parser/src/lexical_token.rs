@@ -1,17 +1,17 @@
 use enum_as_inner::EnumAsInner;
 
-mod punctuator;
-mod name;
-mod string_value;
-mod int_value;
 mod float_value;
 mod has_span;
-pub use punctuator::{Punctuator, PunctuatorType};
-pub use name::Name;
-pub use string_value::StringValue;
-pub use int_value::IntValue;
+mod int_value;
+mod name;
+mod punctuator;
+mod string_value;
 pub use float_value::FloatValue;
 pub use has_span::HasSpan;
+pub use int_value::IntValue;
+pub use name::Name;
+pub use punctuator::{Punctuator, PunctuatorType};
+pub use string_value::StringValue;
 
 #[derive(PartialEq, Debug, EnumAsInner)]
 pub enum LexicalToken<'a> {

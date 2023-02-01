@@ -1,4 +1,4 @@
-use crate::ast::{Tokens, ParseError, TryFromTokens, FromTokens, Directive};
+use crate::ast::{Directive, FromTokens, ParseError, Tokens, TryFromTokens};
 
 #[derive(Debug)]
 pub struct Directives<'a, const CONST: bool>(Vec<Directive<'a, CONST>>);

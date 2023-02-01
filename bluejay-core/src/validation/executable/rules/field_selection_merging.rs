@@ -1,26 +1,15 @@
-use std::collections::HashMap;
-use itertools::Itertools;
-use crate::validation::executable::{Visitor, Error, Rule};
-use crate::executable::{
-    ExecutableDocument,
-    Selection,
-    Field,
-    InlineFragment,
-    FragmentSpread,
-    FragmentDefinition,
-};
 use crate::definition::{
-    SchemaDefinition,
-    TypeDefinitionReference,
+    AbstractBaseOutputTypeReference, FieldDefinition, FieldsDefinition, InterfaceTypeDefinition,
+    ObjectTypeDefinition, OutputTypeReference, SchemaDefinition, TypeDefinitionReference,
     TypeDefinitionReferenceFromAbstract,
-    InterfaceTypeDefinition,
-    ObjectTypeDefinition,
-    FieldsDefinition,
-    FieldDefinition,
-    AbstractBaseOutputTypeReference,
-    OutputTypeReference,
 };
+use crate::executable::{
+    ExecutableDocument, Field, FragmentDefinition, FragmentSpread, InlineFragment, Selection,
+};
+use crate::validation::executable::{Error, Rule, Visitor};
 use crate::Argument;
+use itertools::Itertools;
+use std::collections::HashMap;
 
 pub struct FieldSelectionMerging<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>> {
     executable_document: &'a E,
@@ -28,99 +17,164 @@ pub struct FieldSelectionMerging<'a, E: ExecutableDocument<'a>, S: SchemaDefinit
     errors: Vec<Error<'a, E, S>>,
 }
 
-impl<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>> Visitor<'a, E, S> for FieldSelectionMerging<'a, E, S> {
-    fn visit_selection_set(&mut self, selection_set: &'a E::SelectionSet, r#type: &'a TypeDefinitionReferenceFromAbstract<S::TypeDefinitionReference>) {
+impl<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>> Visitor<'a, E, S>
+    for FieldSelectionMerging<'a, E, S>
+{
+    fn visit_selection_set(
+        &mut self,
+        selection_set: &'a E::SelectionSet,
+        r#type: &'a TypeDefinitionReferenceFromAbstract<S::TypeDefinitionReference>,
+    ) {
         if !self.fields_in_set_can_merge(selection_set.as_ref().iter(), r#type) {
-            self.errors.push(Error::FieldSelectionsDoNotMerge { selection_set });
+            self.errors
+                .push(Error::FieldSelectionsDoNotMerge { selection_set });
         }
     }
 }
 
 impl<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>> FieldSelectionMerging<'a, E, S> {
-    fn fields_in_set_can_merge(&self, selection_set: impl Iterator<Item = &'a E::Selection>, scoped_type: &'a TypeDefinitionReferenceFromAbstract<S::TypeDefinitionReference>) -> bool {
+    fn fields_in_set_can_merge(
+        &self,
+        selection_set: impl Iterator<Item = &'a E::Selection>,
+        scoped_type: &'a TypeDefinitionReferenceFromAbstract<S::TypeDefinitionReference>,
+    ) -> bool {
         let mut groups: HashMap<&'a str, Vec<FieldContext<'a, E, S>>> = HashMap::new();
         self.group_fields(&mut groups, selection_set, scoped_type);
 
         groups.values().all(|fields_for_name| {
-            fields_for_name.iter().tuple_combinations().all(|(field_a, field_b)| {
-                self.same_response_shape(field_a, field_b) && {
-                    let parent_type_a = field_a.parent_type;
-                    let parent_type_b = field_b.parent_type;
+            fields_for_name
+                .iter()
+                .tuple_combinations()
+                .all(|(field_a, field_b)| {
+                    self.same_response_shape(field_a, field_b) && {
+                        let parent_type_a = field_a.parent_type;
+                        let parent_type_b = field_b.parent_type;
 
-                    if parent_type_a.name() == parent_type_b.name() || !matches!(parent_type_a, TypeDefinitionReference::ObjectType(_, _)) || !matches!(parent_type_b, TypeDefinitionReference::ObjectType(_, _)) {
-                        if field_a.field.name() != field_b.field.name() {
-                            return false;
+                        if parent_type_a.name() == parent_type_b.name()
+                            || !matches!(parent_type_a, TypeDefinitionReference::ObjectType(_, _))
+                            || !matches!(parent_type_b, TypeDefinitionReference::ObjectType(_, _))
+                        {
+                            if field_a.field.name() != field_b.field.name() {
+                                return false;
+                            }
+
+                            if !Self::arguments_equal(
+                                field_a.field.arguments(),
+                                field_b.field.arguments(),
+                            ) {
+                                return false;
+                            }
+
+                            let merged_set = field_a
+                                .field
+                                .selection_set()
+                                .map(AsRef::as_ref)
+                                .unwrap_or_default()
+                                .iter()
+                                .chain(
+                                    field_b
+                                        .field
+                                        .selection_set()
+                                        .map(AsRef::as_ref)
+                                        .unwrap_or_default()
+                                        .iter(),
+                                );
+
+                            self.fields_in_set_can_merge(merged_set, parent_type_a)
+                        } else {
+                            true
                         }
-                        
-                        if !Self::arguments_equal(field_a.field.arguments(), field_b.field.arguments()) {
-                            return false;
-                        }
-
-                        let merged_set = field_a.field.selection_set().map(AsRef::as_ref).unwrap_or_default().iter()
-                            .chain(field_b.field.selection_set().map(AsRef::as_ref).unwrap_or_default().iter());
-
-                        self.fields_in_set_can_merge(merged_set, parent_type_a)
-                    } else {
-                        true
                     }
-                }
-            })
+                })
         })
     }
 
-    fn group_fields(&self, groups: &mut HashMap<&'a str, Vec<FieldContext<'a, E, S>>>, selection_set: impl Iterator<Item=&'a E::Selection>, parent_type: &'a TypeDefinitionReferenceFromAbstract<S::TypeDefinitionReference>) {
-        selection_set.for_each(|selection| {
-            match selection.as_ref() {
-                Selection::Field(field) => {
-                    let fields_definition = match parent_type {
-                        TypeDefinitionReference::ObjectType(otd, _) => Some(otd.as_ref().fields_definition()),
-                        TypeDefinitionReference::InterfaceType(itd, _) => Some(itd.as_ref().fields_definition()),
-                        TypeDefinitionReference::BuiltinScalarType(_) | TypeDefinitionReference::CustomScalarType(_, _) | TypeDefinitionReference::EnumType(_, _) | TypeDefinitionReference::InputObjectType(_, _) | TypeDefinitionReference::UnionType(_, _) => None,
-                    };
-                    if let Some(fields_definition) = fields_definition {
-                        if let Some(field_definition) = fields_definition.get_field(field.name()) {
-                            groups.entry(field.response_name()).or_default().push(FieldContext { field, field_definition, parent_type });
-                        }
+    fn group_fields(
+        &self,
+        groups: &mut HashMap<&'a str, Vec<FieldContext<'a, E, S>>>,
+        selection_set: impl Iterator<Item = &'a E::Selection>,
+        parent_type: &'a TypeDefinitionReferenceFromAbstract<S::TypeDefinitionReference>,
+    ) {
+        selection_set.for_each(|selection| match selection.as_ref() {
+            Selection::Field(field) => {
+                let fields_definition = match parent_type {
+                    TypeDefinitionReference::ObjectType(otd, _) => {
+                        Some(otd.as_ref().fields_definition())
                     }
-                },
-                Selection::FragmentSpread(fs) => {
-                    let fragment_name = fs.name();
-                    let fragment_definition = self.executable_document
-                        .fragment_definitions()
-                        .iter()
-                        .find(|fd| fd.name() == fragment_name);
-                    if let Some(fragment_definition) = fragment_definition {
-                        let type_condition = fragment_definition.type_condition();
-                        if let Some(scoped_type) = self.schema_definition.get_type(type_condition) {
-                            self.group_fields(groups, fragment_definition.selection_set().as_ref().iter(), scoped_type);
-                        }
+                    TypeDefinitionReference::InterfaceType(itd, _) => {
+                        Some(itd.as_ref().fields_definition())
                     }
-                },
-                Selection::InlineFragment(i) => {
-                    let scoped_type = match i.type_condition() {
-                        Some(type_condition) => self.schema_definition.get_type(type_condition),
-                        None => Some(parent_type),
-                    };
-                    if let Some(scoped_type) = scoped_type {
-                        self.group_fields(groups, i.selection_set().as_ref().iter(), scoped_type);
+                    TypeDefinitionReference::BuiltinScalarType(_)
+                    | TypeDefinitionReference::CustomScalarType(_, _)
+                    | TypeDefinitionReference::EnumType(_, _)
+                    | TypeDefinitionReference::InputObjectType(_, _)
+                    | TypeDefinitionReference::UnionType(_, _) => None,
+                };
+                if let Some(fields_definition) = fields_definition {
+                    if let Some(field_definition) = fields_definition.get_field(field.name()) {
+                        groups
+                            .entry(field.response_name())
+                            .or_default()
+                            .push(FieldContext {
+                                field,
+                                field_definition,
+                                parent_type,
+                            });
                     }
-                },
+                }
+            }
+            Selection::FragmentSpread(fs) => {
+                let fragment_name = fs.name();
+                let fragment_definition = self
+                    .executable_document
+                    .fragment_definitions()
+                    .iter()
+                    .find(|fd| fd.name() == fragment_name);
+                if let Some(fragment_definition) = fragment_definition {
+                    let type_condition = fragment_definition.type_condition();
+                    if let Some(scoped_type) = self.schema_definition.get_type(type_condition) {
+                        self.group_fields(
+                            groups,
+                            fragment_definition.selection_set().as_ref().iter(),
+                            scoped_type,
+                        );
+                    }
+                }
+            }
+            Selection::InlineFragment(i) => {
+                let scoped_type = match i.type_condition() {
+                    Some(type_condition) => self.schema_definition.get_type(type_condition),
+                    None => Some(parent_type),
+                };
+                if let Some(scoped_type) = scoped_type {
+                    self.group_fields(groups, i.selection_set().as_ref().iter(), scoped_type);
+                }
             }
         });
     }
 
-    fn same_response_shape(&self, field_a: &FieldContext<'a, E, S>, field_b: &FieldContext<'a, E, S>) -> bool {
-        let types_match = Self::types_match_for_same_response_shape(field_a.field_definition.r#type(), field_b.field_definition.r#type());
-        
+    fn same_response_shape(
+        &self,
+        field_a: &FieldContext<'a, E, S>,
+        field_b: &FieldContext<'a, E, S>,
+    ) -> bool {
+        let types_match = Self::types_match_for_same_response_shape(
+            field_a.field_definition.r#type(),
+            field_b.field_definition.r#type(),
+        );
+
         if !types_match {
             return false;
         }
-        
+
         let mut field_a_groups = {
             let mut groups: HashMap<&str, Vec<FieldContext<'a, E, S>>> = HashMap::new();
-            
+
             if let Some(selection_set) = field_a.field.selection_set() {
-                if let Some(scoped_type) = self.schema_definition.get_type(field_a.field_definition.r#type().as_ref().base().name()) {
+                if let Some(scoped_type) = self
+                    .schema_definition
+                    .get_type(field_a.field_definition.r#type().as_ref().base().name())
+                {
                     self.group_fields(&mut groups, selection_set.as_ref().iter(), scoped_type);
                 }
             }
@@ -130,9 +184,12 @@ impl<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>> FieldSelectionMergi
 
         let field_b_groups = {
             let mut groups: HashMap<&str, Vec<FieldContext<'a, E, S>>> = HashMap::new();
-            
+
             if let Some(selection_set) = field_b.field.selection_set() {
-                if let Some(scoped_type) = self.schema_definition.get_type(field_b.field_definition.r#type().as_ref().base().name()) {
+                if let Some(scoped_type) = self
+                    .schema_definition
+                    .get_type(field_b.field_definition.r#type().as_ref().base().name())
+                {
                     self.group_fields(&mut groups, selection_set.as_ref().iter(), scoped_type);
                 }
             }
@@ -147,13 +204,17 @@ impl<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>> FieldSelectionMergi
         let groups = field_a_groups;
 
         groups.values().all(|fields_for_name| {
-            fields_for_name.iter().tuple_combinations().all(|(field_a, field_b)| {
-                self.same_response_shape(field_a, field_b) && todo!()
-            })
+            fields_for_name
+                .iter()
+                .tuple_combinations()
+                .all(|(field_a, field_b)| self.same_response_shape(field_a, field_b) && todo!())
         })
     }
 
-    fn types_match_for_same_response_shape(type_a: &S::OutputTypeReference, type_b: &S::OutputTypeReference) -> bool {
+    fn types_match_for_same_response_shape(
+        type_a: &S::OutputTypeReference,
+        type_b: &S::OutputTypeReference,
+    ) -> bool {
         let mut type_a = type_a.as_ref();
         let mut type_b = type_b.as_ref();
 
@@ -171,10 +232,13 @@ impl<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>> FieldSelectionMergi
                 Some(type_a_base)
             } else {
                 None
-            }.and_then(|type_a_base| if let OutputTypeReference::Base(type_b_base, _) = &type_b {
-                Some((type_a_base, type_b_base))
-            } else {
-                None
+            }
+            .and_then(|type_a_base| {
+                if let OutputTypeReference::Base(type_b_base, _) = &type_b {
+                    Some((type_a_base, type_b_base))
+                } else {
+                    None
+                }
             });
 
             if let Some(double_base) = double_base {
@@ -198,20 +262,37 @@ impl<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>> FieldSelectionMergi
         };
 
         if type_a.to_concrete().is_scalar_or_enum() || type_b.to_concrete().is_scalar_or_enum() {
-            return type_a.name() == type_b.name()
+            return type_a.name() == type_b.name();
         }
 
-        return true
+        return true;
     }
 
-    fn arguments_equal(args_a: Option<&'a E::Arguments<false>>, args_b: Option<&'a E::Arguments<false>>) -> bool {
-        let lhs: HashMap<&str, _> = HashMap::from_iter(args_a.map(AsRef::as_ref).unwrap_or_default().iter().map(|arg: &E::Argument<false>| (arg.name(), arg.value().as_ref())));
-        let rhs: HashMap<&str, _> = HashMap::from_iter(args_b.map(AsRef::as_ref).unwrap_or_default().iter().map(|arg: &E::Argument<false>| (arg.name(), arg.value().as_ref())));
+    fn arguments_equal(
+        args_a: Option<&'a E::Arguments<false>>,
+        args_b: Option<&'a E::Arguments<false>>,
+    ) -> bool {
+        let lhs: HashMap<&str, _> = HashMap::from_iter(
+            args_a
+                .map(AsRef::as_ref)
+                .unwrap_or_default()
+                .iter()
+                .map(|arg: &E::Argument<false>| (arg.name(), arg.value().as_ref())),
+        );
+        let rhs: HashMap<&str, _> = HashMap::from_iter(
+            args_b
+                .map(AsRef::as_ref)
+                .unwrap_or_default()
+                .iter()
+                .map(|arg: &E::Argument<false>| (arg.name(), arg.value().as_ref())),
+        );
         lhs == rhs
     }
 }
 
-impl<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>> IntoIterator for FieldSelectionMerging<'a, E, S> {
+impl<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>> IntoIterator
+    for FieldSelectionMerging<'a, E, S>
+{
     type Item = Error<'a, E, S>;
     type IntoIter = std::vec::IntoIter<Error<'a, E, S>>;
 
@@ -220,9 +301,15 @@ impl<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>> IntoIterator for Fi
     }
 }
 
-impl<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>> Rule<'a, E, S> for FieldSelectionMerging<'a, E, S> {
+impl<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>> Rule<'a, E, S>
+    for FieldSelectionMerging<'a, E, S>
+{
     fn new(executable_document: &'a E, schema_definition: &'a S) -> Self {
-        Self { executable_document, schema_definition, errors: Vec::new() }
+        Self {
+            executable_document,
+            schema_definition,
+            errors: Vec::new(),
+        }
     }
 }
 

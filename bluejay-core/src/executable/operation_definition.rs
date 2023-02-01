@@ -1,13 +1,20 @@
+use crate::executable::{ExecutableDocument, SelectionSet, VariableDefinitions};
 use crate::{OperationType, VariableDirectives};
-use crate::executable::{VariableDefinitions, SelectionSet, ExecutableDocument};
 
 #[derive(Debug)]
-pub enum OperationDefinition<E: ExplicitOperationDefinition, I: ImplicitOperationDefinition<SelectionSet=E::SelectionSet>> {
+pub enum OperationDefinition<
+    E: ExplicitOperationDefinition,
+    I: ImplicitOperationDefinition<SelectionSet = E::SelectionSet>,
+> {
     Explicit(E),
     Implicit(I),
 }
 
-impl<E: ExplicitOperationDefinition, I: ImplicitOperationDefinition<SelectionSet=E::SelectionSet>> OperationDefinition<E, I> {
+impl<
+        E: ExplicitOperationDefinition,
+        I: ImplicitOperationDefinition<SelectionSet = E::SelectionSet>,
+    > OperationDefinition<E, I>
+{
     pub fn operation_type(&self) -> OperationType {
         match self {
             Self::Explicit(eod) => *eod.operation_type(),
@@ -37,23 +44,36 @@ impl<E: ExplicitOperationDefinition, I: ImplicitOperationDefinition<SelectionSet
     }
 }
 
-pub trait AbstractOperationDefinition: Into<OperationDefinition<Self::ExplicitOperationDefinition, Self::ImplicitOperationDefinition>> + AsRef<OperationDefinition<Self::ExplicitOperationDefinition, Self::ImplicitOperationDefinition>> {
+pub trait AbstractOperationDefinition: Into<OperationDefinition<Self::ExplicitOperationDefinition, Self::ImplicitOperationDefinition>>
+    + AsRef<OperationDefinition<Self::ExplicitOperationDefinition, Self::ImplicitOperationDefinition>>
+{
     type ExplicitOperationDefinition: ExplicitOperationDefinition;
     type ImplicitOperationDefinition: ImplicitOperationDefinition<SelectionSet=<Self::ExplicitOperationDefinition as ExplicitOperationDefinition>::SelectionSet>;
 }
 
-impl<E: ExplicitOperationDefinition, I: ImplicitOperationDefinition<SelectionSet=E::SelectionSet>> AsRef<OperationDefinition<E, I>> for OperationDefinition<E, I> {
+impl<
+        E: ExplicitOperationDefinition,
+        I: ImplicitOperationDefinition<SelectionSet = E::SelectionSet>,
+    > AsRef<OperationDefinition<E, I>> for OperationDefinition<E, I>
+{
     fn as_ref(&self) -> &OperationDefinition<E, I> {
         self
     }
 }
 
-impl<E: ExplicitOperationDefinition, I: ImplicitOperationDefinition<SelectionSet=E::SelectionSet>> AbstractOperationDefinition for OperationDefinition<E, I> {
+impl<
+        E: ExplicitOperationDefinition,
+        I: ImplicitOperationDefinition<SelectionSet = E::SelectionSet>,
+    > AbstractOperationDefinition for OperationDefinition<E, I>
+{
     type ExplicitOperationDefinition = E;
     type ImplicitOperationDefinition = I;
 }
 
-pub type OperationDefinitionFromExecutableDocument<'a, E> = OperationDefinition<<E as ExecutableDocument<'a>>::ExplicitOperationDefinition, <E as ExecutableDocument<'a>>::ImplicitOperationDefinition>;
+pub type OperationDefinitionFromExecutableDocument<'a, E> = OperationDefinition<
+    <E as ExecutableDocument<'a>>::ExplicitOperationDefinition,
+    <E as ExecutableDocument<'a>>::ImplicitOperationDefinition,
+>;
 
 pub trait ExplicitOperationDefinition: Sized {
     type VariableDefinitions: VariableDefinitions;

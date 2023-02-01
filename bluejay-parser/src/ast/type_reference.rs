@@ -1,9 +1,8 @@
-use crate::ast::{Tokens, ParseError, FromTokens, TryFromTokens, IsMatch};
-use crate::lexical_token::{PunctuatorType, Name};
+use crate::ast::{FromTokens, IsMatch, ParseError, Tokens, TryFromTokens};
+use crate::lexical_token::{Name, PunctuatorType};
 use crate::Span;
 use bluejay_core::{
-    ListTypeReference as CoreListTypeReference,
-    NamedTypeReference as CoreNamedTypeReference,
+    ListTypeReference as CoreListTypeReference, NamedTypeReference as CoreNamedTypeReference,
     TypeReference as CoreTypeReference,
 };
 
@@ -71,7 +70,11 @@ impl<'a> FromTokens<'a> for ListTypeReference<'a> {
         let close_span = tokens.expect_punctuator(PunctuatorType::CloseSquareBracket)?;
         let square_bracket_span = open_span.merge(&close_span);
         let bang_span = tokens.next_if_punctuator(PunctuatorType::Bang);
-        Ok(Self { inner, square_bracket_span, bang_span })
+        Ok(Self {
+            inner,
+            square_bracket_span,
+            bang_span,
+        })
     }
 }
 

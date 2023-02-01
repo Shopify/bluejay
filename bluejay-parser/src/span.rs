@@ -1,4 +1,4 @@
-use std::cmp::{min, max};
+use std::cmp::{max, min};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[repr(transparent)]

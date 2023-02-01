@@ -17,7 +17,9 @@ pub use field::Field;
 pub use fragment_definition::FragmentDefinition;
 pub use fragment_spread::FragmentSpread;
 pub use inline_fragment::InlineFragment;
-pub use operation_definition::{OperationDefinition, ExplicitOperationDefinition, ImplicitOperationDefinition};
+pub use operation_definition::{
+    ExplicitOperationDefinition, ImplicitOperationDefinition, OperationDefinition,
+};
 pub use selection::Selection;
 pub use selection_set::SelectionSet;
 pub use type_condition::TypeCondition;

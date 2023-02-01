@@ -1,9 +1,12 @@
-use crate::ast::{ParseError, Tokens, FromTokens, IsMatch, VariableDirectives, TryFromTokens};
-use crate::ast::executable::{VariableDefinitions, SelectionSet};
+use crate::ast::executable::{SelectionSet, VariableDefinitions};
+use crate::ast::{FromTokens, IsMatch, ParseError, Tokens, TryFromTokens, VariableDirectives};
 use crate::lexical_token::Name;
 use bluejay_core::OperationType;
 
-pub type OperationDefinition<'a> = bluejay_core::executable::OperationDefinition<ExplicitOperationDefinition<'a>, ImplicitOperationDefinition<'a>>;
+pub type OperationDefinition<'a> = bluejay_core::executable::OperationDefinition<
+    ExplicitOperationDefinition<'a>,
+    ImplicitOperationDefinition<'a>,
+>;
 
 impl<'a> FromTokens<'a> for OperationDefinition<'a> {
     fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
@@ -12,9 +15,17 @@ impl<'a> FromTokens<'a> for OperationDefinition<'a> {
             let variable_definitions = VariableDefinitions::try_from_tokens(tokens).transpose()?;
             let directives = VariableDirectives::from_tokens(tokens)?;
             let selection_set = SelectionSet::from_tokens(tokens)?;
-            Ok(Self::Explicit(ExplicitOperationDefinition { operation_type, name, variable_definitions, directives, selection_set }))
+            Ok(Self::Explicit(ExplicitOperationDefinition {
+                operation_type,
+                name,
+                variable_definitions,
+                directives,
+                selection_set,
+            }))
         } else if let Some(selection_set) = SelectionSet::try_from_tokens(tokens).transpose()? {
-            Ok(Self::Implicit(ImplicitOperationDefinition { selection_set }))
+            Ok(Self::Implicit(ImplicitOperationDefinition {
+                selection_set,
+            }))
         } else {
             Err(tokens.unexpected_token())
         }

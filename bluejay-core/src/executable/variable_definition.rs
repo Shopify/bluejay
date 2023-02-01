@@ -1,5 +1,5 @@
-use crate::{Variable, AbstractTypeReference, AbstractConstValue};
 use crate::ConstDirectives;
+use crate::{AbstractConstValue, AbstractTypeReference, Variable};
 
 pub trait VariableDefinition {
     type Variable: Variable;

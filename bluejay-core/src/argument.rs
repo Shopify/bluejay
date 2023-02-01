@@ -1,4 +1,4 @@
-use crate::{AbstractValue};
+use crate::AbstractValue;
 
 pub trait Argument<const CONST: bool> {
     type Value: AbstractValue<CONST>;

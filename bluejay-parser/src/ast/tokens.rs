@@ -1,10 +1,12 @@
-use std::collections::VecDeque;
-use crate::{Scanner, Span};
-use crate::lexical_token::{LexicalToken, Name, IntValue, FloatValue, StringValue, HasSpan, PunctuatorType};
-use crate::scanner::ScanError;
 use crate::ast::parse_error::ParseError;
+use crate::lexical_token::{
+    FloatValue, HasSpan, IntValue, LexicalToken, Name, PunctuatorType, StringValue,
+};
+use crate::scanner::ScanError;
+use crate::{Scanner, Span};
+use std::collections::VecDeque;
 
-pub trait Tokens<'a>: Iterator<Item=LexicalToken<'a>> {
+pub trait Tokens<'a>: Iterator<Item = LexicalToken<'a>> {
     fn expect_name(&mut self) -> Result<Name<'a>, ParseError>;
     fn expect_name_value(&mut self, value: &str) -> Result<Span, ParseError>;
     fn expect_punctuator(&mut self, punctuator_type: PunctuatorType) -> Result<Span, ParseError>;
@@ -30,7 +32,11 @@ pub struct ScannerTokens<'a, T: Scanner<'a>> {
 
 impl<'a, T: Scanner<'a>> ScannerTokens<'a, T> {
     pub fn new(scanner: T) -> Self {
-        Self { scanner, errors: Vec::new(), buffer: VecDeque::new() }
+        Self {
+            scanner,
+            errors: Vec::new(),
+            buffer: VecDeque::new(),
+        }
     }
 
     pub fn peek<'b, 'c: 'b>(&'c mut self, idx: usize) -> Option<&'b LexicalToken> {
@@ -45,11 +51,9 @@ impl<'a, T: Scanner<'a>> ScannerTokens<'a, T> {
     fn compute_up_to(&mut self, idx: usize) {
         while idx >= self.buffer.len() {
             match self.scanner.next() {
-                Some(res) => {
-                    match res {
-                        Ok(val) => self.buffer.push_back(val),
-                        Err(err) => self.errors.push(err),
-                    }
+                Some(res) => match res {
+                    Ok(val) => self.buffer.push_back(val),
+                    Err(err) => self.errors.push(err),
                 },
                 None => break,
             }
@@ -59,7 +63,9 @@ impl<'a, T: Scanner<'a>> ScannerTokens<'a, T> {
     pub fn expect_name(&mut self) -> Result<Name<'a>, ParseError> {
         match self.next() {
             Some(LexicalToken::Name(n)) => Ok(n),
-            Some(lt) => Err(ParseError::ExpectedName { span: lt.span().clone() }),
+            Some(lt) => Err(ParseError::ExpectedName {
+                span: lt.span().clone(),
+            }),
             None => Err(self.unexpected_eof()),
         }
     }
@@ -67,21 +73,32 @@ impl<'a, T: Scanner<'a>> ScannerTokens<'a, T> {
     pub fn expect_name_value(&mut self, value: &str) -> Result<Span, ParseError> {
         match self.next() {
             Some(LexicalToken::Name(n)) if n.as_str() == value => Ok(n.span().clone()),
-            Some(lt) => Err(ParseError::ExpectedIdentifier { span: lt.span().clone(), value: value.to_string() }),
+            Some(lt) => Err(ParseError::ExpectedIdentifier {
+                span: lt.span().clone(),
+                value: value.to_string(),
+            }),
             None => Err(self.unexpected_eof()),
         }
     }
 
-    pub fn expect_punctuator(&mut self, punctuator_type: PunctuatorType) -> Result<Span, ParseError> {
+    pub fn expect_punctuator(
+        &mut self,
+        punctuator_type: PunctuatorType,
+    ) -> Result<Span, ParseError> {
         match self.next() {
             Some(LexicalToken::Punctuator(p)) if p.r#type() == punctuator_type => Ok(p.into()),
-            Some(lt) => Err(ParseError::ExpectedIdentifier { span: lt.into(), value: punctuator_type.to_string() }),
+            Some(lt) => Err(ParseError::ExpectedIdentifier {
+                span: lt.into(),
+                value: punctuator_type.to_string(),
+            }),
             None => Err(self.unexpected_eof()),
         }
     }
 
     pub fn unexpected_eof(&self) -> ParseError {
-        ParseError::UnexpectedEOF { span: self.scanner.empty_span() }
+        ParseError::UnexpectedEOF {
+            span: self.scanner.empty_span(),
+        }
     }
 
     pub fn unexpected_token(&mut self) -> ParseError {
@@ -90,14 +107,17 @@ impl<'a, T: Scanner<'a>> ScannerTokens<'a, T> {
             .unwrap_or_else(|| self.unexpected_eof())
     }
 
-    fn next_if<F>(&mut self, f: F) -> Option<Span> where F: Fn(&LexicalToken) -> bool {
+    fn next_if<F>(&mut self, f: F) -> Option<Span>
+    where
+        F: Fn(&LexicalToken) -> bool,
+    {
         match self.peek_next() {
             Some(token) if f(token) => {
                 let span = token.span().clone();
                 self.next();
                 Some(span)
-            },
-            _ => None
+            }
+            _ => None,
         }
     }
 
@@ -106,19 +126,23 @@ impl<'a, T: Scanner<'a>> ScannerTokens<'a, T> {
     }
 
     pub fn next_if_int_value(&mut self) -> Option<IntValue> {
-        matches!(self.peek_next(), Some(LexicalToken::IntValue(_))).then(|| self.next().unwrap().into_int_value().unwrap())
+        matches!(self.peek_next(), Some(LexicalToken::IntValue(_)))
+            .then(|| self.next().unwrap().into_int_value().unwrap())
     }
 
     pub fn next_if_float_value(&mut self) -> Option<FloatValue> {
-        matches!(self.peek_next(), Some(LexicalToken::FloatValue(_))).then(|| self.next().unwrap().into_float_value().unwrap())
+        matches!(self.peek_next(), Some(LexicalToken::FloatValue(_)))
+            .then(|| self.next().unwrap().into_float_value().unwrap())
     }
 
     pub fn next_if_string_value(&mut self) -> Option<StringValue> {
-        matches!(self.peek_next(), Some(LexicalToken::StringValue(_))).then(|| self.next().unwrap().into_string_value().unwrap())
+        matches!(self.peek_next(), Some(LexicalToken::StringValue(_)))
+            .then(|| self.next().unwrap().into_string_value().unwrap())
     }
 
     pub fn next_if_name(&mut self) -> Option<Name<'a>> {
-        matches!(self.peek_next(), Some(LexicalToken::Name(_))).then(|| self.next().unwrap().into_name().unwrap())
+        matches!(self.peek_next(), Some(LexicalToken::Name(_)))
+            .then(|| self.next().unwrap().into_name().unwrap())
     }
 
     pub fn next_if_name_matches(&mut self, name: &str) -> Option<Span> {

@@ -1,6 +1,8 @@
-use crate::lexical_token::{Name, PunctuatorType};
-use crate::ast::{VariableArguments, VariableDirectives, Tokens, ParseError, FromTokens, TryFromTokens, IsMatch};
 use crate::ast::executable::SelectionSet;
+use crate::ast::{
+    FromTokens, IsMatch, ParseError, Tokens, TryFromTokens, VariableArguments, VariableDirectives,
+};
+use crate::lexical_token::{Name, PunctuatorType};
 
 #[derive(Debug)]
 pub struct Field<'a> {
@@ -25,7 +27,13 @@ impl<'a> FromTokens<'a> for Field<'a> {
         let arguments = VariableArguments::try_from_tokens(tokens).transpose()?;
         let directives = VariableDirectives::from_tokens(tokens)?;
         let selection_set = SelectionSet::try_from_tokens(tokens).transpose()?;
-        Ok(Self { alias, name, arguments, directives, selection_set })
+        Ok(Self {
+            alias,
+            name,
+            arguments,
+            directives,
+            selection_set,
+        })
     }
 }
 

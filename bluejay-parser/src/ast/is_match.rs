@@ -1,4 +1,4 @@
-use crate::ast::{Tokens, TryFromTokens, FromTokens, ParseError};
+use crate::ast::{FromTokens, ParseError, Tokens, TryFromTokens};
 
 pub trait IsMatch<'a> {
     fn is_match(tokens: &mut impl Tokens<'a>) -> bool;
