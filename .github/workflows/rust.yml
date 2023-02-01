@@ -14,6 +14,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      - name: Add rustfmt
+        run: rustup component add rustfmt
       - name: Run cargo fmt
         run: cargo fmt --check
       - name: Run clippy
