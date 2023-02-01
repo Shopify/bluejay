@@ -162,7 +162,7 @@ impl<
     > AsRef<Value<CONST, V, I, F, S, B, N, E, L, O>> for Value<CONST, V, I, F, S, B, N, E, L, O>
 {
     fn as_ref(&self) -> &Value<CONST, V, I, F, S, B, N, E, L, O> {
-        &self
+        self
     }
 }
 

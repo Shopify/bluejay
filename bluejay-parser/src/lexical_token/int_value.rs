@@ -13,15 +13,15 @@ impl HasSpan for IntValue {
     }
 }
 
-impl Into<Span> for IntValue {
-    fn into(self) -> Span {
-        self.span
+impl From<IntValue> for Span {
+    fn from(val: IntValue) -> Self {
+        val.span
     }
 }
 
-impl Into<i32> for IntValue {
-    fn into(self) -> i32 {
-        self.value
+impl From<IntValue> for i32 {
+    fn from(val: IntValue) -> Self {
+        val.value
     }
 }
 

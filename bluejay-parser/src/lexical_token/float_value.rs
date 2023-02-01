@@ -23,15 +23,15 @@ impl HasSpan for FloatValue {
     }
 }
 
-impl Into<Span> for FloatValue {
-    fn into(self) -> Span {
-        self.span
+impl From<FloatValue> for Span {
+    fn from(val: FloatValue) -> Self {
+        val.span
     }
 }
 
-impl Into<f64> for FloatValue {
-    fn into(self) -> f64 {
-        self.value
+impl From<FloatValue> for f64 {
+    fn from(val: FloatValue) -> Self {
+        val.value
     }
 }
 

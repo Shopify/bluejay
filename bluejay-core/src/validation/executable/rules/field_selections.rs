@@ -34,7 +34,7 @@ impl<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>> Visitor<'a, E, S>
                 if let Selection::Field(field) = selection.as_ref() {
                     let name = field.name();
                     (!fields_definition.contains_field(name))
-                        .then(|| Error::FieldDoesNotExistOnType { field, r#type })
+                        .then_some(Error::FieldDoesNotExistOnType { field, r#type })
                 } else {
                     None
                 }

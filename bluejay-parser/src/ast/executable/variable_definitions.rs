@@ -6,7 +6,7 @@ use crate::Span;
 #[derive(Debug)]
 pub struct VariableDefinitions<'a> {
     variable_definitions: Vec<VariableDefinition<'a>>,
-    span: Span,
+    _span: Span,
 }
 
 impl<'a> FromTokens<'a> for VariableDefinitions<'a> {
@@ -22,7 +22,7 @@ impl<'a> FromTokens<'a> for VariableDefinitions<'a> {
         let span = open_span.merge(&close_span);
         Ok(Self {
             variable_definitions,
-            span,
+            _span: span,
         })
     }
 }

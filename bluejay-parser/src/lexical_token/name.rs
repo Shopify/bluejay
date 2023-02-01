@@ -23,14 +23,14 @@ impl<'a> HasSpan for Name<'a> {
     }
 }
 
-impl<'a> Into<Span> for Name<'a> {
-    fn into(self) -> Span {
-        self.span
+impl<'a> From<Name<'a>> for Span {
+    fn from(val: Name<'a>) -> Self {
+        val.span
     }
 }
 
 impl<'a> AsRef<str> for Name<'a> {
     fn as_ref(&self) -> &str {
-        &self.value
+        self.value
     }
 }

@@ -29,9 +29,9 @@ impl HasSpan for StringValue {
     }
 }
 
-impl Into<Span> for StringValue {
-    fn into(self) -> Span {
-        self.span
+impl From<StringValue> for Span {
+    fn from(val: StringValue) -> Self {
+        val.span
     }
 }
 

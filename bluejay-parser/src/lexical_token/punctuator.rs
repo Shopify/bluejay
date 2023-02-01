@@ -42,9 +42,9 @@ impl HasSpan for Punctuator {
     }
 }
 
-impl Into<Span> for Punctuator {
-    fn into(self) -> Span {
-        self.span
+impl From<Punctuator> for Span {
+    fn from(val: Punctuator) -> Self {
+        val.span
     }
 }
 
@@ -66,6 +66,6 @@ impl fmt::Display for PunctuatorType {
             Self::CloseBrace => "}",
             Self::Ellipse => "...",
         };
-        write!(f, "{}", s)
+        write!(f, "{s}")
     }
 }

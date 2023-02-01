@@ -84,7 +84,7 @@ impl<
 {
     fn clone(&self) -> Self {
         match self {
-            Self::BuiltinScalarType(bstd) => Self::BuiltinScalarType(bstd.clone()),
+            Self::BuiltinScalarType(bstd) => Self::BuiltinScalarType(*bstd),
             Self::CustomScalarType(csw, _) => {
                 Self::CustomScalarType(csw.clone(), Default::default())
             }

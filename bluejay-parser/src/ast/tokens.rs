@@ -175,9 +175,9 @@ impl<'a, T: Scanner<'a>> Iterator for ScannerTokens<'a, T> {
     }
 }
 
-impl<'a, T: Scanner<'a>> Into<Vec<ScanError>> for ScannerTokens<'a, T> {
-    fn into(self) -> Vec<ScanError> {
-        self.errors
+impl<'a, T: Scanner<'a>> From<ScannerTokens<'a, T>> for Vec<ScanError> {
+    fn from(val: ScannerTokens<'a, T>) -> Self {
+        val.errors
     }
 }
 

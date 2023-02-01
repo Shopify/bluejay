@@ -40,7 +40,8 @@ impl<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>> IntoIterator
         self.operations
             .into_iter()
             .filter_map(|(name, operations)| {
-                (operations.len() > 1).then(|| Error::NonUniqueOperationNames { name, operations })
+                (operations.len() > 1)
+                    .then_some(Error::NonUniqueOperationNames { name, operations })
             })
     }
 }

@@ -34,14 +34,14 @@ impl<'a> HasSpan for LexicalToken<'a> {
     }
 }
 
-impl<'a> Into<crate::Span> for LexicalToken<'a> {
-    fn into(self) -> crate::Span {
-        match self {
-            Self::FloatValue(f) => f.into(),
-            Self::IntValue(i) => i.into(),
-            Self::StringValue(s) => s.into(),
-            Self::Name(n) => n.into(),
-            Self::Punctuator(p) => p.into(),
+impl<'a> From<LexicalToken<'a>> for crate::Span {
+    fn from(val: LexicalToken<'a>) -> Self {
+        match val {
+            LexicalToken::FloatValue(f) => f.into(),
+            LexicalToken::IntValue(i) => i.into(),
+            LexicalToken::StringValue(s) => s.into(),
+            LexicalToken::Name(n) => n.into(),
+            LexicalToken::Punctuator(p) => p.into(),
         }
     }
 }

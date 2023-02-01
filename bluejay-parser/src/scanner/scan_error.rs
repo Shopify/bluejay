@@ -8,10 +8,10 @@ pub enum ScanError {
     FloatValueTooLarge(Span),
 }
 
-impl Into<Error> for ScanError {
-    fn into(self) -> Error {
-        match self {
-            Self::UnrecognizedTokenError(span) => Error {
+impl From<ScanError> for Error {
+    fn from(val: ScanError) -> Self {
+        match val {
+            ScanError::UnrecognizedTokenError(span) => Self {
                 message: "Unrecognized token".to_string(),
                 annotations: vec![Annotation {
                     message: "Unable to parse".to_string(),
@@ -19,7 +19,7 @@ impl Into<Error> for ScanError {
                     span,
                 }],
             },
-            Self::IntegerValueTooLarge(span) => Error {
+            ScanError::IntegerValueTooLarge(span) => Self {
                 message: "Value too large to fit in a 32-bit signed integer".to_string(),
                 annotations: vec![Annotation {
                     message: "Integer too large".to_string(),
@@ -27,7 +27,7 @@ impl Into<Error> for ScanError {
                     span,
                 }],
             },
-            Self::FloatValueTooLarge(span) => Error {
+            ScanError::FloatValueTooLarge(span) => Self {
                 message: "Value too large to fit in a 64-bit float".to_string(),
                 annotations: vec![Annotation {
                     message: "Float too large".to_string(),

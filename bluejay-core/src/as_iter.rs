@@ -4,5 +4,5 @@ pub trait AsIter {
     where
         Self: 'a;
 
-    fn iter<'a>(&'a self) -> Self::Iterator<'a>;
+    fn iter(&self) -> Self::Iterator<'_>;
 }

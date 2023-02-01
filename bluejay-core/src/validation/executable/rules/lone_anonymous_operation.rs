@@ -31,7 +31,7 @@ impl<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>> IntoIterator
     fn into_iter(self) -> Self::IntoIter {
         (self.executable_document.operation_definitions().len() != 1
             && !self.anonymous_operations.is_empty())
-        .then(|| Error::NotLoneAnonymousOperation {
+        .then_some(Error::NotLoneAnonymousOperation {
             anonymous_operations: self.anonymous_operations,
         })
         .into_iter()

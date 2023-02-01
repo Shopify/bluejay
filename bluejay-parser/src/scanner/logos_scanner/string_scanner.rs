@@ -46,14 +46,14 @@ impl<'a> Token<'a> {
             match token {
                 Self::SourceCharacters(s) => formatted.push_str(s),
                 Self::EscapedUnicode(c) => formatted.push(c),
-                Self::EscapedQuote => formatted.push_str("\u{0022}"),
-                Self::EscapedBackslash => formatted.push_str("\u{005C}"),
-                Self::EscapedSlash => formatted.push_str("\u{002F}"),
-                Self::EscapedBackspace => formatted.push_str("\u{0008}"),
-                Self::EscapedFormFeed => formatted.push_str("\u{000C}"),
-                Self::EscapedNewline => formatted.push_str("\u{000A}"),
-                Self::EscapedCarriageReturn => formatted.push_str("\u{000D}"),
-                Self::EscapedTab => formatted.push_str("\u{0009}"),
+                Self::EscapedQuote => formatted.push('\u{0022}'),
+                Self::EscapedBackslash => formatted.push('\u{005C}'),
+                Self::EscapedSlash => formatted.push('\u{002F}'),
+                Self::EscapedBackspace => formatted.push('\u{0008}'),
+                Self::EscapedFormFeed => formatted.push('\u{000C}'),
+                Self::EscapedNewline => formatted.push('\u{000A}'),
+                Self::EscapedCarriageReturn => formatted.push('\u{000D}'),
+                Self::EscapedTab => formatted.push('\u{0009}'),
                 Self::Error => panic!("Unexpected error"),
             }
         }

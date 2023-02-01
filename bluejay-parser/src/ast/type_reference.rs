@@ -40,12 +40,6 @@ impl<'a> FromTokens<'a> for NamedTypeReference<'a> {
     }
 }
 
-impl<'a> NamedTypeReference<'a> {
-    pub(crate) fn name(&self) -> &Name {
-        &self.name
-    }
-}
-
 impl<'a> CoreNamedTypeReference for NamedTypeReference<'a> {
     fn name(&self) -> &str {
         self.name.as_ref()
@@ -59,7 +53,7 @@ impl<'a> CoreNamedTypeReference for NamedTypeReference<'a> {
 #[derive(Debug)]
 pub struct ListTypeReference<'a> {
     inner: Box<TypeReference<'a>>,
-    square_bracket_span: Span,
+    _square_bracket_span: Span,
     bang_span: Option<Span>,
 }
 
@@ -72,7 +66,7 @@ impl<'a> FromTokens<'a> for ListTypeReference<'a> {
         let bang_span = tokens.next_if_punctuator(PunctuatorType::Bang);
         Ok(Self {
             inner,
-            square_bracket_span,
+            _square_bracket_span: square_bracket_span,
             bang_span,
         })
     }

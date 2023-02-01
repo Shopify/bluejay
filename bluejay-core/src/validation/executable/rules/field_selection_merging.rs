@@ -222,10 +222,8 @@ impl<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>> FieldSelectionMergi
             let type_a_non_null = type_a.is_required();
             let type_b_non_null = type_b.is_required();
 
-            if type_a_non_null || type_b_non_null {
-                if !type_a_non_null || !type_b_non_null {
-                    return false;
-                }
+            if (type_a_non_null || type_b_non_null) && (!type_a_non_null || !type_b_non_null) {
+                return false;
             }
 
             let double_base = if let OutputTypeReference::Base(type_a_base, _) = &type_a {
@@ -265,7 +263,7 @@ impl<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>> FieldSelectionMergi
             return type_a.name() == type_b.name();
         }
 
-        return true;
+        true
     }
 
     fn arguments_equal(

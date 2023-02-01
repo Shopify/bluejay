@@ -21,7 +21,7 @@ impl<'a, const CONST: bool> FromTokens<'a> for Value<'a, CONST> {
             if CONST {
                 None
             } else {
-                Variable::try_from_tokens(tokens).map(|res| res.map(|var| Self::Variable(var)))
+                Variable::try_from_tokens(tokens).map(|res| res.map(Self::Variable))
             }
         })
         .or_else(|| {
@@ -96,6 +96,22 @@ impl<'a, const CONST: bool> FromTokens<'a> for Value<'a, CONST> {
                 .map(|token| ParseError::UnexpectedToken { span: token.into() })
                 .unwrap_or_else(|| tokens.unexpected_eof()))
         })
+    }
+}
+
+impl<'a, const CONST: bool> HasSpan for Value<'a, CONST> {
+    fn span(&self) -> &Span {
+        match self {
+            Self::Boolean(b) => &b.span,
+            Self::Enum(e) => e.span(),
+            Self::Float(f) => f.span(),
+            Self::Integer(i) => i.span(),
+            Self::List(l) => &l.span,
+            Self::Null(n) => n.span(),
+            Self::Object(o) => &o.span,
+            Self::String(s) => s.span(),
+            Self::Variable(v) => v.span(),
+        }
     }
 }
 

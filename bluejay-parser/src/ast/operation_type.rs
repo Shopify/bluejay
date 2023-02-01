@@ -17,7 +17,7 @@ impl<'a> FromTokens<'a> for bluejay_core::OperationType {
 impl<'a> IsMatch<'a> for bluejay_core::OperationType {
     fn is_match(tokens: &mut impl Tokens<'a>) -> bool {
         Self::POSSIBLE_VALUES
-            .into_iter()
-            .any(|value| tokens.peek_name_matches(0, *value))
+            .iter()
+            .any(|value| tokens.peek_name_matches(0, value))
     }
 }
