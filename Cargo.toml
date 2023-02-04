@@ -3,3 +3,4 @@ members = [
     "bluejay-parser",
     "bluejay-core",
 ]
+resolver = "2"

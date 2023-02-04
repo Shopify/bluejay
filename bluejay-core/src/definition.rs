@@ -1,4 +1,5 @@
 mod arguments_definition;
+mod directive_definition;
 mod enum_type_definition;
 mod enum_value_definition;
 mod enum_value_definitions;
@@ -21,6 +22,7 @@ mod union_member_types;
 mod union_type_definition;
 
 pub use arguments_definition::ArgumentsDefinition;
+pub use directive_definition::{DirectiveDefinition, DirectiveLocation};
 pub use enum_type_definition::EnumTypeDefinition;
 pub use enum_value_definition::EnumValueDefinition;
 pub use enum_value_definitions::EnumValueDefinitions;

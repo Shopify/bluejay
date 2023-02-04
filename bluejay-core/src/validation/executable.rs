@@ -5,7 +5,7 @@ mod validator;
 mod visitor;
 
 pub use error::Error;
-use rule::Rule;
+pub use rule::Rule;
 use rules::Rules;
-pub use validator::Validator;
+pub use validator::{RulesValidator, Validator};
 use visitor::Visitor;

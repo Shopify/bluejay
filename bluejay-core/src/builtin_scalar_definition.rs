@@ -1,4 +1,3 @@
-use crate::definition::ScalarTypeDefinition;
 use strum::{AsRefStr, Display, EnumIter, EnumString, EnumVariantNames, IntoStaticStr};
 
 #[derive(
@@ -14,16 +13,6 @@ pub enum BuiltinScalarDefinition {
 
 impl BuiltinScalarDefinition {
     pub fn name(&self) -> &'static str {
-        self.into()
-    }
-}
-
-impl ScalarTypeDefinition for BuiltinScalarDefinition {
-    fn description(&self) -> Option<&str> {
-        None
-    }
-
-    fn name(&self) -> &str {
         self.into()
     }
 }

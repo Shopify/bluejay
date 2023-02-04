@@ -5,7 +5,7 @@ use crate::Span;
 pub enum ParseError {
     ExpectedOneOf {
         span: Span,
-        values: Vec<&'static str>,
+        values: &'static [&'static str],
     },
     ExpectedIdentifier {
         span: Span,

@@ -1,6 +1,7 @@
 use crate::ast::{Argument, FromTokens, IsMatch, ParseError, Tokens};
 use crate::lexical_token::{HasSpan, PunctuatorType};
 use crate::Span;
+use bluejay_core::AsIter;
 
 #[derive(Debug)]
 pub struct Arguments<'a, const CONST: bool> {
@@ -41,8 +42,11 @@ impl<'a, const CONST: bool> bluejay_core::Arguments<CONST> for Arguments<'a, CON
     type Argument = Argument<'a, CONST>;
 }
 
-impl<'a, const CONST: bool> AsRef<[Argument<'a, CONST>]> for Arguments<'a, CONST> {
-    fn as_ref(&self) -> &[Argument<'a, CONST>] {
-        &self.arguments
+impl<'a, const CONST: bool> AsIter for Arguments<'a, CONST> {
+    type Item = Argument<'a, CONST>;
+    type Iterator<'b> = std::slice::Iter<'b, Self::Item> where 'a: 'b;
+
+    fn iter(&self) -> Self::Iterator<'_> {
+        self.arguments.iter()
     }
 }

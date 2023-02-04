@@ -19,16 +19,6 @@ impl<'a, const CONST: bool> FromTokens<'a> for Argument<'a, CONST> {
     }
 }
 
-impl<'a, const CONST: bool> Argument<'a, CONST> {
-    pub fn name(&self) -> &str {
-        self.name.as_ref()
-    }
-
-    pub fn value(&self) -> &Value<CONST> {
-        &self.value
-    }
-}
-
 impl<'a, const CONST: bool> bluejay_core::Argument<CONST> for Argument<'a, CONST> {
     type Value = Value<'a, CONST>;
 

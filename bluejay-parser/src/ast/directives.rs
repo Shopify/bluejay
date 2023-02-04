@@ -1,4 +1,4 @@
-use crate::ast::{Directive, FromTokens, ParseError, Tokens, TryFromTokens};
+use crate::ast::{Directive, FromTokens, IsMatch, ParseError, Tokens, TryFromTokens};
 
 #[derive(Debug)]
 pub struct Directives<'a, const CONST: bool>(Vec<Directive<'a, CONST>>);
@@ -13,6 +13,12 @@ impl<'a, const CONST: bool> FromTokens<'a> for Directives<'a, CONST> {
             directives.push(directive?);
         }
         Ok(Self(directives))
+    }
+}
+
+impl<'a, const CONST: bool> IsMatch<'a> for Directives<'a, CONST> {
+    fn is_match(tokens: &mut impl Tokens<'a>) -> bool {
+        Directive::<'a, CONST>::is_match(tokens)
     }
 }
 

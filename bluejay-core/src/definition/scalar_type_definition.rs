@@ -1,4 +1,9 @@
+use crate::ConstDirectives;
+
 pub trait ScalarTypeDefinition {
-    fn name(&self) -> &str;
+    type Directives: ConstDirectives;
+
     fn description(&self) -> Option<&str>;
+    fn name(&self) -> &str;
+    fn directives(&self) -> Option<&Self::Directives>;
 }

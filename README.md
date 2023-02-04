@@ -8,10 +8,7 @@
 > **Note**
 > In an effort to get a working proof-of-concept, documentation and test coverage has been sacrificied. This will be corrected prior to a stable release.
 
-## `bluejay-core`
+## Crates
 
-`bluejay-core` defines traits for implementing GraphQL schemas and executables and provides capabilities for validating executables (in progress) with future plans for validating schemas.
-
-## `bluejay-parser`
-
-`bluejay-parser` provides parsing capabilities of GraphQL executables with future plans for parsing schemas.
+- [`bluejay-core`](/bluejay-core/README.md)
+- [`bluejay-parser`](/bluejay-parser/README.md)

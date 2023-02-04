@@ -1,4 +1,4 @@
-use crate::AbstractValue;
+use crate::{AbstractValue, AsIter};
 
 pub trait Argument<const CONST: bool> {
     type Value: AbstractValue<CONST>;
@@ -13,7 +13,7 @@ pub trait VariableArgument: Argument<false> {}
 impl<T: Argument<true>> ConstArgument for T {}
 impl<T: Argument<false>> VariableArgument for T {}
 
-pub trait Arguments<const CONST: bool>: AsRef<[Self::Argument]> {
+pub trait Arguments<const CONST: bool>: AsIter<Item = Self::Argument> {
     type Argument: Argument<CONST>;
 }
 

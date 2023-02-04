@@ -1,13 +1,13 @@
 use crate::definition::{
-    AbstractBaseOutputTypeReference, FieldDefinition, FieldsDefinition, InterfaceTypeDefinition,
-    ObjectTypeDefinition, OutputTypeReference, SchemaDefinition, TypeDefinitionReference,
+    FieldDefinition, FieldsDefinition, InterfaceTypeDefinition, ObjectTypeDefinition,
+    OutputTypeReference, SchemaDefinition, TypeDefinitionReference,
     TypeDefinitionReferenceFromAbstract,
 };
 use crate::executable::{
     ExecutableDocument, Field, FragmentDefinition, FragmentSpread, InlineFragment, Selection,
 };
 use crate::validation::executable::{Error, Rule, Visitor};
-use crate::Argument;
+use crate::{Argument, AsIter};
 use itertools::Itertools;
 use std::collections::HashMap;
 
@@ -227,13 +227,13 @@ impl<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>> FieldSelectionMergi
             }
 
             let double_base = if let OutputTypeReference::Base(type_a_base, _) = &type_a {
-                Some(type_a_base)
+                Some(type_a_base.as_ref())
             } else {
                 None
             }
             .and_then(|type_a_base| {
                 if let OutputTypeReference::Base(type_b_base, _) = &type_b {
-                    Some((type_a_base, type_b_base))
+                    Some((type_a_base, type_b_base.as_ref()))
                 } else {
                     None
                 }
@@ -259,7 +259,7 @@ impl<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>> FieldSelectionMergi
             }
         };
 
-        if type_a.to_concrete().is_scalar_or_enum() || type_b.to_concrete().is_scalar_or_enum() {
+        if type_a.as_ref().is_scalar_or_enum() || type_b.as_ref().is_scalar_or_enum() {
             return type_a.name() == type_b.name();
         }
 
@@ -270,20 +270,22 @@ impl<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>> FieldSelectionMergi
         args_a: Option<&'a E::Arguments<false>>,
         args_b: Option<&'a E::Arguments<false>>,
     ) -> bool {
-        let lhs: HashMap<&str, _> = HashMap::from_iter(
-            args_a
-                .map(AsRef::as_ref)
-                .unwrap_or_default()
-                .iter()
-                .map(|arg: &E::Argument<false>| (arg.name(), arg.value().as_ref())),
-        );
-        let rhs: HashMap<&str, _> = HashMap::from_iter(
-            args_b
-                .map(AsRef::as_ref)
-                .unwrap_or_default()
-                .iter()
-                .map(|arg: &E::Argument<false>| (arg.name(), arg.value().as_ref())),
-        );
+        let lhs: HashMap<&str, _> = args_a
+            .map(|args| {
+                HashMap::from_iter(
+                    args.iter()
+                        .map(|arg: &E::Argument<false>| (arg.name(), arg.value().as_ref())),
+                )
+            })
+            .unwrap_or_default();
+        let rhs: HashMap<&str, _> = args_b
+            .map(|args| {
+                HashMap::from_iter(
+                    args.iter()
+                        .map(|arg: &E::Argument<false>| (arg.name(), arg.value().as_ref())),
+                )
+            })
+            .unwrap_or_default();
         lhs == rhs
     }
 }

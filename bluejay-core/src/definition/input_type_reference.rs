@@ -17,6 +17,37 @@ pub enum BaseInputTypeReference<
     EnumType(EW, PhantomData<E>),
 }
 
+impl<
+        CS: ScalarTypeDefinition,
+        CSW: AsRef<CS>,
+        I: InputObjectTypeDefinition,
+        IW: AsRef<I>,
+        E: EnumTypeDefinition,
+        EW: AsRef<E>,
+    > AsRef<Self> for BaseInputTypeReference<CS, CSW, I, IW, E, EW>
+{
+    fn as_ref(&self) -> &Self {
+        self
+    }
+}
+
+impl<
+        CS: ScalarTypeDefinition,
+        CSW: AsRef<CS>,
+        I: InputObjectTypeDefinition,
+        IW: AsRef<I>,
+        E: EnumTypeDefinition,
+        EW: AsRef<E>,
+    > AbstractBaseInputTypeReference for BaseInputTypeReference<CS, CSW, I, IW, E, EW>
+{
+    type CustomScalarTypeDefinition = CS;
+    type EnumTypeDefinition = E;
+    type InputObjectTypeDefinition = I;
+    type WrappedCustomScalarTypeDefinition = CSW;
+    type WrappedEnumTypeDefinition = EW;
+    type WrappedInputObjectTypeDefinition = IW;
+}
+
 pub type BaseInputTypeReferenceFromAbstract<T> = BaseInputTypeReference<
     <T as AbstractBaseInputTypeReference>::CustomScalarTypeDefinition,
     <T as AbstractBaseInputTypeReference>::WrappedCustomScalarTypeDefinition,
@@ -26,15 +57,13 @@ pub type BaseInputTypeReferenceFromAbstract<T> = BaseInputTypeReference<
     <T as AbstractBaseInputTypeReference>::WrappedEnumTypeDefinition,
 >;
 
-pub trait AbstractBaseInputTypeReference {
+pub trait AbstractBaseInputTypeReference: AsRef<BaseInputTypeReferenceFromAbstract<Self>> {
     type CustomScalarTypeDefinition: ScalarTypeDefinition;
     type InputObjectTypeDefinition: InputObjectTypeDefinition;
     type EnumTypeDefinition: EnumTypeDefinition;
     type WrappedCustomScalarTypeDefinition: AsRef<Self::CustomScalarTypeDefinition>;
     type WrappedInputObjectTypeDefinition: AsRef<Self::InputObjectTypeDefinition>;
     type WrappedEnumTypeDefinition: AsRef<Self::EnumTypeDefinition>;
-
-    fn to_concrete(&self) -> BaseInputTypeReferenceFromAbstract<Self>;
 }
 
 #[derive(Debug, Clone)]
@@ -51,9 +80,9 @@ impl<B: AbstractBaseInputTypeReference, W: AsRef<Self>> InputTypeReference<B, W>
         }
     }
 
-    pub fn base(&self) -> &B {
+    pub fn base(&self) -> &BaseInputTypeReferenceFromAbstract<B> {
         match self {
-            Self::Base(b, _) => b,
+            Self::Base(b, _) => b.as_ref(),
             Self::List(l, _) => l.as_ref().base(),
         }
     }

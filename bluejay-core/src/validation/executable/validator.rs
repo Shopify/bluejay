@@ -1,25 +1,29 @@
 use crate::definition::{
-    AbstractBaseOutputTypeReference, FieldDefinition, FieldsDefinition, ObjectTypeDefinition,
-    SchemaDefinition, TypeDefinitionReferenceFromAbstract,
+    FieldDefinition, FieldsDefinition, ObjectTypeDefinition, SchemaDefinition,
+    TypeDefinitionReferenceFromAbstract,
 };
 use crate::executable::{
     ExecutableDocument, Field, FragmentDefinition, InlineFragment,
     OperationDefinitionFromExecutableDocument, Selection,
 };
-use crate::validation::executable::{Error, Rule, Rules, Visitor};
+use crate::validation::executable::{Error, Rule, Rules};
 
-pub struct Validator<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>> {
+pub struct Validator<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>, R: Rule<'a, E, S>> {
     schema_definition: &'a S,
     executable_document: &'a E,
-    rules: Rules<'a, E, S>,
+    rule: R,
 }
 
-impl<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>> Validator<'a, E, S> {
+pub type RulesValidator<'a, E, S> = Validator<'a, E, S, Rules<'a, E, S>>;
+
+impl<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>, R: Rule<'a, E, S>>
+    Validator<'a, E, S, R>
+{
     fn new(executable_document: &'a E, schema_definition: &'a S) -> Self {
         Self {
             schema_definition,
             executable_document,
-            rules: Rules::new(executable_document, schema_definition),
+            rule: Rule::new(executable_document, schema_definition),
         }
     }
 
@@ -42,7 +46,7 @@ impl<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>> Validator<'a, E, S>
         &mut self,
         operation_definition: &'a OperationDefinitionFromExecutableDocument<'a, E>,
     ) {
-        self.rules.visit_operation(operation_definition);
+        self.rule.visit_operation(operation_definition);
 
         // TODO: handle mutation case
         self.visit_selection_set(
@@ -67,7 +71,7 @@ impl<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>> Validator<'a, E, S>
         selection_set: &'a E::SelectionSet,
         scoped_type: &'a TypeDefinitionReferenceFromAbstract<S::TypeDefinitionReference>,
     ) {
-        self.rules.visit_selection_set(selection_set, scoped_type);
+        self.rule.visit_selection_set(selection_set, scoped_type);
 
         selection_set.as_ref().iter().for_each(|selection| {
             let contained_selection_set_and_type = match selection.as_ref() {
@@ -110,11 +114,13 @@ impl<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>> Validator<'a, E, S>
     }
 }
 
-impl<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>> IntoIterator for Validator<'a, E, S> {
+impl<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>, R: Rule<'a, E, S>> IntoIterator
+    for Validator<'a, E, S, R>
+{
     type Item = Error<'a, E, S>;
-    type IntoIter = <Rules<'a, E, S> as IntoIterator>::IntoIter;
+    type IntoIter = <R as IntoIterator>::IntoIter;
 
     fn into_iter(self) -> Self::IntoIter {
-        self.rules.into_iter()
+        self.rule.into_iter()
     }
 }
