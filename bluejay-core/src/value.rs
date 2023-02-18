@@ -2,9 +2,12 @@ use crate::Variable;
 use std::collections::HashMap;
 
 pub trait ObjectValue<V> {
-    type Key: AsRef<str>;
+    type Iterator<'a>: Iterator<Item = (&'a str, &'a V)>
+    where
+        Self: 'a,
+        V: 'a;
 
-    fn fields(&self) -> &[(Self::Key, V)];
+    fn iter(&self) -> Self::Iterator<'_>;
 }
 
 pub trait IntegerValue {
@@ -27,17 +30,9 @@ impl FloatValue for f64 {
     }
 }
 
-pub trait StringValue: AsRef<str> {
-    fn contains_enum_values() -> bool {
-        false
-    }
-}
+pub trait StringValue: AsRef<str> {}
 
-impl StringValue for String {
-    fn contains_enum_values() -> bool {
-        true
-    }
-}
+impl StringValue for String {}
 
 pub trait BooleanValue {
     fn to_bool(&self) -> bool;
@@ -124,7 +119,8 @@ pub trait AbstractValue<const CONST: bool>:
 pub trait AbstractConstValue: AbstractValue<true> {}
 pub trait AbstractVariableValue: AbstractValue<false> {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, strum::Display)]
+#[strum(serialize_all = "lowercase")]
 pub enum Value<
     const CONST: bool,
     V: Variable,
@@ -200,8 +196,8 @@ impl<
             Self::Enum(e) => matches!(other, Self::Enum(other_e) if e.as_ref() == other_e.as_ref()),
             Self::List(l) => matches!(other, Self::List(other_l) if l.as_ref() == other_l.as_ref()),
             Self::Object(o) => matches!(other, Self::Object(other_o) if {
-                let lhs: HashMap<&str, &Self> = HashMap::from_iter(o.fields().iter().map(|(k, v)| (k.as_ref(), v)));
-                let rhs: HashMap<&str, &Self> = HashMap::from_iter(other_o.fields().iter().map(|(k, v)| (k.as_ref(), v)));
+                let lhs: HashMap<&str, &Self> = HashMap::from_iter(o.iter());
+                let rhs: HashMap<&str, &Self> = HashMap::from_iter(other_o.iter());
                 lhs == rhs
             }),
         }

@@ -1,6 +1,7 @@
 use crate::ast::{FromTokens, ParseError, Tokens, TryFromTokens, Variable};
 use crate::lexical_token::{FloatValue, HasSpan, IntValue, Name, PunctuatorType, StringValue};
 use crate::Span;
+use bluejay_core::AsIter;
 
 pub type Value<'a, const CONST: bool> = bluejay_core::Value<
     CONST,
@@ -151,10 +152,19 @@ pub struct ObjectValue<'a, const CONST: bool> {
 }
 
 impl<'a, const CONST: bool> bluejay_core::ObjectValue<Value<'a, CONST>> for ObjectValue<'a, CONST> {
-    type Key = Name<'a>;
+    type Iterator<'b> = std::iter::Map<std::slice::Iter<'b, (Name<'a>, Value<'a, CONST>)>, fn(&'b (Name<'a>, Value<'a, CONST>)) -> (&'b str, &'b Value<'a, CONST>)> where 'a: 'b;
 
-    fn fields(&self) -> &[(Self::Key, Value<'a, CONST>)] {
-        &self.fields
+    fn iter(&self) -> Self::Iterator<'_> {
+        self.fields.iter().map(|(key, value)| (key.as_str(), value))
+    }
+}
+
+impl<'a, const CONST: bool> AsIter for ObjectValue<'a, CONST> {
+    type Item = (Name<'a>, Value<'a, CONST>);
+    type Iterator<'b> = std::slice::Iter<'b, (Name<'a>, Value<'a, CONST>)> where 'a: 'b;
+
+    fn iter(&self) -> Self::Iterator<'_> {
+        self.fields.iter()
     }
 }
 
