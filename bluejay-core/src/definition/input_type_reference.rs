@@ -38,6 +38,25 @@ impl<
         IW: AsRef<I>,
         E: EnumTypeDefinition,
         EW: AsRef<E>,
+    > BaseInputTypeReference<CS, CSW, I, IW, E, EW>
+{
+    pub fn name(&self) -> &str {
+        match self {
+            Self::BuiltinScalarType(bstd) => bstd.name(),
+            Self::CustomScalarType(cstd, _) => cstd.as_ref().name(),
+            Self::EnumType(etd, _) => etd.as_ref().name(),
+            Self::InputObjectType(iotd, _) => iotd.as_ref().name(),
+        }
+    }
+}
+
+impl<
+        CS: ScalarTypeDefinition,
+        CSW: AsRef<CS>,
+        I: InputObjectTypeDefinition,
+        IW: AsRef<I>,
+        E: EnumTypeDefinition,
+        EW: AsRef<E>,
     > AbstractBaseInputTypeReference for BaseInputTypeReference<CS, CSW, I, IW, E, EW>
 {
     type CustomScalarTypeDefinition = CS;
@@ -84,6 +103,21 @@ impl<B: AbstractBaseInputTypeReference, W: AsRef<Self>> InputTypeReference<B, W>
         match self {
             Self::Base(b, _) => b.as_ref(),
             Self::List(l, _) => l.as_ref().base(),
+        }
+    }
+
+    pub fn display_name(&self) -> String {
+        match self {
+            Self::Base(b, required) => {
+                format!("{}{}", b.as_ref().name(), if *required { "!" } else { "" })
+            }
+            Self::List(inner, required) => {
+                format!(
+                    "[{}]{}",
+                    inner.as_ref().display_name(),
+                    if *required { "!" } else { "" }
+                )
+            }
         }
     }
 }
