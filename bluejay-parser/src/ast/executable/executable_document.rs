@@ -41,32 +41,42 @@ impl<'a> ExecutableDocument<'a> {
 
         let mut instance: Self = Self::new(Vec::new(), Vec::new());
         let mut errors = Vec::new();
+        let mut last_pass_had_error = false;
 
         loop {
-            if let Some(res) = ExecutableDefinition::try_from_tokens(&mut tokens) {
-                match res {
-                    Ok(ExecutableDefinition::Operation(operation_definition)) => {
-                        instance.operation_definitions.push(operation_definition)
+            last_pass_had_error =
+                if let Some(res) = ExecutableDefinition::try_from_tokens(&mut tokens) {
+                    match res {
+                        Ok(ExecutableDefinition::Operation(operation_definition)) => {
+                            instance.operation_definitions.push(operation_definition);
+                            false
+                        }
+                        Ok(ExecutableDefinition::Fragment(fragment_definition)) => {
+                            instance.fragment_definitions.push(fragment_definition);
+                            false
+                        }
+                        Err(err) => {
+                            if !last_pass_had_error {
+                                errors.push(err);
+                            }
+                            true
+                        }
                     }
-                    Ok(ExecutableDefinition::Fragment(fragment_definition)) => {
-                        instance.fragment_definitions.push(fragment_definition)
+                } else if let Some(token) = tokens.next() {
+                    if !last_pass_had_error {
+                        errors.push(ParseError::UnexpectedToken { span: token.into() });
                     }
-                    Err(err) => {
-                        errors.push(err);
-                    }
+                    true
+                } else {
+                    break;
                 }
-            } else if let Some(token) = tokens.next() {
-                errors.push(ParseError::UnexpectedToken { span: token.into() })
-            } else {
-                break;
-            }
         }
 
-        let errors = errors
-            .into_iter()
-            .map(|e| e.into())
-            .chain(tokens.errors.into_iter().map(|e| e.into()))
-            .collect();
+        let errors = if tokens.errors.is_empty() {
+            errors.into_iter().map(Into::into).collect()
+        } else {
+            tokens.errors.into_iter().map(Into::into).collect()
+        };
 
         (instance, errors)
     }

@@ -46,66 +46,106 @@ impl<'a> DefinitionDocument<'a> {
         }
     }
 
+    fn parse_definition<'b, S, T: FromTokens<'b> + Into<S>>(
+        definitions: &mut Vec<S>,
+        tokens: &mut impl Tokens<'b>,
+        errors: &mut Vec<ParseError>,
+        last_pass_had_error: &mut bool,
+    ) {
+        match T::from_tokens(tokens) {
+            Ok(definition) => {
+                definitions.push(definition.into());
+                *last_pass_had_error = false;
+            }
+            Err(err) => {
+                if !*last_pass_had_error {
+                    errors.push(err);
+                    *last_pass_had_error = true;
+                }
+            }
+        }
+    }
+
     pub fn parse(s: &'a str) -> (Self, Vec<Error>) {
         let scanner = LogosScanner::new(s);
         let mut tokens = ScannerTokens::new(scanner);
 
         let mut instance: Self = Self::new();
         let mut errors = Vec::new();
+        let mut last_pass_had_error = false;
 
         loop {
             match Self::next_definition_identifier(&mut tokens) {
                 Some(CustomScalarTypeDefinition::SCALAR_IDENTIFIER) => {
-                    match CustomScalarTypeDefinition::from_tokens(&mut tokens) {
-                        Ok(cstd) => instance.type_definition_references.push(cstd.into()),
-                        Err(err) => errors.push(err),
-                    }
+                    Self::parse_definition::<_, CustomScalarTypeDefinition>(
+                        &mut instance.type_definition_references,
+                        &mut tokens,
+                        &mut errors,
+                        &mut last_pass_had_error,
+                    )
                 }
                 Some(ObjectTypeDefinition::TYPE_IDENTIFIER) => {
-                    match ObjectTypeDefinition::from_tokens(&mut tokens) {
-                        Ok(otd) => instance.type_definition_references.push(otd.into()),
-                        Err(err) => errors.push(err),
-                    }
+                    Self::parse_definition::<_, ObjectTypeDefinition>(
+                        &mut instance.type_definition_references,
+                        &mut tokens,
+                        &mut errors,
+                        &mut last_pass_had_error,
+                    )
                 }
                 Some(InputObjectTypeDefinition::INPUT_IDENTIFIER) => {
-                    match InputObjectTypeDefinition::from_tokens(&mut tokens) {
-                        Ok(iotd) => instance.type_definition_references.push(iotd.into()),
-                        Err(err) => errors.push(err),
-                    }
+                    Self::parse_definition::<_, InputObjectTypeDefinition>(
+                        &mut instance.type_definition_references,
+                        &mut tokens,
+                        &mut errors,
+                        &mut last_pass_had_error,
+                    )
                 }
                 Some(EnumTypeDefinition::ENUM_IDENTIFIER) => {
-                    match EnumTypeDefinition::from_tokens(&mut tokens) {
-                        Ok(etd) => instance.type_definition_references.push(etd.into()),
-                        Err(err) => errors.push(err),
-                    }
+                    Self::parse_definition::<_, EnumTypeDefinition>(
+                        &mut instance.type_definition_references,
+                        &mut tokens,
+                        &mut errors,
+                        &mut last_pass_had_error,
+                    )
                 }
                 Some(UnionTypeDefinition::UNION_IDENTIFIER) => {
-                    match UnionTypeDefinition::from_tokens(&mut tokens) {
-                        Ok(utd) => instance.type_definition_references.push(utd.into()),
-                        Err(err) => errors.push(err),
-                    }
+                    Self::parse_definition::<_, UnionTypeDefinition>(
+                        &mut instance.type_definition_references,
+                        &mut tokens,
+                        &mut errors,
+                        &mut last_pass_had_error,
+                    )
                 }
                 Some(InterfaceTypeDefinition::INTERFACE_IDENTIFIER) => {
-                    match InterfaceTypeDefinition::from_tokens(&mut tokens) {
-                        Ok(itd) => instance.type_definition_references.push(itd.into()),
-                        Err(err) => errors.push(err),
-                    }
+                    Self::parse_definition::<_, InterfaceTypeDefinition>(
+                        &mut instance.type_definition_references,
+                        &mut tokens,
+                        &mut errors,
+                        &mut last_pass_had_error,
+                    )
                 }
                 Some(ExplicitSchemaDefinition::SCHEMA_IDENTIFIER) => {
-                    match ExplicitSchemaDefinition::from_tokens(&mut tokens) {
-                        Ok(sd) => instance.schema_definitions.push(sd),
-                        Err(err) => errors.push(err),
-                    }
+                    Self::parse_definition::<_, ExplicitSchemaDefinition>(
+                        &mut instance.schema_definitions,
+                        &mut tokens,
+                        &mut errors,
+                        &mut last_pass_had_error,
+                    )
                 }
                 Some(DirectiveDefinition::DIRECTIVE_IDENTIFIER) => {
-                    match DirectiveDefinition::from_tokens(&mut tokens) {
-                        Ok(dd) => instance.directive_definitions.push(dd),
-                        Err(err) => errors.push(err),
-                    }
+                    Self::parse_definition::<_, DirectiveDefinition>(
+                        &mut instance.directive_definitions,
+                        &mut tokens,
+                        &mut errors,
+                        &mut last_pass_had_error,
+                    )
                 }
                 _ => {
                     if let Some(token) = tokens.next() {
-                        errors.push(ParseError::UnexpectedToken { span: token.into() })
+                        if !last_pass_had_error {
+                            errors.push(ParseError::UnexpectedToken { span: token.into() });
+                            last_pass_had_error = true;
+                        }
                     } else {
                         break;
                     }
@@ -113,11 +153,11 @@ impl<'a> DefinitionDocument<'a> {
             }
         }
 
-        let errors = errors
-            .into_iter()
-            .map(|e| e.into())
-            .chain(tokens.errors.into_iter().map(|e| e.into()))
-            .collect();
+        let errors = if tokens.errors.is_empty() {
+            errors.into_iter().map(Into::into).collect()
+        } else {
+            tokens.errors.into_iter().map(Into::into).collect()
+        };
 
         (instance, errors)
     }
