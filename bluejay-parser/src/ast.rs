@@ -15,8 +15,8 @@ mod value;
 mod variable;
 
 pub use argument::{Argument, ConstArgument, VariableArgument};
-use arguments::{Arguments, VariableArguments};
-use directive::Directive;
+pub use arguments::{Arguments, VariableArguments};
+pub use directive::Directive;
 use directives::{ConstDirectives, Directives, VariableDirectives};
 use from_tokens::FromTokens;
 use is_match::IsMatch;

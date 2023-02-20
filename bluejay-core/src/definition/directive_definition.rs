@@ -1,8 +1,8 @@
 use crate::definition::ArgumentsDefinition;
 use crate::AsIter;
-use strum::{EnumString, EnumVariantNames, VariantNames};
+use strum::{AsRefStr, EnumIter, EnumString, EnumVariantNames, VariantNames};
 
-#[derive(Debug, Clone, Copy, EnumString, EnumVariantNames)]
+#[derive(Debug, Clone, Copy, EnumString, EnumVariantNames, EnumIter, AsRefStr)]
 #[strum(serialize_all = "SCREAMING_SNAKE_CASE")]
 pub enum DirectiveLocation {
     Query,
@@ -39,4 +39,5 @@ pub trait DirectiveDefinition {
     fn arguments_definition(&self) -> Option<&Self::ArgumentsDefinition>;
     fn is_repeatable(&self) -> bool;
     fn locations(&self) -> &Self::DirectiveLocations;
+    fn is_builtin(&self) -> bool;
 }

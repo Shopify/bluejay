@@ -29,3 +29,18 @@ impl<F: Field, FS: FragmentSpread, IF: InlineFragment> AbstractSelection for Sel
     type FragmentSpread = FS;
     type InlineFragment = IF;
 }
+
+impl<
+        F: Field,
+        FS: FragmentSpread<Directives = F::Directives>,
+        IF: InlineFragment<Directives = F::Directives>,
+    > Selection<F, FS, IF>
+{
+    pub fn directives(&self) -> &F::Directives {
+        match self {
+            Self::Field(f) => f.directives(),
+            Self::FragmentSpread(fs) => fs.directives(),
+            Self::InlineFragment(i) => i.directives(),
+        }
+    }
+}

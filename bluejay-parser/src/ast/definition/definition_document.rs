@@ -39,7 +39,10 @@ impl<'a> DefinitionDocument<'a> {
     fn new() -> Self {
         Self {
             schema_definitions: Vec::new(),
-            directive_definitions: Vec::new(),
+            directive_definitions: vec![
+                DirectiveDefinition::skip(),
+                DirectiveDefinition::include(),
+            ],
             type_definition_references: Vec::from_iter(
                 BuiltinScalarDefinition::iter().map(TypeDefinitionReference::BuiltinScalarType),
             ),
@@ -168,7 +171,10 @@ impl<'a> DefinitionDocument<'a> {
     }
 
     pub fn definition_count(&self) -> usize {
-        self.directive_definitions.len()
+        self.directive_definitions
+            .iter()
+            .filter(|dd| !dd.is_builtin())
+            .count()
             + self.schema_definitions.len()
             + self
                 .type_definition_references
@@ -184,7 +190,7 @@ impl<'a> DefinitionDocument<'a> {
     fn index_directive_definitions(
         &'a self,
         errors: &mut Vec<DefinitionDocumentError<'a>>,
-    ) -> HashMap<&str, &DirectiveDefinition<'a>> {
+    ) -> HashMap<&str, &'a DirectiveDefinition<'a>> {
         let mut indexed: HashMap<&str, &DirectiveDefinition<'a>> = HashMap::new();
         let mut duplicates: HashMap<&str, Vec<&DirectiveDefinition<'a>>> = HashMap::new();
 

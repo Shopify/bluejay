@@ -1,6 +1,7 @@
 use crate::ast::definition::ArgumentsDefinition;
-use crate::ast::{FromTokens, ParseError, Tokens, TryFromTokens};
+use crate::ast::{FromTokens, ParseError, ScannerTokens, Tokens, TryFromTokens};
 use crate::lexical_token::{HasSpan, Name, PunctuatorType, StringValue};
+use crate::scanner::LogosScanner;
 use crate::Span;
 use bluejay_core::definition::{
     DirectiveDefinition as CoreDirectiveDefinition, DirectiveLocation as CoreDirectiveLocation,
@@ -15,6 +16,7 @@ pub struct DirectiveDefinition<'a> {
     arguments_definition: Option<ArgumentsDefinition<'a>>,
     is_repeatable: bool,
     locations: DirectiveLocations,
+    is_builtin: bool,
 }
 
 impl<'a> CoreDirectiveDefinition for DirectiveDefinition<'a> {
@@ -40,12 +42,36 @@ impl<'a> CoreDirectiveDefinition for DirectiveDefinition<'a> {
     fn locations(&self) -> &Self::DirectiveLocations {
         &self.locations
     }
+
+    fn is_builtin(&self) -> bool {
+        self.is_builtin
+    }
 }
 
 impl<'a> DirectiveDefinition<'a> {
     pub(crate) const DIRECTIVE_IDENTIFIER: &'static str = "directive";
     const REPEATABLE_IDENTIFIER: &'static str = "repeatable";
     const ON_IDENTIFIER: &'static str = "on";
+    const SKIP_DEFINITION: &'static str =
+        "directive @skip(if: Boolean!) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT";
+    const INCLUDE_DEFINITION: &'static str =
+        "directive @include(if: Boolean!) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT";
+
+    fn builtin(s: &'static str) -> Self {
+        let scanner = LogosScanner::new(s);
+        let mut tokens = ScannerTokens::new(scanner);
+        let mut definition = DirectiveDefinition::from_tokens(&mut tokens).unwrap();
+        definition.is_builtin = true;
+        definition
+    }
+
+    pub(crate) fn skip() -> Self {
+        Self::builtin(Self::SKIP_DEFINITION)
+    }
+
+    pub(crate) fn include() -> Self {
+        Self::builtin(Self::INCLUDE_DEFINITION)
+    }
 }
 
 impl<'a> FromTokens<'a> for DirectiveDefinition<'a> {
@@ -66,6 +92,7 @@ impl<'a> FromTokens<'a> for DirectiveDefinition<'a> {
             arguments_definition,
             is_repeatable,
             locations,
+            is_builtin: false,
         })
     }
 }
