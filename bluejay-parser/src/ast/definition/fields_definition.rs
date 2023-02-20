@@ -29,10 +29,10 @@ impl<'a> FromTokens<'a> for FieldsDefinition<'a> {
         let open_span = tokens.expect_punctuator(PunctuatorType::OpenBrace)?;
         let mut field_definitions: Vec<FieldDefinition> = vec![FieldDefinition::typename()];
         let close_span = loop {
+            field_definitions.push(FieldDefinition::from_tokens(tokens)?);
             if let Some(close_span) = tokens.next_if_punctuator(PunctuatorType::CloseBrace) {
                 break close_span;
             }
-            field_definitions.push(FieldDefinition::from_tokens(tokens)?);
         };
         let span = open_span.merge(&close_span);
         Ok(Self {

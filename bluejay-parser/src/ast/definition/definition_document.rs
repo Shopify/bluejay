@@ -157,12 +157,20 @@ impl<'a> DefinitionDocument<'a> {
         }
 
         let errors = if tokens.errors.is_empty() {
-            errors.into_iter().map(Into::into).collect()
+            if errors.is_empty() && instance.is_empty() {
+                vec![ParseError::EmptyDocument.into()]
+            } else {
+                errors.into_iter().map(Into::into).collect()
+            }
         } else {
             tokens.errors.into_iter().map(Into::into).collect()
         };
 
         (instance, errors)
+    }
+
+    fn is_empty(&self) -> bool {
+        self.definition_count() == 0
     }
 
     fn next_definition_identifier(tokens: &mut impl Tokens<'a>) -> Option<&str> {

@@ -16,10 +16,10 @@ impl<'a, const CONST: bool> FromTokens<'a> for Arguments<'a, CONST> {
         let open_span = tokens.expect_punctuator(PunctuatorType::OpenRoundBracket)?;
         let mut arguments: Vec<Argument<CONST>> = Vec::new();
         let close_span = loop {
+            arguments.push(Argument::from_tokens(tokens)?);
             if let Some(close_span) = tokens.next_if_punctuator(PunctuatorType::CloseRoundBracket) {
                 break close_span;
             }
-            arguments.push(Argument::from_tokens(tokens)?);
         };
         let span = open_span.merge(&close_span);
         Ok(Self { arguments, span })

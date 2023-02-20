@@ -73,12 +73,20 @@ impl<'a> ExecutableDocument<'a> {
         }
 
         let errors = if tokens.errors.is_empty() {
-            errors.into_iter().map(Into::into).collect()
+            if errors.is_empty() && instance.is_empty() {
+                vec![ParseError::EmptyDocument.into()]
+            } else {
+                errors.into_iter().map(Into::into).collect()
+            }
         } else {
             tokens.errors.into_iter().map(Into::into).collect()
         };
 
         (instance, errors)
+    }
+
+    fn is_empty(&self) -> bool {
+        self.operation_definitions.is_empty() && self.fragment_definitions.is_empty()
     }
 }
 
@@ -121,18 +129,18 @@ mod tests {
         let document = r#"
             {
                 dog {
-                ...fragmentOne
-                ...fragmentTwo
+                    ...fragmentOne
+                    ...fragmentTwo
                 }
             }
-            
+
             fragment fragmentOne on Dog {
                 name
             }
-            
+
             fragment fragmentTwo on Dog {
                 owner {
-                name
+                    name
                 }
             }
         "#;

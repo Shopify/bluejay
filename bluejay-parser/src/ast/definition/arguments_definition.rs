@@ -29,10 +29,10 @@ impl<'a> FromTokens<'a> for ArgumentsDefinition<'a> {
         let open_span = tokens.expect_punctuator(PunctuatorType::OpenRoundBracket)?;
         let mut argument_definitions: Vec<InputValueDefinition> = Vec::new();
         let close_span = loop {
+            argument_definitions.push(InputValueDefinition::from_tokens(tokens)?);
             if let Some(close_span) = tokens.next_if_punctuator(PunctuatorType::CloseRoundBracket) {
                 break close_span;
             }
-            argument_definitions.push(InputValueDefinition::from_tokens(tokens)?);
         };
         let span = open_span.merge(&close_span);
         Ok(Self {

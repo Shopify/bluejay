@@ -11,11 +11,14 @@ impl<'a> FromTokens<'a> for SelectionSet<'a> {
     fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
         tokens.expect_punctuator(PunctuatorType::OpenBrace)?;
         let mut selections: Vec<Selection> = Vec::new();
-        while tokens
-            .next_if_punctuator(PunctuatorType::CloseBrace)
-            .is_none()
-        {
+        loop {
             selections.push(Selection::from_tokens(tokens)?);
+            if tokens
+                .next_if_punctuator(PunctuatorType::CloseBrace)
+                .is_some()
+            {
+                break;
+            }
         }
         Ok(Self { selections })
     }

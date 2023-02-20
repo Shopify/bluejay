@@ -20,6 +20,7 @@ pub enum ParseError {
     UnexpectedToken {
         span: Span,
     },
+    EmptyDocument,
 }
 
 impl From<ParseError> for Error {
@@ -64,6 +65,10 @@ impl From<ParseError> for Error {
                     annotation_type: AnnotationType::Primary,
                     span,
                 }],
+            },
+            ParseError::EmptyDocument => Self {
+                message: "Document does not contain any definitions".to_string(),
+                annotations: Vec::new(),
             },
         }
     }

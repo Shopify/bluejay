@@ -29,10 +29,10 @@ impl<'a> FromTokens<'a> for EnumValueDefinitions<'a> {
         let open_span = tokens.expect_punctuator(PunctuatorType::OpenBrace)?;
         let mut enum_value_definitions = Vec::new();
         let close_span = loop {
+            enum_value_definitions.push(EnumValueDefinition::from_tokens(tokens)?);
             if let Some(close_span) = tokens.next_if_punctuator(PunctuatorType::CloseBrace) {
                 break close_span;
             }
-            enum_value_definitions.push(EnumValueDefinition::from_tokens(tokens)?);
         };
         let span = open_span.merge(&close_span);
         Ok(Self {
