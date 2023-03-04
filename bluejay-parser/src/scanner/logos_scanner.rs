@@ -5,12 +5,17 @@ use crate::lexical_token::{
 };
 use crate::scanner::{ScanError, Scanner};
 use crate::Span;
-use logos::{FilterResult, Lexer, Logos};
+use logos::{Lexer, Logos};
 
 mod block_string_scanner;
 mod string_scanner;
 
 #[derive(Logos, Debug, PartialEq)]
+#[logos(subpattern intpart = r"-?(?:0|[1-9]\d*)")]
+#[logos(subpattern decimalpart = r"\.\d+")]
+#[logos(subpattern exponentpart = r"[eE][+-]?\d+")]
+#[logos(subpattern hexdigit = r"[0-9A-Fa-f]")]
+#[logos(subpattern fixedunicode = r"\\u(?&hexdigit)(?&hexdigit)(?&hexdigit)(?&hexdigit)")]
 pub enum Token<'a> {
     // Punctuators
     #[token("!")]
@@ -47,45 +52,45 @@ pub enum Token<'a> {
     Name(&'a str),
 
     // IntValue
-    #[regex(r"-?(?:0|[1-9]\d*)", parse_integer)]
+    #[regex(r"(?&intpart)", parse_integer)]
     IntValue(Result<i32, ParseIntError>),
 
     // FloatValue
     #[regex(
-        r"-?(?:0|[1-9]\d*)(?:\.\d+[eE][+-]?\d+|\.\d+|[eE][+-]?\d+)",
+        r"(?&intpart)(?:(?&decimalpart)(?&exponentpart)|(?&decimalpart)|(?&exponentpart))",
         parse_float
     )]
     FloatValue(Result<f64, ParseFloatError>),
 
     // StringValue
-    #[regex(r#""(?:[\u0009\u0020\u0021\u0023-\u005B\u005D-\uFFFF]|\\u[0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f]|\\["\\/bfnrt])*""#r, parse_string)]
-    StringValue(String),
+    #[regex(r#""(?:[^\\"\n\r]|(?&fixedunicode)|\\u\{(?&hexdigit)+\}|\\["\\/bfnrt])*""#r, parse_string)]
+    StringValue(Result<String, Vec<Span>>),
 
     #[regex("\"\"\"", parse_block_string)]
     BlockStringValue(String),
 
     // Skippable
     #[error]
-    #[regex(r"[\uFEFF\u0009\u0020\u000D\u000A,]+", logos::skip)]
-    #[regex(r"#[\u0009\u0020-\uFFFF]*", logos::skip)] // comments
+    #[regex(r"[\uFEFF\t \n\r,]+", logos::skip)]
+    #[regex(r"#[^\n\r]*", logos::skip)] // comments
     Error,
 }
 
-fn parse_block_string<'a>(lexer: &mut Lexer<'a, Token<'a>>) -> FilterResult<String> {
+fn parse_block_string<'a>(lexer: &mut Lexer<'a, Token<'a>>) -> Option<String> {
     match block_string_scanner::Token::parse(lexer.remainder()) {
         Ok((s, bytes_consumed)) => {
             lexer.bump(bytes_consumed);
-            FilterResult::Emit(s)
+            Some(s)
         }
         Err(_) => {
             lexer.bump(lexer.remainder().len());
-            FilterResult::Error
+            None
         }
     }
 }
 
-fn parse_string<'a>(lexer: &mut Lexer<'a, Token<'a>>) -> String {
-    string_scanner::Token::parse(lexer.slice())
+fn parse_string<'a>(lexer: &mut Lexer<'a, Token<'a>>) -> Result<String, Vec<Span>> {
+    string_scanner::Token::parse(lexer.slice(), lexer.span().start)
 }
 
 fn validate_number<'a>(lexer: &mut Lexer<'a, Token<'a>>) -> bool {
@@ -100,20 +105,12 @@ fn validate_number<'a>(lexer: &mut Lexer<'a, Token<'a>>) -> bool {
     invalid_trail_bytes == 0
 }
 
-fn parse_integer<'a>(lexer: &mut Lexer<'a, Token<'a>>) -> FilterResult<Result<i32, ParseIntError>> {
-    if validate_number(lexer) {
-        FilterResult::Emit(lexer.slice().parse())
-    } else {
-        FilterResult::Error
-    }
+fn parse_integer<'a>(lexer: &mut Lexer<'a, Token<'a>>) -> Option<Result<i32, ParseIntError>> {
+    validate_number(lexer).then(|| lexer.slice().parse())
 }
 
-fn parse_float<'a>(lexer: &mut Lexer<'a, Token<'a>>) -> FilterResult<Result<f64, ParseFloatError>> {
-    if validate_number(lexer) {
-        FilterResult::Emit(lexer.slice().parse())
-    } else {
-        FilterResult::Error
-    }
+fn parse_float<'a>(lexer: &mut Lexer<'a, Token<'a>>) -> Option<Result<f64, ParseFloatError>> {
+    validate_number(lexer).then(|| lexer.slice().parse())
 }
 
 #[repr(transparent)]
@@ -149,7 +146,9 @@ impl<'a> Iterator for LogosScanner<'a> {
                     Ok(val) => Ok(LexicalToken::FloatValue(FloatValue::new(val, span))),
                     Err(_) => Err(ScanError::FloatValueTooLarge(span)),
                 },
-                Token::StringValue(s) => Ok(LexicalToken::StringValue(StringValue::new(s, span))),
+                Token::StringValue(res) => res
+                    .map(|s| LexicalToken::StringValue(StringValue::new(s, span)))
+                    .map_err(ScanError::StringWithInvalidEscapedUnicode),
                 Token::BlockStringValue(s) => {
                     Ok(LexicalToken::StringValue(StringValue::new(s, span)))
                 }
@@ -178,59 +177,178 @@ impl<'a> LogosScanner<'a> {
 
 #[cfg(test)]
 mod tests {
-    use super::{Logos, Token};
+    use super::{Logos, Span, Token};
+    use std::assert_matches::assert_matches;
 
     #[test]
     fn block_string_test() {
-        let s = r#"
-            """
-                This is my multiline string!
-
-                Isn't it cool?
-            """
-        "#;
-
-        let mut lexer = Token::lexer(s);
-
         assert_eq!(
-            Some(Token::BlockStringValue(String::from(
-                "This is my multiline string!\n\nIsn't it cool?"
-            ))),
-            lexer.next(),
-        );
+            Some(Token::BlockStringValue(
+                "This is my multiline string!\n\nIsn't it cool? 🔥".to_string()
+            )),
+            Token::lexer(
+                r#"
+                    """
+                        This is my multiline string!
 
-        assert_eq!(13..109, lexer.span(),)
+                        Isn't it cool? 🔥
+                    """
+                "#
+            )
+            .next(),
+        );
+        assert_eq!(
+            Some((Token::BlockStringValue("Testing span".to_string()), 1..19,)),
+            Token::lexer(r#" """Testing span""" "#).spanned().next(),
+        );
+        assert_eq!(
+            Some(Token::BlockStringValue(
+                "Testing escaped block quote \"\"\"".to_string()
+            )),
+            Token::lexer(r#" """Testing escaped block quote \"""""" "#).next(),
+        );
+        assert_eq!(
+            Some(Token::BlockStringValue(
+                "Testing \n various \n newlines".to_string()
+            )),
+            Token::lexer("\"\"\"\nTesting \r various \r\n newlines\"\"\"").next(),
+        );
+        assert_eq!(
+            Some(Token::Error),
+            Token::lexer(r#" """This is a block string that doesn't end "#).next(),
+        );
+        assert_eq!(
+            vec![
+                Token::BlockStringValue("".to_string()),
+                Token::StringValue(Ok("".to_string()))
+            ],
+            Token::lexer(r#" """""""" "#).collect::<Vec<Token>>(),
+        );
     }
 
     #[test]
     fn string_test() {
-        let s = "\"This is a string with escaped characters and unicode: \\uABCD!\\n\"";
-
-        let mut lexer = Token::lexer(s);
-
         assert_eq!(
-            Some(Token::StringValue(String::from(
-                "This is a string with escaped characters and unicode: \u{ABCD}!\n"
+            Some(Token::StringValue(Ok(
+                "This is a string with escaped characters and unicode: 🥳\u{ABCD}\u{10FFFF}!\n"
+                    .to_string()
             ))),
-            lexer.next(),
-        )
+            Token::lexer("\"This is a string with escaped characters and unicode: 🥳\\uABCD\\u{10FFFF}!\\n\"").next(),
+        );
+        assert_eq!(
+            Some(Token::Error),
+            Token::lexer("\"This is a string with a newline \n Not allowed!\"").next(),
+        );
+        assert_eq!(
+            Some((Token::StringValue(Ok("Testing span".to_string())), 1..15,)),
+            Token::lexer(r#" "Testing span" "#).spanned().next(),
+        );
+        assert_eq!(
+            Some(Token::StringValue(Err(vec![Span::from(2..8)]))),
+            Token::lexer(r#" "\uD800" "#).next(),
+        );
+        assert_eq!(
+            Some(Token::StringValue(Err(vec![Span::from(2..12)]))),
+            Token::lexer(r#" "\u{00D800}" "#).next(),
+        );
+        assert_eq!(
+            Some(Token::StringValue(Ok("🔥".to_string()))),
+            Token::lexer(r#" "\uD83D\uDD25" "#).next(),
+        );
+        assert_eq!(
+            Some(Token::StringValue(Ok("\u{1234}\u{ABCD}".to_string()))),
+            Token::lexer(r#" "\u1234\uABCD" "#).next(),
+        );
+        assert_eq!(
+            Some(Token::StringValue(Err(vec![Span::from(2..8)]))),
+            Token::lexer(r#" "\uDEAD\uDEAD" "#).next(),
+        );
+        assert_eq!(
+            Some(Token::StringValue(Err(vec![Span::from(8..14)]))),
+            Token::lexer(r#" "\uD800\uD800" "#).next(),
+        );
+        assert_eq!(
+            Some(Token::Error),
+            Token::lexer(r#" "This is a string that doesn't end "#).next(),
+        );
     }
 
     #[test]
     fn int_test() {
-        let s = "12345";
-
-        let mut lexer = Token::lexer(s);
-
-        assert_eq!(Some(Token::IntValue(Ok(12345))), lexer.next());
+        assert_eq!(
+            Some(Token::IntValue(Ok(12345))),
+            Token::lexer("12345").next()
+        );
+        assert_eq!(Some(Token::Error), Token::lexer("012345").next(),);
+        assert_eq!(
+            Some((Token::Error, 0..6)),
+            Token::lexer("12345A").spanned().next()
+        );
+        assert_eq!(
+            Some((Token::Error, 0..6)),
+            Token::lexer("12345_").spanned().next()
+        );
+        assert_eq!(Some(Token::IntValue(Ok(0))), Token::lexer("0").next());
+        assert_eq!(Some(Token::IntValue(Ok(0))), Token::lexer("-0").next());
+        assert_matches!(
+            Token::lexer((i64::from(i32::MAX) + 1).to_string().as_str()).next(),
+            Some(Token::IntValue(Err(_)))
+        );
+        assert_matches!(
+            Token::lexer((i64::from(i32::MIN) - 1).to_string().as_str()).next(),
+            Some(Token::IntValue(Err(_)))
+        );
     }
 
     #[test]
     fn float_test() {
-        let s = "12345.6789e123";
+        assert_eq!(
+            Some(Token::FloatValue(Ok(12345.6789e123))),
+            Token::lexer("12345.6789e123").next()
+        );
+        assert_eq!(
+            Some(Token::FloatValue(Ok(12345e123))),
+            Token::lexer("12345e123").next()
+        );
+        assert_eq!(
+            Some(Token::FloatValue(Ok(12345.6789))),
+            Token::lexer("12345.6789").next()
+        );
+        assert_eq!(
+            Some(Token::FloatValue(Ok(0.0))),
+            Token::lexer("0.00000000").next()
+        );
+        assert_eq!(
+            Some(Token::FloatValue(Ok(-1.23))),
+            Token::lexer("-1.23").next()
+        );
+        assert_eq!(Some(Token::Error), Token::lexer("012345.6789e123").next());
+        assert_eq!(Some(Token::Error), Token::lexer("-012345.6789e123").next());
+        assert_eq!(Some(Token::Error), Token::lexer("1.").next());
+        assert_eq!(
+            Some((Token::Error, 0..15)),
+            Token::lexer("12345.6789e123A").spanned().next()
+        );
+    }
 
-        let mut lexer = Token::lexer(s);
+    #[test]
+    fn name_test() {
+        assert_eq!(Some(Token::Name("name")), Token::lexer("name").next());
+        assert_eq!(Some(Token::Name("__name")), Token::lexer("__name").next());
+        assert_eq!(Some(Token::Name("name1")), Token::lexer("name1").next());
+        assert_eq!(Some(Token::Error), Token::lexer("1name").next());
+        assert_eq!(
+            vec![Token::Name("dashed"), Token::Error, Token::Name("name")],
+            Token::lexer("dashed-name").collect::<Vec<Token>>(),
+        );
+    }
 
-        assert_eq!(Some(Token::FloatValue(Ok(12345.6789e123))), lexer.next());
+    #[test]
+    fn comment_test() {
+        assert_eq!(None, Token::lexer("# this is a comment").next());
+        assert_eq!(
+            Some(Token::Ampersand),
+            Token::lexer("# this is a comment\n# this is another comment\r&").next(),
+        );
     }
 }

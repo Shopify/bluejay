@@ -3,18 +3,18 @@ use std::cmp::min;
 
 #[derive(Logos, Debug)]
 pub(super) enum Token<'a> {
-    #[regex(r"[\u0021\u0023-\u005B\u005D-\uFFFF][\u0009\u0020\u0021\u0023-\u005B\u005D-\uFFFF]*")]
+    #[regex(r#"[^"\\\n\r \t][^"\\\n\r]*"#)]
     #[token("\"")]
     #[token("\\")]
     BlockStringCharacters(&'a str),
 
-    #[token("\u{000A}")]
-    #[token("\u{000D}\u{000A}")]
-    #[token("\u{000D}")]
+    #[token("\n")]
+    #[token("\r\n")]
+    #[token("\r")]
     Newline,
 
-    #[token("\u{0020}")]
-    #[token("\u{0009}")]
+    #[token(" ")]
+    #[token("\t")]
     Whitespace(&'a str),
 
     #[token("\"\"\"")]
@@ -101,7 +101,7 @@ impl<'a> Token<'a> {
                                 |token| match token {
                                     Self::BlockStringCharacters(s) => Some(*s),
                                     Self::Whitespace(s) => Some(*s),
-                                    Self::EscapedBlockQuote => Some(r#"""#),
+                                    Self::EscapedBlockQuote => Some("\"\"\""),
                                     _ => None,
                                 },
                             ),

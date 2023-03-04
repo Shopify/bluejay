@@ -14,3 +14,10 @@ logos = { version = "0.12" }
 enum-as-inner = "0.5"
 once_cell = "1.17"
 bluejay-core = { version = "0.1.0-alpha.1", path = "../bluejay-core" }
+
+[dev-dependencies]
+criterion = "0.4"
+
+[[bench]]
+name = "parse_github_schema"
+harness = false

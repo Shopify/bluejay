@@ -1,3 +1,5 @@
+#![feature(assert_matches)]
+
 pub mod ast;
 mod error;
 mod lexical_token;

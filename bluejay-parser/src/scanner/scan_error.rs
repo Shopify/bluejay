@@ -6,6 +6,7 @@ pub enum ScanError {
     UnrecognizedTokenError(Span),
     IntegerValueTooLarge(Span),
     FloatValueTooLarge(Span),
+    StringWithInvalidEscapedUnicode(Vec<Span>),
 }
 
 impl From<ScanError> for Error {
@@ -34,6 +35,17 @@ impl From<ScanError> for Error {
                     annotation_type: AnnotationType::Primary,
                     span,
                 }],
+            },
+            ScanError::StringWithInvalidEscapedUnicode(spans) => Self {
+                message: "Escaped unicode invalid".to_string(),
+                annotations: spans
+                    .into_iter()
+                    .map(|span| Annotation {
+                        message: "Escaped unicode invalid".to_string(),
+                        annotation_type: AnnotationType::Primary,
+                        span,
+                    })
+                    .collect(),
             },
         }
     }

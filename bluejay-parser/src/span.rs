@@ -1,4 +1,5 @@
 use std::cmp::{max, min};
+use std::ops::Add;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[repr(transparent)]
@@ -19,5 +20,19 @@ impl Span {
 
     pub(crate) fn empty() -> Self {
         Self(0..0)
+    }
+}
+
+impl From<logos::Span> for Span {
+    fn from(value: logos::Span) -> Self {
+        Self(value)
+    }
+}
+
+impl Add<usize> for Span {
+    type Output = Self;
+
+    fn add(self, rhs: usize) -> Self::Output {
+        Self((self.0.start + rhs)..(self.0.end + rhs))
     }
 }
