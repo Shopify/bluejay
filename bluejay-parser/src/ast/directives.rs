@@ -1,4 +1,5 @@
 use crate::ast::{Directive, FromTokens, IsMatch, ParseError, Tokens, TryFromTokens};
+use bluejay_core::AsIter;
 
 #[derive(Debug)]
 pub struct Directives<'a, const CONST: bool>(Vec<Directive<'a, CONST>>);
@@ -26,8 +27,11 @@ impl<'a, const CONST: bool> bluejay_core::Directives<CONST> for Directives<'a, C
     type Directive = Directive<'a, CONST>;
 }
 
-impl<'a, const CONST: bool> AsRef<[Directive<'a, CONST>]> for Directives<'a, CONST> {
-    fn as_ref(&self) -> &[Directive<'a, CONST>] {
-        &self.0
+impl<'a, const CONST: bool> AsIter for Directives<'a, CONST> {
+    type Item = Directive<'a, CONST>;
+    type Iterator<'b> = std::slice::Iter<'b, Self::Item> where 'a: 'b;
+
+    fn iter(&self) -> Self::Iterator<'_> {
+        self.0.iter()
     }
 }

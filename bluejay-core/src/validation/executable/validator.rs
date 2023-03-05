@@ -52,7 +52,7 @@ impl<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>, R: Rule<'a, E, S>>
         self.visit_selection_set(
             operation_definition.selection_set(),
             self.schema_definition
-                .get_type(self.schema_definition.query().name())
+                .get_type_definition(self.schema_definition.query().name())
                 .expect("Schema definition's `get_type` method returned `None` for query root"),
         )
     }
@@ -60,7 +60,7 @@ impl<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>, R: Rule<'a, E, S>>
     fn visit_fragment_definition(&mut self, fragment_definition: &'a E::FragmentDefinition) {
         let type_condition = self
             .schema_definition
-            .get_type(fragment_definition.type_condition());
+            .get_type_definition(fragment_definition.type_condition());
         if let Some(type_condition) = type_condition {
             self.visit_selection_set(fragment_definition.selection_set(), type_condition);
         }
@@ -82,13 +82,13 @@ impl<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>, R: Rule<'a, E, S>>
                         .get_field(f.name())
                         .and_then(|fd| {
                             self.schema_definition
-                                .get_type(fd.r#type().as_ref().base().name())
+                                .get_type_definition(fd.r#type().as_ref().base().name())
                         })
                         .map(|t| (selection_set, t))
                 }),
                 Selection::InlineFragment(i) => {
                     let t = if let Some(type_condition) = i.type_condition() {
-                        self.schema_definition.get_type(type_condition)
+                        self.schema_definition.get_type_definition(type_condition)
                     } else {
                         Some(scoped_type)
                     };

@@ -5,6 +5,10 @@ pub trait AsIter {
         Self: 'a;
 
     fn iter(&self) -> Self::Iterator<'_>;
+
+    fn is_empty(&self) -> bool {
+        self.iter().next().is_none()
+    }
 }
 
 impl<T> AsIter for Vec<T> {

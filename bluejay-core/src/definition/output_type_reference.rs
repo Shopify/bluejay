@@ -150,6 +150,21 @@ impl<B: AbstractBaseOutputTypeReference, W: AsRef<Self>> OutputTypeReference<B, 
             Self::List(l, _) => l.as_ref().base(),
         }
     }
+
+    pub fn display_name(&self) -> String {
+        match self {
+            Self::Base(b, required) => {
+                format!("{}{}", b.as_ref().name(), if *required { "!" } else { "" })
+            }
+            Self::List(inner, required) => {
+                format!(
+                    "[{}]{}",
+                    inner.as_ref().display_name(),
+                    if *required { "!" } else { "" }
+                )
+            }
+        }
+    }
 }
 
 pub trait AbstractOutputTypeReference:

@@ -8,7 +8,7 @@ pub trait InterfaceTypeDefinition {
 
     fn description(&self) -> Option<&str>;
     fn name(&self) -> &str;
-    fn interface_impelementations(&self) -> Option<&Self::InterfaceImplementations>;
+    fn interface_implementations(&self) -> Option<&Self::InterfaceImplementations>;
     fn directives(&self) -> Option<&Self::Directives>;
     fn fields_definition(&self) -> &Self::FieldsDefinition;
 }

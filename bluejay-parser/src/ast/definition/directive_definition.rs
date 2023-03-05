@@ -1,7 +1,6 @@
 use crate::ast::definition::ArgumentsDefinition;
-use crate::ast::{FromTokens, ParseError, ScannerTokens, Tokens, TryFromTokens};
+use crate::ast::{FromTokens, Parse, ParseError, Tokens, TryFromTokens};
 use crate::lexical_token::{HasSpan, Name, PunctuatorType, StringValue};
-use crate::scanner::LogosScanner;
 use crate::Span;
 use bluejay_core::definition::{
     DirectiveDefinition as CoreDirectiveDefinition, DirectiveLocation as CoreDirectiveLocation,
@@ -58,9 +57,7 @@ impl<'a> DirectiveDefinition<'a> {
         "directive @include(if: Boolean!) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT";
 
     fn builtin(s: &'static str) -> Self {
-        let scanner = LogosScanner::new(s);
-        let mut tokens = ScannerTokens::new(scanner);
-        let mut definition = DirectiveDefinition::from_tokens(&mut tokens).unwrap();
+        let mut definition = DirectiveDefinition::parse(s).unwrap();
         definition.is_builtin = true;
         definition
     }

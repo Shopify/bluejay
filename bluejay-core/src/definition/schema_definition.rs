@@ -1,11 +1,11 @@
 use crate::definition::{
     AbstractBaseInputTypeReference, AbstractBaseOutputTypeReference, AbstractInputTypeReference,
     AbstractOutputTypeReference, AbstractTypeDefinitionReference, ArgumentsDefinition,
-    DirectiveDefinition, EnumTypeDefinition, FieldDefinition, FieldsDefinition,
-    InputFieldsDefinition, InputObjectTypeDefinition, InputValueDefinition,
-    InterfaceImplementation, InterfaceImplementations, InterfaceTypeDefinition,
-    ObjectTypeDefinition, ScalarTypeDefinition, TypeDefinitionReferenceFromAbstract,
-    UnionMemberType, UnionMemberTypes, UnionTypeDefinition,
+    DirectiveDefinition, EnumTypeDefinition, EnumValueDefinition, EnumValueDefinitions,
+    FieldDefinition, FieldsDefinition, InputFieldsDefinition, InputObjectTypeDefinition,
+    InputValueDefinition, InterfaceImplementation, InterfaceImplementations,
+    InterfaceTypeDefinition, ObjectTypeDefinition, ScalarTypeDefinition,
+    TypeDefinitionReferenceFromAbstract, UnionMemberType, UnionMemberTypes, UnionTypeDefinition,
 };
 use crate::ConstDirectives;
 
@@ -19,6 +19,8 @@ pub trait SchemaDefinition<'a>: 'a {
         InputValueDefinition = Self::InputValueDefinition,
     >;
     type ArgumentsDefinition: ArgumentsDefinition<ArgumentDefinition = Self::InputValueDefinition>;
+    type EnumValueDefinition: EnumValueDefinition<Directives = Self::Directives>;
+    type EnumValueDefinitions: EnumValueDefinitions<EnumValueDefinition = Self::EnumValueDefinition>;
     type FieldDefinition: FieldDefinition<
         ArgumentsDefinition = Self::ArgumentsDefinition,
         OutputTypeReference = Self::OutputTypeReference,
@@ -70,7 +72,10 @@ pub trait SchemaDefinition<'a>: 'a {
         InputFieldsDefinition = Self::InputFieldsDefinition,
         Directives = Self::Directives,
     >;
-    type EnumTypeDefinition: EnumTypeDefinition<Directives = Self::Directives>;
+    type EnumTypeDefinition: EnumTypeDefinition<
+        Directives = Self::Directives,
+        EnumValueDefinitions = Self::EnumValueDefinitions,
+    >;
     type TypeDefinitionReference: AbstractTypeDefinitionReference<
         CustomScalarTypeDefinition = Self::CustomScalarTypeDefinition,
         ObjectTypeDefinition = Self::ObjectTypeDefinition,
@@ -80,15 +85,21 @@ pub trait SchemaDefinition<'a>: 'a {
         InterfaceTypeDefinition = Self::InterfaceTypeDefinition,
     >;
     type DirectiveDefinition: DirectiveDefinition<ArgumentsDefinition = Self::ArgumentsDefinition>;
+    type TypeDefinitionReferences: Iterator<
+        Item = &'a TypeDefinitionReferenceFromAbstract<Self::TypeDefinitionReference>,
+    >;
+    type DirectiveDefinitions: Iterator<Item = &'a Self::DirectiveDefinition>;
 
     fn description(&self) -> Option<&str>;
     fn query(&self) -> &Self::ObjectTypeDefinition;
     fn mutation(&self) -> Option<&Self::ObjectTypeDefinition>;
     fn subscription(&self) -> Option<&Self::ObjectTypeDefinition>;
     fn schema_directives(&self) -> Option<&Self::Directives>;
-    fn get_type(
+    fn get_type_definition(
         &self,
         name: &str,
     ) -> Option<&TypeDefinitionReferenceFromAbstract<Self::TypeDefinitionReference>>;
-    fn get_directive(&self, name: &str) -> Option<&Self::DirectiveDefinition>;
+    fn type_definitions(&'a self) -> Self::TypeDefinitionReferences;
+    fn get_directive_definition(&self, name: &str) -> Option<&Self::DirectiveDefinition>;
+    fn directive_definitions(&'a self) -> Self::DirectiveDefinitions;
 }

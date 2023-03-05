@@ -25,7 +25,7 @@ impl<'a> CoreObjectTypeDefinition for ObjectTypeDefinition<'a> {
         self.name.as_ref()
     }
 
-    fn interface_impelementations(&self) -> Option<&Self::InterfaceImplementations> {
+    fn interface_implementations(&self) -> Option<&Self::InterfaceImplementations> {
         self.interface_implementations.as_ref()
     }
 

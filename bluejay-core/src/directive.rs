@@ -1,4 +1,4 @@
-use crate::Arguments;
+use crate::{Arguments, AsIter};
 
 pub trait Directive<const CONST: bool> {
     type Arguments: Arguments<CONST>;
@@ -13,7 +13,7 @@ impl<T: Directive<true>> ConstDirective for T {}
 pub trait VariableDirective: Directive<false> {}
 impl<T: Directive<false>> VariableDirective for T {}
 
-pub trait Directives<const CONST: bool>: AsRef<[Self::Directive]> {
+pub trait Directives<const CONST: bool>: AsIter<Item = Self::Directive> {
     type Directive: Directive<CONST>;
 }
 

@@ -35,7 +35,7 @@ impl<'a> ExecutableDocument<'a> {
         &self.fragment_definitions
     }
 
-    pub fn parse(s: &'a str) -> (Self, Vec<Error>) {
+    pub fn parse(s: &'a str) -> Result<Self, Vec<Error>> {
         let scanner = LogosScanner::new(s);
         let mut tokens = ScannerTokens::new(scanner);
 
@@ -82,7 +82,11 @@ impl<'a> ExecutableDocument<'a> {
             tokens.errors.into_iter().map(Into::into).collect()
         };
 
-        (instance, errors)
+        if errors.is_empty() {
+            Ok(instance)
+        } else {
+            Err(errors)
+        }
     }
 
     fn is_empty(&self) -> bool {
@@ -145,9 +149,8 @@ mod tests {
             }
         "#;
 
-        let (defs, errs) = ExecutableDocument::parse(document);
+        let defs = ExecutableDocument::parse(document).unwrap();
 
-        assert_eq!(0, errs.len());
         assert_eq!(2, defs.fragment_definitions().len());
         assert_eq!(1, defs.operation_definitions().len());
     }

@@ -2,5 +2,6 @@
 members = [
     "bluejay-parser",
     "bluejay-core",
+    "bluejay-printer",
 ]
 resolver = "2"

@@ -132,7 +132,9 @@ impl<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>> FieldSelectionMergi
                     .find(|fd| fd.name() == fragment_name);
                 if let Some(fragment_definition) = fragment_definition {
                     let type_condition = fragment_definition.type_condition();
-                    if let Some(scoped_type) = self.schema_definition.get_type(type_condition) {
+                    if let Some(scoped_type) =
+                        self.schema_definition.get_type_definition(type_condition)
+                    {
                         self.group_fields(
                             groups,
                             fragment_definition.selection_set().as_ref().iter(),
@@ -143,7 +145,9 @@ impl<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>> FieldSelectionMergi
             }
             Selection::InlineFragment(i) => {
                 let scoped_type = match i.type_condition() {
-                    Some(type_condition) => self.schema_definition.get_type(type_condition),
+                    Some(type_condition) => {
+                        self.schema_definition.get_type_definition(type_condition)
+                    }
                     None => Some(parent_type),
                 };
                 if let Some(scoped_type) = scoped_type {
@@ -173,7 +177,7 @@ impl<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>> FieldSelectionMergi
             if let Some(selection_set) = field_a.field.selection_set() {
                 if let Some(scoped_type) = self
                     .schema_definition
-                    .get_type(field_a.field_definition.r#type().as_ref().base().name())
+                    .get_type_definition(field_a.field_definition.r#type().as_ref().base().name())
                 {
                     self.group_fields(&mut groups, selection_set.as_ref().iter(), scoped_type);
                 }
@@ -188,7 +192,7 @@ impl<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>> FieldSelectionMergi
             if let Some(selection_set) = field_b.field.selection_set() {
                 if let Some(scoped_type) = self
                     .schema_definition
-                    .get_type(field_b.field_definition.r#type().as_ref().base().name())
+                    .get_type_definition(field_b.field_definition.r#type().as_ref().base().name())
                 {
                     self.group_fields(&mut groups, selection_set.as_ref().iter(), scoped_type);
                 }
