@@ -1,0 +1,10 @@
+directive @repeatable on FIELD_DEFINITION
+
+"""
+This directive indicates if something is special!
+"""
+directive @special on FIELD_DEFINITION
+
+type Query {
+  specialField: String! @repeatable @special @repeatable
+}

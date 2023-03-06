@@ -34,8 +34,6 @@ impl DisplayObjectTypeDefinition {
             }
         }
 
-        DisplayFieldsDefinition::fmt(object_type_definition.fields_definition(), f, 0)?;
-
-        writeln!(f)
+        DisplayFieldsDefinition::fmt(object_type_definition.fields_definition(), f, 0)
     }
 }

@@ -15,7 +15,7 @@ impl DisplayDirectiveDefinition {
             DisplayStringValue::fmt_block(description, f, 0)?;
         }
 
-        write!(f, "directive @{} ", directive_definition.name())?;
+        write!(f, "directive @{}", directive_definition.name())?;
 
         if let Some(arguments_definition) = directive_definition.arguments_definition() {
             DisplayArgumentsDefinition::fmt(arguments_definition, f, 0)?;
@@ -38,7 +38,6 @@ impl DisplayDirectiveDefinition {
                 write!(f, "{location}")
             })?;
 
-        writeln!(f)?;
         writeln!(f)
     }
 }

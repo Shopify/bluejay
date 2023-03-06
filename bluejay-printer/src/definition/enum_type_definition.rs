@@ -53,8 +53,6 @@ impl DisplayEnumTypeDefinition {
                 writeln!(f)
             })?;
 
-        writeln!(f, "}}")?;
-
-        writeln!(f)
+        writeln!(f, "}}")
     }
 }

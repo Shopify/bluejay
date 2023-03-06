@@ -38,7 +38,6 @@ impl DisplayInputObjectTypeDefinition {
                 DisplayInputValueDefinition::fmt(ivd, f, INDENTATION_SIZE)
             })?;
 
-        writeln!(f, "}}")?;
-        writeln!(f)
+        writeln!(f, "}}")
     }
 }

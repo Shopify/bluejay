@@ -22,7 +22,6 @@ impl DisplayScalarTypeDefinition {
             }
         }
 
-        writeln!(f)?;
         writeln!(f)
     }
 }

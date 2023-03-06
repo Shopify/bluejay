@@ -37,7 +37,6 @@ impl DisplayUnionTypeDefinition {
                 write!(f, "{}", union_member.member_type().name())
             })?;
 
-        writeln!(f)?;
         writeln!(f)
     }
 }

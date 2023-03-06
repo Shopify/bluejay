@@ -1,7 +1,11 @@
+---
+source: bluejay-printer/tests/integration_test.rs
+expression: printed
+---
 """
 Defines what type of global IDs are accepted for a mutation argument of type ID.
 """
-directive @possibleTypes (
+directive @possibleTypes(
   """
   Abstract type of accepted global ID
   """
@@ -16,14 +20,14 @@ directive @possibleTypes (
 """
 Marks an element of a GraphQL schema as only available via a preview header
 """
-directive @preview (
+directive @preview(
   """
   The identifier of the API preview that toggles this field.
   """
   toggledBy: String!
 ) on ARGUMENT_DEFINITION | ENUM | ENUM_VALUE | FIELD_DEFINITION | INPUT_FIELD_DEFINITION | INPUT_OBJECT | INTERFACE | OBJECT | SCALAR | UNION
 
-directive @requiredCapabilities (
+directive @requiredCapabilities(
   requiredCapabilities: [String!]
 ) on ARGUMENT_DEFINITION | ENUM | ENUM_VALUE | FIELD_DEFINITION | INPUT_FIELD_DEFINITION | INPUT_OBJECT | INTERFACE | OBJECT | SCALAR | UNION
 
@@ -885,7 +889,7 @@ type AddVerifiableDomainPayload {
 """
 Represents a 'added_to_project' event on a given issue or pull request.
 """
-type AddedToProjectEvent implements Node{
+type AddedToProjectEvent implements Node {
   """
   Identifies the actor who performed the event.
   """
@@ -922,7 +926,7 @@ type AddedToProjectEvent implements Node{
 """
 A GitHub App.
 """
-type App implements Node{
+type App implements Node {
   """
   Identifies the date and time when the object was created.
   """
@@ -1139,7 +1143,7 @@ interface Assignable {
 """
 Represents an 'assigned' event on any assignable object.
 """
-type AssignedEvent implements Node{
+type AssignedEvent implements Node {
   """
   Identifies the actor who performed the event.
   """
@@ -1276,7 +1280,7 @@ enum AuditLogOrderField {
 """
 Represents a 'auto_merge_disabled' event on a given pull request.
 """
-type AutoMergeDisabledEvent implements Node{
+type AutoMergeDisabledEvent implements Node {
   """
   Identifies the actor who performed the event.
   """
@@ -1313,7 +1317,7 @@ type AutoMergeDisabledEvent implements Node{
 """
 Represents a 'auto_merge_enabled' event on a given pull request.
 """
-type AutoMergeEnabledEvent implements Node{
+type AutoMergeEnabledEvent implements Node {
   """
   Identifies the actor who performed the event.
   """
@@ -1383,7 +1387,7 @@ type AutoMergeRequest {
 """
 Represents a 'auto_rebase_enabled' event on a given pull request.
 """
-type AutoRebaseEnabledEvent implements Node{
+type AutoRebaseEnabledEvent implements Node {
   """
   Identifies the actor who performed the event.
   """
@@ -1410,7 +1414,7 @@ type AutoRebaseEnabledEvent implements Node{
 """
 Represents a 'auto_squash_enabled' event on a given pull request.
 """
-type AutoSquashEnabledEvent implements Node{
+type AutoSquashEnabledEvent implements Node {
   """
   Identifies the actor who performed the event.
   """
@@ -1437,7 +1441,7 @@ type AutoSquashEnabledEvent implements Node{
 """
 Represents a 'automatic_base_change_failed' event on a given pull request.
 """
-type AutomaticBaseChangeFailedEvent implements Node{
+type AutomaticBaseChangeFailedEvent implements Node {
   """
   Identifies the actor who performed the event.
   """
@@ -1469,7 +1473,7 @@ type AutomaticBaseChangeFailedEvent implements Node{
 """
 Represents a 'automatic_base_change_succeeded' event on a given pull request.
 """
-type AutomaticBaseChangeSucceededEvent implements Node{
+type AutomaticBaseChangeSucceededEvent implements Node {
   """
   Identifies the actor who performed the event.
   """
@@ -1506,7 +1510,7 @@ scalar Base64String
 """
 Represents a 'base_ref_changed' event on a given issue or pull request.
 """
-type BaseRefChangedEvent implements Node{
+type BaseRefChangedEvent implements Node {
   """
   Identifies the actor who performed the event.
   """
@@ -1543,7 +1547,7 @@ type BaseRefChangedEvent implements Node{
 """
 Represents a 'base_ref_deleted' event on a given pull request.
 """
-type BaseRefDeletedEvent implements Node{
+type BaseRefDeletedEvent implements Node {
   """
   Identifies the actor who performed the event.
   """
@@ -1570,7 +1574,7 @@ type BaseRefDeletedEvent implements Node{
 """
 Represents a 'base_ref_force_pushed' event on a given pull request.
 """
-type BaseRefForcePushedEvent implements Node{
+type BaseRefForcePushedEvent implements Node {
   """
   Identifies the actor who performed the event.
   """
@@ -1645,7 +1649,7 @@ type BlameRange {
 """
 Represents a Git blob.
 """
-type Blob implements GitObject & Node{
+type Blob implements GitObject & Node {
   """
   An abbreviated version of the Git object ID
   """
@@ -1697,7 +1701,7 @@ type Blob implements GitObject & Node{
 """
 A special type of user which takes actions on behalf of GitHub Apps.
 """
-type Bot implements Actor & Node & UniformResourceLocatable{
+type Bot implements Actor & Node & UniformResourceLocatable {
   """
   A URL pointing to the GitHub App's public avatar.
   """
@@ -1749,7 +1753,7 @@ union BranchActorAllowanceActor = App | Team | User
 """
 A branch protection rule.
 """
-type BranchProtectionRule implements Node{
+type BranchProtectionRule implements Node {
   """
   Can this branch be deleted.
   """
@@ -2116,7 +2120,7 @@ type BranchProtectionRuleEdge {
 """
 A user, team, or app who has the ability to bypass a force push requirement on a protected branch.
 """
-type BypassForcePushAllowance implements Node{
+type BypassForcePushAllowance implements Node {
   """
   The actor that can force push.
   """
@@ -2173,7 +2177,7 @@ type BypassForcePushAllowanceEdge {
 """
 A user, team, or app who has the ability to bypass a pull request requirement on a protected branch.
 """
-type BypassPullRequestAllowance implements Node{
+type BypassPullRequestAllowance implements Node {
   """
   The actor that can bypass.
   """
@@ -2245,7 +2249,7 @@ type CVSS {
 """
 A common weakness enumeration
 """
-type CWE implements Node{
+type CWE implements Node {
   """
   The id of the CWE
   """
@@ -2685,7 +2689,7 @@ enum CheckConclusionState {
 """
 A check run.
 """
-type CheckRun implements Node & RequirableByPullRequest & UniformResourceLocatable{
+type CheckRun implements Node & RequirableByPullRequest & UniformResourceLocatable {
   """
   The check run's annotations
   """
@@ -3122,7 +3126,7 @@ type CheckStepEdge {
 """
 A check suite.
 """
-type CheckSuite implements Node{
+type CheckSuite implements Node {
   """
   The GitHub App which created this check suite.
   """
@@ -3575,7 +3579,7 @@ type ClosePullRequestPayload {
 """
 Represents a 'closed' event on any `Closable`.
 """
-type ClosedEvent implements Node & UniformResourceLocatable{
+type ClosedEvent implements Node & UniformResourceLocatable {
   """
   Identifies the actor who performed the event.
   """
@@ -3622,7 +3626,7 @@ union Closer = Commit | PullRequest
 """
 The Code of Conduct for a repository
 """
-type CodeOfConduct implements Node{
+type CodeOfConduct implements Node {
   """
   The body of the Code of Conduct
   """
@@ -3856,7 +3860,7 @@ enum CommentCannotUpdateReason {
 """
 Represents a 'comment_deleted' event on a given issue or pull request.
 """
-type CommentDeletedEvent implements Node{
+type CommentDeletedEvent implements Node {
   """
   Identifies the actor who performed the event.
   """
@@ -3883,7 +3887,7 @@ type CommentDeletedEvent implements Node{
 """
 Represents a Git commit.
 """
-type Commit implements GitObject & Node & Subscribable & UniformResourceLocatable{
+type Commit implements GitObject & Node & Subscribable & UniformResourceLocatable {
   """
   An abbreviated version of the Git object ID
   """
@@ -4336,7 +4340,7 @@ input CommitAuthor {
 """
 Represents a comment on a given Commit.
 """
-type CommitComment implements Comment & Deletable & Minimizable & Node & Reactable & RepositoryNode & Updatable & UpdatableComment{
+type CommitComment implements Comment & Deletable & Minimizable & Node & Reactable & RepositoryNode & Updatable & UpdatableComment {
   """
   The actor who authored the comment.
   """
@@ -4583,7 +4587,7 @@ type CommitCommentEdge {
 """
 A thread of comments on a commit.
 """
-type CommitCommentThread implements Node & RepositoryNode{
+type CommitCommentThread implements Node & RepositoryNode {
   """
   The comments that exist in this thread.
   """
@@ -4835,7 +4839,7 @@ input CommittableBranch {
 """
 Represents a 'connected' event on a given issue or pull request.
 """
-type ConnectedEvent implements Node{
+type ConnectedEvent implements Node {
   """
   Identifies the actor who performed the event.
   """
@@ -5539,7 +5543,7 @@ type ConvertPullRequestToDraftPayload {
 """
 Represents a 'convert_to_draft' event on a given pull request.
 """
-type ConvertToDraftEvent implements Node & UniformResourceLocatable{
+type ConvertToDraftEvent implements Node & UniformResourceLocatable {
   """
   Identifies the actor who performed the event.
   """
@@ -5571,7 +5575,7 @@ type ConvertToDraftEvent implements Node & UniformResourceLocatable{
 """
 Represents a 'converted_note_to_issue' event on a given issue or pull request.
 """
-type ConvertedNoteToIssueEvent implements Node{
+type ConvertedNoteToIssueEvent implements Node {
   """
   Identifies the actor who performed the event.
   """
@@ -5608,7 +5612,7 @@ type ConvertedNoteToIssueEvent implements Node{
 """
 Represents a 'converted_to_discussion' event on a given issue.
 """
-type ConvertedToDiscussionEvent implements Node{
+type ConvertedToDiscussionEvent implements Node {
   """
   Identifies the actor who performed the event.
   """
@@ -6878,7 +6882,7 @@ type CreateTeamDiscussionPayload {
 """
 Represents the contribution a user made by committing to a repository.
 """
-type CreatedCommitContribution implements Contribution{
+type CreatedCommitContribution implements Contribution {
   """
   How many commits were made on this day to this repository by the user.
   """
@@ -6960,7 +6964,7 @@ type CreatedCommitContributionEdge {
 """
 Represents the contribution a user made on GitHub by opening an issue.
 """
-type CreatedIssueContribution implements Contribution{
+type CreatedIssueContribution implements Contribution {
   """
   Whether this contribution is associated with a record you do not have access to. For
   example, your own 'first issue' contribution may have been made on a repository you can no
@@ -7042,7 +7046,7 @@ union CreatedIssueOrRestrictedContribution = CreatedIssueContribution | Restrict
 """
 Represents the contribution a user made on GitHub by opening a pull request.
 """
-type CreatedPullRequestContribution implements Contribution{
+type CreatedPullRequestContribution implements Contribution {
   """
   Whether this contribution is associated with a record you do not have access to. For
   example, your own 'first issue' contribution may have been made on a repository you can no
@@ -7124,7 +7128,7 @@ union CreatedPullRequestOrRestrictedContribution = CreatedPullRequestContributio
 """
 Represents the contribution a user made by leaving a review on a pull request.
 """
-type CreatedPullRequestReviewContribution implements Contribution{
+type CreatedPullRequestReviewContribution implements Contribution {
   """
   Whether this contribution is associated with a record you do not have access to. For
   example, your own 'first issue' contribution may have been made on a repository you can no
@@ -7211,7 +7215,7 @@ type CreatedPullRequestReviewContributionEdge {
 """
 Represents the contribution a user made on GitHub by creating a repository.
 """
-type CreatedRepositoryContribution implements Contribution{
+type CreatedRepositoryContribution implements Contribution {
   """
   Whether this contribution is associated with a record you do not have access to. For
   example, your own 'first issue' contribution may have been made on a repository you can no
@@ -7293,7 +7297,7 @@ union CreatedRepositoryOrRestrictedContribution = CreatedRepositoryContribution 
 """
 Represents a mention made by one issue or pull request to another.
 """
-type CrossReferencedEvent implements Node & UniformResourceLocatable{
+type CrossReferencedEvent implements Node & UniformResourceLocatable {
   """
   Identifies the actor who performed the event.
   """
@@ -8005,7 +8009,7 @@ type DeleteVerifiableDomainPayload {
 """
 Represents a 'demilestoned' event on a given issue or pull request.
 """
-type DemilestonedEvent implements Node{
+type DemilestonedEvent implements Node {
   """
   Identifies the actor who performed the event.
   """
@@ -8032,7 +8036,7 @@ type DemilestonedEvent implements Node{
 """
 A Dependabot Update for a dependency in a repository
 """
-type DependabotUpdate implements RepositoryNode{
+type DependabotUpdate implements RepositoryNode {
   """
   The error from a dependency update
   """
@@ -8194,7 +8198,7 @@ enum DependencyGraphEcosystem {
 """
 Dependency manifest for a repository
 """
-type DependencyGraphManifest implements Node@preview(toggledBy: "hawkgirl-preview") {
+type DependencyGraphManifest implements Node @preview(toggledBy: "hawkgirl-preview") {
   """
   Path to view the manifest file blob
   """
@@ -8296,7 +8300,7 @@ type DependencyGraphManifestEdge @preview(toggledBy: "hawkgirl-preview") {
 """
 A repository deploy key.
 """
-type DeployKey implements Node{
+type DeployKey implements Node {
   """
   Identifies the date and time when the object was created.
   """
@@ -8368,7 +8372,7 @@ type DeployKeyEdge {
 """
 Represents a 'deployed' event on a given pull request.
 """
-type DeployedEvent implements Node{
+type DeployedEvent implements Node {
   """
   Identifies the actor who performed the event.
   """
@@ -8405,7 +8409,7 @@ type DeployedEvent implements Node{
 """
 Represents triggered deployment instance.
 """
-type Deployment implements Node{
+type Deployment implements Node {
   """
   Identifies the commit sha of the deployment.
   """
@@ -8557,7 +8561,7 @@ type DeploymentEdge {
 """
 Represents a 'deployment_environment_changed' event on a given pull request.
 """
-type DeploymentEnvironmentChangedEvent implements Node{
+type DeploymentEnvironmentChangedEvent implements Node {
   """
   Identifies the actor who performed the event.
   """
@@ -8799,7 +8803,7 @@ type DeploymentRequestEdge {
 """
 A deployment review.
 """
-type DeploymentReview implements Node{
+type DeploymentReview implements Node {
   """
   The comment the user left.
   """
@@ -9006,7 +9010,7 @@ enum DeploymentState {
 """
 Describes the status of a given deployment attempt.
 """
-type DeploymentStatus implements Node{
+type DeploymentStatus implements Node {
   """
   Identifies the date and time when the object was created.
   """
@@ -9193,7 +9197,7 @@ type DisablePullRequestAutoMergePayload {
 """
 Represents a 'disconnected' event on a given issue or pull request.
 """
-type DisconnectedEvent implements Node{
+type DisconnectedEvent implements Node {
   """
   Identifies the actor who performed the event.
   """
@@ -9225,7 +9229,7 @@ type DisconnectedEvent implements Node{
 """
 A discussion in a repository.
 """
-type Discussion implements Comment & Deletable & Labelable & Lockable & Node & Reactable & RepositoryNode & Subscribable & Updatable & Votable{
+type Discussion implements Comment & Deletable & Labelable & Lockable & Node & Reactable & RepositoryNode & Subscribable & Updatable & Votable {
   """
   Reason that the conversation was locked.
   """
@@ -9517,7 +9521,7 @@ type Discussion implements Comment & Deletable & Labelable & Lockable & Node & R
 """
 A category for discussions in a repository.
 """
-type DiscussionCategory implements Node & RepositoryNode{
+type DiscussionCategory implements Node & RepositoryNode {
   """
   Identifies the date and time when the object was created.
   """
@@ -9604,7 +9608,7 @@ type DiscussionCategoryEdge {
 """
 A comment on a discussion.
 """
-type DiscussionComment implements Comment & Deletable & Minimizable & Node & Reactable & Updatable & UpdatableComment & Votable{
+type DiscussionComment implements Comment & Deletable & Minimizable & Node & Reactable & Updatable & UpdatableComment & Votable {
   """
   The actor who authored the comment.
   """
@@ -10071,7 +10075,7 @@ type DismissRepositoryVulnerabilityAlertPayload {
 """
 A draft issue within a project.
 """
-type DraftIssue implements Node{
+type DraftIssue implements Node {
   """
   A list of users to assigned to this draft issue.
   """
@@ -10258,7 +10262,7 @@ type EnablePullRequestAutoMergePayload {
 """
 An account to manage multiple organizations with consolidated policy and billing.
 """
-type Enterprise implements Node{
+type Enterprise implements Node {
   """
   A URL pointing to the enterprise's public avatar.
   """
@@ -10500,7 +10504,7 @@ type EnterpriseAdministratorEdge {
 """
 An invitation for a user to become an owner or billing manager of an enterprise.
 """
-type EnterpriseAdministratorInvitation implements Node{
+type EnterpriseAdministratorInvitation implements Node {
   """
   Identifies the date and time when the object was created.
   """
@@ -10757,7 +10761,7 @@ enum EnterpriseEnabledSettingValue {
 """
 An identity provider configured to provision identities for an enterprise.
 """
-type EnterpriseIdentityProvider implements Node{
+type EnterpriseIdentityProvider implements Node {
   """
   The digest algorithm used to sign SAML requests for the identity provider.
   """
@@ -12111,7 +12115,7 @@ type EnterprisePendingMemberInvitationEdge {
 """
 A subset of repository information queryable from an enterprise.
 """
-type EnterpriseRepositoryInfo implements Node{
+type EnterpriseRepositoryInfo implements Node {
   id: ID!
 
   """
@@ -12173,7 +12177,7 @@ type EnterpriseRepositoryInfoEdge {
 """
 An Enterprise Server installation.
 """
-type EnterpriseServerInstallation implements Node{
+type EnterpriseServerInstallation implements Node {
   """
   Identifies the date and time when the object was created.
   """
@@ -12340,7 +12344,7 @@ enum EnterpriseServerInstallationOrderField {
 """
 A user account on an Enterprise Server installation.
 """
-type EnterpriseServerUserAccount implements Node{
+type EnterpriseServerUserAccount implements Node {
   """
   Identifies the date and time when the object was created.
   """
@@ -12457,7 +12461,7 @@ type EnterpriseServerUserAccountEdge {
 """
 An email belonging to a user account on an Enterprise Server installation.
 """
-type EnterpriseServerUserAccountEmail implements Node{
+type EnterpriseServerUserAccountEmail implements Node {
   """
   Identifies the date and time when the object was created.
   """
@@ -12584,7 +12588,7 @@ enum EnterpriseServerUserAccountOrderField {
 """
 A user accounts upload from an Enterprise Server installation.
 """
-type EnterpriseServerUserAccountsUpload implements Node{
+type EnterpriseServerUserAccountsUpload implements Node {
   """
   Identifies the date and time when the object was created.
   """
@@ -12706,7 +12710,7 @@ enum EnterpriseServerUserAccountsUploadSyncState {
 """
 An account for a user who is an admin of an enterprise or a member of an enterprise through one or more organizations.
 """
-type EnterpriseUserAccount implements Actor & Node{
+type EnterpriseUserAccount implements Actor & Node {
   """
   A URL pointing to the enterprise user account's public avatar.
   """
@@ -12873,7 +12877,7 @@ enum EnterpriseUserDeployment {
 """
 An environment.
 """
-type Environment implements Node{
+type Environment implements Node {
   """
   Identifies the primary key from the database.
   """
@@ -12955,7 +12959,7 @@ type EnvironmentEdge {
 """
 An external identity provisioned by SAML SSO or SCIM.
 """
-type ExternalIdentity implements Node{
+type ExternalIdentity implements Node {
   """
   The GUID for this identity
   """
@@ -13475,7 +13479,7 @@ enum FundingPlatform {
 """
 A generic hovercard context with a message and icon
 """
-type GenericHovercardContext implements HovercardContext{
+type GenericHovercardContext implements HovercardContext {
   """
   A string describing this context
   """
@@ -13490,7 +13494,7 @@ type GenericHovercardContext implements HovercardContext{
 """
 A Gist.
 """
-type Gist implements Node & Starrable & UniformResourceLocatable{
+type Gist implements Node & Starrable & UniformResourceLocatable {
   """
   A list of comments associated with the gist
   """
@@ -13657,7 +13661,7 @@ type Gist implements Node & Starrable & UniformResourceLocatable{
 """
 Represents a comment on an Gist.
 """
-type GistComment implements Comment & Deletable & Minimizable & Node & Updatable & UpdatableComment{
+type GistComment implements Comment & Deletable & Minimizable & Node & Updatable & UpdatableComment {
   """
   The actor who authored the comment.
   """
@@ -14277,7 +14281,7 @@ scalar GitTimestamp
 """
 Represents a GPG signature on a Commit or Tag.
 """
-type GpgSignature implements GitSignature{
+type GpgSignature implements GitSignature {
   """
   Email used to sign this object.
   """
@@ -14423,7 +14427,7 @@ scalar HTML
 """
 Represents a 'head_ref_deleted' event on a given pull request.
 """
-type HeadRefDeletedEvent implements Node{
+type HeadRefDeletedEvent implements Node {
   """
   Identifies the actor who performed the event.
   """
@@ -14455,7 +14459,7 @@ type HeadRefDeletedEvent implements Node{
 """
 Represents a 'head_ref_force_pushed' event on a given pull request.
 """
-type HeadRefForcePushedEvent implements Node{
+type HeadRefForcePushedEvent implements Node {
   """
   Identifies the actor who performed the event.
   """
@@ -14492,7 +14496,7 @@ type HeadRefForcePushedEvent implements Node{
 """
 Represents a 'head_ref_restored' event on a given pull request.
 """
-type HeadRefRestoredEvent implements Node{
+type HeadRefRestoredEvent implements Node {
   """
   Identifies the actor who performed the event.
   """
@@ -14669,7 +14673,7 @@ enum IpAllowListEnabledSettingValue {
 """
 An IP address or range of addresses that is allowed to access an owner's resources.
 """
-type IpAllowListEntry implements Node{
+type IpAllowListEntry implements Node {
   """
   A single IP address or range of IP addresses in CIDR notation.
   """
@@ -14796,7 +14800,7 @@ union IpAllowListOwner = App | Enterprise | Organization
 """
 An Issue is a place to discuss ideas, enhancements, tasks, and bugs for a project.
 """
-type Issue implements Assignable & Closable & Comment & Labelable & Lockable & Node & ProjectNextOwner & ProjectV2Owner & Reactable & RepositoryNode & Subscribable & UniformResourceLocatable & Updatable & UpdatableComment{
+type Issue implements Assignable & Closable & Comment & Labelable & Lockable & Node & ProjectNextOwner & ProjectV2Owner & Reactable & RepositoryNode & Subscribable & UniformResourceLocatable & Updatable & UpdatableComment {
   """
   Reason that the conversation was locked.
   """
@@ -15418,7 +15422,7 @@ enum IssueClosedStateReason {
 """
 Represents a comment on an Issue.
 """
-type IssueComment implements Comment & Deletable & Minimizable & Node & Reactable & RepositoryNode & Updatable & UpdatableComment{
+type IssueComment implements Comment & Deletable & Minimizable & Node & Reactable & RepositoryNode & Updatable & UpdatableComment {
   """
   The actor who authored the comment.
   """
@@ -16186,7 +16190,7 @@ enum IssueTimelineItemsItemType {
 """
 Represents a user signing up for a GitHub account.
 """
-type JoinedGitHubContribution implements Contribution{
+type JoinedGitHubContribution implements Contribution {
   """
   Whether this contribution is associated with a record you do not have access to. For
   example, your own 'first issue' contribution may have been made on a repository you can no
@@ -16218,7 +16222,7 @@ type JoinedGitHubContribution implements Contribution{
 """
 A label for categorizing Issues, Pull Requests, Milestones, or Discussions with a given Repository.
 """
-type Label implements Node{
+type Label implements Node {
   """
   Identifies the label color.
   """
@@ -16470,7 +16474,7 @@ interface Labelable {
 """
 Represents a 'labeled' event on a given issue or pull request.
 """
-type LabeledEvent implements Node{
+type LabeledEvent implements Node {
   """
   Identifies the actor who performed the event.
   """
@@ -16497,7 +16501,7 @@ type LabeledEvent implements Node{
 """
 Represents a given language found in repositories.
 """
-type Language implements Node{
+type Language implements Node {
   """
   The color defined for the current language.
   """
@@ -16583,7 +16587,7 @@ enum LanguageOrderField {
 """
 A repository's open source license
 """
-type License implements Node{
+type License implements Node {
   """
   The full text of the license
   """
@@ -16800,7 +16804,7 @@ interface Lockable {
 """
 Represents a 'locked' event on a given issue or pull request.
 """
-type LockedEvent implements Node{
+type LockedEvent implements Node {
   """
   Identifies the actor who performed the event.
   """
@@ -16827,7 +16831,7 @@ type LockedEvent implements Node{
 """
 A placeholder user for attribution of imported data on GitHub.
 """
-type Mannequin implements Actor & Node & UniformResourceLocatable{
+type Mannequin implements Actor & Node & UniformResourceLocatable {
   """
   A URL pointing to the GitHub App's public avatar.
   """
@@ -16979,7 +16983,7 @@ type MarkPullRequestReadyForReviewPayload {
 """
 Represents a 'marked_as_duplicate' event on a given issue or pull request.
 """
-type MarkedAsDuplicateEvent implements Node{
+type MarkedAsDuplicateEvent implements Node {
   """
   Identifies the actor who performed the event.
   """
@@ -17011,7 +17015,7 @@ type MarkedAsDuplicateEvent implements Node{
 """
 A public description of a Marketplace category.
 """
-type MarketplaceCategory implements Node{
+type MarketplaceCategory implements Node {
   """
   The category's description.
   """
@@ -17058,7 +17062,7 @@ type MarketplaceCategory implements Node{
 """
 A listing in the GitHub integration marketplace.
 """
-type MarketplaceListing implements Node{
+type MarketplaceListing implements Node {
   """
   The GitHub App this listing represents.
   """
@@ -17427,7 +17431,7 @@ interface MemberStatusable {
 """
 Audit log entry for a members_can_delete_repos.clear event.
 """
-type MembersCanDeleteReposClearAuditEntry implements AuditEntry & EnterpriseAuditEntryData & Node & OrganizationAuditEntryData{
+type MembersCanDeleteReposClearAuditEntry implements AuditEntry & EnterpriseAuditEntryData & Node & OrganizationAuditEntryData {
   """
   The action name
   """
@@ -17534,7 +17538,7 @@ type MembersCanDeleteReposClearAuditEntry implements AuditEntry & EnterpriseAudi
 """
 Audit log entry for a members_can_delete_repos.disable event.
 """
-type MembersCanDeleteReposDisableAuditEntry implements AuditEntry & EnterpriseAuditEntryData & Node & OrganizationAuditEntryData{
+type MembersCanDeleteReposDisableAuditEntry implements AuditEntry & EnterpriseAuditEntryData & Node & OrganizationAuditEntryData {
   """
   The action name
   """
@@ -17641,7 +17645,7 @@ type MembersCanDeleteReposDisableAuditEntry implements AuditEntry & EnterpriseAu
 """
 Audit log entry for a members_can_delete_repos.enable event.
 """
-type MembersCanDeleteReposEnableAuditEntry implements AuditEntry & EnterpriseAuditEntryData & Node & OrganizationAuditEntryData{
+type MembersCanDeleteReposEnableAuditEntry implements AuditEntry & EnterpriseAuditEntryData & Node & OrganizationAuditEntryData {
   """
   The action name
   """
@@ -17748,7 +17752,7 @@ type MembersCanDeleteReposEnableAuditEntry implements AuditEntry & EnterpriseAud
 """
 Represents a 'mentioned' event on a given issue or pull request.
 """
-type MentionedEvent implements Node{
+type MentionedEvent implements Node {
   """
   Identifies the actor who performed the event.
   """
@@ -17945,7 +17949,7 @@ enum MergeableState {
 """
 Represents a 'merged' event on a given pull request.
 """
-type MergedEvent implements Node & UniformResourceLocatable{
+type MergedEvent implements Node & UniformResourceLocatable {
   """
   Identifies the actor who performed the event.
   """
@@ -18039,7 +18043,7 @@ interface Migration {
 """
 An Octoshift migration source.
 """
-type MigrationSource implements Node{
+type MigrationSource implements Node {
   id: ID!
 
   """
@@ -18131,7 +18135,7 @@ enum MigrationState {
 """
 Represents a Milestone object on a given repository.
 """
-type Milestone implements Closable & Node & UniformResourceLocatable{
+type Milestone implements Closable & Node & UniformResourceLocatable {
   """
   `true` if the object is closed (definition of closed may depend on type)
   """
@@ -18403,7 +18407,7 @@ enum MilestoneState {
 """
 Represents a 'milestoned' event on a given issue or pull request.
 """
-type MilestonedEvent implements Node{
+type MilestonedEvent implements Node {
   """
   Identifies the actor who performed the event.
   """
@@ -18560,7 +18564,7 @@ type MoveProjectColumnPayload {
 """
 Represents a 'moved_columns_in_project' event on a given issue or pull request.
 """
-type MovedColumnsInProjectEvent implements Node{
+type MovedColumnsInProjectEvent implements Node {
   """
   Identifies the actor who performed the event.
   """
@@ -20540,7 +20544,7 @@ enum NotificationRestrictionSettingValue {
 """
 An OIDC identity provider configured to provision identities for an enterprise.
 """
-type OIDCProvider implements Node{
+type OIDCProvider implements Node {
   """
   The enterprise this identity provider belongs to.
   """
@@ -20632,7 +20636,7 @@ interface OauthApplicationAuditEntryData {
 """
 Audit log entry for a oauth_application.create event.
 """
-type OauthApplicationCreateAuditEntry implements AuditEntry & Node & OauthApplicationAuditEntryData & OrganizationAuditEntryData{
+type OauthApplicationCreateAuditEntry implements AuditEntry & Node & OauthApplicationAuditEntryData & OrganizationAuditEntryData {
   """
   The action name
   """
@@ -20834,7 +20838,7 @@ enum OrderDirection {
 """
 Audit log entry for a org.add_billing_manager
 """
-type OrgAddBillingManagerAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData{
+type OrgAddBillingManagerAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData {
   """
   The action name
   """
@@ -20931,7 +20935,7 @@ type OrgAddBillingManagerAuditEntry implements AuditEntry & Node & OrganizationA
 """
 Audit log entry for a org.add_member
 """
-type OrgAddMemberAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData{
+type OrgAddMemberAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData {
   """
   The action name
   """
@@ -21043,7 +21047,7 @@ enum OrgAddMemberAuditEntryPermission {
 """
 Audit log entry for a org.block_user
 """
-type OrgBlockUserAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData{
+type OrgBlockUserAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData {
   """
   The action name
   """
@@ -21155,7 +21159,7 @@ type OrgBlockUserAuditEntry implements AuditEntry & Node & OrganizationAuditEntr
 """
 Audit log entry for a org.config.disable_collaborators_only event.
 """
-type OrgConfigDisableCollaboratorsOnlyAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData{
+type OrgConfigDisableCollaboratorsOnlyAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData {
   """
   The action name
   """
@@ -21247,7 +21251,7 @@ type OrgConfigDisableCollaboratorsOnlyAuditEntry implements AuditEntry & Node & 
 """
 Audit log entry for a org.config.enable_collaborators_only event.
 """
-type OrgConfigEnableCollaboratorsOnlyAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData{
+type OrgConfigEnableCollaboratorsOnlyAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData {
   """
   The action name
   """
@@ -21339,7 +21343,7 @@ type OrgConfigEnableCollaboratorsOnlyAuditEntry implements AuditEntry & Node & O
 """
 Audit log entry for a org.create event.
 """
-type OrgCreateAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData{
+type OrgCreateAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData {
   """
   The action name
   """
@@ -21466,7 +21470,7 @@ enum OrgCreateAuditEntryBillingPlan {
 """
 Audit log entry for a org.disable_oauth_app_restrictions event.
 """
-type OrgDisableOauthAppRestrictionsAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData{
+type OrgDisableOauthAppRestrictionsAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData {
   """
   The action name
   """
@@ -21558,7 +21562,7 @@ type OrgDisableOauthAppRestrictionsAuditEntry implements AuditEntry & Node & Org
 """
 Audit log entry for a org.disable_saml event.
 """
-type OrgDisableSamlAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData{
+type OrgDisableSamlAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData {
   """
   The action name
   """
@@ -21670,7 +21674,7 @@ type OrgDisableSamlAuditEntry implements AuditEntry & Node & OrganizationAuditEn
 """
 Audit log entry for a org.disable_two_factor_requirement event.
 """
-type OrgDisableTwoFactorRequirementAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData{
+type OrgDisableTwoFactorRequirementAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData {
   """
   The action name
   """
@@ -21762,7 +21766,7 @@ type OrgDisableTwoFactorRequirementAuditEntry implements AuditEntry & Node & Org
 """
 Audit log entry for a org.enable_oauth_app_restrictions event.
 """
-type OrgEnableOauthAppRestrictionsAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData{
+type OrgEnableOauthAppRestrictionsAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData {
   """
   The action name
   """
@@ -21854,7 +21858,7 @@ type OrgEnableOauthAppRestrictionsAuditEntry implements AuditEntry & Node & Orga
 """
 Audit log entry for a org.enable_saml event.
 """
-type OrgEnableSamlAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData{
+type OrgEnableSamlAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData {
   """
   The action name
   """
@@ -21966,7 +21970,7 @@ type OrgEnableSamlAuditEntry implements AuditEntry & Node & OrganizationAuditEnt
 """
 Audit log entry for a org.enable_two_factor_requirement event.
 """
-type OrgEnableTwoFactorRequirementAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData{
+type OrgEnableTwoFactorRequirementAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData {
   """
   The action name
   """
@@ -22083,7 +22087,7 @@ enum OrgEnterpriseOwnerOrderField {
 """
 Audit log entry for a org.invite_member event.
 """
-type OrgInviteMemberAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData{
+type OrgInviteMemberAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData {
   """
   The action name
   """
@@ -22185,7 +22189,7 @@ type OrgInviteMemberAuditEntry implements AuditEntry & Node & OrganizationAuditE
 """
 Audit log entry for a org.invite_to_business event.
 """
-type OrgInviteToBusinessAuditEntry implements AuditEntry & EnterpriseAuditEntryData & Node & OrganizationAuditEntryData{
+type OrgInviteToBusinessAuditEntry implements AuditEntry & EnterpriseAuditEntryData & Node & OrganizationAuditEntryData {
   """
   The action name
   """
@@ -22292,7 +22296,7 @@ type OrgInviteToBusinessAuditEntry implements AuditEntry & EnterpriseAuditEntryD
 """
 Audit log entry for a org.oauth_app_access_approved event.
 """
-type OrgOauthAppAccessApprovedAuditEntry implements AuditEntry & Node & OauthApplicationAuditEntryData & OrganizationAuditEntryData{
+type OrgOauthAppAccessApprovedAuditEntry implements AuditEntry & Node & OauthApplicationAuditEntryData & OrganizationAuditEntryData {
   """
   The action name
   """
@@ -22399,7 +22403,7 @@ type OrgOauthAppAccessApprovedAuditEntry implements AuditEntry & Node & OauthApp
 """
 Audit log entry for a org.oauth_app_access_denied event.
 """
-type OrgOauthAppAccessDeniedAuditEntry implements AuditEntry & Node & OauthApplicationAuditEntryData & OrganizationAuditEntryData{
+type OrgOauthAppAccessDeniedAuditEntry implements AuditEntry & Node & OauthApplicationAuditEntryData & OrganizationAuditEntryData {
   """
   The action name
   """
@@ -22506,7 +22510,7 @@ type OrgOauthAppAccessDeniedAuditEntry implements AuditEntry & Node & OauthAppli
 """
 Audit log entry for a org.oauth_app_access_requested event.
 """
-type OrgOauthAppAccessRequestedAuditEntry implements AuditEntry & Node & OauthApplicationAuditEntryData & OrganizationAuditEntryData{
+type OrgOauthAppAccessRequestedAuditEntry implements AuditEntry & Node & OauthApplicationAuditEntryData & OrganizationAuditEntryData {
   """
   The action name
   """
@@ -22613,7 +22617,7 @@ type OrgOauthAppAccessRequestedAuditEntry implements AuditEntry & Node & OauthAp
 """
 Audit log entry for a org.remove_billing_manager event.
 """
-type OrgRemoveBillingManagerAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData{
+type OrgRemoveBillingManagerAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData {
   """
   The action name
   """
@@ -22730,7 +22734,7 @@ enum OrgRemoveBillingManagerAuditEntryReason {
 """
 Audit log entry for a org.remove_member event.
 """
-type OrgRemoveMemberAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData{
+type OrgRemoveMemberAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData {
   """
   The action name
   """
@@ -22898,7 +22902,7 @@ enum OrgRemoveMemberAuditEntryReason {
 """
 Audit log entry for a org.remove_outside_collaborator event.
 """
-type OrgRemoveOutsideCollaboratorAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData{
+type OrgRemoveOutsideCollaboratorAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData {
   """
   The action name
   """
@@ -23038,7 +23042,7 @@ enum OrgRemoveOutsideCollaboratorAuditEntryReason {
 """
 Audit log entry for a org.restore_member event.
 """
-type OrgRestoreMemberAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData{
+type OrgRestoreMemberAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData {
   """
   The action name
   """
@@ -23170,7 +23174,7 @@ union OrgRestoreMemberAuditEntryMembership = OrgRestoreMemberMembershipOrganizat
 """
 Metadata for an organization membership for org.restore_member actions
 """
-type OrgRestoreMemberMembershipOrganizationAuditEntryData implements OrganizationAuditEntryData{
+type OrgRestoreMemberMembershipOrganizationAuditEntryData implements OrganizationAuditEntryData {
   """
   The Organization associated with the Audit Entry.
   """
@@ -23195,7 +23199,7 @@ type OrgRestoreMemberMembershipOrganizationAuditEntryData implements Organizatio
 """
 Metadata for a repository membership for org.restore_member actions
 """
-type OrgRestoreMemberMembershipRepositoryAuditEntryData implements RepositoryAuditEntryData{
+type OrgRestoreMemberMembershipRepositoryAuditEntryData implements RepositoryAuditEntryData {
   """
   The repository associated with the action
   """
@@ -23220,7 +23224,7 @@ type OrgRestoreMemberMembershipRepositoryAuditEntryData implements RepositoryAud
 """
 Metadata for a team membership for org.restore_member actions
 """
-type OrgRestoreMemberMembershipTeamAuditEntryData implements TeamAuditEntryData{
+type OrgRestoreMemberMembershipTeamAuditEntryData implements TeamAuditEntryData {
   """
   The team associated with the action
   """
@@ -23245,7 +23249,7 @@ type OrgRestoreMemberMembershipTeamAuditEntryData implements TeamAuditEntryData{
 """
 Audit log entry for a org.unblock_user
 """
-type OrgUnblockUserAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData{
+type OrgUnblockUserAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData {
   """
   The action name
   """
@@ -23357,7 +23361,7 @@ type OrgUnblockUserAuditEntry implements AuditEntry & Node & OrganizationAuditEn
 """
 Audit log entry for a org.update_default_repository_permission
 """
-type OrgUpdateDefaultRepositoryPermissionAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData{
+type OrgUpdateDefaultRepositoryPermissionAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData {
   """
   The action name
   """
@@ -23484,7 +23488,7 @@ enum OrgUpdateDefaultRepositoryPermissionAuditEntryPermission {
 """
 Audit log entry for a org.update_member event.
 """
-type OrgUpdateMemberAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData{
+type OrgUpdateMemberAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData {
   """
   The action name
   """
@@ -23601,7 +23605,7 @@ enum OrgUpdateMemberAuditEntryPermission {
 """
 Audit log entry for a org.update_member_repository_creation_permission event.
 """
-type OrgUpdateMemberRepositoryCreationPermissionAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData{
+type OrgUpdateMemberRepositoryCreationPermissionAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData {
   """
   The action name
   """
@@ -23748,7 +23752,7 @@ enum OrgUpdateMemberRepositoryCreationPermissionAuditEntryVisibility {
 """
 Audit log entry for a org.update_member_repository_invitation_permission event.
 """
-type OrgUpdateMemberRepositoryInvitationPermissionAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData{
+type OrgUpdateMemberRepositoryInvitationPermissionAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData {
   """
   The action name
   """
@@ -23845,7 +23849,7 @@ type OrgUpdateMemberRepositoryInvitationPermissionAuditEntry implements AuditEnt
 """
 An account on GitHub, with one or more owners, that has repositories, members and teams.
 """
-type Organization implements Actor & MemberStatusable & Node & PackageOwner & ProfileOwner & ProjectNextOwner & ProjectOwner & ProjectV2Owner & RepositoryDiscussionAuthor & RepositoryDiscussionCommentAuthor & RepositoryOwner & Sponsorable & UniformResourceLocatable{
+type Organization implements Actor & MemberStatusable & Node & PackageOwner & ProfileOwner & ProjectNextOwner & ProjectOwner & ProjectV2Owner & RepositoryDiscussionAuthor & RepositoryDiscussionCommentAuthor & RepositoryOwner & Sponsorable & UniformResourceLocatable {
   """
   Determine if this repository owner has any items that can be pinned to their profile.
   """
@@ -25149,7 +25153,7 @@ type OrganizationEnterpriseOwnerEdge {
 """
 An Identity Provider configured to provision SAML and SCIM identities for Organizations
 """
-type OrganizationIdentityProvider implements Node{
+type OrganizationIdentityProvider implements Node {
   """
   The digest algorithm used to sign SAML requests for the Identity Provider.
   """
@@ -25226,7 +25230,7 @@ type OrganizationIdentityProvider implements Node{
 """
 An Invitation for a user to an organization.
 """
-type OrganizationInvitation implements Node{
+type OrganizationInvitation implements Node {
   """
   Identifies the date and time when the object was created.
   """
@@ -25468,7 +25472,7 @@ enum OrganizationOrderField {
 """
 An organization teams hovercard context
 """
-type OrganizationTeamsHovercardContext implements HovercardContext{
+type OrganizationTeamsHovercardContext implements HovercardContext {
   """
   A string describing this context
   """
@@ -25523,7 +25527,7 @@ type OrganizationTeamsHovercardContext implements HovercardContext{
 """
 An organization list hovercard context
 """
-type OrganizationsHovercardContext implements HovercardContext{
+type OrganizationsHovercardContext implements HovercardContext {
   """
   A string describing this context
   """
@@ -25568,7 +25572,7 @@ type OrganizationsHovercardContext implements HovercardContext{
 """
 Information for an uploaded package.
 """
-type Package implements Node{
+type Package implements Node {
   id: ID!
 
   """
@@ -25680,7 +25684,7 @@ type PackageEdge {
 """
 A file in a package version.
 """
-type PackageFile implements Node{
+type PackageFile implements Node {
   id: ID!
 
   """
@@ -25879,7 +25883,7 @@ type PackageStatistics {
 """
 A version tag contains the mapping between a tag name and a version.
 """
-type PackageTag implements Node{
+type PackageTag implements Node {
   id: ID!
 
   """
@@ -25936,7 +25940,7 @@ enum PackageType {
 """
 Information about a specific package version.
 """
-type PackageVersion implements Node{
+type PackageVersion implements Node {
   """
   List of files associated with this package version
   """
@@ -26293,7 +26297,7 @@ enum PinnableItemType {
 """
 A Pinned Discussion is a discussion pinned to a repository's index page.
 """
-type PinnedDiscussion implements Node & RepositoryNode{
+type PinnedDiscussion implements Node & RepositoryNode {
   """
   Identifies the date and time when the object was created.
   """
@@ -26450,7 +26454,7 @@ enum PinnedDiscussionPattern {
 """
 Represents a 'pinned' event on a given issue or pull request.
 """
-type PinnedEvent implements Node{
+type PinnedEvent implements Node {
   """
   Identifies the actor who performed the event.
   """
@@ -26472,7 +26476,7 @@ type PinnedEvent implements Node{
 """
 A Pinned Issue is a issue pinned to a repository's index page.
 """
-type PinnedIssue implements Node{
+type PinnedIssue implements Node {
   """
   Identifies the primary key from the database.
   """
@@ -26544,7 +26548,7 @@ scalar PreciseDateTime
 """
 Audit log entry for a private_repository_forking.disable event.
 """
-type PrivateRepositoryForkingDisableAuditEntry implements AuditEntry & EnterpriseAuditEntryData & Node & OrganizationAuditEntryData & RepositoryAuditEntryData{
+type PrivateRepositoryForkingDisableAuditEntry implements AuditEntry & EnterpriseAuditEntryData & Node & OrganizationAuditEntryData & RepositoryAuditEntryData {
   """
   The action name
   """
@@ -26671,7 +26675,7 @@ type PrivateRepositoryForkingDisableAuditEntry implements AuditEntry & Enterpris
 """
 Audit log entry for a private_repository_forking.enable event.
 """
-type PrivateRepositoryForkingEnableAuditEntry implements AuditEntry & EnterpriseAuditEntryData & Node & OrganizationAuditEntryData & RepositoryAuditEntryData{
+type PrivateRepositoryForkingEnableAuditEntry implements AuditEntry & EnterpriseAuditEntryData & Node & OrganizationAuditEntryData & RepositoryAuditEntryData {
   """
   The action name
   """
@@ -26954,7 +26958,7 @@ interface ProfileOwner {
 """
 Projects manage issues, pull requests and notes within a project owner.
 """
-type Project implements Closable & Node & Updatable{
+type Project implements Closable & Node & Updatable {
   """
   The project's description body.
   """
@@ -27096,7 +27100,7 @@ type Project implements Closable & Node & Updatable{
 """
 A card in a project.
 """
-type ProjectCard implements Node{
+type ProjectCard implements Node {
   """
   The project column this card is associated under. A card may only belong to one
   project column at a time. The column field will be null if the card is created
@@ -27261,7 +27265,7 @@ enum ProjectCardState {
 """
 A column inside a project.
 """
-type ProjectColumn implements Node{
+type ProjectColumn implements Node {
   """
   List of cards in the column
   """
@@ -27483,7 +27487,7 @@ enum ProjectItemType {
 """
 New projects that manage issues, pull requests and drafts using tables and boards.
 """
-type ProjectNext implements Closable & Node & Updatable{
+type ProjectNext implements Closable & Node & Updatable {
   """
   Returns true if the project is closed.
   """
@@ -27705,7 +27709,7 @@ type ProjectNextEdge {
 """
 A field inside a project.
 """
-type ProjectNextField implements Node & ProjectNextFieldCommon{
+type ProjectNextField implements Node & ProjectNextFieldCommon {
   """
   Identifies the date and time when the object was created.
   """
@@ -27899,7 +27903,7 @@ enum ProjectNextFieldType {
 """
 An item within a new Project.
 """
-type ProjectNextItem implements Node{
+type ProjectNextItem implements Node {
   """
   The content of the referenced draft issue, issue, or pull request
   """
@@ -28021,7 +28025,7 @@ type ProjectNextItemEdge {
 """
 An value of a field in an item of a new Project.
 """
-type ProjectNextItemFieldValue implements Node{
+type ProjectNextItemFieldValue implements Node {
   """
   Identifies the date and time when the object was created.
   """
@@ -28374,7 +28378,7 @@ interface ProjectV2Owner {
 """
 A view within a Project.
 """
-type ProjectView implements Node{
+type ProjectView implements Node {
   """
   Identifies the date and time when the object was created.
   """
@@ -28521,7 +28525,7 @@ enum ProjectViewLayout {
 """
 A user's public key.
 """
-type PublicKey implements Node{
+type PublicKey implements Node {
   """
   The last time this authorization was used to perform an action. Values will be null for keys not owned by the user.
   """
@@ -28601,7 +28605,7 @@ type PublicKeyEdge {
 """
 A repository pull request.
 """
-type PullRequest implements Assignable & Closable & Comment & Labelable & Lockable & Node & ProjectNextOwner & ProjectV2Owner & Reactable & RepositoryNode & Subscribable & UniformResourceLocatable & Updatable & UpdatableComment{
+type PullRequest implements Assignable & Closable & Comment & Labelable & Lockable & Node & ProjectNextOwner & ProjectV2Owner & Reactable & RepositoryNode & Subscribable & UniformResourceLocatable & Updatable & UpdatableComment {
   """
   Reason that the conversation was locked.
   """
@@ -29636,7 +29640,7 @@ type PullRequestChangedFileEdge {
 """
 Represents a Git commit part of a pull request.
 """
-type PullRequestCommit implements Node & UniformResourceLocatable{
+type PullRequestCommit implements Node & UniformResourceLocatable {
   """
   The Git commit object
   """
@@ -29663,7 +29667,7 @@ type PullRequestCommit implements Node & UniformResourceLocatable{
 """
 Represents a commit comment thread part of a pull request.
 """
-type PullRequestCommitCommentThread implements Node & RepositoryNode{
+type PullRequestCommitCommentThread implements Node & RepositoryNode {
   """
   The comments that exist in this thread.
   """
@@ -29890,7 +29894,7 @@ enum PullRequestOrderField {
 """
 A review object for a given pull request.
 """
-type PullRequestReview implements Comment & Deletable & Node & Reactable & RepositoryNode & Updatable & UpdatableComment{
+type PullRequestReview implements Comment & Deletable & Node & Reactable & RepositoryNode & Updatable & UpdatableComment {
   """
   The actor who authored the comment.
   """
@@ -30142,7 +30146,7 @@ type PullRequestReview implements Comment & Deletable & Node & Reactable & Repos
 """
 A review comment associated with a given repository pull request.
 """
-type PullRequestReviewComment implements Comment & Deletable & Minimizable & Node & Reactable & RepositoryNode & Updatable & UpdatableComment{
+type PullRequestReviewComment implements Comment & Deletable & Minimizable & Node & Reactable & RepositoryNode & Updatable & UpdatableComment {
   """
   The actor who authored the comment.
   """
@@ -30604,7 +30608,7 @@ enum PullRequestReviewState {
 """
 A threaded list of comments for a given pull request.
 """
-type PullRequestReviewThread implements Node{
+type PullRequestReviewThread implements Node {
   """
   A list of pull request comments associated with the thread.
   """
@@ -31236,7 +31240,7 @@ enum PullRequestUpdateState {
 """
 A Git push.
 """
-type Push implements Node{
+type Push implements Node {
   id: ID!
 
   """
@@ -31268,7 +31272,7 @@ type Push implements Node{
 """
 A team, user, or app who has the ability to push to a protected branch.
 """
-type PushAllowance implements Node{
+type PushAllowance implements Node {
   """
   The actor that can push.
   """
@@ -31975,7 +31979,7 @@ type ReactingUserEdge {
 """
 An emoji reaction to a particular piece of content.
 """
-type Reaction implements Node{
+type Reaction implements Node {
   """
   Identifies the emoji reaction.
   """
@@ -32247,7 +32251,7 @@ type ReactorEdge {
 """
 Represents a 'ready_for_review' event on a given pull request.
 """
-type ReadyForReviewEvent implements Node & UniformResourceLocatable{
+type ReadyForReviewEvent implements Node & UniformResourceLocatable {
   """
   Identifies the actor who performed the event.
   """
@@ -32279,7 +32283,7 @@ type ReadyForReviewEvent implements Node & UniformResourceLocatable{
 """
 Represents a Git reference.
 """
-type Ref implements Node{
+type Ref implements Node {
   """
   A list of pull requests with this ref as the head ref.
   """
@@ -32526,7 +32530,7 @@ type RefUpdateRule {
 """
 Represents a 'referenced' event on a given `ReferencedSubject`.
 """
-type ReferencedEvent implements Node{
+type ReferencedEvent implements Node {
   """
   Identifies the actor who performed the event.
   """
@@ -32673,7 +32677,7 @@ type RejectDeploymentsPayload {
 """
 A release contains the content for a release.
 """
-type Release implements Node & Reactable & UniformResourceLocatable{
+type Release implements Node & Reactable & UniformResourceLocatable {
   """
   The author of the release
   """
@@ -32875,7 +32879,7 @@ type Release implements Node & Reactable & UniformResourceLocatable{
 """
 A release asset contains the content for a release asset.
 """
-type ReleaseAsset implements Node{
+type ReleaseAsset implements Node {
   """
   The asset's content-type
   """
@@ -33407,7 +33411,7 @@ type RemoveUpvotePayload {
 """
 Represents a 'removed_from_project' event on a given issue or pull request.
 """
-type RemovedFromProjectEvent implements Node{
+type RemovedFromProjectEvent implements Node {
   """
   Identifies the actor who performed the event.
   """
@@ -33439,7 +33443,7 @@ type RemovedFromProjectEvent implements Node{
 """
 Represents a 'renamed' event on a given issue or pull request
 """
-type RenamedTitleEvent implements Node{
+type RenamedTitleEvent implements Node {
   """
   Identifies the actor who performed the event.
   """
@@ -33536,7 +33540,7 @@ type ReopenPullRequestPayload {
 """
 Represents a 'reopened' event on any `Closable`.
 """
-type ReopenedEvent implements Node{
+type ReopenedEvent implements Node {
   """
   Identifies the actor who performed the event.
   """
@@ -33563,7 +33567,7 @@ type ReopenedEvent implements Node{
 """
 Audit log entry for a repo.access event.
 """
-type RepoAccessAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData & RepositoryAuditEntryData{
+type RepoAccessAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData & RepositoryAuditEntryData {
   """
   The action name
   """
@@ -33700,7 +33704,7 @@ enum RepoAccessAuditEntryVisibility {
 """
 Audit log entry for a repo.add_member event.
 """
-type RepoAddMemberAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData & RepositoryAuditEntryData{
+type RepoAddMemberAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData & RepositoryAuditEntryData {
   """
   The action name
   """
@@ -33837,7 +33841,7 @@ enum RepoAddMemberAuditEntryVisibility {
 """
 Audit log entry for a repo.add_topic event.
 """
-type RepoAddTopicAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData & RepositoryAuditEntryData & TopicAuditEntryData{
+type RepoAddTopicAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData & RepositoryAuditEntryData & TopicAuditEntryData {
   """
   The action name
   """
@@ -33959,7 +33963,7 @@ type RepoAddTopicAuditEntry implements AuditEntry & Node & OrganizationAuditEntr
 """
 Audit log entry for a repo.archived event.
 """
-type RepoArchivedAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData & RepositoryAuditEntryData{
+type RepoArchivedAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData & RepositoryAuditEntryData {
   """
   The action name
   """
@@ -34096,7 +34100,7 @@ enum RepoArchivedAuditEntryVisibility {
 """
 Audit log entry for a repo.change_merge_setting event.
 """
-type RepoChangeMergeSettingAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData & RepositoryAuditEntryData{
+type RepoChangeMergeSettingAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData & RepositoryAuditEntryData {
   """
   The action name
   """
@@ -34238,7 +34242,7 @@ enum RepoChangeMergeSettingAuditEntryMergeType {
 """
 Audit log entry for a repo.config.disable_anonymous_git_access event.
 """
-type RepoConfigDisableAnonymousGitAccessAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData & RepositoryAuditEntryData{
+type RepoConfigDisableAnonymousGitAccessAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData & RepositoryAuditEntryData {
   """
   The action name
   """
@@ -34350,7 +34354,7 @@ type RepoConfigDisableAnonymousGitAccessAuditEntry implements AuditEntry & Node 
 """
 Audit log entry for a repo.config.disable_collaborators_only event.
 """
-type RepoConfigDisableCollaboratorsOnlyAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData & RepositoryAuditEntryData{
+type RepoConfigDisableCollaboratorsOnlyAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData & RepositoryAuditEntryData {
   """
   The action name
   """
@@ -34462,7 +34466,7 @@ type RepoConfigDisableCollaboratorsOnlyAuditEntry implements AuditEntry & Node &
 """
 Audit log entry for a repo.config.disable_contributors_only event.
 """
-type RepoConfigDisableContributorsOnlyAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData & RepositoryAuditEntryData{
+type RepoConfigDisableContributorsOnlyAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData & RepositoryAuditEntryData {
   """
   The action name
   """
@@ -34574,7 +34578,7 @@ type RepoConfigDisableContributorsOnlyAuditEntry implements AuditEntry & Node & 
 """
 Audit log entry for a repo.config.disable_sockpuppet_disallowed event.
 """
-type RepoConfigDisableSockpuppetDisallowedAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData & RepositoryAuditEntryData{
+type RepoConfigDisableSockpuppetDisallowedAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData & RepositoryAuditEntryData {
   """
   The action name
   """
@@ -34686,7 +34690,7 @@ type RepoConfigDisableSockpuppetDisallowedAuditEntry implements AuditEntry & Nod
 """
 Audit log entry for a repo.config.enable_anonymous_git_access event.
 """
-type RepoConfigEnableAnonymousGitAccessAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData & RepositoryAuditEntryData{
+type RepoConfigEnableAnonymousGitAccessAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData & RepositoryAuditEntryData {
   """
   The action name
   """
@@ -34798,7 +34802,7 @@ type RepoConfigEnableAnonymousGitAccessAuditEntry implements AuditEntry & Node &
 """
 Audit log entry for a repo.config.enable_collaborators_only event.
 """
-type RepoConfigEnableCollaboratorsOnlyAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData & RepositoryAuditEntryData{
+type RepoConfigEnableCollaboratorsOnlyAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData & RepositoryAuditEntryData {
   """
   The action name
   """
@@ -34910,7 +34914,7 @@ type RepoConfigEnableCollaboratorsOnlyAuditEntry implements AuditEntry & Node & 
 """
 Audit log entry for a repo.config.enable_contributors_only event.
 """
-type RepoConfigEnableContributorsOnlyAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData & RepositoryAuditEntryData{
+type RepoConfigEnableContributorsOnlyAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData & RepositoryAuditEntryData {
   """
   The action name
   """
@@ -35022,7 +35026,7 @@ type RepoConfigEnableContributorsOnlyAuditEntry implements AuditEntry & Node & O
 """
 Audit log entry for a repo.config.enable_sockpuppet_disallowed event.
 """
-type RepoConfigEnableSockpuppetDisallowedAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData & RepositoryAuditEntryData{
+type RepoConfigEnableSockpuppetDisallowedAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData & RepositoryAuditEntryData {
   """
   The action name
   """
@@ -35134,7 +35138,7 @@ type RepoConfigEnableSockpuppetDisallowedAuditEntry implements AuditEntry & Node
 """
 Audit log entry for a repo.config.lock_anonymous_git_access event.
 """
-type RepoConfigLockAnonymousGitAccessAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData & RepositoryAuditEntryData{
+type RepoConfigLockAnonymousGitAccessAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData & RepositoryAuditEntryData {
   """
   The action name
   """
@@ -35246,7 +35250,7 @@ type RepoConfigLockAnonymousGitAccessAuditEntry implements AuditEntry & Node & O
 """
 Audit log entry for a repo.config.unlock_anonymous_git_access event.
 """
-type RepoConfigUnlockAnonymousGitAccessAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData & RepositoryAuditEntryData{
+type RepoConfigUnlockAnonymousGitAccessAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData & RepositoryAuditEntryData {
   """
   The action name
   """
@@ -35358,7 +35362,7 @@ type RepoConfigUnlockAnonymousGitAccessAuditEntry implements AuditEntry & Node &
 """
 Audit log entry for a repo.create event.
 """
-type RepoCreateAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData & RepositoryAuditEntryData{
+type RepoCreateAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData & RepositoryAuditEntryData {
   """
   The action name
   """
@@ -35505,7 +35509,7 @@ enum RepoCreateAuditEntryVisibility {
 """
 Audit log entry for a repo.destroy event.
 """
-type RepoDestroyAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData & RepositoryAuditEntryData{
+type RepoDestroyAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData & RepositoryAuditEntryData {
   """
   The action name
   """
@@ -35642,7 +35646,7 @@ enum RepoDestroyAuditEntryVisibility {
 """
 Audit log entry for a repo.remove_member event.
 """
-type RepoRemoveMemberAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData & RepositoryAuditEntryData{
+type RepoRemoveMemberAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData & RepositoryAuditEntryData {
   """
   The action name
   """
@@ -35779,7 +35783,7 @@ enum RepoRemoveMemberAuditEntryVisibility {
 """
 Audit log entry for a repo.remove_topic event.
 """
-type RepoRemoveTopicAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData & RepositoryAuditEntryData & TopicAuditEntryData{
+type RepoRemoveTopicAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData & RepositoryAuditEntryData & TopicAuditEntryData {
   """
   The action name
   """
@@ -35936,7 +35940,7 @@ enum ReportedContentClassifiers {
 """
 A repository contains the content for a project.
 """
-type Repository implements Node & PackageOwner & ProjectOwner & RepositoryInfo & Starrable & Subscribable & UniformResourceLocatable{
+type Repository implements Node & PackageOwner & ProjectOwner & RepositoryInfo & Starrable & Subscribable & UniformResourceLocatable {
   """
   A list of users that can be assigned to issues in this repository.
   """
@@ -37973,7 +37977,7 @@ enum RepositoryInteractionLimitOrigin {
 """
 An invitation for a user to be added to a repository.
 """
-type RepositoryInvitation implements Node{
+type RepositoryInvitation implements Node {
   """
   The email address that received the invitation.
   """
@@ -38100,7 +38104,7 @@ enum RepositoryLockReason {
 """
 An Octoshift repository migration.
 """
-type RepositoryMigration implements Migration & Node{
+type RepositoryMigration implements Migration & Node {
   """
   The Octoshift migration flag to continue on error.
   """
@@ -38434,7 +38438,7 @@ enum RepositoryPrivacy {
 """
 A repository-topic connects a repository to a topic.
 """
-type RepositoryTopic implements Node & UniformResourceLocatable{
+type RepositoryTopic implements Node & UniformResourceLocatable {
   id: ID!
 
   """
@@ -38516,7 +38520,7 @@ enum RepositoryVisibility {
 """
 Audit log entry for a repository_visibility_change.disable event.
 """
-type RepositoryVisibilityChangeDisableAuditEntry implements AuditEntry & EnterpriseAuditEntryData & Node & OrganizationAuditEntryData{
+type RepositoryVisibilityChangeDisableAuditEntry implements AuditEntry & EnterpriseAuditEntryData & Node & OrganizationAuditEntryData {
   """
   The action name
   """
@@ -38623,7 +38627,7 @@ type RepositoryVisibilityChangeDisableAuditEntry implements AuditEntry & Enterpr
 """
 Audit log entry for a repository_visibility_change.enable event.
 """
-type RepositoryVisibilityChangeEnableAuditEntry implements AuditEntry & EnterpriseAuditEntryData & Node & OrganizationAuditEntryData{
+type RepositoryVisibilityChangeEnableAuditEntry implements AuditEntry & EnterpriseAuditEntryData & Node & OrganizationAuditEntryData {
   """
   The action name
   """
@@ -38730,7 +38734,7 @@ type RepositoryVisibilityChangeEnableAuditEntry implements AuditEntry & Enterpri
 """
 A Dependabot alert for a repository with a dependency affected by a security vulnerability.
 """
-type RepositoryVulnerabilityAlert implements Node & RepositoryNode{
+type RepositoryVulnerabilityAlert implements Node & RepositoryNode {
   """
   When was the alert created?
   """
@@ -39079,7 +39083,7 @@ type ResolveReviewThreadPayload {
 """
 Represents a private contribution a user made on GitHub.
 """
-type RestrictedContribution implements Contribution{
+type RestrictedContribution implements Contribution {
   """
   Whether this contribution is associated with a record you do not have access to. For
   example, your own 'first issue' contribution may have been made on a repository you can no
@@ -39111,7 +39115,7 @@ type RestrictedContribution implements Contribution{
 """
 A user, team, or app who has the ability to dismiss a review on a protected branch.
 """
-type ReviewDismissalAllowance implements Node{
+type ReviewDismissalAllowance implements Node {
   """
   The actor that can dismiss.
   """
@@ -39173,7 +39177,7 @@ type ReviewDismissalAllowanceEdge {
 """
 Represents a 'review_dismissed' event on a given issue or pull request.
 """
-type ReviewDismissedEvent implements Node & UniformResourceLocatable{
+type ReviewDismissedEvent implements Node & UniformResourceLocatable {
   """
   Identifies the actor who performed the event.
   """
@@ -39235,7 +39239,7 @@ type ReviewDismissedEvent implements Node & UniformResourceLocatable{
 """
 A request for a user to review a pull request.
 """
-type ReviewRequest implements Node{
+type ReviewRequest implements Node {
   """
   Whether this request was created for a code owner
   """
@@ -39302,7 +39306,7 @@ type ReviewRequestEdge {
 """
 Represents an 'review_request_removed' event on a given pull request.
 """
-type ReviewRequestRemovedEvent implements Node{
+type ReviewRequestRemovedEvent implements Node {
   """
   Identifies the actor who performed the event.
   """
@@ -39329,7 +39333,7 @@ type ReviewRequestRemovedEvent implements Node{
 """
 Represents an 'review_requested' event on a given pull request.
 """
-type ReviewRequestedEvent implements Node{
+type ReviewRequestedEvent implements Node {
   """
   Identifies the actor who performed the event.
   """
@@ -39357,7 +39361,7 @@ type ReviewRequestedEvent implements Node{
 A hovercard context with a message describing the current code review state of the pull
 request.
 """
-type ReviewStatusHovercardContext implements HovercardContext{
+type ReviewStatusHovercardContext implements HovercardContext {
   """
   A string describing this context
   """
@@ -39542,7 +39546,7 @@ enum SamlSignatureAlgorithm {
 """
 A Saved Reply is text a user can use to reply quickly.
 """
-type SavedReply implements Node{
+type SavedReply implements Node {
   """
   The body of the saved reply.
   """
@@ -39739,7 +39743,7 @@ enum SearchType {
 """
 A GitHub Security Advisory
 """
-type SecurityAdvisory implements Node{
+type SecurityAdvisory implements Node {
   """
   The CVSS associated with this advisory
   """
@@ -40387,7 +40391,7 @@ type SetUserInteractionLimitPayload {
 """
 Represents an S/MIME signature on a Commit or Tag.
 """
-type SmimeSignature implements GitSignature{
+type SmimeSignature implements GitSignature {
   """
   Email used to sign this object.
   """
@@ -40848,7 +40852,7 @@ enum SponsorableOrderField {
 """
 An event related to sponsorship activity.
 """
-type SponsorsActivity implements Node{
+type SponsorsActivity implements Node {
   """
   What action this activity indicates took place.
   """
@@ -41056,7 +41060,7 @@ enum SponsorsGoalKind {
 """
 A GitHub Sponsors listing.
 """
-type SponsorsListing implements Node{
+type SponsorsListing implements Node {
   """
   The current goal the maintainer is trying to reach with GitHub Sponsors, if any.
   """
@@ -41143,7 +41147,7 @@ type SponsorsListing implements Node{
 """
 A GitHub Sponsors tier associated with a GitHub Sponsors listing.
 """
-type SponsorsTier implements Node{
+type SponsorsTier implements Node {
   """
   SponsorsTier information only visible to users that can administer the associated Sponsors listing.
   """
@@ -41324,7 +41328,7 @@ enum SponsorsTierOrderField {
 """
 A sponsorship relationship between a sponsor and a maintainer
 """
-type Sponsorship implements Node{
+type Sponsorship implements Node {
   """
   Identifies the date and time when the object was created.
   """
@@ -41434,7 +41438,7 @@ type SponsorshipEdge {
 """
 An update sent to sponsors of a user or organization on GitHub Sponsors.
 """
-type SponsorshipNewsletter implements Node{
+type SponsorshipNewsletter implements Node {
   """
   The contents of the newsletter, the message the sponsorable wanted to give.
   """
@@ -41812,7 +41816,7 @@ type StartRepositoryMigrationPayload {
 """
 Represents a commit status.
 """
-type Status implements Node{
+type Status implements Node {
   """
   A list of status contexts and check runs for this commit.
   """
@@ -41869,7 +41873,7 @@ type Status implements Node{
 """
 Represents the rollup for both the check runs and status for a commit.
 """
-type StatusCheckRollup implements Node{
+type StatusCheckRollup implements Node {
   """
   The commit the status and check runs are attached to.
   """
@@ -41956,7 +41960,7 @@ type StatusCheckRollupContextEdge {
 """
 Represents an individual commit status context
 """
-type StatusContext implements Node & RequirableByPullRequest{
+type StatusContext implements Node & RequirableByPullRequest {
   """
   The avatar of the OAuth application or the user that created the status
   """
@@ -42185,7 +42189,7 @@ interface Subscribable {
 """
 Represents a 'subscribed' event on a given `Subscribable`.
 """
-type SubscribedEvent implements Node{
+type SubscribedEvent implements Node {
   """
   Identifies the actor who performed the event.
   """
@@ -42247,7 +42251,7 @@ type SuggestedReviewer {
 """
 Represents a Git tag.
 """
-type Tag implements GitObject & Node{
+type Tag implements GitObject & Node {
   """
   An abbreviated version of the Git object ID
   """
@@ -42299,7 +42303,7 @@ type Tag implements GitObject & Node{
 """
 A team of users in an organization.
 """
-type Team implements MemberStatusable & Node & Subscribable{
+type Team implements MemberStatusable & Node & Subscribable {
   """
   A list of teams that are ancestors of this team.
   """
@@ -42716,7 +42720,7 @@ type Team implements MemberStatusable & Node & Subscribable{
 """
 Audit log entry for a team.add_member event.
 """
-type TeamAddMemberAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData & TeamAuditEntryData{
+type TeamAddMemberAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData & TeamAuditEntryData {
   """
   The action name
   """
@@ -42833,7 +42837,7 @@ type TeamAddMemberAuditEntry implements AuditEntry & Node & OrganizationAuditEnt
 """
 Audit log entry for a team.add_repository event.
 """
-type TeamAddRepositoryAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData & RepositoryAuditEntryData & TeamAuditEntryData{
+type TeamAddRepositoryAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData & RepositoryAuditEntryData & TeamAuditEntryData {
   """
   The action name
   """
@@ -42995,7 +42999,7 @@ interface TeamAuditEntryData {
 """
 Audit log entry for a team.change_parent_team event.
 """
-type TeamChangeParentTeamAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData & TeamAuditEntryData{
+type TeamChangeParentTeamAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData & TeamAuditEntryData {
   """
   The action name
   """
@@ -43177,7 +43181,7 @@ type TeamConnection {
 """
 A team discussion.
 """
-type TeamDiscussion implements Comment & Deletable & Node & Reactable & Subscribable & UniformResourceLocatable & Updatable & UpdatableComment{
+type TeamDiscussion implements Comment & Deletable & Node & Reactable & Subscribable & UniformResourceLocatable & Updatable & UpdatableComment {
   """
   The actor who authored the comment.
   """
@@ -43439,7 +43443,7 @@ type TeamDiscussion implements Comment & Deletable & Node & Reactable & Subscrib
 """
 A comment on a team discussion.
 """
-type TeamDiscussionComment implements Comment & Deletable & Node & Reactable & UniformResourceLocatable & Updatable & UpdatableComment{
+type TeamDiscussionComment implements Comment & Deletable & Node & Reactable & UniformResourceLocatable & Updatable & UpdatableComment {
   """
   The actor who authored the comment.
   """
@@ -43928,7 +43932,7 @@ enum TeamPrivacy {
 """
 Audit log entry for a team.remove_member event.
 """
-type TeamRemoveMemberAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData & TeamAuditEntryData{
+type TeamRemoveMemberAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData & TeamAuditEntryData {
   """
   The action name
   """
@@ -44045,7 +44049,7 @@ type TeamRemoveMemberAuditEntry implements AuditEntry & Node & OrganizationAudit
 """
 Audit log entry for a team.remove_repository event.
 """
-type TeamRemoveRepositoryAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData & RepositoryAuditEntryData & TeamAuditEntryData{
+type TeamRemoveRepositoryAuditEntry implements AuditEntry & Node & OrganizationAuditEntryData & RepositoryAuditEntryData & TeamAuditEntryData {
   """
   The action name
   """
@@ -44344,7 +44348,7 @@ type TextMatchHighlight {
 """
 A topic aggregates entities that are related to a subject.
 """
-type Topic implements Node & Starrable{
+type Topic implements Node & Starrable {
   id: ID!
 
   """
@@ -44556,7 +44560,7 @@ type TransferIssuePayload {
 """
 Represents a 'transferred' event on a given issue or pull request.
 """
-type TransferredEvent implements Node{
+type TransferredEvent implements Node {
   """
   Identifies the actor who performed the event.
   """
@@ -44583,7 +44587,7 @@ type TransferredEvent implements Node{
 """
 Represents a Git tree.
 """
-type Tree implements GitObject & Node{
+type Tree implements GitObject & Node {
   """
   An abbreviated version of the Git object ID
   """
@@ -44715,7 +44719,7 @@ type UnarchiveRepositoryPayload {
 """
 Represents an 'unassigned' event on any assignable object.
 """
-type UnassignedEvent implements Node{
+type UnassignedEvent implements Node {
   """
   Identifies the actor who performed the event.
   """
@@ -44822,7 +44826,7 @@ interface UniformResourceLocatable {
 """
 Represents an unknown signature on a Commit or Tag.
 """
-type UnknownSignature implements GitSignature{
+type UnknownSignature implements GitSignature {
   """
   Email used to sign this object.
   """
@@ -44863,7 +44867,7 @@ type UnknownSignature implements GitSignature{
 """
 Represents an 'unlabeled' event on a given issue or pull request.
 """
-type UnlabeledEvent implements Node{
+type UnlabeledEvent implements Node {
   """
   Identifies the actor who performed the event.
   """
@@ -44965,7 +44969,7 @@ type UnlockLockablePayload {
 """
 Represents an 'unlocked' event on a given issue or pull request.
 """
-type UnlockedEvent implements Node{
+type UnlockedEvent implements Node {
   """
   Identifies the actor who performed the event.
   """
@@ -45087,7 +45091,7 @@ type UnmarkIssueAsDuplicatePayload {
 """
 Represents an 'unmarked_as_duplicate' event on a given issue or pull request.
 """
-type UnmarkedAsDuplicateEvent implements Node{
+type UnmarkedAsDuplicateEvent implements Node {
   """
   Identifies the actor who performed the event.
   """
@@ -45179,7 +45183,7 @@ type UnpinIssuePayload {
 """
 Represents an 'unpinned' event on a given issue or pull request.
 """
-type UnpinnedEvent implements Node{
+type UnpinnedEvent implements Node {
   """
   Identifies the actor who performed the event.
   """
@@ -45231,7 +45235,7 @@ type UnresolveReviewThreadPayload {
 """
 Represents an 'unsubscribed' event on a given `Subscribable`.
 """
-type UnsubscribedEvent implements Node{
+type UnsubscribedEvent implements Node {
   """
   Identifies the actor who performed the event.
   """
@@ -47615,7 +47619,7 @@ type UpdateTopicsPayload {
 """
 A user is an individual's account on GitHub that owns repositories and can make new content.
 """
-type User implements Actor & Node & PackageOwner & ProfileOwner & ProjectNextOwner & ProjectOwner & ProjectV2Owner & RepositoryDiscussionAuthor & RepositoryDiscussionCommentAuthor & RepositoryOwner & Sponsorable & UniformResourceLocatable{
+type User implements Actor & Node & PackageOwner & ProfileOwner & ProjectNextOwner & ProjectOwner & ProjectV2Owner & RepositoryDiscussionAuthor & RepositoryDiscussionCommentAuthor & RepositoryOwner & Sponsorable & UniformResourceLocatable {
   """
   Determine if this repository owner has any items that can be pinned to their profile.
   """
@@ -49035,7 +49039,7 @@ enum UserBlockDuration {
 """
 Represents a 'user_blocked' event on a given user.
 """
-type UserBlockedEvent implements Node{
+type UserBlockedEvent implements Node {
   """
   Identifies the actor who performed the event.
   """
@@ -49087,7 +49091,7 @@ type UserConnection {
 """
 An edit on user content
 """
-type UserContentEdit implements Node{
+type UserContentEdit implements Node {
   """
   Identifies the date and time when the object was created.
   """
@@ -49204,7 +49208,7 @@ type UserEmailMetadata {
 """
 The user's description of what they're currently doing.
 """
-type UserStatus implements Node{
+type UserStatus implements Node {
   """
   Identifies the date and time when the object was created.
   """
@@ -49321,7 +49325,7 @@ enum UserStatusOrderField {
 """
 A domain that can be verified or approved for an organization or an enterprise.
 """
-type VerifiableDomain implements Node{
+type VerifiableDomain implements Node {
   """
   Identifies the date and time when the object was created.
   """
@@ -49503,7 +49507,7 @@ type VerifyVerifiableDomainPayload {
 """
 A hovercard context with a message describing how the viewer is related.
 """
-type ViewerHovercardContext implements HovercardContext{
+type ViewerHovercardContext implements HovercardContext {
   """
   A string describing this context
   """
@@ -49543,7 +49547,7 @@ interface Votable {
 """
 A workflow contains meta information about an Actions workflow file.
 """
-type Workflow implements Node{
+type Workflow implements Node {
   """
   Identifies the date and time when the object was created.
   """
@@ -49570,7 +49574,7 @@ type Workflow implements Node{
 """
 A workflow run.
 """
-type WorkflowRun implements Node{
+type WorkflowRun implements Node {
   """
   The check suite this workflow run belongs to.
   """

@@ -1,0 +1,37 @@
+"""
+This is an input object
+"""
+input MyInput {
+  intField: Int!
+
+  booleanField: Boolean!
+}
+
+"""
+This is an object type
+"""
+type MyObject {
+  intField: Int!
+
+  idField: ID!
+}
+
+"""
+This is an object
+"""
+type Query {
+  """
+  This is a field
+  """
+  myField(
+    """
+    This is an argument
+    """
+    bar: MyInput!
+  ): MyObject!
+
+  """
+  This is another field
+  """
+  bar: [String!]!
+}

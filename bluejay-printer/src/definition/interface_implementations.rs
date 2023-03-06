@@ -20,7 +20,8 @@ impl DisplayInterfaceImplementations {
                         write!(f, " & ")?;
                     }
                     write!(f, "{}", ii.interface().name())
-                })
+                })?;
+            write!(f, " ")
         } else {
             Ok(())
         }

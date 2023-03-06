@@ -1,0 +1,22 @@
+"""
+This is an interface
+"""
+interface MyInterface {
+  stringField: String!
+}
+
+interface MyOtherInterface implements MyInterface {
+  intField: Int!
+
+  stringField: String!
+}
+
+type MyType implements MyInterface & MyOtherInterface {
+  intField: Int!
+
+  stringField: String!
+}
+
+type Query {
+  myField: MyType!
+}

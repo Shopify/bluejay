@@ -29,35 +29,59 @@ impl DisplaySchemaDefinition {
         schema_definition
             .directive_definitions()
             .filter(|dd| !dd.is_builtin())
-            .try_for_each(|dd| DisplayDirectiveDefinition::fmt(dd, f))?;
+            .enumerate()
+            .try_for_each(|(idx, dd)| {
+                if idx != 0 {
+                    writeln!(f)?;
+                }
+                DisplayDirectiveDefinition::fmt(dd, f)
+            })?;
+
+        let had_directives_to_output = schema_definition
+            .directive_definitions()
+            .any(|dd| !dd.is_builtin());
 
         schema_definition
             .type_definitions()
-            .try_for_each(|tdr| match tdr {
-                TypeDefinitionReference::BuiltinScalarType(_) => Ok(()),
-                TypeDefinitionReference::CustomScalarType(cstd, _) => {
-                    DisplayScalarTypeDefinition::fmt(cstd.as_ref(), f)
+            .filter(|tdr| !tdr.is_builtin())
+            .enumerate()
+            .try_for_each(|(idx, tdr)| {
+                if had_directives_to_output || idx != 0 {
+                    writeln!(f)?;
                 }
-                TypeDefinitionReference::EnumType(etd, _) => {
-                    DisplayEnumTypeDefinition::fmt(etd.as_ref(), f)
-                }
-                TypeDefinitionReference::InputObjectType(iotd, _) => {
-                    DisplayInputObjectTypeDefinition::fmt(iotd.as_ref(), f)
-                }
-                TypeDefinitionReference::InterfaceType(itd, _) => {
-                    DisplayInterfaceTypeDefinition::fmt(itd.as_ref(), f)
-                }
-                TypeDefinitionReference::ObjectType(otd, _) => {
-                    DisplayObjectTypeDefinition::fmt(otd.as_ref(), f)
-                }
-                TypeDefinitionReference::UnionType(utd, _) => {
-                    DisplayUnionTypeDefinition::fmt(utd.as_ref(), f)
+                match tdr {
+                    TypeDefinitionReference::BuiltinScalarType(_) => Ok(()),
+                    TypeDefinitionReference::CustomScalarType(cstd, _) => {
+                        DisplayScalarTypeDefinition::fmt(cstd.as_ref(), f)
+                    }
+                    TypeDefinitionReference::EnumType(etd, _) => {
+                        DisplayEnumTypeDefinition::fmt(etd.as_ref(), f)
+                    }
+                    TypeDefinitionReference::InputObjectType(iotd, _) => {
+                        DisplayInputObjectTypeDefinition::fmt(iotd.as_ref(), f)
+                    }
+                    TypeDefinitionReference::InterfaceType(itd, _) => {
+                        DisplayInterfaceTypeDefinition::fmt(itd.as_ref(), f)
+                    }
+                    TypeDefinitionReference::ObjectType(otd, _) => {
+                        DisplayObjectTypeDefinition::fmt(otd.as_ref(), f)
+                    }
+                    TypeDefinitionReference::UnionType(utd, _) => {
+                        DisplayUnionTypeDefinition::fmt(utd.as_ref(), f)
+                    }
                 }
             })?;
 
         if Self::is_implicit(schema_definition) {
             Ok(())
         } else {
+            if had_directives_to_output
+                || schema_definition
+                    .type_definitions()
+                    .any(|tdr| !tdr.is_builtin())
+            {
+                writeln!(f)?;
+            }
             Self::fmt_explicit_schema_definition(schema_definition, f)
         }
     }
@@ -121,47 +145,16 @@ mod tests {
     use super::DisplaySchemaDefinition;
     use bluejay_parser::ast::definition::{DefinitionDocument, SchemaDefinition};
 
-    macro_rules! assert_prints {
-        ($val:ident) => {
-            let document = DefinitionDocument::parse($val).unwrap();
-            let schema_definition = SchemaDefinition::try_from(&document).unwrap();
-            assert_eq!($val, DisplaySchemaDefinition::to_string(&schema_definition));
-        };
-    }
-
     #[test]
     fn test_schema_dump() {
-        let s = r#""""
-This is an input object
-"""
-input MyInput {
-  intField: Int!
-
-  booleanField: Boolean!
-}
-
-"""
-This is an object
-"""
-type Query {
-  """
-  This is a field
-  """
-  foo(
-    """
-    This is an argument
-    """
-    bar: MyInput!
-  ): Int!
-
-  """
-  This is another field
-  """
-  bar: [String!]!
-}
-
-"#;
-
-        assert_prints!(s);
+        insta::glob!("test_data/schema_definition/*.graphql", |path| {
+            let input = std::fs::read_to_string(path).unwrap();
+            let document = DefinitionDocument::parse(input.as_str()).unwrap();
+            let schema_definition = SchemaDefinition::try_from(&document).unwrap();
+            similar_asserts::assert_eq!(
+                input,
+                DisplaySchemaDefinition::to_string(&schema_definition)
+            );
+        });
     }
 }

@@ -35,8 +35,6 @@ impl DisplayInterfaceTypeDefinition {
             }
         }
 
-        DisplayFieldsDefinition::fmt(interface_type_definition.fields_definition(), f, 0)?;
-
-        writeln!(f)
+        DisplayFieldsDefinition::fmt(interface_type_definition.fields_definition(), f, 0)
     }
 }

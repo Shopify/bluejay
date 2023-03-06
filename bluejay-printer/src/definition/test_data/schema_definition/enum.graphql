@@ -1,0 +1,21 @@
+type Query {
+  weight: Weight!
+}
+
+type Weight {
+  value: Int!
+
+  unit: WeightUnit!
+}
+
+"""
+Units of weigth
+"""
+enum WeightUnit {
+  """
+  Kilograms
+  """
+  KILOGRAMS
+
+  POUNDS
+}
