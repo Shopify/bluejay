@@ -1,0 +1,11 @@
+type MyObject {
+  intField: Int!
+}
+
+type MyOtherObject implements MyObject {
+  intField: Int!
+}
+
+type Query {
+  myField: MyOtherObject!
+}

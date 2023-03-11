@@ -11,6 +11,12 @@ pub struct CustomScalarTypeDefinition<'a> {
     directives: Option<ConstDirectives<'a>>,
 }
 
+impl<'a> CustomScalarTypeDefinition<'a> {
+    pub(crate) fn name(&self) -> &Name<'a> {
+        &self.name
+    }
+}
+
 impl<'a> CoreScalarTypeDefinition for CustomScalarTypeDefinition<'a> {
     type Directives = ConstDirectives<'a>;
 

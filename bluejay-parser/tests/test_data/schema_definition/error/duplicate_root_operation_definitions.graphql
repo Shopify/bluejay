@@ -1,0 +1,12 @@
+type MyObject {
+  intField: Int!
+}
+
+type MyOtherObject {
+  stringField: String!
+}
+
+schema {
+  query: MyObject
+  query: MyOtherObject
+}

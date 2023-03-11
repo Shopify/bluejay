@@ -1,0 +1,25 @@
+---
+source: bluejay-parser/tests/schema_definition_integration_test.rs
+expression: formatted_errors
+input_file: bluejay-parser/tests/test_data/schema_definition/error/implicit_and_explicit_schema_definitions.graphql
+---
+Error: Document uses implicit and explicit schema definitions
+    ╭─[<unknown>:25:1]
+    │
+  1 │ type Query {
+    │      ──┬──  
+    │        ╰──── Query of implicit schema definition
+    │ 
+  5 │ type Mutation {
+    │      ────┬───  
+    │          ╰───── Mutation of implicit schema definition
+    │ 
+  9 │ type Subscription {
+    │      ──────┬─────  
+    │            ╰─────── Subscription of implicit schema definition
+    │ 
+ 25 │ schema {
+    │ ───┬──  
+    │    ╰──── Explicit schema definition
+────╯
+

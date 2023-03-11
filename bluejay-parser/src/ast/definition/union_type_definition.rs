@@ -34,6 +34,10 @@ impl<'a> CoreUnionTypeDefinition for UnionTypeDefinition<'a> {
 
 impl<'a> UnionTypeDefinition<'a> {
     pub(crate) const UNION_IDENTIFIER: &'static str = "union";
+
+    pub(crate) fn name(&self) -> &Name<'a> {
+        &self.name
+    }
 }
 
 impl<'a> FromTokens<'a> for UnionTypeDefinition<'a> {

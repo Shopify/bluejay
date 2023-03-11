@@ -1,0 +1,4 @@
+type Query {
+  field1: TypeDoesNotExist!
+  field2: TypeAlsoDoesNotExist!
+}

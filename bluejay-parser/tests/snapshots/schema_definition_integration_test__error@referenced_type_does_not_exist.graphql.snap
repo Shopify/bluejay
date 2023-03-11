@@ -1,0 +1,21 @@
+---
+source: bluejay-parser/tests/schema_definition_integration_test.rs
+expression: formatted_errors
+input_file: bluejay-parser/tests/test_data/schema_definition/error/referenced_type_does_not_exist.graphql
+---
+Error: Referenced type `TypeDoesNotExist` does not exist
+   ╭─[<unknown>:2:11]
+   │
+ 2 │   field1: TypeDoesNotExist!
+   │           ────────┬───────  
+   │                   ╰───────── No definition for referenced type
+───╯
+
+Error: Referenced type `TypeAlsoDoesNotExist` does not exist
+   ╭─[<unknown>:3:11]
+   │
+ 3 │   field2: TypeAlsoDoesNotExist!
+   │           ──────────┬─────────  
+   │                     ╰─────────── No definition for referenced type
+───╯
+

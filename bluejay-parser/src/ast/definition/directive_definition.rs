@@ -69,6 +69,10 @@ impl<'a> DirectiveDefinition<'a> {
     pub(crate) fn include() -> Self {
         Self::builtin(Self::INCLUDE_DEFINITION)
     }
+
+    pub(crate) fn name(&self) -> &Name<'a> {
+        &self.name
+    }
 }
 
 impl<'a> FromTokens<'a> for DirectiveDefinition<'a> {

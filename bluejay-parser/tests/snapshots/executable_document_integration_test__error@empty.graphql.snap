@@ -1,0 +1,7 @@
+---
+source: bluejay-parser/tests/executable_document_integration_test.rs
+expression: formatted_errors
+input_file: bluejay-parser/tests/test_data/executable_document/error/empty.graphql
+---
+Error: Document does not contain any definitions
+

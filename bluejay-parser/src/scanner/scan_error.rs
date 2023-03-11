@@ -1,4 +1,4 @@
-use crate::error::{Annotation, AnnotationType, Error};
+use crate::error::{Annotation, Error};
 use crate::Span;
 
 #[derive(Debug)]
@@ -14,35 +14,35 @@ impl From<ScanError> for Error {
         match val {
             ScanError::UnrecognizedTokenError(span) => Self {
                 message: "Unrecognized token".to_string(),
-                annotations: vec![Annotation {
+                primary_annotation: Some(Annotation {
                     message: "Unable to parse".to_string(),
-                    annotation_type: AnnotationType::Primary,
                     span,
-                }],
+                }),
+                secondary_annotations: Vec::new(),
             },
             ScanError::IntegerValueTooLarge(span) => Self {
                 message: "Value too large to fit in a 32-bit signed integer".to_string(),
-                annotations: vec![Annotation {
+                primary_annotation: Some(Annotation {
                     message: "Integer too large".to_string(),
-                    annotation_type: AnnotationType::Primary,
                     span,
-                }],
+                }),
+                secondary_annotations: Vec::new(),
             },
             ScanError::FloatValueTooLarge(span) => Self {
                 message: "Value too large to fit in a 64-bit float".to_string(),
-                annotations: vec![Annotation {
+                primary_annotation: Some(Annotation {
                     message: "Float too large".to_string(),
-                    annotation_type: AnnotationType::Primary,
                     span,
-                }],
+                }),
+                secondary_annotations: Vec::new(),
             },
             ScanError::StringWithInvalidEscapedUnicode(spans) => Self {
                 message: "Escaped unicode invalid".to_string(),
-                annotations: spans
+                primary_annotation: None,
+                secondary_annotations: spans
                     .into_iter()
                     .map(|span| Annotation {
                         message: "Escaped unicode invalid".to_string(),
-                        annotation_type: AnnotationType::Primary,
                         span,
                     })
                     .collect(),

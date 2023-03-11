@@ -1,0 +1,7 @@
+type MutationRoot {
+  myMutation: String!
+}
+
+schema {
+  mutation: MutationRoot
+}

@@ -40,6 +40,10 @@ impl<'a> CoreInterfaceTypeDefinition for InterfaceTypeDefinition<'a> {
 
 impl<'a> InterfaceTypeDefinition<'a> {
     pub(crate) const INTERFACE_IDENTIFIER: &'static str = "interface";
+
+    pub(crate) fn name(&self) -> &Name<'a> {
+        &self.name
+    }
 }
 
 impl<'a> FromTokens<'a> for InterfaceTypeDefinition<'a> {

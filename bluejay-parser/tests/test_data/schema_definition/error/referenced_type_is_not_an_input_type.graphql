@@ -1,0 +1,7 @@
+type MyObject {
+  intField: Int!
+}
+
+type Query {
+  field(myObject: MyObject!): Int!
+}

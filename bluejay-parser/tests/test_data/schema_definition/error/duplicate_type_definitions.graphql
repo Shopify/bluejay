@@ -1,0 +1,7 @@
+type Query {
+  intField: Int!
+}
+
+type Query {
+  intField: Int!
+}

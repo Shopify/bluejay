@@ -21,6 +21,10 @@ impl Span {
     pub(crate) fn empty() -> Self {
         Self(0..0)
     }
+
+    pub(crate) fn to_range(&self) -> std::ops::Range<usize> {
+        self.0.clone()
+    }
 }
 
 impl From<logos::Span> for Span {

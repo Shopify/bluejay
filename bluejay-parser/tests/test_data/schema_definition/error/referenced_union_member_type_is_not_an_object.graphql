@@ -1,0 +1,5 @@
+union MyUnion = Int | String
+
+type Query {
+  myField: MyUnion
+}

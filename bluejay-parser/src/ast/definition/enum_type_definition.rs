@@ -34,6 +34,10 @@ impl<'a> CoreEnumTypeDefinition for EnumTypeDefinition<'a> {
 
 impl<'a> EnumTypeDefinition<'a> {
     pub(crate) const ENUM_IDENTIFIER: &'static str = "enum";
+
+    pub(crate) fn name(&self) -> &Name<'a> {
+        &self.name
+    }
 }
 
 impl<'a> FromTokens<'a> for EnumTypeDefinition<'a> {

@@ -14,10 +14,10 @@ impl<'a> FromTokens<'a> for VariableDefinitions<'a> {
         let open_span = tokens.expect_punctuator(PunctuatorType::OpenRoundBracket)?;
         let mut variable_definitions: Vec<VariableDefinition> = Vec::new();
         let close_span = loop {
+            variable_definitions.push(VariableDefinition::from_tokens(tokens)?);
             if let Some(close_span) = tokens.next_if_punctuator(PunctuatorType::CloseRoundBracket) {
                 break close_span;
             }
-            variable_definitions.push(VariableDefinition::from_tokens(tokens)?);
         };
         let span = open_span.merge(&close_span);
         Ok(Self {

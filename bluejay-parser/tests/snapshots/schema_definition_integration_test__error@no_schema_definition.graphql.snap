@@ -1,0 +1,7 @@
+---
+source: bluejay-parser/tests/schema_definition_integration_test.rs
+expression: formatted_errors
+input_file: bluejay-parser/tests/test_data/schema_definition/error/no_schema_definition.graphql
+---
+Error: Document does not contain a schema definition
+

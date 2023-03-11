@@ -1,0 +1,13 @@
+---
+source: bluejay-parser/tests/schema_definition_integration_test.rs
+expression: formatted_errors
+input_file: bluejay-parser/tests/test_data/schema_definition/error/implicit_root_operation_type_not_an_object.graphql
+---
+Error: Referenced type `Query` is not an object
+   ╭─[<unknown>:1:7]
+   │
+ 1 │ input Query {
+   │       ──┬──  
+   │         ╰──── Not an object type
+───╯
+

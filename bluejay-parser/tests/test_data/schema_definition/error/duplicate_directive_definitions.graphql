@@ -1,0 +1,7 @@
+directive @foo on OBJECT
+
+directive @foo on OBJECT
+
+type Query @foo {
+  intField: Int!
+}

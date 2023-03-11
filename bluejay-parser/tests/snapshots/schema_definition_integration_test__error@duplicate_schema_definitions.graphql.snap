@@ -1,0 +1,17 @@
+---
+source: bluejay-parser/tests/schema_definition_integration_test.rs
+expression: formatted_errors
+input_file: bluejay-parser/tests/test_data/schema_definition/error/duplicate_schema_definitions.graphql
+---
+Error: Multiple schema definitions
+   ╭─[<unknown>:1:1]
+   │
+ 5 │ schema {
+   │ ───┬──  
+   │    ╰──── Schema definition
+   │ 
+ 9 │ schema {
+   │ ───┬──  
+   │    ╰──── Schema definition
+───╯
+

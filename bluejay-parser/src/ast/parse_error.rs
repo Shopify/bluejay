@@ -1,4 +1,4 @@
-use crate::error::{Annotation, AnnotationType, Error};
+use crate::error::{Annotation, Error};
 use crate::Span;
 
 #[derive(Debug)]
@@ -28,47 +28,48 @@ impl From<ParseError> for Error {
         match val {
             ParseError::ExpectedOneOf { span, values } => Self {
                 message: "Parse error".to_string(),
-                annotations: vec![Annotation {
+                primary_annotation: Some(Annotation {
                     message: format!("Expected one of the following: {}", values.join(", "),),
-                    annotation_type: AnnotationType::Primary,
                     span,
-                }],
+                }),
+                secondary_annotations: Vec::new(),
             },
             ParseError::ExpectedIdentifier { span, value } => Self {
                 message: "Parse error".to_string(),
-                annotations: vec![Annotation {
+                primary_annotation: Some(Annotation {
                     message: format!("Expected to find: {value}"),
-                    annotation_type: AnnotationType::Primary,
                     span,
-                }],
+                }),
+                secondary_annotations: Vec::new(),
             },
             ParseError::ExpectedName { span } => Self {
                 message: "Parse error".to_string(),
-                annotations: vec![Annotation {
+                primary_annotation: Some(Annotation {
                     message: "Expected a name".to_string(),
-                    annotation_type: AnnotationType::Primary,
                     span,
-                }],
+                }),
+                secondary_annotations: Vec::new(),
             },
             ParseError::UnexpectedEOF { span } => Self {
                 message: "Parse error".to_string(),
-                annotations: vec![Annotation {
+                primary_annotation: Some(Annotation {
                     message: "Unexpected EOF".to_string(),
-                    annotation_type: AnnotationType::Primary,
                     span,
-                }],
+                }),
+                secondary_annotations: Vec::new(),
             },
             ParseError::UnexpectedToken { span } => Self {
                 message: "Unexpected token".to_string(),
-                annotations: vec![Annotation {
+                primary_annotation: Some(Annotation {
                     message: "Unexpected token".to_string(),
-                    annotation_type: AnnotationType::Primary,
                     span,
-                }],
+                }),
+                secondary_annotations: Vec::new(),
             },
             ParseError::EmptyDocument => Self {
                 message: "Document does not contain any definitions".to_string(),
-                annotations: Vec::new(),
+                primary_annotation: None,
+                secondary_annotations: Vec::new(),
             },
         }
     }

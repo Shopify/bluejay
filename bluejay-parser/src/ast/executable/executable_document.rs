@@ -7,6 +7,7 @@ use crate::ast::{
     Argument, Arguments, Directive, Directives, ParseError, ScannerTokens, TryFromTokens, Value,
     Variable,
 };
+use crate::lexical_token::HasSpan;
 use crate::scanner::LogosScanner;
 use crate::Error;
 
@@ -64,7 +65,7 @@ impl<'a> ExecutableDocument<'a> {
                     }
                 } else if let Some(token) = tokens.next() {
                     if !last_pass_had_error {
-                        errors.push(ParseError::UnexpectedToken { span: token.into() });
+                        errors.push(ParseError::UnexpectedToken { span: token.span() });
                     }
                     true
                 } else {

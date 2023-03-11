@@ -7,9 +7,10 @@ use std::str::FromStr;
 #[derive(Debug)]
 pub struct ExplicitSchemaDefinition<'a> {
     description: Option<StringValue>,
-    _schema_span: Span,
+    schema_identifier_span: Span,
     directives: Option<ConstDirectives<'a>>,
     root_operation_type_definitions: Vec<RootOperationTypeDefinition<'a>>,
+    root_operation_type_definitions_span: Span,
 }
 
 impl<'a> ExplicitSchemaDefinition<'a> {
@@ -31,7 +32,15 @@ impl<'a> ExplicitSchemaDefinition<'a> {
     pub(crate) fn uses_implicit_names(&self) -> bool {
         self.root_operation_type_definitions
             .iter()
-            .all(|rotd| Self::IMPLICIT_OPERATION_TYPE_NAMES.contains(&rotd.name()))
+            .all(|rotd| Self::IMPLICIT_OPERATION_TYPE_NAMES.contains(&rotd.name().as_ref()))
+    }
+
+    pub(crate) fn schema_identifier_span(&self) -> Span {
+        self.schema_identifier_span.clone()
+    }
+
+    pub(crate) fn root_operation_type_definitions_span(&self) -> Span {
+        self.root_operation_type_definitions_span.clone()
     }
 }
 
@@ -39,26 +48,29 @@ impl<'a> FromTokens<'a> for ExplicitSchemaDefinition<'a> {
     fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
         let description = tokens.next_if_string_value();
 
-        let schema_span = tokens.expect_name_value(Self::SCHEMA_IDENTIFIER)?;
+        let schema_identifier_span = tokens.expect_name_value(Self::SCHEMA_IDENTIFIER)?;
 
         let directives = ConstDirectives::try_from_tokens(tokens).transpose()?;
 
         let mut root_operation_type_definitions = Vec::new();
 
-        tokens.expect_punctuator(PunctuatorType::OpenBrace)?;
+        let open_span = tokens.expect_punctuator(PunctuatorType::OpenBrace)?;
 
-        while tokens
-            .next_if_punctuator(PunctuatorType::CloseBrace)
-            .is_none()
-        {
+        let close_span = loop {
             root_operation_type_definitions.push(RootOperationTypeDefinition::from_tokens(tokens)?);
-        }
+            if let Some(close_span) = tokens.next_if_punctuator(PunctuatorType::CloseBrace) {
+                break close_span;
+            }
+        };
+
+        let root_operation_type_definitions_span = open_span.merge(&close_span);
 
         Ok(Self {
             description,
-            _schema_span: schema_span,
+            schema_identifier_span,
             directives,
             root_operation_type_definitions,
+            root_operation_type_definitions_span,
         })
     }
 }
@@ -70,12 +82,12 @@ pub struct RootOperationTypeDefinition<'a> {
 }
 
 impl<'a> RootOperationTypeDefinition<'a> {
-    pub(crate) fn operation_type(&self) -> &OperationType {
-        &self.operation_type
+    pub(crate) fn operation_type(&self) -> OperationType {
+        self.operation_type
     }
 
-    pub(crate) fn name(&self) -> &str {
-        self.name.as_ref()
+    pub(crate) fn name(&self) -> &Name<'a> {
+        &self.name
     }
 }
 

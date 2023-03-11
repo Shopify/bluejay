@@ -1,0 +1,17 @@
+---
+source: bluejay-parser/tests/schema_definition_integration_test.rs
+expression: formatted_errors
+input_file: bluejay-parser/tests/test_data/schema_definition/error/duplicate_type_definitions.graphql
+---
+Error: Multiple type definitions with name `Query`
+   ╭─[<unknown>:1:1]
+   │
+ 1 │ type Query {
+   │      ──┬──  
+   │        ╰──── Type definition with name `Query`
+   │ 
+ 5 │ type Query {
+   │      ──┬──  
+   │        ╰──── Type definition with name `Query`
+───╯
+

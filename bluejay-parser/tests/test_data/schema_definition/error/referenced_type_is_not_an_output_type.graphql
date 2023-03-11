@@ -1,0 +1,7 @@
+input MyInput {
+  intField: Int!
+}
+
+type Query {
+  myField: MyInput!
+}

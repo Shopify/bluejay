@@ -40,6 +40,10 @@ impl<'a> CoreObjectTypeDefinition for ObjectTypeDefinition<'a> {
 
 impl<'a> ObjectTypeDefinition<'a> {
     pub(crate) const TYPE_IDENTIFIER: &'static str = "type";
+
+    pub(crate) fn name(&self) -> &Name<'a> {
+        &self.name
+    }
 }
 
 impl<'a> FromTokens<'a> for ObjectTypeDefinition<'a> {

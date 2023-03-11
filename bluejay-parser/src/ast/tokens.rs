@@ -86,9 +86,9 @@ impl<'a, T: Scanner<'a>> ScannerTokens<'a, T> {
         punctuator_type: PunctuatorType,
     ) -> Result<Span, ParseError> {
         match self.next() {
-            Some(LexicalToken::Punctuator(p)) if p.r#type() == punctuator_type => Ok(p.into()),
+            Some(LexicalToken::Punctuator(p)) if p.r#type() == punctuator_type => Ok(p.span()),
             Some(lt) => Err(ParseError::ExpectedIdentifier {
-                span: lt.into(),
+                span: lt.span(),
                 value: punctuator_type.to_string(),
             }),
             None => Err(self.unexpected_eof()),
@@ -103,7 +103,7 @@ impl<'a, T: Scanner<'a>> ScannerTokens<'a, T> {
 
     pub fn unexpected_token(&mut self) -> ParseError {
         self.next()
-            .map(|token| ParseError::UnexpectedToken { span: token.into() })
+            .map(|token| ParseError::UnexpectedToken { span: token.span() })
             .unwrap_or_else(|| self.unexpected_eof())
     }
 

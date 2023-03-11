@@ -34,6 +34,10 @@ impl<'a> CoreInputObjectTypeDefinition for InputObjectTypeDefinition<'a> {
 
 impl<'a> InputObjectTypeDefinition<'a> {
     pub(crate) const INPUT_IDENTIFIER: &'static str = "input";
+
+    pub(crate) fn name(&self) -> &Name<'a> {
+        &self.name
+    }
 }
 
 impl<'a> FromTokens<'a> for InputObjectTypeDefinition<'a> {
