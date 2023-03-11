@@ -121,7 +121,7 @@ impl<'a> FromTokens<'a> for InputTypeReference<'a> {
             let span = if let Some(bang_span) = &bang_span {
                 base_name.span().merge(bang_span)
             } else {
-                base_name.span().clone()
+                base_name.span()
             };
             let base = BaseInputTypeReference {
                 name: base_name,

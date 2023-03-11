@@ -6,7 +6,7 @@ impl<'a> FromTokens<'a> for bluejay_core::OperationType {
         tokens.expect_name().and_then(|name| {
             bluejay_core::OperationType::try_from(name.as_str()).map_err(|_| {
                 ParseError::ExpectedOneOf {
-                    span: name.span().clone(),
+                    span: name.span(),
                     values: bluejay_core::OperationType::POSSIBLE_VALUES,
                 }
             })

@@ -63,18 +63,16 @@ impl<'a, T: Scanner<'a>> ScannerTokens<'a, T> {
     pub fn expect_name(&mut self) -> Result<Name<'a>, ParseError> {
         match self.next() {
             Some(LexicalToken::Name(n)) => Ok(n),
-            Some(lt) => Err(ParseError::ExpectedName {
-                span: lt.span().clone(),
-            }),
+            Some(lt) => Err(ParseError::ExpectedName { span: lt.span() }),
             None => Err(self.unexpected_eof()),
         }
     }
 
     pub fn expect_name_value(&mut self, value: &str) -> Result<Span, ParseError> {
         match self.next() {
-            Some(LexicalToken::Name(n)) if n.as_str() == value => Ok(n.span().clone()),
+            Some(LexicalToken::Name(n)) if n.as_str() == value => Ok(n.span()),
             Some(lt) => Err(ParseError::ExpectedIdentifier {
-                span: lt.span().clone(),
+                span: lt.span(),
                 value: value.to_string(),
             }),
             None => Err(self.unexpected_eof()),
@@ -113,7 +111,7 @@ impl<'a, T: Scanner<'a>> ScannerTokens<'a, T> {
     {
         match self.peek_next() {
             Some(token) if f(token) => {
-                let span = token.span().clone();
+                let span = token.span();
                 self.next();
                 Some(span)
             }

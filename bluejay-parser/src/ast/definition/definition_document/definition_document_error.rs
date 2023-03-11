@@ -90,7 +90,7 @@ impl<'a> From<DefinitionDocumentError<'a>> for Error {
                 message: "Multiple schema definitions".to_string(),
                 primary_annotation: None,
                 secondary_annotations: definitions
-                    .into_iter()
+                    .iter()
                     .map(|definition| Annotation {
                         message: "Schema definition".to_string(),
                         span: definition.schema_identifier_span(),

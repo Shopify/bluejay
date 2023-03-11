@@ -146,7 +146,7 @@ impl<'a> FromTokens<'a> for OutputTypeReference<'a> {
             let span = if let Some(bang_span) = &bang_span {
                 base_name.span().merge(bang_span)
             } else {
-                base_name.span().clone()
+                base_name.span()
             };
             let base = BaseOutputTypeReference::new(base_name);
             let inner = CoreOutputTypeReference::Base(base, bang_span.is_some());

@@ -25,4 +25,5 @@ name = "parse_github_schema"
 harness = false
 
 [features]
+default = ["format-errors"]
 format-errors = ["dep:ariadne"]

@@ -110,10 +110,10 @@ impl<'a> FromTokens<'a> for DirectiveLocation {
             CoreDirectiveLocation::from_str(name.as_ref())
                 .map(|inner| Self {
                     inner,
-                    _span: name.span().clone(),
+                    _span: name.span(),
                 })
                 .map_err(|_| ParseError::ExpectedOneOf {
-                    span: name.span().clone(),
+                    span: name.span(),
                     values: CoreDirectiveLocation::POSSIBLE_VALUES,
                 })
         })

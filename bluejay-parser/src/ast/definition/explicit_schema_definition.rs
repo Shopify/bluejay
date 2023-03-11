@@ -95,7 +95,7 @@ impl<'a> FromTokens<'a> for RootOperationTypeDefinition<'a> {
     fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
         let operation_type = tokens.expect_name().and_then(|name| {
             OperationType::from_str(name.as_str()).map_err(|_| ParseError::ExpectedOneOf {
-                span: name.span().clone(),
+                span: name.span(),
                 values: OperationType::POSSIBLE_VALUES,
             })
         })?;
