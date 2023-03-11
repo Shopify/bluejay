@@ -1,0 +1,15 @@
+---
+source: bluejay-validator/tests/executable_integration_test.rs
+expression: formatted_errors
+input_file: bluejay-validator/tests/test_data/executable/error/subscription_operation_definition_single_root_field.graphql
+---
+Error: Subscription root is not a single field
+    ╭─[<unknown>:1:18]
+    │
+  1 │ ╭─▶ subscription sub {
+    ┆ ┆   
+ 10 │ ├─▶ }
+    │ │       
+    │ ╰─────── Selection set contains multiple fields
+────╯
+

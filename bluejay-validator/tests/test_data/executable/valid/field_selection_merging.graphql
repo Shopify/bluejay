@@ -1,0 +1,73 @@
+query MergeIdenticalFields {
+  dog {
+    ...mergeIdenticalFields
+  }
+}
+
+query MergeIdenticalAliasesAndFields {
+  dog {
+    ...mergeIdenticalAliasesAndFields
+  }
+}
+
+query MergeIdenticalFieldsWithIdenticalArgs {
+  dog {
+    ...mergeIdenticalFieldsWithIdenticalArgs
+  }
+}
+
+query MergeIdenticalFieldsWithIdenticalValues($dogCommand: DogCommand) {
+  dog {
+    ...mergeIdenticalFieldsWithIdenticalValues
+  }
+}
+
+query SafeDifferingFields {
+  dog {
+    ...safeDifferingFields
+  }
+}
+
+query SafeDifferingArgs {
+  dog {
+    ...safeDifferingArgs
+  }
+}
+
+fragment mergeIdenticalFields on Dog {
+  name
+  name
+}
+
+fragment mergeIdenticalAliasesAndFields on Dog {
+  otherName: name
+  otherName: name
+}
+
+fragment mergeIdenticalFieldsWithIdenticalArgs on Dog {
+  doesKnowCommand(dogCommand: SIT)
+  doesKnowCommand(dogCommand: SIT)
+}
+
+fragment mergeIdenticalFieldsWithIdenticalValues on Dog {
+  doesKnowCommand(dogCommand: $dogCommand)
+  doesKnowCommand(dogCommand: $dogCommand)
+}
+
+fragment safeDifferingFields on Pet {
+  ... on Dog {
+    volume: barkVolume
+  }
+  ... on Cat {
+    volume: meowVolume
+  }
+}
+
+fragment safeDifferingArgs on Pet {
+  ... on Dog {
+    doesKnowCommand(dogCommand: SIT)
+  }
+  ... on Cat {
+    doesKnowCommand(catCommand: JUMP)
+  }
+}

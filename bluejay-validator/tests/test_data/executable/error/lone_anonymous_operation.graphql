@@ -1,0 +1,13 @@
+{
+  dog {
+    name
+  }
+}
+
+query getName {
+  dog {
+    owner {
+      name
+    }
+  }
+}

@@ -7,9 +7,8 @@ use crate::ast::{
     Argument, Arguments, Directive, Directives, ParseError, ScannerTokens, TryFromTokens, Value,
     Variable,
 };
-use crate::lexical_token::HasSpan;
 use crate::scanner::LogosScanner;
-use crate::Error;
+use crate::{Error, HasSpan};
 
 #[derive(Debug)]
 pub struct ExecutableDocument<'a> {
@@ -95,7 +94,7 @@ impl<'a> ExecutableDocument<'a> {
     }
 }
 
-impl<'a> bluejay_core::executable::ExecutableDocument<'a> for ExecutableDocument<'a> {
+impl<'a> bluejay_core::executable::ExecutableDocument for ExecutableDocument<'a> {
     type Variable = Variable<'a>;
     type Value<const CONST: bool> = Value<'a, CONST>;
     type TypeReference = crate::ast::TypeReference<'a>;

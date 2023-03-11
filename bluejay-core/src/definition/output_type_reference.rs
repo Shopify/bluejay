@@ -50,7 +50,7 @@ impl<
         }
     }
 
-    pub(crate) fn is_scalar_or_enum(&self) -> bool {
+    pub fn is_scalar_or_enum(&self) -> bool {
         matches!(
             self,
             Self::BuiltinScalarType(_) | Self::CustomScalarType(_, _) | Self::EnumType(_, _)

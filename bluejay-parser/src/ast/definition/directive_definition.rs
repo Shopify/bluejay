@@ -1,7 +1,7 @@
 use crate::ast::definition::ArgumentsDefinition;
 use crate::ast::{FromTokens, Parse, ParseError, Tokens, TryFromTokens};
-use crate::lexical_token::{HasSpan, Name, PunctuatorType, StringValue};
-use crate::Span;
+use crate::lexical_token::{Name, PunctuatorType, StringValue};
+use crate::{Span, HasSpan};
 use bluejay_core::definition::{
     DirectiveDefinition as CoreDirectiveDefinition, DirectiveLocation as CoreDirectiveLocation,
 };

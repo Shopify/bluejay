@@ -1,6 +1,6 @@
 use crate::ast::{FromTokens, IsMatch, ParseError, Tokens};
-use crate::lexical_token::{HasSpan, Name, PunctuatorType};
-use crate::Span;
+use crate::lexical_token::{Name, PunctuatorType};
+use crate::{Span, HasSpan};
 
 #[derive(Debug)]
 pub struct Variable<'a> {

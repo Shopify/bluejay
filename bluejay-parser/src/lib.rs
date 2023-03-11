@@ -1,10 +1,10 @@
 #![feature(assert_matches)]
 
 pub mod ast;
-mod error;
+pub mod error;
 mod lexical_token;
 mod scanner;
 mod span;
 
 pub use error::Error;
-pub use span::Span;
+pub use span::{HasSpan, Span};

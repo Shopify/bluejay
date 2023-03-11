@@ -1,19 +1,19 @@
 [package]
 name = "bluejay-printer"
-version = "0.1.0-alpha.2"
+version = "0.1.0-alpha.3"
 edition = "2021"
 license = "MIT"
 repository = "https://github.com/adampetro/bluejay"
 homepage = "https://github.com/adampetro/bluejay"
 keywords = ["graphql"]
-exclude = [".gitignore", "tests/**/*", "**/snapshots/**"]
+exclude = [".gitignore", "*.graphql", "*.snap"]
 description = "A GraphQL printer"
 
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bluejay-core = { version = "0.1.0-alpha.2", path = "../bluejay-core" }
+bluejay-core = { version = "0.1.0-alpha.3", path = "../bluejay-core" }
 
 [dev-dependencies]
 insta = { version = "1.28", features = ["glob"] }

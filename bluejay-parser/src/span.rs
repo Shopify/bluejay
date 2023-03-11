@@ -40,3 +40,7 @@ impl Add<usize> for Span {
         Self((self.0.start + rhs)..(self.0.end + rhs))
     }
 }
+
+pub trait HasSpan {
+    fn span(&self) -> Span;
+}

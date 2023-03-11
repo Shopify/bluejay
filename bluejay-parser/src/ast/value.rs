@@ -1,6 +1,6 @@
 use crate::ast::{FromTokens, ParseError, Tokens, TryFromTokens, Variable};
-use crate::lexical_token::{FloatValue, HasSpan, IntValue, Name, PunctuatorType, StringValue};
-use crate::Span;
+use crate::lexical_token::{FloatValue, IntValue, Name, PunctuatorType, StringValue};
+use crate::{Span, HasSpan};
 use bluejay_core::AsIter;
 
 pub type Value<'a, const CONST: bool> = bluejay_core::Value<

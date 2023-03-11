@@ -1,0 +1,25 @@
+query scalarSelectionsNotAllowedOnInt {
+  dog {
+    barkVolume
+  }
+}
+
+query directQueryOnObjectWithoutSubFields {
+  human {
+    name
+  }
+}
+
+query directQueryOnInterfaceWithoutSubFields {
+  pet {
+    name
+  }
+}
+
+query directQueryOnUnionWithoutSubFields {
+  catOrDog {
+    ...on Dog {
+      name
+    }
+  }
+}

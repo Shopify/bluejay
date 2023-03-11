@@ -1,9 +1,9 @@
 use crate::ast::parse_error::ParseError;
 use crate::lexical_token::{
-    FloatValue, HasSpan, IntValue, LexicalToken, Name, PunctuatorType, StringValue,
+    FloatValue, IntValue, LexicalToken, Name, PunctuatorType, StringValue,
 };
 use crate::scanner::{ScanError, Scanner};
-use crate::Span;
+use crate::{Span, HasSpan};
 use std::collections::VecDeque;
 
 pub trait Tokens<'a>: Iterator<Item = LexicalToken<'a>> {

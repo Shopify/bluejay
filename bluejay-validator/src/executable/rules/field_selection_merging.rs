@@ -1,23 +1,23 @@
-use crate::definition::{
+use crate::executable::{Error, Rule, Visitor};
+use bluejay_core::definition::{
     FieldDefinition, FieldsDefinition, InterfaceTypeDefinition, ObjectTypeDefinition,
     OutputTypeReference, SchemaDefinition, TypeDefinitionReference,
     TypeDefinitionReferenceFromAbstract,
 };
-use crate::executable::{
+use bluejay_core::executable::{
     ExecutableDocument, Field, FragmentDefinition, FragmentSpread, InlineFragment, Selection,
 };
-use crate::validation::executable::{Error, Rule, Visitor};
-use crate::{Argument, AsIter};
+use bluejay_core::{Argument, AsIter};
 use itertools::Itertools;
 use std::collections::HashMap;
 
-pub struct FieldSelectionMerging<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>> {
+pub struct FieldSelectionMerging<'a, E: ExecutableDocument, S: SchemaDefinition> {
     executable_document: &'a E,
     schema_definition: &'a S,
     errors: Vec<Error<'a, E, S>>,
 }
 
-impl<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>> Visitor<'a, E, S>
+impl<'a, E: ExecutableDocument, S: SchemaDefinition> Visitor<'a, E, S>
     for FieldSelectionMerging<'a, E, S>
 {
     fn visit_selection_set(
@@ -32,7 +32,7 @@ impl<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>> Visitor<'a, E, S>
     }
 }
 
-impl<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>> FieldSelectionMerging<'a, E, S> {
+impl<'a, E: ExecutableDocument, S: SchemaDefinition> FieldSelectionMerging<'a, E, S> {
     fn fields_in_set_can_merge(
         &self,
         selection_set: impl Iterator<Item = &'a E::Selection>,
@@ -294,7 +294,7 @@ impl<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>> FieldSelectionMergi
     }
 }
 
-impl<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>> IntoIterator
+impl<'a, E: ExecutableDocument, S: SchemaDefinition> IntoIterator
     for FieldSelectionMerging<'a, E, S>
 {
     type Item = Error<'a, E, S>;
@@ -305,7 +305,7 @@ impl<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>> IntoIterator
     }
 }
 
-impl<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>> Rule<'a, E, S>
+impl<'a, E: ExecutableDocument, S: SchemaDefinition> Rule<'a, E, S>
     for FieldSelectionMerging<'a, E, S>
 {
     fn new(executable_document: &'a E, schema_definition: &'a S) -> Self {
@@ -317,8 +317,11 @@ impl<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>> Rule<'a, E, S>
     }
 }
 
-struct FieldContext<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>> {
+struct FieldContext<'a, E: ExecutableDocument, S: SchemaDefinition> {
     field: &'a E::Field,
     field_definition: &'a S::FieldDefinition,
     parent_type: &'a TypeDefinitionReferenceFromAbstract<S::TypeDefinitionReference>,
 }
+
+#[cfg(test)]
+mod tests {}

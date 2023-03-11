@@ -1,15 +1,15 @@
-use crate::definition::{
+use crate::executable::{Error, Rule, Visitor};
+use bluejay_core::definition::{
     FieldsDefinition, InterfaceTypeDefinition, ObjectTypeDefinition, SchemaDefinition,
     TypeDefinitionReference, TypeDefinitionReferenceFromAbstract,
 };
-use crate::executable::{ExecutableDocument, Field, Selection};
-use crate::validation::executable::{Error, Rule, Visitor};
+use bluejay_core::executable::{ExecutableDocument, Field, Selection};
 
-pub struct FieldSelections<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>> {
+pub struct FieldSelections<'a, E: ExecutableDocument, S: SchemaDefinition> {
     errors: Vec<Error<'a, E, S>>,
 }
 
-impl<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>> Visitor<'a, E, S>
+impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Visitor<'a, E, S>
     for FieldSelections<'a, E, S>
 {
     fn visit_selection_set(
@@ -42,7 +42,7 @@ impl<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>> Visitor<'a, E, S>
     }
 }
 
-impl<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>> IntoIterator
+impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> IntoIterator
     for FieldSelections<'a, E, S>
 {
     type Item = Error<'a, E, S>;
@@ -53,7 +53,7 @@ impl<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>> IntoIterator
     }
 }
 
-impl<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>> Rule<'a, E, S>
+impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Rule<'a, E, S>
     for FieldSelections<'a, E, S>
 {
     fn new(_: &'a E, _: &'a S) -> Self {

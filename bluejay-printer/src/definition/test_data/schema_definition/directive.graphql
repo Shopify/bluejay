@@ -1,4 +1,4 @@
-directive @repeatable on FIELD_DEFINITION
+directive @repeatable repeatable on FIELD_DEFINITION
 
 """
 This directive indicates if something is special!

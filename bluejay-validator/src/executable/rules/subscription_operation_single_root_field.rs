@@ -1,28 +1,24 @@
-use crate::definition::SchemaDefinition;
-use crate::executable::{
+use crate::executable::{Error, Rule, Visitor};
+use bluejay_core::definition::SchemaDefinition;
+use bluejay_core::executable::{
     ExecutableDocument, FragmentDefinition, FragmentSpread, InlineFragment,
     OperationDefinitionFromExecutableDocument, Selection,
 };
-use crate::validation::executable::{Error, Rule, Visitor};
-use crate::OperationType;
+use bluejay_core::OperationType;
 use std::marker::PhantomData;
 
-pub struct SubscriptionOperationSingleRootField<
-    'a,
-    E: ExecutableDocument<'a>,
-    S: SchemaDefinition<'a>,
-> {
-    invalid_operation_definitions: Vec<&'a OperationDefinitionFromExecutableDocument<'a, E>>,
+pub struct SubscriptionOperationSingleRootField<'a, E: ExecutableDocument, S: SchemaDefinition> {
+    invalid_operation_definitions: Vec<&'a OperationDefinitionFromExecutableDocument<E>>,
     executable_document: &'a E,
     schema_definition: PhantomData<S>,
 }
 
-impl<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>> Visitor<'a, E, S>
+impl<'a, E: ExecutableDocument, S: SchemaDefinition> Visitor<'a, E, S>
     for SubscriptionOperationSingleRootField<'a, E, S>
 {
     fn visit_operation(
         &mut self,
-        operation_definition: &'a OperationDefinitionFromExecutableDocument<'a, E>,
+        operation_definition: &'a OperationDefinitionFromExecutableDocument<E>,
     ) {
         if !matches!(
             operation_definition.operation_type(),
@@ -57,13 +53,13 @@ impl<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>> Visitor<'a, E, S>
     }
 }
 
-impl<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>> IntoIterator
+impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> IntoIterator
     for SubscriptionOperationSingleRootField<'a, E, S>
 {
     type Item = Error<'a, E, S>;
     type IntoIter = std::iter::Map<
-        std::vec::IntoIter<&'a OperationDefinitionFromExecutableDocument<'a, E>>,
-        fn(&'a OperationDefinitionFromExecutableDocument<'a, E>) -> Error<'a, E, S>,
+        std::vec::IntoIter<&'a OperationDefinitionFromExecutableDocument<E>>,
+        fn(&'a OperationDefinitionFromExecutableDocument<E>) -> Error<'a, E, S>,
     >;
 
     fn into_iter(self) -> Self::IntoIter {
@@ -73,7 +69,7 @@ impl<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>> IntoIterator
     }
 }
 
-impl<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>> Rule<'a, E, S>
+impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Rule<'a, E, S>
     for SubscriptionOperationSingleRootField<'a, E, S>
 {
     fn new(executable_document: &'a E, _: &'a S) -> Self {

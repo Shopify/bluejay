@@ -1,0 +1,10 @@
+subscription sub {
+  newMessage {
+    body
+    sender
+  }
+  otherNewMessage: newMessage {
+    body
+    sender
+  }
+}

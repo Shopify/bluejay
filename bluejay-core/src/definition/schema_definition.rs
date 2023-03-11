@@ -9,7 +9,7 @@ use crate::definition::{
 };
 use crate::ConstDirectives;
 
-pub trait SchemaDefinition<'a>: 'a {
+pub trait SchemaDefinition {
     type Directives: ConstDirectives;
     type InputValueDefinition: InputValueDefinition<
         InputTypeReference = Self::InputTypeReference,
@@ -85,10 +85,14 @@ pub trait SchemaDefinition<'a>: 'a {
         InterfaceTypeDefinition = Self::InterfaceTypeDefinition,
     >;
     type DirectiveDefinition: DirectiveDefinition<ArgumentsDefinition = Self::ArgumentsDefinition>;
-    type TypeDefinitionReferences: Iterator<
+    type TypeDefinitionReferences<'a>: Iterator<
         Item = &'a TypeDefinitionReferenceFromAbstract<Self::TypeDefinitionReference>,
-    >;
-    type DirectiveDefinitions: Iterator<Item = &'a Self::DirectiveDefinition>;
+    >
+    where
+        Self: 'a;
+    type DirectiveDefinitions<'a>: Iterator<Item = &'a Self::DirectiveDefinition>
+    where
+        Self: 'a;
 
     fn description(&self) -> Option<&str>;
     fn query(&self) -> &Self::ObjectTypeDefinition;
@@ -99,7 +103,7 @@ pub trait SchemaDefinition<'a>: 'a {
         &self,
         name: &str,
     ) -> Option<&TypeDefinitionReferenceFromAbstract<Self::TypeDefinitionReference>>;
-    fn type_definitions(&'a self) -> Self::TypeDefinitionReferences;
+    fn type_definitions(&self) -> Self::TypeDefinitionReferences<'_>;
     fn get_directive_definition(&self, name: &str) -> Option<&Self::DirectiveDefinition>;
-    fn directive_definitions(&'a self) -> Self::DirectiveDefinitions;
+    fn directive_definitions(&self) -> Self::DirectiveDefinitions<'_>;
 }

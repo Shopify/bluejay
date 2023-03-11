@@ -1,20 +1,20 @@
-use crate::definition::SchemaDefinition;
-use crate::executable::{ExecutableDocument, OperationDefinitionFromExecutableDocument};
-use crate::validation::executable::{Error, Rule, Visitor};
+use crate::executable::{Error, Rule, Visitor};
+use bluejay_core::definition::SchemaDefinition;
+use bluejay_core::executable::{ExecutableDocument, OperationDefinitionFromExecutableDocument};
 use std::marker::PhantomData;
 
-pub struct LoneAnonymousOperation<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>> {
-    anonymous_operations: Vec<&'a OperationDefinitionFromExecutableDocument<'a, E>>,
+pub struct LoneAnonymousOperation<'a, E: ExecutableDocument, S: SchemaDefinition> {
+    anonymous_operations: Vec<&'a OperationDefinitionFromExecutableDocument<E>>,
     executable_document: &'a E,
     schema_definition: PhantomData<S>,
 }
 
-impl<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>> Visitor<'a, E, S>
+impl<'a, E: ExecutableDocument, S: SchemaDefinition> Visitor<'a, E, S>
     for LoneAnonymousOperation<'a, E, S>
 {
     fn visit_operation(
         &mut self,
-        operation_definition: &'a OperationDefinitionFromExecutableDocument<'a, E>,
+        operation_definition: &'a OperationDefinitionFromExecutableDocument<E>,
     ) {
         if operation_definition.name().is_none() {
             self.anonymous_operations.push(operation_definition);
@@ -22,7 +22,7 @@ impl<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>> Visitor<'a, E, S>
     }
 }
 
-impl<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>> IntoIterator
+impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> IntoIterator
     for LoneAnonymousOperation<'a, E, S>
 {
     type Item = Error<'a, E, S>;
@@ -38,7 +38,7 @@ impl<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>> IntoIterator
     }
 }
 
-impl<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>> Rule<'a, E, S>
+impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Rule<'a, E, S>
     for LoneAnonymousOperation<'a, E, S>
 {
     fn new(executable_document: &'a E, _: &'a S) -> Self {

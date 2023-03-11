@@ -1,6 +1,6 @@
 use crate::ast::{Argument, FromTokens, IsMatch, ParseError, Tokens};
-use crate::lexical_token::{HasSpan, PunctuatorType};
-use crate::Span;
+use crate::lexical_token::PunctuatorType;
+use crate::{Span, HasSpan};
 use bluejay_core::AsIter;
 
 #[derive(Debug)]

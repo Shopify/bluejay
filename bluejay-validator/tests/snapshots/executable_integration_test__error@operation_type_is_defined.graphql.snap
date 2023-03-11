@@ -1,0 +1,13 @@
+---
+source: bluejay-validator/tests/executable_integration_test.rs
+expression: formatted_errors
+input_file: bluejay-validator/tests/test_data/executable/error/operation_type_is_defined.graphql
+---
+Error: Schema does not define a mutation root
+   ╭─[<unknown>:1:1]
+   │
+ 1 │ mutation {
+   │ ────┬───  
+   │     ╰───── Schema does not define a mutation root
+───╯
+

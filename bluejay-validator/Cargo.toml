@@ -1,0 +1,23 @@
+[package]
+name = "bluejay-validator"
+version = "0.1.0-alpha.3"
+edition = "2021"
+license = "MIT"
+repository = "https://github.com/adampetro/bluejay"
+homepage = "https://github.com/adampetro/bluejay"
+keywords = ["graphql"]
+exclude = [".gitignore", "tests/**/*"]
+description = "A GraphQL parser"
+
+[dependencies]
+bluejay-core = { version = "0.1.0-alpha.3", path = "../bluejay-core" }
+bluejay-parser = { version = "0.1.0-alpha.3", path = "../bluejay-parser", optional = true, features = ["format-errors"] }
+paste = "1.0"
+itertools = "0.10.5"
+
+[dev-dependencies]
+insta = { version = "1.28", features = ["glob"] }
+
+[features]
+default = ["parser-integration"]
+parser-integration = ["dep:bluejay-parser"]

@@ -8,7 +8,7 @@ use crate::{
     AbstractTypeReference, AbstractValue, Argument, Arguments, Directive, Directives, Variable,
 };
 
-pub trait ExecutableDocument<'a>: 'a {
+pub trait ExecutableDocument {
     type Variable: Variable;
     type Value<const CONST: bool>: AbstractValue<CONST>;
     type TypeReference: AbstractTypeReference;

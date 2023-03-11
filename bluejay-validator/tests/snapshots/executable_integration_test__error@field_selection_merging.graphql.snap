@@ -1,0 +1,125 @@
+---
+source: bluejay-validator/tests/executable_integration_test.rs
+expression: formatted_errors
+input_file: bluejay-validator/tests/test_data/executable/error/field_selection_merging.graphql
+---
+Error: Field selections do not merge
+   ╭─[<unknown>:2:7]
+   │
+ 2 │ ╭─▶   dog {
+   ┆ ┆   
+ 4 │ ├─▶   }
+   │ │         
+   │ ╰───────── Field selections do not merge
+───╯
+
+Error: Field selections do not merge
+    ╭─[<unknown>:8:7]
+    │
+  8 │ ╭─▶   dog {
+    ┆ ┆   
+ 10 │ ├─▶   }
+    │ │         
+    │ ╰───────── Field selections do not merge
+────╯
+
+Error: Field selections do not merge
+    ╭─[<unknown>:14:7]
+    │
+ 14 │ ╭─▶   dog {
+    ┆ ┆   
+ 16 │ ├─▶   }
+    │ │         
+    │ ╰───────── Field selections do not merge
+────╯
+
+Error: Field selections do not merge
+    ╭─[<unknown>:20:7]
+    │
+ 20 │ ╭─▶   dog {
+    ┆ ┆   
+ 22 │ ├─▶   }
+    │ │         
+    │ ╰───────── Field selections do not merge
+────╯
+
+Error: Field selections do not merge
+    ╭─[<unknown>:26:7]
+    │
+ 26 │ ╭─▶   dog {
+    ┆ ┆   
+ 28 │ ├─▶   }
+    │ │         
+    │ ╰───────── Field selections do not merge
+────╯
+
+Error: Field selections do not merge
+    ╭─[<unknown>:32:7]
+    │
+ 32 │ ╭─▶   dog {
+    ┆ ┆   
+ 34 │ ├─▶   }
+    │ │         
+    │ ╰───────── Field selections do not merge
+────╯
+
+Error: Field selections do not merge
+    ╭─[<unknown>:37:41]
+    │
+ 37 │ ╭─▶ fragment conflictingBecauseAlias on Dog {
+    ┆ ┆   
+ 40 │ ├─▶ }
+    │ │       
+    │ ╰─────── Field selections do not merge
+────╯
+
+Error: Field selections do not merge
+    ╭─[<unknown>:42:41]
+    │
+ 42 │ ╭─▶ fragment conflictingArgsOnValues on Dog {
+    ┆ ┆   
+ 45 │ ├─▶ }
+    │ │       
+    │ ╰─────── Field selections do not merge
+────╯
+
+Error: Field selections do not merge
+    ╭─[<unknown>:47:44]
+    │
+ 47 │ ╭─▶ fragment conflictingArgsValueAndVar on Dog {
+    ┆ ┆   
+ 50 │ ├─▶ }
+    │ │       
+    │ ╰─────── Field selections do not merge
+────╯
+
+Error: Field selections do not merge
+    ╭─[<unknown>:52:41]
+    │
+ 52 │ ╭─▶ fragment conflictingArgsWithVars on Dog {
+    ┆ ┆   
+ 55 │ ├─▶ }
+    │ │       
+    │ ╰─────── Field selections do not merge
+────╯
+
+Error: Field selections do not merge
+    ╭─[<unknown>:57:31]
+    │
+ 57 │ ╭─▶ fragment differingArgs on Dog {
+    ┆ ┆   
+ 60 │ ├─▶ }
+    │ │       
+    │ ╰─────── Field selections do not merge
+────╯
+
+Error: Field selections do not merge
+    ╭─[<unknown>:62:47]
+    │
+ 62 │ ╭─▶ fragment conflictingDifferingResponses on Pet {
+    ┆ ┆   
+ 69 │ ├─▶ }
+    │ │       
+    │ ╰─────── Field selections do not merge
+────╯
+

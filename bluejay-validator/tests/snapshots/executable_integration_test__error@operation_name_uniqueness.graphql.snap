@@ -1,0 +1,17 @@
+---
+source: bluejay-validator/tests/executable_integration_test.rs
+expression: formatted_errors
+input_file: bluejay-validator/tests/test_data/executable/error/operation_name_uniqueness.graphql
+---
+Error: Multiple operation definitions named `getName`
+   ╭─[<unknown>:1:1]
+   │
+ 1 │ query getName {
+   │       ───┬───  
+   │          ╰───── Operation definition with name `getName`
+   │ 
+ 7 │ query getName {
+   │       ───┬───  
+   │          ╰───── Operation definition with name `getName`
+───╯
+

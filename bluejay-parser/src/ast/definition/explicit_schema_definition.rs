@@ -1,6 +1,6 @@
 use crate::ast::{ConstDirectives, FromTokens, ParseError, Tokens, TryFromTokens};
-use crate::lexical_token::{HasSpan, Name, PunctuatorType, StringValue};
-use crate::Span;
+use crate::lexical_token::{Name, PunctuatorType, StringValue};
+use crate::{HasSpan, Span};
 use bluejay_core::OperationType;
 use std::str::FromStr;
 

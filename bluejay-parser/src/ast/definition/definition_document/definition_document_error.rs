@@ -3,7 +3,8 @@ use crate::ast::definition::{
     ExplicitSchemaDefinition, RootOperationTypeDefinition, TypeDefinitionReference,
 };
 use crate::error::{Annotation, Error};
-use crate::lexical_token::{HasSpan, Name};
+use crate::lexical_token::Name;
+use crate::HasSpan;
 use bluejay_core::OperationType;
 
 #[derive(Debug)]

@@ -1,7 +1,8 @@
 use crate::ast::executable::{SelectionSet, VariableDefinitions};
-use crate::ast::{FromTokens, IsMatch, ParseError, Tokens, TryFromTokens, VariableDirectives};
+use crate::ast::{
+    FromTokens, IsMatch, OperationType, ParseError, Tokens, TryFromTokens, VariableDirectives,
+};
 use crate::lexical_token::Name;
-use bluejay_core::OperationType;
 
 pub type OperationDefinition<'a> = bluejay_core::executable::OperationDefinition<
     ExplicitOperationDefinition<'a>,
@@ -52,8 +53,8 @@ impl<'a> bluejay_core::executable::ExplicitOperationDefinition for ExplicitOpera
     type Directives = VariableDirectives<'a>;
     type SelectionSet = SelectionSet<'a>;
 
-    fn operation_type(&self) -> &OperationType {
-        &self.operation_type
+    fn operation_type(&self) -> bluejay_core::OperationType {
+        (&self.operation_type).into()
     }
 
     fn name(&self) -> Option<&str> {
@@ -70,6 +71,16 @@ impl<'a> bluejay_core::executable::ExplicitOperationDefinition for ExplicitOpera
 
     fn selection_set(&self) -> &Self::SelectionSet {
         &self.selection_set
+    }
+}
+
+impl<'a> ExplicitOperationDefinition<'a> {
+    pub fn name(&self) -> Option<&Name<'a>> {
+        self.name.as_ref()
+    }
+
+    pub fn operation_type(&self) -> &OperationType {
+        &self.operation_type
     }
 }
 

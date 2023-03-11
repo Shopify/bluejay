@@ -8,7 +8,6 @@ mod directive;
 pub mod executable;
 mod operation_type;
 mod type_reference;
-pub mod validation;
 mod value;
 mod variable;
 

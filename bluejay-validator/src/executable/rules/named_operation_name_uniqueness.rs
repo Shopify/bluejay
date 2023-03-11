@@ -1,23 +1,23 @@
-use crate::definition::SchemaDefinition;
-use crate::executable::{
+use crate::executable::{Error, Rule, Visitor};
+use bluejay_core::definition::SchemaDefinition;
+use bluejay_core::executable::{
     ExecutableDocument, ExplicitOperationDefinition, OperationDefinition,
     OperationDefinitionFromExecutableDocument,
 };
-use crate::validation::executable::{Error, Rule, Visitor};
 use std::collections::HashMap;
 use std::marker::PhantomData;
 
-pub struct NamedOperationNameUniqueness<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>> {
+pub struct NamedOperationNameUniqueness<'a, E: ExecutableDocument, S: SchemaDefinition> {
     operations: HashMap<&'a str, Vec<&'a E::ExplicitOperationDefinition>>,
     schema_definition: PhantomData<S>,
 }
 
-impl<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>> Visitor<'a, E, S>
+impl<'a, E: ExecutableDocument, S: SchemaDefinition> Visitor<'a, E, S>
     for NamedOperationNameUniqueness<'a, E, S>
 {
     fn visit_operation(
         &mut self,
-        operation_definition: &'a OperationDefinitionFromExecutableDocument<'a, E>,
+        operation_definition: &'a OperationDefinitionFromExecutableDocument<E>,
     ) {
         if let OperationDefinition::Explicit(eod) = operation_definition {
             if let Some(name) = eod.name() {
@@ -27,7 +27,7 @@ impl<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>> Visitor<'a, E, S>
     }
 }
 
-impl<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>> IntoIterator
+impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> IntoIterator
     for NamedOperationNameUniqueness<'a, E, S>
 {
     type Item = Error<'a, E, S>;
@@ -46,7 +46,7 @@ impl<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>> IntoIterator
     }
 }
 
-impl<'a, E: ExecutableDocument<'a>, S: SchemaDefinition<'a>> Rule<'a, E, S>
+impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Rule<'a, E, S>
     for NamedOperationNameUniqueness<'a, E, S>
 {
     fn new(_: &'a E, _: &'a S) -> Self {

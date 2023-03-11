@@ -3,8 +3,8 @@ use crate::ast::definition::{
     TypeDefinitionReference, UnionTypeDefinition,
 };
 use crate::ast::{FromTokens, ParseError, Tokens};
-use crate::lexical_token::{HasSpan, Name, PunctuatorType};
-use crate::Span;
+use crate::lexical_token::{Name, PunctuatorType};
+use crate::{HasSpan, Span};
 use bluejay_core::definition::{
     AbstractBaseOutputTypeReference, AbstractOutputTypeReference,
     BaseOutputTypeReference as CoreBaseOutputTypeReference, BaseOutputTypeReferenceFromAbstract,

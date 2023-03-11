@@ -13,3 +13,4 @@
 - [`bluejay-core`](/bluejay-core/README.md)
 - [`bluejay-parser`](/bluejay-parser/README.md)
 - [`bluejay-printer`](/bluejay-printer/README.md)
+- [`bluejay-validator`](/bluejay-validator/README.md)

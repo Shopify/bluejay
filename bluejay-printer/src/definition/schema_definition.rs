@@ -22,8 +22,8 @@ use std::fmt::{Error, Write};
 pub struct DisplaySchemaDefinition;
 
 impl DisplaySchemaDefinition {
-    pub fn fmt<'a, T: SchemaDefinition<'a>, W: Write>(
-        schema_definition: &'a T,
+    pub fn fmt<T: SchemaDefinition, W: Write>(
+        schema_definition: &T,
         f: &mut W,
     ) -> Result<(), Error> {
         schema_definition
@@ -86,13 +86,13 @@ impl DisplaySchemaDefinition {
         }
     }
 
-    pub fn to_string<'a, T: SchemaDefinition<'a>>(schema_definition: &'a T) -> String {
+    pub fn to_string<T: SchemaDefinition>(schema_definition: &T) -> String {
         let mut s = String::new();
         Self::fmt(schema_definition, &mut s).expect("fmt returned an error unexpectedly");
         s
     }
 
-    fn is_implicit<'a, T: SchemaDefinition<'a>>(schema_definition: &T) -> bool {
+    fn is_implicit<T: SchemaDefinition>(schema_definition: &T) -> bool {
         schema_definition.description().is_none()
             && schema_definition.query().name() == "Query"
             && schema_definition
@@ -109,8 +109,8 @@ impl DisplaySchemaDefinition {
                 .unwrap_or(true)
     }
 
-    fn fmt_explicit_schema_definition<'a, T: SchemaDefinition<'a>, W: Write>(
-        schema_definition: &'a T,
+    fn fmt_explicit_schema_definition<T: SchemaDefinition, W: Write>(
+        schema_definition: &T,
         f: &mut W,
     ) -> Result<(), Error> {
         if let Some(description) = schema_definition.description() {

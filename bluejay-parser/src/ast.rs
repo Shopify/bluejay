@@ -21,6 +21,7 @@ pub use directive::Directive;
 pub use directives::{ConstDirectives, Directives, VariableDirectives};
 use from_tokens::FromTokens;
 use is_match::IsMatch;
+use operation_type::OperationType;
 pub use parse::Parse;
 use parse_error::ParseError;
 use tokens::{ScannerTokens, Tokens};

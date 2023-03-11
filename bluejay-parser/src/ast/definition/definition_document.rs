@@ -6,9 +6,8 @@ use crate::ast::definition::{
     UnionTypeDefinition,
 };
 use crate::ast::{FromTokens, ParseError, ScannerTokens, Tokens};
-use crate::lexical_token::HasSpan;
 use crate::scanner::LogosScanner;
-use crate::Error;
+use crate::{Error, HasSpan};
 use bluejay_core::definition::{
     DirectiveDefinition as CoreDirectiveDefinition, FieldDefinition as CoreFieldDefinition,
     InputObjectTypeDefinition as CoreInputObjectTypeDefinition,
@@ -595,9 +594,6 @@ impl<'a> TryFrom<&'a DefinitionDocument<'a>> for SchemaDefinition<'a> {
 
         let explicit_schema_definition =
             definition_document.explicit_schema_definition(&indexed_type_definitions, &mut errors);
-
-        dbg!(&errors);
-        dbg!(&explicit_schema_definition);
 
         let implicit_schema_definition =
             match DefinitionDocument::implicit_schema_definition(&indexed_type_definitions) {

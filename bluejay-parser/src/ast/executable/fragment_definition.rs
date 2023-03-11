@@ -1,6 +1,7 @@
 use crate::ast::executable::{SelectionSet, TypeCondition};
 use crate::ast::{FromTokens, IsMatch, ParseError, Tokens, VariableDirectives};
-use crate::lexical_token::{HasSpan, Name};
+use crate::lexical_token::Name;
+use crate::HasSpan;
 
 #[derive(Debug)]
 pub struct FragmentDefinition<'a> {

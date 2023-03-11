@@ -52,8 +52,8 @@ impl<'a> Field<'a> {
         }
     }
 
-    pub fn name(&self) -> &str {
-        self.name.as_ref()
+    pub fn name(&self) -> &Name<'a> {
+        &self.name
     }
 
     pub fn arguments(&self) -> Option<&VariableArguments> {

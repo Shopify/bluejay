@@ -44,7 +44,7 @@ impl<'a> SchemaDefinition<'a> {
     }
 }
 
-impl<'a> CoreSchemaDefinition<'a> for SchemaDefinition<'a> {
+impl<'a> CoreSchemaDefinition for SchemaDefinition<'a> {
     type Directives = ConstDirectives<'a>;
     type InputValueDefinition = InputValueDefinition<'a>;
     type InputFieldsDefinition = InputFieldsDefinition<'a>;
@@ -69,9 +69,10 @@ impl<'a> CoreSchemaDefinition<'a> for SchemaDefinition<'a> {
     type EnumTypeDefinition = EnumTypeDefinition<'a>;
     type TypeDefinitionReference = TypeDefinitionReference<'a>;
     type DirectiveDefinition = DirectiveDefinition<'a>;
-    type TypeDefinitionReferences =
-        std::iter::Copied<Values<'a, &'a str, &'a TypeDefinitionReference<'a>>>;
-    type DirectiveDefinitions = std::iter::Copied<Values<'a, &'a str, &'a DirectiveDefinition<'a>>>;
+    type TypeDefinitionReferences<'b> =
+        std::iter::Copied<Values<'b, &'b str, &'b TypeDefinitionReference<'a>>> where 'a: 'b;
+    type DirectiveDefinitions<'b> =
+        std::iter::Copied<Values<'b, &'b str, &'b DirectiveDefinition<'a>>> where 'a: 'b;
 
     fn description(&self) -> Option<&str> {
         self.description.as_ref().map(AsRef::as_ref)
@@ -97,7 +98,7 @@ impl<'a> CoreSchemaDefinition<'a> for SchemaDefinition<'a> {
         self.type_definitions.get(name).copied()
     }
 
-    fn type_definitions(&'a self) -> Self::TypeDefinitionReferences {
+    fn type_definitions(&self) -> Self::TypeDefinitionReferences<'_> {
         self.type_definitions.values().copied()
     }
 
@@ -105,7 +106,7 @@ impl<'a> CoreSchemaDefinition<'a> for SchemaDefinition<'a> {
         self.directive_definitions.get(name).copied()
     }
 
-    fn directive_definitions(&'a self) -> Self::DirectiveDefinitions {
+    fn directive_definitions(&self) -> Self::DirectiveDefinitions<'_> {
         self.directive_definitions.values().copied()
     }
 }

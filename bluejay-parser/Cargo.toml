@@ -1,12 +1,12 @@
 [package]
 name = "bluejay-parser"
-version = "0.1.0-alpha.2"
+version = "0.1.0-alpha.3"
 edition = "2021"
 license = "MIT"
 repository = "https://github.com/adampetro/bluejay"
 homepage = "https://github.com/adampetro/bluejay"
 keywords = ["graphql"]
-exclude = [".gitignore"]
+exclude = [".gitignore", "tests/**/*"]
 description = "A GraphQL parser"
 
 [dependencies]
@@ -14,7 +14,7 @@ logos = { version = "0.12" }
 enum-as-inner = "0.5"
 once_cell = "1.17"
 ariadne = { version = "0.2", optional = true }
-bluejay-core = { version = "0.1.0-alpha.2", path = "../bluejay-core" }
+bluejay-core = { version = "0.1.0-alpha.3", path = "../bluejay-core" }
 
 [dev-dependencies]
 criterion = "0.4"
@@ -25,5 +25,4 @@ name = "parse_github_schema"
 harness = false
 
 [features]
-default = ["format-errors"]
 format-errors = ["dep:ariadne"]

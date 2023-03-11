@@ -14,7 +14,10 @@ pub struct Error {
 
 impl Error {
     #[cfg(feature = "format-errors")]
-    pub fn format_errors(document: &str, errors: Vec<Error>) -> String {
+    pub fn format_errors<E: Into<Error>>(
+        document: &str,
+        errors: impl IntoIterator<Item = E>,
+    ) -> String {
         let mut file_cache = Source::from(document);
 
         let mut buf: Vec<u8> = Vec::new();
@@ -23,6 +26,7 @@ impl Error {
             .into_iter()
             .enumerate()
             .try_for_each(|(idx, error)| {
+                let error: Error = error.into();
                 if idx != 0 {
                     buf.extend("\n".as_bytes());
                 }

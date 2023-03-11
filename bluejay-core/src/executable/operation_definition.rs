@@ -17,7 +17,7 @@ impl<
 {
     pub fn operation_type(&self) -> OperationType {
         match self {
-            Self::Explicit(eod) => *eod.operation_type(),
+            Self::Explicit(eod) => eod.operation_type(),
             Self::Implicit(_) => OperationType::Query,
         }
     }
@@ -70,9 +70,9 @@ impl<
     type ImplicitOperationDefinition = I;
 }
 
-pub type OperationDefinitionFromExecutableDocument<'a, E> = OperationDefinition<
-    <E as ExecutableDocument<'a>>::ExplicitOperationDefinition,
-    <E as ExecutableDocument<'a>>::ImplicitOperationDefinition,
+pub type OperationDefinitionFromExecutableDocument<E> = OperationDefinition<
+    <E as ExecutableDocument>::ExplicitOperationDefinition,
+    <E as ExecutableDocument>::ImplicitOperationDefinition,
 >;
 
 pub trait ExplicitOperationDefinition: Sized {
@@ -80,7 +80,7 @@ pub trait ExplicitOperationDefinition: Sized {
     type Directives: VariableDirectives;
     type SelectionSet: SelectionSet;
 
-    fn operation_type(&self) -> &OperationType;
+    fn operation_type(&self) -> OperationType;
     fn name(&self) -> Option<&str>;
     fn variable_definitions(&self) -> Option<&Self::VariableDefinitions>;
     fn directives(&self) -> &Self::Directives;
