@@ -3,6 +3,7 @@
 mod argument;
 mod as_iter;
 mod builtin_scalar_definition;
+mod const_wrappers;
 pub mod definition;
 mod directive;
 pub mod executable;
@@ -16,6 +17,7 @@ pub use argument::{
 };
 pub use as_iter::AsIter;
 pub use builtin_scalar_definition::BuiltinScalarDefinition;
+pub use const_wrappers::ArgumentWrapper;
 pub use directive::{
     ConstDirective, ConstDirectives, Directive, Directives, VariableDirective, VariableDirectives,
 };

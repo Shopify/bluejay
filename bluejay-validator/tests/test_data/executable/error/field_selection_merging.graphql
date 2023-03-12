@@ -1,39 +1,3 @@
-query ConflictingBecauseAlias {
-  dog {
-    ...conflictingBecauseAlias
-  }
-}
-
-query ConflictingArgsOnValues {
-  dog {
-    ...conflictingArgsOnValues
-  }
-}
-
-query ConflictingArgsValueAndVar {
-  dog {
-    ...conflictingArgsValueAndVar
-  }
-}
-
-query ConflictingArgsWithVars {
-  dog {
-    ...conflictingArgsWithVars
-  }
-}
-
-query DifferingArgs {
-  dog {
-    ...differingArgs
-  }
-}
-
-query conflictingDifferingResponses {
-  dog {
-    ...conflictingDifferingResponses
-  }
-}
-
 fragment conflictingBecauseAlias on Dog {
   name: nickname
   name

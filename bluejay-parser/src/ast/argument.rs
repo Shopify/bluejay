@@ -3,8 +3,18 @@ use crate::lexical_token::{Name, PunctuatorType};
 
 #[derive(Debug)]
 pub struct Argument<'a, const CONST: bool> {
-    pub(crate) name: Name<'a>,
-    pub(crate) value: Value<'a, CONST>,
+    name: Name<'a>,
+    value: Value<'a, CONST>,
+}
+
+impl<'a, const CONST: bool> Argument<'a, CONST> {
+    pub fn name(&self) -> &Name<'a> {
+        &self.name
+    }
+
+    pub fn value(&self) -> &Value<'a, CONST> {
+        &self.value
+    }
 }
 
 pub type ConstArgument<'a> = Argument<'a, true>;

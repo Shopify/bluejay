@@ -2,6 +2,7 @@ use crate::ast::executable::VariableDefinition;
 use crate::ast::{FromTokens, IsMatch, ParseError, Tokens};
 use crate::lexical_token::PunctuatorType;
 use crate::Span;
+use bluejay_core::AsIter;
 
 #[derive(Debug)]
 pub struct VariableDefinitions<'a> {
@@ -37,8 +38,11 @@ impl<'a> bluejay_core::executable::VariableDefinitions for VariableDefinitions<'
     type VariableDefinition = VariableDefinition<'a>;
 }
 
-impl<'a> AsRef<[VariableDefinition<'a>]> for VariableDefinitions<'a> {
-    fn as_ref(&self) -> &[VariableDefinition<'a>] {
-        &self.variable_definitions
+impl<'a> AsIter for VariableDefinitions<'a> {
+    type Item = VariableDefinition<'a>;
+    type Iterator<'b> = std::slice::Iter<'b, Self::Item> where 'a: 'b;
+
+    fn iter(&self) -> Self::Iterator<'_> {
+        self.variable_definitions.iter()
     }
 }

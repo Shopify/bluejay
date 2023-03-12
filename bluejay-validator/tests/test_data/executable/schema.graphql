@@ -3,6 +3,7 @@ type Query {
   human: Human
   pet: Pet
   catOrDog: CatOrDog
+  arguments: Arguments
 }
 
 type Subscription {
@@ -61,3 +62,13 @@ type Cat implements Pet {
 union CatOrDog = Cat | Dog
 union DogOrHuman = Dog | Human
 union HumanOrAlien = Human | Alien
+
+type Arguments {
+  multipleRequirements(x: Int!, y: Int!): Int!
+  booleanArgField(booleanArg: Boolean): Boolean
+  floatArgField(floatArg: Float): Float
+  intArgField(intArg: Int): Int
+  nonNullBooleanArgField(nonNullBooleanArg: Boolean!): Boolean!
+  booleanListArgField(booleanListArg: [Boolean]!): [Boolean]
+  optionalNonNullBooleanArgField(optionalBooleanArg: Boolean! = false): Boolean!
+}

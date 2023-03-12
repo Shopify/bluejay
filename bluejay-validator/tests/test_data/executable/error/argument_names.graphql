@@ -1,0 +1,7 @@
+fragment invalidArgName on Dog {
+  doesKnowCommand(command: CLEAN_UP_HOUSE)
+}
+
+fragment invalidArgName on Dog {
+  isHouseTrained(atOtherHomes: true) @include(unless: false)
+}

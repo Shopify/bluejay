@@ -42,6 +42,13 @@ impl<
             Self::Implicit(iod) => iod.selection_set(),
         }
     }
+
+    pub fn directives(&self) -> Option<&E::Directives> {
+        match self {
+            Self::Explicit(eod) => Some(eod.directives()),
+            Self::Implicit(_) => None,
+        }
+    }
 }
 
 pub trait AbstractOperationDefinition: Into<OperationDefinition<Self::ExplicitOperationDefinition, Self::ImplicitOperationDefinition>>

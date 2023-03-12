@@ -7,7 +7,7 @@ repository = "https://github.com/adampetro/bluejay"
 homepage = "https://github.com/adampetro/bluejay"
 keywords = ["graphql"]
 exclude = [".gitignore", "tests/**/*"]
-description = "A GraphQL parser"
+description = "A GraphQL validator"
 
 [dependencies]
 bluejay-core = { version = "0.1.0-alpha.3", path = "../bluejay-core" }

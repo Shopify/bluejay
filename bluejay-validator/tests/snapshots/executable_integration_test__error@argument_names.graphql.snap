@@ -1,0 +1,21 @@
+---
+source: bluejay-validator/tests/executable_integration_test.rs
+expression: formatted_errors
+input_file: bluejay-validator/tests/test_data/executable/error/argument_names.graphql
+---
+Error: Field `doesKnowCommand` does not define an argument named `command`
+   ╭─[<unknown>:2:19]
+   │
+ 2 │   doesKnowCommand(command: CLEAN_UP_HOUSE)
+   │                   ───┬───  
+   │                      ╰───── No argument definition with this name
+───╯
+
+Error: Directive `include` does not define an argument named `unless`
+   ╭─[<unknown>:6:47]
+   │
+ 6 │   isHouseTrained(atOtherHomes: true) @include(unless: false)
+   │                                               ───┬──  
+   │                                                  ╰──── No argument definition with this name
+───╯
+

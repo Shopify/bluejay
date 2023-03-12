@@ -12,4 +12,3 @@ description = "Base GraphQL abstractions"
 [dependencies]
 strum = { version = "0.24", features = ["derive"] }
 paste = "1.0"
-itertools = "0.10.5"

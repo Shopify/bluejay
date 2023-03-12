@@ -1,6 +1,8 @@
-use bluejay_core::definition::{SchemaDefinition, TypeDefinitionReferenceFromAbstract};
+use bluejay_core::definition::{
+    DirectiveDefinition, FieldDefinition, SchemaDefinition, TypeDefinitionReferenceFromAbstract,
+};
 use bluejay_core::executable::{ExecutableDocument, OperationDefinitionFromExecutableDocument};
-use bluejay_core::OperationType;
+use bluejay_core::{ArgumentWrapper, OperationType};
 #[cfg(feature = "parser-integration")]
 use bluejay_parser::{
     ast::executable::ExecutableDocument as ParserExecutableDocument,
@@ -36,6 +38,14 @@ pub enum Error<'a, E: ExecutableDocument, S: SchemaDefinition> {
     NonLeafFieldSelectionEmpty {
         field: &'a E::Field,
         r#type: &'a S::OutputTypeReference,
+    },
+    ArgumentDoesNotExistOnField {
+        argument: &'a E::Argument<false>,
+        field_definition: &'a S::FieldDefinition,
+    },
+    ArgumentDoesNotExistOnDirective {
+        argument: ArgumentWrapper<'a, E::Argument<true>, E::Argument<false>>,
+        directive_definition: &'a S::DirectiveDefinition,
     },
 }
 
@@ -136,6 +146,42 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                 }),
                 secondary_annotations: Vec::new(),
             },
+            Error::ArgumentDoesNotExistOnField {
+                argument,
+                field_definition,
+            } => Self {
+                message: format!(
+                    "Field `{}` does not define an argument named `{}`",
+                    field_definition.name(),
+                    argument.name().as_ref(),
+                ),
+                primary_annotation: Some(Annotation {
+                    message: "No argument definition with this name".to_string(),
+                    span: argument.name().span(),
+                }),
+                secondary_annotations: Vec::new(),
+            },
+            Error::ArgumentDoesNotExistOnDirective {
+                argument,
+                directive_definition,
+            } => {
+                let name = match argument {
+                    ArgumentWrapper::Constant(c) => c.name(),
+                    ArgumentWrapper::Variable(v) => v.name(),
+                };
+                Self {
+                    message: format!(
+                        "Directive `{}` does not define an argument named `{}`",
+                        directive_definition.name(),
+                        name.as_ref(),
+                    ),
+                    primary_annotation: Some(Annotation {
+                        message: "No argument definition with this name".to_string(),
+                        span: name.span(),
+                    }),
+                    secondary_annotations: Vec::new(),
+                }
+            }
         }
     }
 }

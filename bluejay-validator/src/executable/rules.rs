@@ -1,3 +1,4 @@
+mod argument_names;
 mod field_selection_merging;
 mod field_selections;
 mod leaf_field_selections;
@@ -7,7 +8,10 @@ mod operation_type_is_defined;
 mod subscription_operation_single_root_field;
 
 use crate::executable::{Error, Rule, Visitor};
-use bluejay_core::definition::{SchemaDefinition, TypeDefinitionReferenceFromAbstract};
+use argument_names::ArgumentNames;
+use bluejay_core::definition::{
+    DirectiveLocation, SchemaDefinition, TypeDefinitionReferenceFromAbstract,
+};
 use bluejay_core::executable::{ExecutableDocument, OperationDefinitionFromExecutableDocument};
 use field_selection_merging::FieldSelectionMerging;
 use field_selections::FieldSelections;
@@ -52,8 +56,16 @@ macro_rules! define_rules {
                     $(self.[<$rule:snake>].visit_selection_set(selection_set, r#type);)*
                 }
 
-                fn visit_field(&mut self, field: &'a E::Field, r#type: &'a S::OutputTypeReference) {
-                    $(self.[<$rule:snake>].visit_field(field, r#type);)*
+                fn visit_field(&mut self, field: &'a E::Field, field_definition: &'a S::FieldDefinition) {
+                    $(self.[<$rule:snake>].visit_field(field, field_definition);)*
+                }
+
+                fn visit_const_directive(&mut self, directive: &'a E::Directive<true>, location: DirectiveLocation) {
+                    $(self.[<$rule:snake>].visit_const_directive(directive, location);)*
+                }
+
+                fn visit_variable_directive(&mut self, directive: &'a E::Directive<false>, location: DirectiveLocation) {
+                    $(self.[<$rule:snake>].visit_variable_directive(directive, location);)*
                 }
             }
         }
@@ -82,4 +94,5 @@ define_rules!(
     FieldSelectionMerging,
     OperationTypeIsDefined,
     LeafFieldSelections,
+    ArgumentNames,
 );

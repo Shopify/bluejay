@@ -1,39 +1,3 @@
-query MergeIdenticalFields {
-  dog {
-    ...mergeIdenticalFields
-  }
-}
-
-query MergeIdenticalAliasesAndFields {
-  dog {
-    ...mergeIdenticalAliasesAndFields
-  }
-}
-
-query MergeIdenticalFieldsWithIdenticalArgs {
-  dog {
-    ...mergeIdenticalFieldsWithIdenticalArgs
-  }
-}
-
-query MergeIdenticalFieldsWithIdenticalValues($dogCommand: DogCommand) {
-  dog {
-    ...mergeIdenticalFieldsWithIdenticalValues
-  }
-}
-
-query SafeDifferingFields {
-  dog {
-    ...safeDifferingFields
-  }
-}
-
-query SafeDifferingArgs {
-  dog {
-    ...safeDifferingArgs
-  }
-}
-
 fragment mergeIdenticalFields on Dog {
   name
   name

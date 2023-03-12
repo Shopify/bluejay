@@ -1,5 +1,4 @@
-use crate::ConstDirectives;
-use crate::{AbstractConstValue, AbstractTypeReference, Variable};
+use crate::{AbstractConstValue, AbstractTypeReference, AsIter, ConstDirectives, Variable};
 
 pub trait VariableDefinition {
     type Variable: Variable;
@@ -13,6 +12,6 @@ pub trait VariableDefinition {
     fn default_value(&self) -> Option<&Self::Value>;
 }
 
-pub trait VariableDefinitions: AsRef<[Self::VariableDefinition]> {
+pub trait VariableDefinitions: AsIter<Item = Self::VariableDefinition> {
     type VariableDefinition: VariableDefinition;
 }

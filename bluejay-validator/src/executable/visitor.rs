@@ -1,4 +1,6 @@
-use bluejay_core::definition::{SchemaDefinition, TypeDefinitionReferenceFromAbstract};
+use bluejay_core::definition::{
+    DirectiveLocation, SchemaDefinition, TypeDefinitionReferenceFromAbstract,
+};
 use bluejay_core::executable::{ExecutableDocument, OperationDefinitionFromExecutableDocument};
 
 pub trait Visitor<'a, E: ExecutableDocument, S: SchemaDefinition> {
@@ -15,5 +17,19 @@ pub trait Visitor<'a, E: ExecutableDocument, S: SchemaDefinition> {
     ) {
     }
 
-    fn visit_field(&mut self, _field: &'a E::Field, _type: &'a S::OutputTypeReference) {}
+    fn visit_field(&mut self, _field: &'a E::Field, _field_definition: &'a S::FieldDefinition) {}
+
+    fn visit_const_directive(
+        &mut self,
+        _directive: &'a E::Directive<true>,
+        _location: DirectiveLocation,
+    ) {
+    }
+
+    fn visit_variable_directive(
+        &mut self,
+        _directive: &'a E::Directive<false>,
+        _location: DirectiveLocation,
+    ) {
+    }
 }
