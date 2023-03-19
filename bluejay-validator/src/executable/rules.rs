@@ -1,4 +1,5 @@
 mod argument_names;
+mod argument_uniqueness;
 mod field_selection_merging;
 mod field_selections;
 mod leaf_field_selections;
@@ -9,6 +10,7 @@ mod subscription_operation_single_root_field;
 
 use crate::executable::{Error, Rule, Visitor};
 use argument_names::ArgumentNames;
+use argument_uniqueness::ArgumentUniqueness;
 use bluejay_core::definition::{
     DirectiveLocation, SchemaDefinition, TypeDefinitionReferenceFromAbstract,
 };
@@ -95,4 +97,5 @@ define_rules!(
     OperationTypeIsDefined,
     LeafFieldSelections,
     ArgumentNames,
+    ArgumentUniqueness,
 );

@@ -2,7 +2,7 @@ use bluejay_core::definition::{
     DirectiveDefinition, FieldDefinition, SchemaDefinition, TypeDefinitionReferenceFromAbstract,
 };
 use bluejay_core::executable::{ExecutableDocument, OperationDefinitionFromExecutableDocument};
-use bluejay_core::{ArgumentWrapper, OperationType};
+use bluejay_core::{call_const_wrapper_method, ArgumentWrapper, OperationType};
 #[cfg(feature = "parser-integration")]
 use bluejay_parser::{
     ast::executable::ExecutableDocument as ParserExecutableDocument,
@@ -46,6 +46,10 @@ pub enum Error<'a, E: ExecutableDocument, S: SchemaDefinition> {
     ArgumentDoesNotExistOnDirective {
         argument: ArgumentWrapper<'a, E::Argument<true>, E::Argument<false>>,
         directive_definition: &'a S::DirectiveDefinition,
+    },
+    NonUniqueArgumentNames {
+        arguments: Vec<ArgumentWrapper<'a, E::Argument<true>, E::Argument<false>>>,
+        name: &'a str,
     },
 }
 
@@ -165,10 +169,7 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                 argument,
                 directive_definition,
             } => {
-                let name = match argument {
-                    ArgumentWrapper::Constant(c) => c.name(),
-                    ArgumentWrapper::Variable(v) => v.name(),
-                };
+                let name = call_const_wrapper_method!(ArgumentWrapper, argument, name);
                 Self {
                     message: format!(
                         "Directive `{}` does not define an argument named `{}`",
@@ -182,6 +183,17 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                     secondary_annotations: Vec::new(),
                 }
             }
+            Error::NonUniqueArgumentNames { arguments, name } => Self {
+                message: format!("Multiple arguments with name `{name}`"),
+                primary_annotation: None,
+                secondary_annotations: arguments
+                    .into_iter()
+                    .map(|argument| Annotation {
+                        message: format!("Argument with name `{name}`"),
+                        span: call_const_wrapper_method!(ArgumentWrapper, argument, name).span(),
+                    })
+                    .collect(),
+            },
         }
     }
 }

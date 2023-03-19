@@ -5,3 +5,11 @@ fragment argOnRequiredArg on Dog {
 fragment argOnOptional on Dog {
   isHouseTrained(atOtherHomes: true) @include(if: true)
 }
+
+fragment multipleArgs on Arguments {
+  multipleRequirements(x: 1, y: 2)
+}
+
+fragment multipleArgsReverseOrder on Arguments {
+  multipleRequirements(y: 2, x: 1)
+}
