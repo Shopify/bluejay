@@ -1,4 +1,4 @@
-use crate::Argument;
+use crate::{Argument, Directive};
 use paste::paste;
 
 macro_rules! define_const_wrapper {
@@ -13,6 +13,7 @@ macro_rules! define_const_wrapper {
 }
 
 define_const_wrapper!(Argument);
+define_const_wrapper!(Directive);
 
 #[macro_export]
 macro_rules! call_const_wrapper_method {

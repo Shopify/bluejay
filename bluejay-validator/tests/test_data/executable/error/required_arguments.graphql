@@ -1,0 +1,7 @@
+fragment missingRequiredArg on Arguments {
+  nonNullBooleanArgField
+}
+
+fragment missingRequiredArg on Arguments {
+  nonNullBooleanArgField(nonNullBooleanArg: null)
+}

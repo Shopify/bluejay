@@ -6,6 +6,7 @@ mod leaf_field_selections;
 mod lone_anonymous_operation;
 mod named_operation_name_uniqueness;
 mod operation_type_is_defined;
+mod required_arguments;
 mod subscription_operation_single_root_field;
 
 use crate::executable::{Error, Rule, Visitor};
@@ -22,6 +23,7 @@ use lone_anonymous_operation::LoneAnonymousOperation;
 use named_operation_name_uniqueness::NamedOperationNameUniqueness;
 use operation_type_is_defined::OperationTypeIsDefined;
 use paste::paste;
+use required_arguments::RequiredArguments;
 use std::iter::Chain;
 use subscription_operation_single_root_field::SubscriptionOperationSingleRootField;
 
@@ -98,4 +100,5 @@ define_rules!(
     LeafFieldSelections,
     ArgumentNames,
     ArgumentUniqueness,
+    RequiredArguments,
 );

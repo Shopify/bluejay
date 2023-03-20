@@ -1,7 +1,7 @@
 fragment invalidArgName on Dog {
-  doesKnowCommand(command: CLEAN_UP_HOUSE)
+  doesKnowCommand(command: CLEAN_UP_HOUSE, dogCommand: SIT)
 }
 
 fragment invalidArgName on Dog {
-  isHouseTrained(atOtherHomes: true) @include(unless: false)
+  isHouseTrained(atOtherHomes: true) @include(unless: false, if: true)
 }

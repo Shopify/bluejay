@@ -1,5 +1,6 @@
 use crate::ast::{Arguments, FromTokens, IsMatch, ParseError, Tokens, TryFromTokens};
 use crate::lexical_token::{Name, PunctuatorType};
+use crate::{HasSpan, Span};
 
 #[derive(Debug)]
 pub struct Directive<'a, const CONST: bool> {
@@ -32,5 +33,14 @@ impl<'a, const CONST: bool> bluejay_core::Directive<CONST> for Directive<'a, CON
 
     fn arguments(&self) -> Option<&Self::Arguments> {
         self.arguments.as_ref()
+    }
+}
+
+impl<'a, const CONST: bool> HasSpan for Directive<'a, CONST> {
+    fn span(&self) -> Span {
+        match &self.arguments {
+            Some(arguments) => self.name.span().merge(&arguments.span()),
+            None => self.name.span(),
+        }
     }
 }

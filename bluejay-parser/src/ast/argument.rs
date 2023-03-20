@@ -1,5 +1,6 @@
 use crate::ast::{FromTokens, ParseError, Tokens, Value};
 use crate::lexical_token::{Name, PunctuatorType};
+use crate::{HasSpan, Span};
 
 #[derive(Debug)]
 pub struct Argument<'a, const CONST: bool> {
@@ -38,5 +39,11 @@ impl<'a, const CONST: bool> bluejay_core::Argument<CONST> for Argument<'a, CONST
 
     fn value(&self) -> &Value<'a, CONST> {
         &self.value
+    }
+}
+
+impl<'a, const CONST: bool> HasSpan for Argument<'a, CONST> {
+    fn span(&self) -> Span {
+        self.name.span().merge(&self.value.span())
     }
 }

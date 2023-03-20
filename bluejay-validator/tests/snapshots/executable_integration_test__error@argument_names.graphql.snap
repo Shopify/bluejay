@@ -6,7 +6,7 @@ input_file: bluejay-validator/tests/test_data/executable/error/argument_names.gr
 Error: Field `doesKnowCommand` does not define an argument named `command`
    ╭─[<unknown>:2:19]
    │
- 2 │   doesKnowCommand(command: CLEAN_UP_HOUSE)
+ 2 │   doesKnowCommand(command: CLEAN_UP_HOUSE, dogCommand: SIT)
    │                   ───┬───  
    │                      ╰───── No argument definition with this name
 ───╯
@@ -14,7 +14,7 @@ Error: Field `doesKnowCommand` does not define an argument named `command`
 Error: Directive `include` does not define an argument named `unless`
    ╭─[<unknown>:6:47]
    │
- 6 │   isHouseTrained(atOtherHomes: true) @include(unless: false)
+ 6 │   isHouseTrained(atOtherHomes: true) @include(unless: false, if: true)
    │                                               ───┬──  
    │                                                  ╰──── No argument definition with this name
 ───╯

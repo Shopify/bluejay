@@ -1,0 +1,11 @@
+fragment goodBooleanArg on Arguments {
+  booleanArgField(booleanArg: true)
+}
+
+fragment goodNonNullArg on Arguments {
+  nonNullBooleanArgField(nonNullBooleanArg: true)
+}
+
+fragment goodBooleanArgDefault on Arguments {
+  booleanArgField
+}

@@ -14,7 +14,7 @@ impl Span {
         &self.0
     }
 
-    pub(crate) fn merge(&self, other: &Self) -> Self {
+    pub fn merge(&self, other: &Self) -> Self {
         Self(min(self.0.start, other.0.start)..max(self.0.end, other.0.end))
     }
 

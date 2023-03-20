@@ -1,0 +1,23 @@
+---
+source: bluejay-validator/tests/executable_integration_test.rs
+expression: formatted_errors
+input_file: bluejay-validator/tests/test_data/executable/error/required_arguments.graphql
+---
+Error: Field `nonNullBooleanArgField` missing argument(s): nonNullBooleanArg
+   ╭─[<unknown>:2:3]
+   │
+ 2 │   nonNullBooleanArgField
+   │   ───────────┬──────────  
+   │              ╰──────────── Missing argument(s): nonNullBooleanArg
+───╯
+
+Error: Field `nonNullBooleanArgField` missing argument(s): nonNullBooleanArg
+   ╭─[<unknown>:6:3]
+   │
+ 6 │   nonNullBooleanArgField(nonNullBooleanArg: null)
+   │   ───────────────────────┬──────────┬────────────  
+   │                          ╰───────────────────────── Missing argument(s): nonNullBooleanArg
+   │                                     │              
+   │                                     ╰────────────── `null` value provided for required argument
+───╯
+
