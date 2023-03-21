@@ -1,0 +1,17 @@
+---
+source: bluejay-validator/tests/executable_integration_test.rs
+expression: formatted_errors
+input_file: bluejay-validator/tests/test_data/executable/error/fragment_name_uniqueness.graphql
+---
+Error: Multiple fragment definitions named `fragmentOne`
+    ╭─[<unknown>:1:1]
+    │
+  7 │ fragment fragmentOne on Dog {
+    │          ─────┬─────  
+    │               ╰─────── Fragment definition with name `fragmentOne`
+    │ 
+ 11 │ fragment fragmentOne on Dog {
+    │          ─────┬─────  
+    │               ╰─────── Fragment definition with name `fragmentOne`
+────╯
+

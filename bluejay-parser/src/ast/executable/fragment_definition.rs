@@ -38,8 +38,8 @@ impl<'a> FromTokens<'a> for FragmentDefinition<'a> {
 }
 
 impl<'a> FragmentDefinition<'a> {
-    pub fn name(&self) -> &str {
-        self.name.as_ref()
+    pub fn name(&self) -> &Name<'a> {
+        &self.name
     }
 
     pub fn type_condition(&self) -> &str {

@@ -67,6 +67,10 @@ pub enum Error<'a, E: ExecutableDocument, S: SchemaDefinition> {
         missing_argument_definitions: Vec<&'a S::InputValueDefinition>,
         arguments_with_null_values: Vec<ArgumentWrapper<'a, E::Argument<true>, E::Argument<false>>>,
     },
+    NonUniqueFragmentDefinitionNames {
+        name: &'a str,
+        fragment_definitions: Vec<&'a E::FragmentDefinition>,
+    },
 }
 
 #[cfg(feature = "parser-integration")]
@@ -275,6 +279,20 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                         .collect(),
                 }
             }
+            Error::NonUniqueFragmentDefinitionNames {
+                name,
+                fragment_definitions,
+            } => Self {
+                message: format!("Multiple fragment definitions named `{name}`"),
+                primary_annotation: None,
+                secondary_annotations: fragment_definitions
+                    .iter()
+                    .map(|fragment_definition| Annotation {
+                        message: format!("Fragment definition with name `{name}`"),
+                        span: fragment_definition.name().span(),
+                    })
+                    .collect(),
+            },
         }
     }
 }

@@ -4,7 +4,7 @@ use bluejay_core::definition::{
 use bluejay_core::executable::{ExecutableDocument, OperationDefinitionFromExecutableDocument};
 
 pub trait Visitor<'a, E: ExecutableDocument, S: SchemaDefinition> {
-    fn visit_operation(
+    fn visit_operation_definition(
         &mut self,
         _operation_definition: &'a OperationDefinitionFromExecutableDocument<E>,
     ) {
@@ -32,4 +32,6 @@ pub trait Visitor<'a, E: ExecutableDocument, S: SchemaDefinition> {
         _location: DirectiveLocation,
     ) {
     }
+
+    fn visit_fragment_definition(&mut self, _fragment_definition: &'a E::FragmentDefinition) {}
 }

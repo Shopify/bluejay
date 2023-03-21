@@ -14,7 +14,7 @@ pub struct OperationTypeIsDefined<'a, E: ExecutableDocument, S: SchemaDefinition
 impl<'a, E: ExecutableDocument, S: SchemaDefinition> Visitor<'a, E, S>
     for OperationTypeIsDefined<'a, E, S>
 {
-    fn visit_operation(
+    fn visit_operation_definition(
         &mut self,
         operation_definition: &'a OperationDefinitionFromExecutableDocument<E>,
     ) {

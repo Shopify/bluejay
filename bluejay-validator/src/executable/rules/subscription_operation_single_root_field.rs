@@ -16,7 +16,7 @@ pub struct SubscriptionOperationSingleRootField<'a, E: ExecutableDocument, S: Sc
 impl<'a, E: ExecutableDocument, S: SchemaDefinition> Visitor<'a, E, S>
     for SubscriptionOperationSingleRootField<'a, E, S>
 {
-    fn visit_operation(
+    fn visit_operation_definition(
         &mut self,
         operation_definition: &'a OperationDefinitionFromExecutableDocument<E>,
     ) {

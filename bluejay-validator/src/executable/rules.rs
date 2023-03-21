@@ -2,6 +2,7 @@ mod argument_names;
 mod argument_uniqueness;
 mod field_selection_merging;
 mod field_selections;
+mod fragment_name_uniqueness;
 mod leaf_field_selections;
 mod lone_anonymous_operation;
 mod named_operation_name_uniqueness;
@@ -18,6 +19,7 @@ use bluejay_core::definition::{
 use bluejay_core::executable::{ExecutableDocument, OperationDefinitionFromExecutableDocument};
 use field_selection_merging::FieldSelectionMerging;
 use field_selections::FieldSelections;
+use fragment_name_uniqueness::FragmentNameUniqueness;
 use leaf_field_selections::LeafFieldSelections;
 use lone_anonymous_operation::LoneAnonymousOperation;
 use named_operation_name_uniqueness::NamedOperationNameUniqueness;
@@ -52,8 +54,8 @@ macro_rules! define_rules {
             }
 
             impl<'a, E: ExecutableDocument, S: SchemaDefinition> Visitor<'a, E, S> for Rules<'a, E, S> {
-                fn visit_operation(&mut self, operation_definition: &'a OperationDefinitionFromExecutableDocument<E>) {
-                    $(self.[<$rule:snake>].visit_operation(operation_definition);)*
+                fn visit_operation_definition(&mut self, operation_definition: &'a OperationDefinitionFromExecutableDocument<E>) {
+                    $(self.[<$rule:snake>].visit_operation_definition(operation_definition);)*
                 }
 
                 fn visit_selection_set(&mut self, selection_set: &'a E::SelectionSet, r#type: &'a TypeDefinitionReferenceFromAbstract<S::TypeDefinitionReference>) {
@@ -70,6 +72,10 @@ macro_rules! define_rules {
 
                 fn visit_variable_directive(&mut self, directive: &'a E::Directive<false>, location: DirectiveLocation) {
                     $(self.[<$rule:snake>].visit_variable_directive(directive, location);)*
+                }
+
+                fn visit_fragment_definition(&mut self, fragment_definition: &'a E::FragmentDefinition) {
+                    $(self.[<$rule:snake>].visit_fragment_definition(fragment_definition);)*
                 }
             }
         }
@@ -101,4 +107,5 @@ define_rules!(
     ArgumentNames,
     ArgumentUniqueness,
     RequiredArguments,
+    FragmentNameUniqueness,
 );

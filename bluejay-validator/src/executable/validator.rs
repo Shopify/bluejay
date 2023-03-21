@@ -46,7 +46,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, R: Rule<'a, E, S>> Validato
         &mut self,
         operation_definition: &'a OperationDefinitionFromExecutableDocument<E>,
     ) {
-        self.rule.visit_operation(operation_definition);
+        self.rule.visit_operation_definition(operation_definition);
         if let Some(directives) = operation_definition.directives() {
             self.visit_variable_directives(
                 directives,
@@ -97,7 +97,8 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, R: Rule<'a, E, S>> Validato
         self.visit_variable_directives(
             fragment_definition.directives(),
             DirectiveLocation::FragmentDefinition,
-        )
+        );
+        self.rule.visit_fragment_definition(fragment_definition);
     }
 
     fn visit_selection_set(
