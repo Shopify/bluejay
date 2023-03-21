@@ -3,6 +3,7 @@ mod argument_uniqueness;
 mod field_selection_merging;
 mod field_selections;
 mod fragment_name_uniqueness;
+mod fragment_spread_type_exists;
 mod leaf_field_selections;
 mod lone_anonymous_operation;
 mod named_operation_name_uniqueness;
@@ -20,6 +21,7 @@ use bluejay_core::executable::{ExecutableDocument, OperationDefinitionFromExecut
 use field_selection_merging::FieldSelectionMerging;
 use field_selections::FieldSelections;
 use fragment_name_uniqueness::FragmentNameUniqueness;
+use fragment_spread_type_exists::FragmentSpreadTypeExists;
 use leaf_field_selections::LeafFieldSelections;
 use lone_anonymous_operation::LoneAnonymousOperation;
 use named_operation_name_uniqueness::NamedOperationNameUniqueness;
@@ -77,6 +79,10 @@ macro_rules! define_rules {
                 fn visit_fragment_definition(&mut self, fragment_definition: &'a E::FragmentDefinition) {
                     $(self.[<$rule:snake>].visit_fragment_definition(fragment_definition);)*
                 }
+
+                fn visit_inline_fragment(&mut self, inline_fragment: &'a E::InlineFragment) {
+                    $(self.[<$rule:snake>].visit_inline_fragment(inline_fragment);)*
+                }
             }
         }
     };
@@ -108,4 +114,5 @@ define_rules!(
     ArgumentUniqueness,
     RequiredArguments,
     FragmentNameUniqueness,
+    FragmentSpreadTypeExists,
 );

@@ -34,10 +34,8 @@ impl<'a> IsMatch<'a> for InlineFragment<'a> {
 }
 
 impl<'a> InlineFragment<'a> {
-    pub fn type_condition(&self) -> Option<&str> {
-        self.type_condition
-            .as_ref()
-            .map(|tc| tc.named_type().as_ref())
+    pub fn type_condition(&self) -> Option<&TypeCondition<'a>> {
+        self.type_condition.as_ref()
     }
 
     pub fn selection_set(&self) -> &SelectionSet<'a> {

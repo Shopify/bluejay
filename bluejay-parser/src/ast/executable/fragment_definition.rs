@@ -42,8 +42,8 @@ impl<'a> FragmentDefinition<'a> {
         &self.name
     }
 
-    pub fn type_condition(&self) -> &str {
-        self.type_condition.named_type().as_ref()
+    pub fn type_condition(&self) -> &TypeCondition<'a> {
+        &self.type_condition
     }
 
     pub fn selection_set(&self) -> &SelectionSet {

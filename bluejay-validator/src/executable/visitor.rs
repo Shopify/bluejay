@@ -34,4 +34,6 @@ pub trait Visitor<'a, E: ExecutableDocument, S: SchemaDefinition> {
     }
 
     fn visit_fragment_definition(&mut self, _fragment_definition: &'a E::FragmentDefinition) {}
+
+    fn visit_inline_fragment(&mut self, _inline_fragment: &'a E::InlineFragment) {}
 }

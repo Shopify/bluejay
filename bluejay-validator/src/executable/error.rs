@@ -71,6 +71,12 @@ pub enum Error<'a, E: ExecutableDocument, S: SchemaDefinition> {
         name: &'a str,
         fragment_definitions: Vec<&'a E::FragmentDefinition>,
     },
+    FragmentDefinitionTargetTypeDoesNotExist {
+        fragment_definition: &'a E::FragmentDefinition,
+    },
+    InlineFragmentTargetTypeDoesNotExist {
+        inline_fragment: &'a E::InlineFragment,
+    },
 }
 
 #[cfg(feature = "parser-integration")]
@@ -292,6 +298,33 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                         span: fragment_definition.name().span(),
                     })
                     .collect(),
+            },
+            Error::FragmentDefinitionTargetTypeDoesNotExist {
+                fragment_definition,
+            } => Self {
+                message: format!(
+                    "No type definition with name `{}`",
+                    fragment_definition.type_condition().named_type().as_ref()
+                ),
+                primary_annotation: Some(Annotation {
+                    message: "No type with this name".to_string(),
+                    span: fragment_definition.type_condition().named_type().span(),
+                }),
+                secondary_annotations: Vec::new(),
+            },
+            Error::InlineFragmentTargetTypeDoesNotExist { inline_fragment } => Self {
+                message: format!(
+                    "No type definition with name `{}`",
+                    inline_fragment
+                        .type_condition()
+                        .map(|tc| tc.named_type().as_ref())
+                        .unwrap_or_default()
+                ),
+                primary_annotation: inline_fragment.type_condition().map(|tc| Annotation {
+                    message: "No type with this name".to_string(),
+                    span: tc.named_type().span(),
+                }),
+                secondary_annotations: Vec::new(),
             },
         }
     }

@@ -23,7 +23,7 @@ impl<'a> IsMatch<'a> for TypeCondition<'a> {
 impl<'a> TypeCondition<'a> {
     pub(crate) const ON: &'static str = "on";
 
-    pub(crate) fn named_type(&self) -> &Name {
+    pub fn named_type(&self) -> &Name {
         &self.named_type
     }
 }

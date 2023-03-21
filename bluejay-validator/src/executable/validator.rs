@@ -179,6 +179,8 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, R: Rule<'a, E, S>> Validato
         if let Some(fragment_type) = fragment_type {
             self.visit_selection_set(inline_fragment.selection_set(), fragment_type);
         }
+
+        self.rule.visit_inline_fragment(inline_fragment);
     }
 
     fn visit_fragment_spread(
