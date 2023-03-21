@@ -77,6 +77,12 @@ pub enum Error<'a, E: ExecutableDocument, S: SchemaDefinition> {
     InlineFragmentTargetTypeDoesNotExist {
         inline_fragment: &'a E::InlineFragment,
     },
+    FragmentDefinitionTargetTypeNotComposite {
+        fragment_definition: &'a E::FragmentDefinition,
+    },
+    InlineFragmentTargetTypeNotComposite {
+        inline_fragment: &'a E::InlineFragment,
+    },
 }
 
 #[cfg(feature = "parser-integration")]
@@ -322,6 +328,33 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                 ),
                 primary_annotation: inline_fragment.type_condition().map(|tc| Annotation {
                     message: "No type with this name".to_string(),
+                    span: tc.named_type().span(),
+                }),
+                secondary_annotations: Vec::new(),
+            },
+            Error::FragmentDefinitionTargetTypeNotComposite {
+                fragment_definition,
+            } => Self {
+                message: format!(
+                    "`{}` is not a composite type",
+                    fragment_definition.type_condition().named_type().as_ref()
+                ),
+                primary_annotation: Some(Annotation {
+                    message: "Fragment definition target types must be composite types".to_string(),
+                    span: fragment_definition.type_condition().named_type().span(),
+                }),
+                secondary_annotations: Vec::new(),
+            },
+            Error::InlineFragmentTargetTypeNotComposite { inline_fragment } => Self {
+                message: format!(
+                    "`{}` is not a composite type",
+                    inline_fragment
+                        .type_condition()
+                        .map(|tc| tc.named_type().as_ref())
+                        .unwrap_or_default()
+                ),
+                primary_annotation: inline_fragment.type_condition().map(|tc| Annotation {
+                    message: "Inline fragment target types must be composite types".to_string(),
                     span: tc.named_type().span(),
                 }),
                 secondary_annotations: Vec::new(),

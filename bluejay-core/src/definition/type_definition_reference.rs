@@ -158,6 +158,13 @@ impl<
     pub fn is_builtin(&self) -> bool {
         matches!(self, Self::BuiltinScalarType(_))
     }
+
+    pub fn is_composite(&self) -> bool {
+        matches!(
+            self,
+            Self::ObjectType(_, _) | Self::UnionType(_, _) | Self::InterfaceType(_, _)
+        )
+    }
 }
 
 pub type TypeDefinitionReferenceFromAbstract<T> = TypeDefinitionReference<

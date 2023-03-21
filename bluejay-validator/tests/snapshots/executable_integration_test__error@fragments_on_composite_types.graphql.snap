@@ -1,0 +1,21 @@
+---
+source: bluejay-validator/tests/executable_integration_test.rs
+expression: formatted_errors
+input_file: bluejay-validator/tests/test_data/executable/error/fragments_on_composite_types.graphql
+---
+Error: `Int` is not a composite type
+   ╭─[<unknown>:1:26]
+   │
+ 1 │ fragment fragOnScalar on Int {
+   │                          ─┬─  
+   │                           ╰─── Fragment definition target types must be composite types
+───╯
+
+Error: `Boolean` is not a composite type
+   ╭─[<unknown>:6:10]
+   │
+ 6 │   ... on Boolean {
+   │          ───┬───  
+   │             ╰───── Inline fragment target types must be composite types
+───╯
+

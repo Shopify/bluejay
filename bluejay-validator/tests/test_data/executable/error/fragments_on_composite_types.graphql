@@ -1,0 +1,9 @@
+fragment fragOnScalar on Int {
+  something
+}
+
+fragment inlineFragOnScalar on Dog {
+  ... on Boolean {
+    somethingElse
+  }
+}

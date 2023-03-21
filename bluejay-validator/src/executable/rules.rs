@@ -4,6 +4,7 @@ mod field_selection_merging;
 mod field_selections;
 mod fragment_name_uniqueness;
 mod fragment_spread_type_exists;
+mod fragments_on_composite_types;
 mod leaf_field_selections;
 mod lone_anonymous_operation;
 mod named_operation_name_uniqueness;
@@ -22,6 +23,7 @@ use field_selection_merging::FieldSelectionMerging;
 use field_selections::FieldSelections;
 use fragment_name_uniqueness::FragmentNameUniqueness;
 use fragment_spread_type_exists::FragmentSpreadTypeExists;
+use fragments_on_composite_types::FragmentsOnCompositeTypes;
 use leaf_field_selections::LeafFieldSelections;
 use lone_anonymous_operation::LoneAnonymousOperation;
 use named_operation_name_uniqueness::NamedOperationNameUniqueness;
@@ -115,4 +117,5 @@ define_rules!(
     RequiredArguments,
     FragmentNameUniqueness,
     FragmentSpreadTypeExists,
+    FragmentsOnCompositeTypes,
 );
