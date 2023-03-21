@@ -192,6 +192,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, R: Rule<'a, E, S>> Validato
             fragment_spread.directives(),
             DirectiveLocation::FragmentSpread,
         );
+        self.rule.visit_fragment_spread(fragment_spread);
         // fragment will get checked when definition is visited
     }
 

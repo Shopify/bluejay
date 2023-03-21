@@ -1,33 +1,45 @@
-fragment conflictingBecauseAlias on Dog {
-  name: nickname
-  name
-}
-
-fragment conflictingArgsOnValues on Dog {
-  doesKnowCommand(dogCommand: SIT)
-  doesKnowCommand(dogCommand: HEEL)
-}
-
-fragment conflictingArgsValueAndVar on Dog {
-  doesKnowCommand(dogCommand: SIT)
-  doesKnowCommand(dogCommand: $dogCommand)
-}
-
-fragment conflictingArgsWithVars on Dog {
-  doesKnowCommand(dogCommand: $varOne)
-  doesKnowCommand(dogCommand: $varTwo)
-}
-
-fragment differingArgs on Dog {
-  doesKnowCommand(dogCommand: SIT)
-  doesKnowCommand
-}
-
-fragment conflictingDifferingResponses on Pet {
-  ... on Dog {
-    someValue: nickname
+query conflictingBecauseAlias {
+  dog {
+    name: nickname
+    name
   }
-  ... on Cat {
-    someValue: meowVolume
+}
+
+query conflictingArgsOnValues {
+  dog {
+    doesKnowCommand(dogCommand: SIT)
+    doesKnowCommand(dogCommand: HEEL)
+  }
+}
+
+query conflictingArgsValueAndVar {
+  dog {
+    doesKnowCommand(dogCommand: SIT)
+    doesKnowCommand(dogCommand: $dogCommand)
+  }
+}
+
+query conflictingArgsWithVars {
+  dog {
+    doesKnowCommand(dogCommand: $varOne)
+    doesKnowCommand(dogCommand: $varTwo)
+  }
+}
+
+query differingArgs {
+  dog {
+    doesKnowCommand(dogCommand: SIT)
+    doesKnowCommand
+  }
+}
+
+query conflictingDifferingResponses {
+  pet {
+    ... on Dog {
+      someValue: nickname
+    }
+    ... on Cat {
+      someValue: meowVolume
+    }
   }
 }

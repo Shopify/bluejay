@@ -1,7 +1,11 @@
-fragment argOnRequiredArg on Dog {
-  doesKnowCommand(dogCommand: SIT, dogCommand: HEEL)
+query argOnRequiredArg {
+  dog {
+    doesKnowCommand(dogCommand: SIT, dogCommand: HEEL)
+  }
 }
 
-fragment argOnOptional on Dog {
-  isHouseTrained(atOtherHomes: true, atOtherHomes: false) @include(if: true, if: false)
+query argOnOptional {
+  dog {
+    isHouseTrained(atOtherHomes: true, atOtherHomes: false) @include(if: true, if: false)
+  }
 }

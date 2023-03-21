@@ -7,3 +7,10 @@ fragment inlineNotExistingType on Dog {
     name
   }
 }
+
+{
+  dog {
+    ...inlineNotExistingType
+  }
+  ...notOnExistingType
+}

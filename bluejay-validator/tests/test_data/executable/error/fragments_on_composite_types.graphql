@@ -7,3 +7,10 @@ fragment inlineFragOnScalar on Dog {
     somethingElse
   }
 }
+
+{
+  dog {
+    ...inlineFragOnScalar
+    ...fragOnScalar
+  }
+}

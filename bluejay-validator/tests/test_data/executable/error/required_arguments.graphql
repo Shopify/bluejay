@@ -1,7 +1,11 @@
-fragment missingRequiredArg on Arguments {
-  nonNullBooleanArgField
+query missingRequiredArg {
+  arguments {
+    nonNullBooleanArgField
+  }
 }
 
-fragment requiredArgNull on Arguments {
-  nonNullBooleanArgField(nonNullBooleanArg: null)
+query requiredArgNull {
+  arguments {
+    nonNullBooleanArgField(nonNullBooleanArg: null)
+  }
 }

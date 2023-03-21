@@ -4,6 +4,7 @@ mod field_selection_merging;
 mod field_selections;
 mod fragment_name_uniqueness;
 mod fragment_spread_type_exists;
+mod fragments_must_be_used;
 mod fragments_on_composite_types;
 mod leaf_field_selections;
 mod lone_anonymous_operation;
@@ -23,6 +24,7 @@ use field_selection_merging::FieldSelectionMerging;
 use field_selections::FieldSelections;
 use fragment_name_uniqueness::FragmentNameUniqueness;
 use fragment_spread_type_exists::FragmentSpreadTypeExists;
+use fragments_must_be_used::FragmentsMustBeUsed;
 use fragments_on_composite_types::FragmentsOnCompositeTypes;
 use leaf_field_selections::LeafFieldSelections;
 use lone_anonymous_operation::LoneAnonymousOperation;
@@ -85,6 +87,10 @@ macro_rules! define_rules {
                 fn visit_inline_fragment(&mut self, inline_fragment: &'a E::InlineFragment) {
                     $(self.[<$rule:snake>].visit_inline_fragment(inline_fragment);)*
                 }
+
+                fn visit_fragment_spread(&mut self, fragment_spread: &'a E::FragmentSpread) {
+                    $(self.[<$rule:snake>].visit_fragment_spread(fragment_spread);)*
+                }
             }
         }
     };
@@ -118,4 +124,5 @@ define_rules!(
     FragmentNameUniqueness,
     FragmentSpreadTypeExists,
     FragmentsOnCompositeTypes,
+    FragmentsMustBeUsed,
 );

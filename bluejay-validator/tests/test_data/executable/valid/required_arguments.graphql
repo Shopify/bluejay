@@ -1,11 +1,17 @@
-fragment goodBooleanArg on Arguments {
-  booleanArgField(booleanArg: true)
+query goodBooleanArg {
+  arguments {
+    booleanArgField(booleanArg: true)
+  }
 }
 
-fragment goodNonNullArg on Arguments {
-  nonNullBooleanArgField(nonNullBooleanArg: true)
+query goodNonNullArg {
+  arguments {
+    nonNullBooleanArgField(nonNullBooleanArg: true)
+  }
 }
 
-fragment goodBooleanArgDefault on Arguments {
-  booleanArgField
+query goodBooleanArgDefault {
+  arguments {
+    booleanArgField
+  }
 }

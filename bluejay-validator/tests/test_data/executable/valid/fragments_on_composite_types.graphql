@@ -11,3 +11,9 @@ fragment fragOnUnion on CatOrDog {
     name
   }
 }
+
+{
+  dog { ...fragOnObject }
+  pet { ...fragOnInterface }
+  catOrDog { ...fragOnUnion }
+}

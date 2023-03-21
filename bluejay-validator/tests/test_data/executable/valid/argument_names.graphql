@@ -1,15 +1,23 @@
-fragment argOnRequiredArg on Dog {
-  doesKnowCommand(dogCommand: SIT)
+query argOnRequiredArg {
+  dog {
+    doesKnowCommand(dogCommand: SIT)
+  }
 }
 
-fragment argOnOptional on Dog {
-  isHouseTrained(atOtherHomes: true) @include(if: true)
+query argOnOptional {
+  dog {
+    isHouseTrained(atOtherHomes: true) @include(if: true)
+  }
 }
 
-fragment multipleArgs on Arguments {
-  multipleRequirements(x: 1, y: 2)
+query multipleArgs {
+  arguments {
+    multipleRequirements(x: 1, y: 2)
+  }
 }
 
-fragment multipleArgsReverseOrder on Arguments {
-  multipleRequirements(y: 2, x: 1)
+query multipleArgsReverseOrder {
+  arguments {
+    multipleRequirements(y: 2, x: 1)
+  }
 }

@@ -1,7 +1,11 @@
-fragment invalidArgName on Dog {
-  doesKnowCommand(command: CLEAN_UP_HOUSE, dogCommand: SIT)
+query invalidArgName {
+  dog {
+    doesKnowCommand(command: CLEAN_UP_HOUSE, dogCommand: SIT)
+  }
 }
 
-fragment invalidDirectiveArgName on Dog {
-  isHouseTrained(atOtherHomes: true) @include(unless: false, if: true)
+query invalidDirectiveArgName {
+  dog {
+    isHouseTrained(atOtherHomes: true) @include(unless: false, if: true)
+  }
 }

@@ -83,6 +83,9 @@ pub enum Error<'a, E: ExecutableDocument, S: SchemaDefinition> {
     InlineFragmentTargetTypeNotComposite {
         inline_fragment: &'a E::InlineFragment,
     },
+    FragmentDefinitionUnused {
+        fragment_definition: &'a E::FragmentDefinition,
+    },
 }
 
 #[cfg(feature = "parser-integration")]
@@ -356,6 +359,19 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                 primary_annotation: inline_fragment.type_condition().map(|tc| Annotation {
                     message: "Inline fragment target types must be composite types".to_string(),
                     span: tc.named_type().span(),
+                }),
+                secondary_annotations: Vec::new(),
+            },
+            Error::FragmentDefinitionUnused {
+                fragment_definition,
+            } => Self {
+                message: format!(
+                    "Fragment definition `{}` is unused",
+                    fragment_definition.name().as_ref()
+                ),
+                primary_annotation: Some(Annotation {
+                    message: "Fragment definition is unused".to_owned(),
+                    span: fragment_definition.name().span(),
                 }),
                 secondary_annotations: Vec::new(),
             },

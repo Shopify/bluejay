@@ -1,37 +1,49 @@
-fragment mergeIdenticalFields on Dog {
-  name
-  name
-}
-
-fragment mergeIdenticalAliasesAndFields on Dog {
-  otherName: name
-  otherName: name
-}
-
-fragment mergeIdenticalFieldsWithIdenticalArgs on Dog {
-  doesKnowCommand(dogCommand: SIT)
-  doesKnowCommand(dogCommand: SIT)
-}
-
-fragment mergeIdenticalFieldsWithIdenticalValues on Dog {
-  doesKnowCommand(dogCommand: $dogCommand)
-  doesKnowCommand(dogCommand: $dogCommand)
-}
-
-fragment safeDifferingFields on Pet {
-  ... on Dog {
-    volume: barkVolume
-  }
-  ... on Cat {
-    volume: meowVolume
+query mergeIdenticalFields {
+  dog {
+    name
+    name
   }
 }
 
-fragment safeDifferingArgs on Pet {
-  ... on Dog {
+query mergeIdenticalAliasesAndFields {
+  dog {
+    otherName: name
+    otherName: name
+  }
+}
+
+query mergeIdenticalFieldsWithIdenticalArgs {
+  dog {
+    doesKnowCommand(dogCommand: SIT)
     doesKnowCommand(dogCommand: SIT)
   }
-  ... on Cat {
-    doesKnowCommand(catCommand: JUMP)
+}
+
+query mergeIdenticalFieldsWithIdenticalValues {
+  dog {
+    doesKnowCommand(dogCommand: $dogCommand)
+    doesKnowCommand(dogCommand: $dogCommand)
+  }
+}
+
+query safeDifferingFields {
+  pet {
+    ... on Dog {
+      volume: barkVolume
+    }
+    ... on Cat {
+      volume: meowVolume
+    }
+  }
+}
+
+query safeDifferingArgs {
+  pet {
+    ... on Dog {
+      doesKnowCommand(dogCommand: SIT)
+    }
+    ... on Cat {
+      doesKnowCommand(catCommand: JUMP)
+    }
   }
 }

@@ -6,30 +6,30 @@ input_file: bluejay-validator/tests/test_data/executable/error/argument_uniquene
 Error: Multiple arguments with name `dogCommand`
    ╭─[<unknown>:1:1]
    │
- 2 │   doesKnowCommand(dogCommand: SIT, dogCommand: HEEL)
-   │                   ─────┬────       ─────┬────  
-   │                        ╰─────────────────────── Argument with name `dogCommand`
-   │                                         │      
-   │                                         ╰────── Argument with name `dogCommand`
+ 3 │     doesKnowCommand(dogCommand: SIT, dogCommand: HEEL)
+   │                     ─────┬────       ─────┬────  
+   │                          ╰─────────────────────── Argument with name `dogCommand`
+   │                                           │      
+   │                                           ╰────── Argument with name `dogCommand`
 ───╯
 
 Error: Multiple arguments with name `atOtherHomes`
    ╭─[<unknown>:1:1]
    │
- 6 │   isHouseTrained(atOtherHomes: true, atOtherHomes: false) @include(if: true, if: false)
-   │                  ──────┬─────        ──────┬─────  
-   │                        ╰─────────────────────────── Argument with name `atOtherHomes`
-   │                                            │       
-   │                                            ╰─────── Argument with name `atOtherHomes`
+ 9 │     isHouseTrained(atOtherHomes: true, atOtherHomes: false) @include(if: true, if: false)
+   │                    ──────┬─────        ──────┬─────  
+   │                          ╰─────────────────────────── Argument with name `atOtherHomes`
+   │                                              │       
+   │                                              ╰─────── Argument with name `atOtherHomes`
 ───╯
 
 Error: Multiple arguments with name `if`
    ╭─[<unknown>:1:1]
    │
- 6 │   isHouseTrained(atOtherHomes: true, atOtherHomes: false) @include(if: true, if: false)
-   │                                                                    ─┬        ─┬  
-   │                                                                     ╰──────────── Argument with name `if`
-   │                                                                               │  
-   │                                                                               ╰── Argument with name `if`
+ 9 │     isHouseTrained(atOtherHomes: true, atOtherHomes: false) @include(if: true, if: false)
+   │                                                                      ─┬        ─┬  
+   │                                                                       ╰──────────── Argument with name `if`
+   │                                                                                 │  
+   │                                                                                 ╰── Argument with name `if`
 ───╯
 

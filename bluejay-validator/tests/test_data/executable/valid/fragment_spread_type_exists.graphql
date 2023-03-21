@@ -2,14 +2,24 @@ fragment correctType on Dog {
   name
 }
 
-fragment inlineFragment on Dog {
-  ... on Dog {
-    name
+query correctType {
+  dog {
+    ...correctType
   }
 }
 
-fragment inlineFragment2 on Dog {
-  ... @include(if: true) {
-    name
+query inlineFragment {
+  dog {
+    ... on Dog {
+      name
+    }
+  }
+}
+
+query inlineFragment2 {
+  dog {
+    ... @include(if: true) {
+      name
+    }
   }
 }

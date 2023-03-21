@@ -4,20 +4,20 @@ expression: formatted_errors
 input_file: bluejay-validator/tests/test_data/executable/error/required_arguments.graphql
 ---
 Error: Field `nonNullBooleanArgField` missing argument(s): nonNullBooleanArg
-   ╭─[<unknown>:2:3]
+   ╭─[<unknown>:3:5]
    │
- 2 │   nonNullBooleanArgField
-   │   ───────────┬──────────  
-   │              ╰──────────── Missing argument(s): nonNullBooleanArg
+ 3 │     nonNullBooleanArgField
+   │     ───────────┬──────────  
+   │                ╰──────────── Missing argument(s): nonNullBooleanArg
 ───╯
 
 Error: Field `nonNullBooleanArgField` missing argument(s): nonNullBooleanArg
-   ╭─[<unknown>:6:3]
+   ╭─[<unknown>:9:5]
    │
- 6 │   nonNullBooleanArgField(nonNullBooleanArg: null)
-   │   ───────────────────────┬──────────┬────────────  
-   │                          ╰───────────────────────── Missing argument(s): nonNullBooleanArg
-   │                                     │              
-   │                                     ╰────────────── `null` value provided for required argument
+ 9 │     nonNullBooleanArgField(nonNullBooleanArg: null)
+   │     ───────────────────────┬──────────┬────────────  
+   │                            ╰───────────────────────── Missing argument(s): nonNullBooleanArg
+   │                                       │              
+   │                                       ╰────────────── `null` value provided for required argument
 ───╯
 
