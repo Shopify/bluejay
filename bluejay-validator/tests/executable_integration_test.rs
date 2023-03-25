@@ -38,7 +38,7 @@ fn test_valid() {
     });
 }
 
-fn with_schema<F: Fn(SchemaDefinition) -> ()>(f: F) {
+fn with_schema(f: fn(SchemaDefinition) -> ()) {
     let s = std::fs::read_to_string("tests/test_data/executable/schema.graphql").unwrap();
     let definition_document =
         DefinitionDocument::parse(s.as_str()).expect("Schema had parse errors");

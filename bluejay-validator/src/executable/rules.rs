@@ -3,6 +3,7 @@ mod argument_uniqueness;
 mod field_selection_merging;
 mod field_selections;
 mod fragment_name_uniqueness;
+mod fragment_spread_target_defined;
 mod fragment_spread_type_exists;
 mod fragments_must_be_used;
 mod fragments_on_composite_types;
@@ -23,6 +24,7 @@ use bluejay_core::executable::{ExecutableDocument, OperationDefinitionFromExecut
 use field_selection_merging::FieldSelectionMerging;
 use field_selections::FieldSelections;
 use fragment_name_uniqueness::FragmentNameUniqueness;
+use fragment_spread_target_defined::FragmentSpreadTargetDefined;
 use fragment_spread_type_exists::FragmentSpreadTypeExists;
 use fragments_must_be_used::FragmentsMustBeUsed;
 use fragments_on_composite_types::FragmentsOnCompositeTypes;
@@ -125,4 +127,5 @@ define_rules!(
     FragmentSpreadTypeExists,
     FragmentsOnCompositeTypes,
     FragmentsMustBeUsed,
+    FragmentSpreadTargetDefined,
 );

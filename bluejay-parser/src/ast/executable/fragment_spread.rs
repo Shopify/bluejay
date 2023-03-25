@@ -29,8 +29,8 @@ impl<'a> IsMatch<'a> for FragmentSpread<'a> {
 }
 
 impl<'a> FragmentSpread<'a> {
-    pub fn name(&self) -> &str {
-        self.name.as_ref()
+    pub fn name(&self) -> &Name<'a> {
+        &self.name
     }
 }
 

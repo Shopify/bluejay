@@ -86,6 +86,9 @@ pub enum Error<'a, E: ExecutableDocument, S: SchemaDefinition> {
     FragmentDefinitionUnused {
         fragment_definition: &'a E::FragmentDefinition,
     },
+    FragmentSpreadTargetUndefined {
+        fragment_spread: &'a E::FragmentSpread,
+    },
 }
 
 #[cfg(feature = "parser-integration")]
@@ -372,6 +375,17 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                 primary_annotation: Some(Annotation {
                     message: "Fragment definition is unused".to_owned(),
                     span: fragment_definition.name().span(),
+                }),
+                secondary_annotations: Vec::new(),
+            },
+            Error::FragmentSpreadTargetUndefined { fragment_spread } => Self {
+                message: format!(
+                    "No fragment defined with name `{}`",
+                    fragment_spread.name().as_ref()
+                ),
+                primary_annotation: Some(Annotation {
+                    message: "No fragment defined with this name".to_owned(),
+                    span: fragment_spread.name().span(),
                 }),
                 secondary_annotations: Vec::new(),
             },

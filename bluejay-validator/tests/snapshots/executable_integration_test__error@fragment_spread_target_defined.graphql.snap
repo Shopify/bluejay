@@ -1,0 +1,13 @@
+---
+source: bluejay-validator/tests/executable_integration_test.rs
+expression: formatted_errors
+input_file: bluejay-validator/tests/test_data/executable/error/fragment_spread_target_defined.graphql
+---
+Error: No fragment defined with name `undefinedFragment`
+   ╭─[<unknown>:3:8]
+   │
+ 3 │     ...undefinedFragment
+   │        ────────┬────────  
+   │                ╰────────── No fragment defined with this name
+───╯
+
