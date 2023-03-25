@@ -28,42 +28,33 @@ impl From<ParseError> for Error {
         match val {
             ParseError::ExpectedOneOf { span, values } => Self {
                 message: "Parse error".to_string(),
-                primary_annotation: Some(Annotation {
-                    message: format!("Expected one of the following: {}", values.join(", "),),
+                primary_annotation: Some(Annotation::new(
+                    format!("Expected one of the following: {}", values.join(", "),),
                     span,
-                }),
+                )),
                 secondary_annotations: Vec::new(),
             },
             ParseError::ExpectedIdentifier { span, value } => Self {
                 message: "Parse error".to_string(),
-                primary_annotation: Some(Annotation {
-                    message: format!("Expected to find: {value}"),
+                primary_annotation: Some(Annotation::new(
+                    format!("Expected to find: {value}"),
                     span,
-                }),
+                )),
                 secondary_annotations: Vec::new(),
             },
             ParseError::ExpectedName { span } => Self {
                 message: "Parse error".to_string(),
-                primary_annotation: Some(Annotation {
-                    message: "Expected a name".to_string(),
-                    span,
-                }),
+                primary_annotation: Some(Annotation::new("Expected a name", span)),
                 secondary_annotations: Vec::new(),
             },
             ParseError::UnexpectedEOF { span } => Self {
                 message: "Parse error".to_string(),
-                primary_annotation: Some(Annotation {
-                    message: "Unexpected EOF".to_string(),
-                    span,
-                }),
+                primary_annotation: Some(Annotation::new("Unexpected EOF", span)),
                 secondary_annotations: Vec::new(),
             },
             ParseError::UnexpectedToken { span } => Self {
                 message: "Unexpected token".to_string(),
-                primary_annotation: Some(Annotation {
-                    message: "Unexpected token".to_string(),
-                    span,
-                }),
+                primary_annotation: Some(Annotation::new("Unexpected token", span)),
                 secondary_annotations: Vec::new(),
             },
             ParseError::EmptyDocument => Self {

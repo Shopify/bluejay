@@ -36,18 +36,18 @@ impl Error {
                     error
                         .primary_annotation
                         .as_ref()
-                        .map(|a| a.span.to_range().start)
+                        .map(|a| a.span().to_range().start)
                         .unwrap_or(0),
                 )
                 .with_config(Config::default().with_color(false))
                 .with_message(error.message)
                 .with_labels(error.primary_annotation.map(|annotation| {
-                    Label::new(annotation.span.to_range())
-                        .with_message(annotation.message)
+                    Label::new(annotation.span().to_range())
+                        .with_message(annotation.message())
                         .with_priority(1)
                 }))
                 .with_labels(error.secondary_annotations.into_iter().map(|annotation| {
-                    Label::new(annotation.span.to_range()).with_message(annotation.message)
+                    Label::new(annotation.span().to_range()).with_message(annotation.message())
                 }))
                 .finish()
                 .write(&mut file_cache, &mut buf)

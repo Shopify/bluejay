@@ -101,9 +101,11 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                 secondary_annotations: operations
                     .iter()
                     .filter_map(|operation| {
-                        operation.name().map(|operation_name| Annotation {
-                            message: format!("Operation definition with name `{name}`"),
-                            span: operation_name.span(),
+                        operation.name().map(|operation_name| {
+                            Annotation::new(
+                                format!("Operation definition with name `{name}`"),
+                                operation_name.span(),
+                            )
                         })
                     })
                     .collect(),
@@ -115,18 +117,20 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                 primary_annotation: None,
                 secondary_annotations: anonymous_operations
                     .iter()
-                    .map(|operation| Annotation {
-                        message: "Anonymous operation definition".to_string(),
-                        span: operation.selection_set().span(),
+                    .map(|operation| {
+                        Annotation::new(
+                            "Anonymous operation definition",
+                            operation.selection_set().span(),
+                        )
                     })
                     .collect(),
             },
             Error::SubscriptionRootNotSingleField { operation } => Self {
                 message: "Subscription root is not a single field".to_string(),
-                primary_annotation: Some(Annotation {
-                    message: "Selection set contains multiple fields".to_string(),
-                    span: operation.selection_set().span(),
-                }),
+                primary_annotation: Some(Annotation::new(
+                    "Selection set contains multiple fields",
+                    operation.selection_set().span(),
+                )),
                 secondary_annotations: Vec::new(),
             },
             Error::FieldDoesNotExistOnType { field, r#type } => Self {
@@ -135,10 +139,10 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                     field.name().as_ref(),
                     r#type.name()
                 ),
-                primary_annotation: Some(Annotation {
-                    message: format!("Field does not exist on type `{}`", r#type.name()),
-                    span: field.name().span(),
-                }),
+                primary_annotation: Some(Annotation::new(
+                    format!("Field does not exist on type `{}`", r#type.name()),
+                    field.name().span(),
+                )),
                 secondary_annotations: Vec::new(),
             },
             Error::OperationTypeNotDefined { operation } => Self {
@@ -146,21 +150,21 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                     "Schema does not define a {} root",
                     OperationType::from(operation.operation_type()),
                 ),
-                primary_annotation: Some(Annotation {
-                    message: format!(
+                primary_annotation: Some(Annotation::new(
+                    format!(
                         "Schema does not define a {} root",
                         OperationType::from(operation.operation_type()),
                     ),
-                    span: operation.operation_type().span(),
-                }),
+                    operation.operation_type().span(),
+                )),
                 secondary_annotations: Vec::new(),
             },
             Error::FieldSelectionsDoNotMerge { selection_set } => Self {
                 message: "Field selections do not merge".to_string(),
-                primary_annotation: Some(Annotation {
-                    message: "Field selections do not merge".to_string(),
-                    span: selection_set.span(),
-                }),
+                primary_annotation: Some(Annotation::new(
+                    "Field selections do not merge",
+                    selection_set.span(),
+                )),
                 secondary_annotations: Vec::new(),
             },
             Error::LeafFieldSelectionNotEmpty {
@@ -171,10 +175,10 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                     "Selection on field of leaf type `{}` was not empty",
                     r#type.as_ref().display_name()
                 ),
-                primary_annotation: Some(Annotation {
-                    message: "Selection set on field of leaf type must be empty".to_string(),
-                    span: selection_set.span(),
-                }),
+                primary_annotation: Some(Annotation::new(
+                    "Selection set on field of leaf type must be empty",
+                    selection_set.span(),
+                )),
                 secondary_annotations: Vec::new(),
             },
             Error::NonLeafFieldSelectionEmpty { field, r#type } => Self {
@@ -182,10 +186,10 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                     "No selection on field of non-leaf type `{}`",
                     r#type.as_ref().display_name()
                 ),
-                primary_annotation: Some(Annotation {
-                    message: "Fields of non-leaf types must have a selection".to_string(),
-                    span: field.name().span(),
-                }),
+                primary_annotation: Some(Annotation::new(
+                    "Fields of non-leaf types must have a selection",
+                    field.name().span(),
+                )),
                 secondary_annotations: Vec::new(),
             },
             Error::ArgumentDoesNotExistOnField {
@@ -197,10 +201,10 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                     field_definition.name(),
                     argument.name().as_ref(),
                 ),
-                primary_annotation: Some(Annotation {
-                    message: "No argument definition with this name".to_string(),
-                    span: argument.name().span(),
-                }),
+                primary_annotation: Some(Annotation::new(
+                    "No argument definition with this name",
+                    argument.name().span(),
+                )),
                 secondary_annotations: Vec::new(),
             },
             Error::ArgumentDoesNotExistOnDirective {
@@ -214,10 +218,10 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                         directive_definition.name(),
                         name.as_ref(),
                     ),
-                    primary_annotation: Some(Annotation {
-                        message: "No argument definition with this name".to_string(),
-                        span: name.span(),
-                    }),
+                    primary_annotation: Some(Annotation::new(
+                        "No argument definition with this name",
+                        name.span(),
+                    )),
                     secondary_annotations: Vec::new(),
                 }
             }
@@ -226,9 +230,11 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                 primary_annotation: None,
                 secondary_annotations: arguments
                     .into_iter()
-                    .map(|argument| Annotation {
-                        message: format!("Argument with name `{name}`"),
-                        span: call_const_wrapper_method!(ArgumentWrapper, argument, name).span(),
+                    .map(|argument| {
+                        Annotation::new(
+                            format!("Argument with name `{name}`"),
+                            call_const_wrapper_method!(ArgumentWrapper, argument, name).span(),
+                        )
                     })
                     .collect(),
             },
@@ -253,15 +259,17 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                         "Field `{}` missing argument(s): {missing_argument_names}",
                         field.response_key()
                     ),
-                    primary_annotation: Some(Annotation {
-                        message: format!("Missing argument(s): {missing_argument_names}"),
+                    primary_annotation: Some(Annotation::new(
+                        format!("Missing argument(s): {missing_argument_names}"),
                         span,
-                    }),
+                    )),
                     secondary_annotations: arguments_with_null_values
                         .into_iter()
-                        .map(|argument| Annotation {
-                            message: "`null` value provided for required argument".to_string(),
-                            span: argument.span(),
+                        .map(|argument| {
+                            Annotation::new(
+                                "`null` value provided for required argument",
+                                argument.span(),
+                            )
                         })
                         .collect(),
                 }
@@ -284,16 +292,16 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                     message: format!(
                         "Directive `{directive_name}` missing argument(s): {missing_argument_names}",
                     ),
-                    primary_annotation: Some(Annotation {
-                        message: format!("Missing argument(s): {missing_argument_names}"),
+                    primary_annotation: Some(Annotation::new(
+                        format!("Missing argument(s): {missing_argument_names}"),
                         span,
-                    }),
+                    )),
                     secondary_annotations: arguments_with_null_values
                         .into_iter()
-                        .map(|argument| Annotation {
-                            message: "`null` value provided for required argument".to_string(),
-                            span: call_const_wrapper_method!(ArgumentWrapper, argument, span),
-                        })
+                        .map(|argument| Annotation::new(
+"`null` value provided for required argument",
+call_const_wrapper_method!(ArgumentWrapper, argument, span),
+                        ))
                         .collect(),
                 }
             }
@@ -305,9 +313,11 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                 primary_annotation: None,
                 secondary_annotations: fragment_definitions
                     .iter()
-                    .map(|fragment_definition| Annotation {
-                        message: format!("Fragment definition with name `{name}`"),
-                        span: fragment_definition.name().span(),
+                    .map(|fragment_definition| {
+                        Annotation::new(
+                            format!("Fragment definition with name `{name}`"),
+                            fragment_definition.name().span(),
+                        )
                     })
                     .collect(),
             },
@@ -318,10 +328,10 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                     "No type definition with name `{}`",
                     fragment_definition.type_condition().named_type().as_ref()
                 ),
-                primary_annotation: Some(Annotation {
-                    message: "No type with this name".to_string(),
-                    span: fragment_definition.type_condition().named_type().span(),
-                }),
+                primary_annotation: Some(Annotation::new(
+                    "No type with this name",
+                    fragment_definition.type_condition().named_type().span(),
+                )),
                 secondary_annotations: Vec::new(),
             },
             Error::InlineFragmentTargetTypeDoesNotExist { inline_fragment } => Self {
@@ -332,10 +342,9 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                         .map(|tc| tc.named_type().as_ref())
                         .unwrap_or_default()
                 ),
-                primary_annotation: inline_fragment.type_condition().map(|tc| Annotation {
-                    message: "No type with this name".to_string(),
-                    span: tc.named_type().span(),
-                }),
+                primary_annotation: inline_fragment
+                    .type_condition()
+                    .map(|tc| Annotation::new("No type with this name", tc.named_type().span())),
                 secondary_annotations: Vec::new(),
             },
             Error::FragmentDefinitionTargetTypeNotComposite {
@@ -345,10 +354,10 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                     "`{}` is not a composite type",
                     fragment_definition.type_condition().named_type().as_ref()
                 ),
-                primary_annotation: Some(Annotation {
-                    message: "Fragment definition target types must be composite types".to_string(),
-                    span: fragment_definition.type_condition().named_type().span(),
-                }),
+                primary_annotation: Some(Annotation::new(
+                    "Fragment definition target types must be composite types",
+                    fragment_definition.type_condition().named_type().span(),
+                )),
                 secondary_annotations: Vec::new(),
             },
             Error::InlineFragmentTargetTypeNotComposite { inline_fragment } => Self {
@@ -359,9 +368,11 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                         .map(|tc| tc.named_type().as_ref())
                         .unwrap_or_default()
                 ),
-                primary_annotation: inline_fragment.type_condition().map(|tc| Annotation {
-                    message: "Inline fragment target types must be composite types".to_string(),
-                    span: tc.named_type().span(),
+                primary_annotation: inline_fragment.type_condition().map(|tc| {
+                    Annotation::new(
+                        "Inline fragment target types must be composite types",
+                        tc.named_type().span(),
+                    )
                 }),
                 secondary_annotations: Vec::new(),
             },
@@ -372,10 +383,10 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                     "Fragment definition `{}` is unused",
                     fragment_definition.name().as_ref()
                 ),
-                primary_annotation: Some(Annotation {
-                    message: "Fragment definition is unused".to_owned(),
-                    span: fragment_definition.name().span(),
-                }),
+                primary_annotation: Some(Annotation::new(
+                    "Fragment definition is unused",
+                    fragment_definition.name().span(),
+                )),
                 secondary_annotations: Vec::new(),
             },
             Error::FragmentSpreadTargetUndefined { fragment_spread } => Self {
@@ -383,10 +394,10 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                     "No fragment defined with name `{}`",
                     fragment_spread.name().as_ref()
                 ),
-                primary_annotation: Some(Annotation {
-                    message: "No fragment defined with this name".to_owned(),
-                    span: fragment_spread.name().span(),
-                }),
+                primary_annotation: Some(Annotation::new(
+                    "No fragment defined with this name",
+                    fragment_spread.name().span(),
+                )),
                 secondary_annotations: Vec::new(),
             },
         }

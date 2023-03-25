@@ -67,9 +67,11 @@ impl<'a> From<DefinitionDocumentError<'a>> for Error {
                 primary_annotation: None,
                 secondary_annotations: definitions
                     .into_iter()
-                    .map(|definition| Annotation {
-                        message: format!("Directive definition with name `@{name}`"),
-                        span: definition.name().span(),
+                    .map(|definition| {
+                        Annotation::new(
+                            format!("Directive definition with name `@{name}`"),
+                            definition.name().span(),
+                        )
                     })
                     .collect(),
             },
@@ -81,9 +83,11 @@ impl<'a> From<DefinitionDocumentError<'a>> for Error {
                 primary_annotation: None,
                 secondary_annotations: root_operation_type_definitions
                     .into_iter()
-                    .map(|rotd| Annotation {
-                        message: format!("Root operation type definition for `{operation_type}`"),
-                        span: rotd.name().span(),
+                    .map(|rotd| {
+                        Annotation::new(
+                            format!("Root operation type definition for `{operation_type}`"),
+                            rotd.name().span(),
+                        )
                     })
                     .collect(),
             },
@@ -92,9 +96,8 @@ impl<'a> From<DefinitionDocumentError<'a>> for Error {
                 primary_annotation: None,
                 secondary_annotations: definitions
                     .iter()
-                    .map(|definition| Annotation {
-                        message: "Schema definition".to_string(),
-                        span: definition.schema_identifier_span(),
+                    .map(|definition| {
+                        Annotation::new("Schema definition", definition.schema_identifier_span())
                     })
                     .collect(),
             },
@@ -103,9 +106,11 @@ impl<'a> From<DefinitionDocumentError<'a>> for Error {
                 primary_annotation: None,
                 secondary_annotations: definitions
                     .into_iter()
-                    .map(|definition| Annotation {
-                        message: format!("Type definition with name `{name}`"),
-                        span: type_definition_reference::name(definition).unwrap().span(),
+                    .map(|definition| {
+                        Annotation::new(
+                            format!("Type definition with name `{name}`"),
+                            type_definition_reference::name(definition).unwrap().span(),
+                        )
                     })
                     .collect(),
             },
@@ -116,18 +121,18 @@ impl<'a> From<DefinitionDocumentError<'a>> for Error {
                     "Referenced type `{}` does not exist",
                     root_operation_type_definition.name().as_ref()
                 ),
-                primary_annotation: Some(Annotation {
-                    message: "No definition for referenced type".to_string(),
-                    span: root_operation_type_definition.name().span(),
-                }),
+                primary_annotation: Some(Annotation::new(
+                    "No definition for referenced type",
+                    root_operation_type_definition.name().span(),
+                )),
                 secondary_annotations: Vec::new(),
             },
             DefinitionDocumentError::ExplicitSchemaDefinitionMissingQuery { definition } => Error {
                 message: "Schema definition does not contain a query".to_string(),
-                primary_annotation: Some(Annotation {
-                    message: "Does not contain a query".to_string(),
-                    span: definition.root_operation_type_definitions_span(),
-                }),
+                primary_annotation: Some(Annotation::new(
+                    "Does not contain a query",
+                    definition.root_operation_type_definitions_span(),
+                )),
                 secondary_annotations: Vec::new(),
             },
             DefinitionDocumentError::ImplicitAndExplicitSchemaDefinitions {
@@ -135,28 +140,28 @@ impl<'a> From<DefinitionDocumentError<'a>> for Error {
                 explicit,
             } => Error {
                 message: "Document uses implicit and explicit schema definitions".to_string(),
-                primary_annotation: Some(Annotation {
-                    message: "Explicit schema definition".to_string(),
-                    span: explicit.schema_identifier_span(),
-                }),
+                primary_annotation: Some(Annotation::new(
+                    "Explicit schema definition",
+                    explicit.schema_identifier_span(),
+                )),
                 secondary_annotations: {
-                    let mut annotations = vec![Annotation {
-                        message: "Query of implicit schema definition".to_string(),
-                        span: implicit.query.name().span(),
-                    }];
+                    let mut annotations = vec![Annotation::new(
+                        "Query of implicit schema definition",
+                        implicit.query.name().span(),
+                    )];
 
                     if let Some(mutation) = implicit.mutation {
-                        annotations.push(Annotation {
-                            message: "Mutation of implicit schema definition".to_string(),
-                            span: mutation.name().span(),
-                        });
+                        annotations.push(Annotation::new(
+                            "Mutation of implicit schema definition",
+                            mutation.name().span(),
+                        ));
                     }
 
                     if let Some(subscription) = implicit.subscription {
-                        annotations.push(Annotation {
-                            message: "Subscription of implicit schema definition".to_string(),
-                            span: subscription.name().span(),
-                        });
+                        annotations.push(Annotation::new(
+                            "Subscription of implicit schema definition",
+                            subscription.name().span(),
+                        ));
                     }
 
                     annotations
@@ -174,59 +179,44 @@ impl<'a> From<DefinitionDocumentError<'a>> for Error {
             },
             DefinitionDocumentError::ReferencedTypeDoesNotExist { name } => Error {
                 message: format!("Referenced type `{}` does not exist", name.as_ref()),
-                primary_annotation: Some(Annotation {
-                    message: "No definition for referenced type".to_string(),
-                    span: name.span(),
-                }),
+                primary_annotation: Some(Annotation::new(
+                    "No definition for referenced type",
+                    name.span(),
+                )),
                 secondary_annotations: Vec::new(),
             },
             DefinitionDocumentError::ReferencedTypeIsNotAnInputType { name } => Error {
                 message: format!("Referenced type `{}` is not an input type", name.as_ref()),
-                primary_annotation: Some(Annotation {
-                    message: "Not an input type".to_string(),
-                    span: name.span(),
-                }),
+                primary_annotation: Some(Annotation::new("Not an input type", name.span())),
                 secondary_annotations: Vec::new(),
             },
             DefinitionDocumentError::ReferencedTypeIsNotAnInterface { name } => Error {
                 message: format!("Referenced type `{}` is not an interface", name.as_ref()),
-                primary_annotation: Some(Annotation {
-                    message: "Not an interface".to_string(),
-                    span: name.span(),
-                }),
+                primary_annotation: Some(Annotation::new("Not an interface", name.span())),
                 secondary_annotations: Vec::new(),
             },
             DefinitionDocumentError::ReferencedTypeIsNotAnOutputType { name } => Error {
                 message: format!("Referenced type `{}` is not an output type", name.as_ref()),
-                primary_annotation: Some(Annotation {
-                    message: "Not an output type".to_string(),
-                    span: name.span(),
-                }),
+                primary_annotation: Some(Annotation::new("Not an output type", name.span())),
                 secondary_annotations: Vec::new(),
             },
             DefinitionDocumentError::ReferencedUnionMemberTypeIsNotAnObject { name } => Error {
                 message: format!("Referenced type `{}` is not an object", name.as_ref()),
-                primary_annotation: Some(Annotation {
-                    message: "Not an object type".to_string(),
-                    span: name.span(),
-                }),
+                primary_annotation: Some(Annotation::new("Not an object type", name.span())),
                 secondary_annotations: Vec::new(),
             },
             DefinitionDocumentError::ImplicitRootOperationTypeNotAnObject { definition } => Error {
                 message: format!("Referenced type `{}` is not an object", definition.name()),
-                primary_annotation: Some(Annotation {
-                    message: "Not an object type".to_string(),
+                primary_annotation: Some(Annotation::new(
+                    "Not an object type",
                     // ok to unwrap because builtin scalar cannot be an implicit schema definition member
-                    span: type_definition_reference::name(definition).unwrap().span(),
-                }),
+                    type_definition_reference::name(definition).unwrap().span(),
+                )),
                 secondary_annotations: Vec::new(),
             },
             DefinitionDocumentError::ExplicitRootOperationTypeNotAnObject { name } => Error {
                 message: format!("Referenced type `{}` is not an object", name.as_ref()),
-                primary_annotation: Some(Annotation {
-                    message: "Not an object type".to_string(),
-                    span: name.span(),
-                }),
+                primary_annotation: Some(Annotation::new("Not an object type", name.span())),
                 secondary_annotations: Vec::new(),
             },
         }
