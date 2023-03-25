@@ -26,42 +26,39 @@ pub enum ParseError {
 impl From<ParseError> for Error {
     fn from(val: ParseError) -> Self {
         match val {
-            ParseError::ExpectedOneOf { span, values } => Self {
-                message: "Parse error".to_string(),
-                primary_annotation: Some(Annotation::new(
+            ParseError::ExpectedOneOf { span, values } => Self::new(
+                "Parse error",
+                Some(Annotation::new(
                     format!("Expected one of the following: {}", values.join(", "),),
                     span,
                 )),
-                secondary_annotations: Vec::new(),
-            },
-            ParseError::ExpectedIdentifier { span, value } => Self {
-                message: "Parse error".to_string(),
-                primary_annotation: Some(Annotation::new(
-                    format!("Expected to find: {value}"),
-                    span,
-                )),
-                secondary_annotations: Vec::new(),
-            },
-            ParseError::ExpectedName { span } => Self {
-                message: "Parse error".to_string(),
-                primary_annotation: Some(Annotation::new("Expected a name", span)),
-                secondary_annotations: Vec::new(),
-            },
-            ParseError::UnexpectedEOF { span } => Self {
-                message: "Parse error".to_string(),
-                primary_annotation: Some(Annotation::new("Unexpected EOF", span)),
-                secondary_annotations: Vec::new(),
-            },
-            ParseError::UnexpectedToken { span } => Self {
-                message: "Unexpected token".to_string(),
-                primary_annotation: Some(Annotation::new("Unexpected token", span)),
-                secondary_annotations: Vec::new(),
-            },
-            ParseError::EmptyDocument => Self {
-                message: "Document does not contain any definitions".to_string(),
-                primary_annotation: None,
-                secondary_annotations: Vec::new(),
-            },
+                Vec::new(),
+            ),
+            ParseError::ExpectedIdentifier { span, value } => Self::new(
+                "Parse error",
+                Some(Annotation::new(format!("Expected to find: {value}"), span)),
+                Vec::new(),
+            ),
+            ParseError::ExpectedName { span } => Self::new(
+                "Parse error",
+                Some(Annotation::new("Expected a name", span)),
+                Vec::new(),
+            ),
+            ParseError::UnexpectedEOF { span } => Self::new(
+                "Parse error",
+                Some(Annotation::new("Unexpected EOF", span)),
+                Vec::new(),
+            ),
+            ParseError::UnexpectedToken { span } => Self::new(
+                "Unexpected token",
+                Some(Annotation::new("Unexpected token", span)),
+                Vec::new(),
+            ),
+            ParseError::EmptyDocument => Self::new(
+                "Document does not contain any definitions",
+                None,
+                Vec::new(),
+            ),
         }
     }
 }

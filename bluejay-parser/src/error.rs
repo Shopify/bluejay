@@ -1,5 +1,6 @@
 #[cfg(feature = "format-errors")]
 use ariadne::{Config, Label, Report, ReportKind, Source};
+use std::borrow::Cow;
 
 mod annotation;
 
@@ -7,12 +8,24 @@ pub use annotation::Annotation;
 
 #[derive(Debug, PartialEq)]
 pub struct Error {
-    pub message: String,
-    pub primary_annotation: Option<Annotation>,
-    pub secondary_annotations: Vec<Annotation>,
+    message: Cow<'static, str>,
+    primary_annotation: Option<Annotation>,
+    secondary_annotations: Vec<Annotation>,
 }
 
 impl Error {
+    pub fn new(
+        message: impl Into<Cow<'static, str>>,
+        primary_annotation: Option<Annotation>,
+        secondary_annotations: Vec<Annotation>,
+    ) -> Self {
+        Self {
+            message: message.into(),
+            primary_annotation,
+            secondary_annotations,
+        }
+    }
+
     #[cfg(feature = "format-errors")]
     pub fn format_errors<E: Into<Error>>(
         document: &str,
