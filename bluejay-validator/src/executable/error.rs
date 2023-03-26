@@ -89,6 +89,10 @@ pub enum Error<'a, E: ExecutableDocument, S: SchemaDefinition> {
     FragmentSpreadTargetUndefined {
         fragment_spread: &'a E::FragmentSpread,
     },
+    FragmentSpreadCycle {
+        fragment_definition: &'a E::FragmentDefinition,
+        fragment_spread: &'a E::FragmentSpread,
+    },
 }
 
 #[cfg(feature = "parser-integration")]
@@ -399,6 +403,23 @@ call_const_wrapper_method!(ArgumentWrapper, argument, span),
                     fragment_spread.name().span(),
                 )),
                 Vec::new(),
+            ),
+            Error::FragmentSpreadCycle {
+                fragment_definition,
+                fragment_spread,
+            } => Self::new(
+                format!(
+                    "Cycle detected in fragment `{}`",
+                    fragment_definition.name().as_ref()
+                ),
+                Some(Annotation::new(
+                    "Cycle introduced by fragment spread",
+                    fragment_spread.name().span(),
+                )),
+                vec![Annotation::new(
+                    "Affected fragment definition",
+                    fragment_definition.name().span(),
+                )],
             ),
         }
     }

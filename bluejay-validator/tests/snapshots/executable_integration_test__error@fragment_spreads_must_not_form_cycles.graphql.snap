@@ -1,0 +1,29 @@
+---
+source: bluejay-validator/tests/executable_integration_test.rs
+expression: formatted_errors
+input_file: bluejay-validator/tests/test_data/executable/error/fragment_spreads_must_not_form_cycles.graphql
+---
+Error: Cycle detected in fragment `barkVolumeFragment`
+    ╭─[<unknown>:9:6]
+    │
+  9 │   ...barkVolumeFragment
+    │      ─────────┬────────  
+    │               ╰────────── Cycle introduced by fragment spread
+    │ 
+ 12 │ fragment barkVolumeFragment on Dog {
+    │          ─────────┬────────  
+    │                   ╰────────── Affected fragment definition
+────╯
+
+Error: Cycle detected in fragment `nameFragment`
+    ╭─[<unknown>:14:6]
+    │
+  7 │ fragment nameFragment on Dog {
+    │          ──────┬─────  
+    │                ╰─────── Affected fragment definition
+    │ 
+ 14 │   ...nameFragment
+    │      ──────┬─────  
+    │            ╰─────── Cycle introduced by fragment spread
+────╯
+

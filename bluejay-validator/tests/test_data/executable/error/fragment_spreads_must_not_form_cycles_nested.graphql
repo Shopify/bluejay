@@ -1,0 +1,19 @@
+{
+  dog {
+    ...dogFragment
+  }
+}
+
+fragment dogFragment on Dog {
+  name
+  owner {
+    ...ownerFragment
+  }
+}
+
+fragment ownerFragment on Human {
+  name
+  pets {
+    ...dogFragment
+  }
+}

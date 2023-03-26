@@ -5,6 +5,7 @@ mod field_selections;
 mod fragment_name_uniqueness;
 mod fragment_spread_target_defined;
 mod fragment_spread_type_exists;
+mod fragment_spreads_must_not_form_cycles;
 mod fragments_must_be_used;
 mod fragments_on_composite_types;
 mod leaf_field_selections;
@@ -26,6 +27,7 @@ use field_selections::FieldSelections;
 use fragment_name_uniqueness::FragmentNameUniqueness;
 use fragment_spread_target_defined::FragmentSpreadTargetDefined;
 use fragment_spread_type_exists::FragmentSpreadTypeExists;
+use fragment_spreads_must_not_form_cycles::FragmentSpreadsMustNotFormCycles;
 use fragments_must_be_used::FragmentsMustBeUsed;
 use fragments_on_composite_types::FragmentsOnCompositeTypes;
 use leaf_field_selections::LeafFieldSelections;
@@ -128,4 +130,5 @@ define_rules!(
     FragmentsOnCompositeTypes,
     FragmentsMustBeUsed,
     FragmentSpreadTargetDefined,
+    FragmentSpreadsMustNotFormCycles,
 );

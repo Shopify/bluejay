@@ -1,0 +1,29 @@
+---
+source: bluejay-validator/tests/executable_integration_test.rs
+expression: formatted_errors
+input_file: bluejay-validator/tests/test_data/executable/error/fragment_spreads_must_not_form_cycles_nested.graphql
+---
+Error: Cycle detected in fragment `dogFragment`
+    ╭─[<unknown>:17:8]
+    │
+  7 │ fragment dogFragment on Dog {
+    │          ─────┬─────  
+    │               ╰─────── Affected fragment definition
+    │ 
+ 17 │     ...dogFragment
+    │        ─────┬─────  
+    │             ╰─────── Cycle introduced by fragment spread
+────╯
+
+Error: Cycle detected in fragment `ownerFragment`
+    ╭─[<unknown>:10:8]
+    │
+ 10 │     ...ownerFragment
+    │        ──────┬──────  
+    │              ╰──────── Cycle introduced by fragment spread
+    │ 
+ 14 │ fragment ownerFragment on Human {
+    │          ──────┬──────  
+    │                ╰──────── Affected fragment definition
+────╯
+

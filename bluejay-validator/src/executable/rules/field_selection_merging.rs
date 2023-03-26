@@ -9,7 +9,7 @@ use bluejay_core::executable::{
 };
 use bluejay_core::{Argument, AsIter};
 use itertools::Itertools;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 pub struct FieldSelectionMerging<'a, E: ExecutableDocument, S: SchemaDefinition> {
     executable_document: &'a E,
@@ -39,7 +39,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> FieldSelectionMerging<'a, E
         scoped_type: &'a TypeDefinitionReferenceFromAbstract<S::TypeDefinitionReference>,
     ) -> bool {
         let mut groups: HashMap<&'a str, Vec<FieldContext<'a, E, S>>> = HashMap::new();
-        self.group_fields(&mut groups, selection_set, scoped_type);
+        self.group_fields(&mut groups, selection_set, scoped_type, &HashSet::new());
 
         groups.values().all(|fields_for_name| {
             fields_for_name
@@ -94,6 +94,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> FieldSelectionMerging<'a, E
         groups: &mut HashMap<&'a str, Vec<FieldContext<'a, E, S>>>,
         selection_set: impl Iterator<Item = &'a E::Selection>,
         parent_type: &'a TypeDefinitionReferenceFromAbstract<S::TypeDefinitionReference>,
+        encountered_fragments: &HashSet<&'a str>,
     ) {
         selection_set.for_each(|selection| match selection.as_ref() {
             Selection::Field(field) => {
@@ -125,6 +126,9 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> FieldSelectionMerging<'a, E
             }
             Selection::FragmentSpread(fs) => {
                 let fragment_name = fs.name();
+                if encountered_fragments.contains(fragment_name) {
+                    return;
+                }
                 let fragment_definition = self
                     .executable_document
                     .fragment_definitions()
@@ -135,10 +139,13 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> FieldSelectionMerging<'a, E
                     if let Some(scoped_type) =
                         self.schema_definition.get_type_definition(type_condition)
                     {
+                        let mut encountered_fragments = encountered_fragments.clone();
+                        encountered_fragments.insert(fragment_name);
                         self.group_fields(
                             groups,
                             fragment_definition.selection_set().as_ref().iter(),
                             scoped_type,
+                            &encountered_fragments,
                         );
                     }
                 }
@@ -151,7 +158,12 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> FieldSelectionMerging<'a, E
                     None => Some(parent_type),
                 };
                 if let Some(scoped_type) = scoped_type {
-                    self.group_fields(groups, i.selection_set().as_ref().iter(), scoped_type);
+                    self.group_fields(
+                        groups,
+                        i.selection_set().as_ref().iter(),
+                        scoped_type,
+                        encountered_fragments,
+                    );
                 }
             }
         });
@@ -179,7 +191,12 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> FieldSelectionMerging<'a, E
                     .schema_definition
                     .get_type_definition(field_a.field_definition.r#type().as_ref().base().name())
                 {
-                    self.group_fields(&mut groups, selection_set.as_ref().iter(), scoped_type);
+                    self.group_fields(
+                        &mut groups,
+                        selection_set.as_ref().iter(),
+                        scoped_type,
+                        &HashSet::new(),
+                    );
                 }
             }
 
@@ -194,7 +211,12 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> FieldSelectionMerging<'a, E
                     .schema_definition
                     .get_type_definition(field_b.field_definition.r#type().as_ref().base().name())
                 {
-                    self.group_fields(&mut groups, selection_set.as_ref().iter(), scoped_type);
+                    self.group_fields(
+                        &mut groups,
+                        selection_set.as_ref().iter(),
+                        scoped_type,
+                        &HashSet::new(),
+                    );
                 }
             }
 
@@ -322,6 +344,3 @@ struct FieldContext<'a, E: ExecutableDocument, S: SchemaDefinition> {
     field_definition: &'a S::FieldDefinition,
     parent_type: &'a TypeDefinitionReferenceFromAbstract<S::TypeDefinitionReference>,
 }
-
-#[cfg(test)]
-mod tests {}
