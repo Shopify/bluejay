@@ -8,16 +8,16 @@ use bluejay_core::executable::{
     ExecutableDocument, Field, FragmentDefinition, FragmentSpread, InlineFragment, Selection,
 };
 use bluejay_core::{Argument, AsIter};
-use itertools::Itertools;
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeMap, HashMap, HashSet};
+use std::ops::Not;
 
 pub struct FieldSelectionMerging<'a, E: ExecutableDocument, S: SchemaDefinition> {
-    executable_document: &'a E,
+    indexed_fragment_definitions: HashMap<&'a str, &'a E::FragmentDefinition>,
     schema_definition: &'a S,
-    errors: Vec<Error<'a, E, S>>,
+    cache: BTreeMap<&'a E::SelectionSet, Vec<Error<'a, E, S>>>,
 }
 
-impl<'a, E: ExecutableDocument, S: SchemaDefinition> Visitor<'a, E, S>
+impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition> Visitor<'a, E, S>
     for FieldSelectionMerging<'a, E, S>
 {
     fn visit_selection_set(
@@ -25,78 +25,241 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> Visitor<'a, E, S>
         selection_set: &'a E::SelectionSet,
         r#type: &'a TypeDefinitionReferenceFromAbstract<S::TypeDefinitionReference>,
     ) {
-        if !self.fields_in_set_can_merge(selection_set.as_ref().iter(), r#type) {
-            self.errors
-                .push(Error::FieldSelectionsDoNotMerge { selection_set });
-        }
+        self.selection_set_valid(selection_set, r#type);
     }
 }
 
-impl<'a, E: ExecutableDocument, S: SchemaDefinition> FieldSelectionMerging<'a, E, S> {
-    fn fields_in_set_can_merge(
-        &self,
-        selection_set: impl Iterator<Item = &'a E::Selection>,
-        scoped_type: &'a TypeDefinitionReferenceFromAbstract<S::TypeDefinitionReference>,
+impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition> FieldSelectionMerging<'a, E, S> {
+    fn selection_set_valid(
+        &mut self,
+        selection_set: &'a E::SelectionSet,
+        parent_type: &'a TypeDefinitionReferenceFromAbstract<S::TypeDefinitionReference>,
     ) -> bool {
-        let mut groups: HashMap<&'a str, Vec<FieldContext<'a, E, S>>> = HashMap::new();
-        self.group_fields(&mut groups, selection_set, scoped_type, &HashSet::new());
+        if let Some(errors) = self.cache.get(selection_set) {
+            errors.is_empty()
+        } else {
+            self.cache.insert(selection_set, Vec::new());
 
-        groups.values().all(|fields_for_name| {
-            fields_for_name
-                .iter()
-                .tuple_combinations()
-                .all(|(field_a, field_b)| {
-                    self.same_response_shape(field_a, field_b) && {
-                        let parent_type_a = field_a.parent_type;
-                        let parent_type_b = field_b.parent_type;
+            let grouped_fields = self.selection_set_contained_fields(selection_set, parent_type);
 
-                        if parent_type_a.name() == parent_type_b.name()
-                            || !matches!(parent_type_a, TypeDefinitionReference::ObjectType(_, _))
-                            || !matches!(parent_type_b, TypeDefinitionReference::ObjectType(_, _))
-                        {
-                            if field_a.field.name() != field_b.field.name() {
-                                return false;
-                            }
+            let errors = self.fields_in_set_can_merge(grouped_fields, selection_set);
 
-                            if !Self::arguments_equal(
-                                field_a.field.arguments(),
-                                field_b.field.arguments(),
-                            ) {
-                                return false;
-                            }
+            let is_valid = errors.is_empty();
 
-                            let merged_set = field_a
-                                .field
-                                .selection_set()
-                                .map(AsRef::as_ref)
-                                .unwrap_or_default()
-                                .iter()
-                                .chain(
-                                    field_b
-                                        .field
-                                        .selection_set()
-                                        .map(AsRef::as_ref)
-                                        .unwrap_or_default()
-                                        .iter(),
-                                );
+            self.cache.insert(selection_set, errors);
 
-                            self.fields_in_set_can_merge(merged_set, parent_type_a)
-                        } else {
-                            true
-                        }
-                    }
-                })
-        })
+            is_valid
+        }
     }
 
-    fn group_fields(
-        &self,
-        groups: &mut HashMap<&'a str, Vec<FieldContext<'a, E, S>>>,
-        selection_set: impl Iterator<Item = &'a E::Selection>,
+    fn fields_in_set_can_merge(
+        &mut self,
+        grouped_fields: HashMap<&'a str, Vec<FieldContext<'a, E, S>>>,
+        selection_set: &'a E::SelectionSet,
+    ) -> Vec<Error<'a, E, S>> {
+        let mut errors = Vec::new();
+
+        grouped_fields.values().for_each(|fields_for_name| {
+            errors.append(&mut self.same_response_shape(fields_for_name, selection_set));
+            errors.append(
+                &mut self
+                    .same_for_common_parents_by_name(fields_for_name.as_slice(), selection_set),
+            );
+        });
+
+        errors
+    }
+
+    fn same_response_shape(
+        &mut self,
+        fields_for_name: &[FieldContext<'a, E, S>],
+        selection_set: &'a E::SelectionSet,
+    ) -> Vec<Error<'a, E, S>> {
+        if fields_for_name.len() <= 1 {
+            return Vec::new();
+        }
+
+        fields_for_name
+            .split_first()
+            .and_then(|(first, rest)| {
+                let errors: Vec<_> = rest
+                    .iter()
+                    .filter_map(|other| {
+                        Self::same_output_type_shape(first, other).not().then_some(
+                            Error::FieldSelectionsDoNotMergeIncompatibleTypes {
+                                selection_set,
+                                field_a: first.field,
+                                field_definition_a: first.field_definition,
+                                field_b: other.field,
+                                field_definition_b: other.field_definition,
+                            },
+                        )
+                    })
+                    .collect();
+
+                errors.is_empty().not().then_some(errors)
+            })
+            .unwrap_or_else(|| {
+                let nested_grouped_fields =
+                    self.field_contexts_contained_fields(fields_for_name.iter());
+
+                nested_grouped_fields
+                    .values()
+                    .flat_map(|nested_fields_for_name| {
+                        self.same_response_shape(nested_fields_for_name, selection_set)
+                    })
+                    .collect()
+            })
+    }
+
+    fn same_for_common_parents_by_name(
+        &mut self,
+        fields_for_name: &[FieldContext<'a, E, S>],
+        selection_set: &'a E::SelectionSet,
+    ) -> Vec<Error<'a, E, S>> {
+        if fields_for_name.len() <= 1 {
+            return Vec::new();
+        }
+
+        type Group<'a, 'b, E, S> = Vec<&'b FieldContext<'a, E, S>>;
+        type ConcreteGroups<'a, 'b, E, S> = HashMap<&'a str, Group<'a, 'b, E, S>>;
+
+        let (abstract_group, concrete_groups): (Group<'a, '_, E, S>, ConcreteGroups<'a, '_, E, S>) =
+            fields_for_name.iter().fold(
+                (Vec::new(), HashMap::new()),
+                |(mut abstract_group, mut concrete_groups), field_context| {
+                    match field_context.parent_type {
+                        TypeDefinitionReference::ObjectType(otd, _) => concrete_groups
+                            .entry(otd.as_ref().name())
+                            .or_default()
+                            .push(field_context),
+                        TypeDefinitionReference::InterfaceType(_, _) => {
+                            abstract_group.push(field_context)
+                        }
+                        _ => {}
+                    }
+                    (abstract_group, concrete_groups)
+                },
+            );
+
+        let groups = if concrete_groups.is_empty() {
+            vec![abstract_group]
+        } else {
+            concrete_groups
+                .into_values()
+                .map(|mut group| {
+                    group.extend(&abstract_group);
+                    group
+                })
+                .collect()
+        };
+
+        groups
+            .iter()
+            .flat_map(|fields_for_common_parent| {
+                fields_for_common_parent
+                    .split_first()
+                    .and_then(|(first, rest)| {
+                        let errors: Vec<_> = rest
+                            .iter()
+                            .filter_map(|other| {
+                                if first.field.name() != other.field.name() {
+                                    Some(Error::FieldSelectionsDoNotMergeDifferingNames {
+                                        selection_set,
+                                        field_a: first.field,
+                                        field_b: other.field,
+                                    })
+                                } else if !Self::arguments_equal(
+                                    first.field.arguments(),
+                                    other.field.arguments(),
+                                ) {
+                                    Some(Error::FieldSelectionsDoNotMergeDifferingArguments {
+                                        selection_set,
+                                        field_a: first.field,
+                                        field_b: other.field,
+                                    })
+                                } else {
+                                    None
+                                }
+                            })
+                            .collect();
+
+                        errors.is_empty().not().then_some(errors)
+                    })
+                    .unwrap_or_else(|| {
+                        let nested_grouped_fields = self.field_contexts_contained_fields(
+                            fields_for_common_parent.iter().copied(),
+                        );
+
+                        nested_grouped_fields
+                            .values()
+                            .flat_map(|nested_fields_for_name| {
+                                self.same_for_common_parents_by_name(
+                                    nested_fields_for_name.as_slice(),
+                                    selection_set,
+                                )
+                            })
+                            .collect()
+                    })
+            })
+            .collect()
+    }
+
+    fn selection_set_contained_fields(
+        &mut self,
+        selection_set: &'a E::SelectionSet,
         parent_type: &'a TypeDefinitionReferenceFromAbstract<S::TypeDefinitionReference>,
-        encountered_fragments: &HashSet<&'a str>,
+    ) -> HashMap<&'a str, Vec<FieldContext<'a, E, S>>> {
+        let mut fields = HashMap::new();
+        self.visit_selections_for_fields(
+            selection_set.as_ref().iter(),
+            &mut fields,
+            parent_type,
+            &HashSet::new(),
+        );
+        fields
+    }
+
+    fn field_contexts_contained_fields<'b>(
+        &mut self,
+        field_contexts: impl Iterator<Item = &'b FieldContext<'a, E, S>>,
+    ) -> HashMap<&'a str, Vec<FieldContext<'a, E, S>>>
+    where
+        'a: 'b,
+    {
+        let mut fields = HashMap::new();
+        field_contexts.for_each(|field_context| {
+            if let Some(selection_set) = field_context.field.selection_set() {
+                if let Some(parent_type) = self.schema_definition.get_type_definition(
+                    field_context
+                        .field_definition
+                        .r#type()
+                        .as_ref()
+                        .base()
+                        .name(),
+                ) {
+                    if self.selection_set_valid(selection_set, parent_type) {
+                        self.visit_selections_for_fields(
+                            selection_set.as_ref().iter(),
+                            &mut fields,
+                            parent_type,
+                            &field_context.parent_fragments,
+                        );
+                    }
+                }
+            }
+        });
+        fields
+    }
+
+    fn visit_selections_for_fields(
+        &mut self,
+        selections: impl Iterator<Item = &'a E::Selection>,
+        fields: &mut HashMap<&'a str, Vec<FieldContext<'a, E, S>>>,
+        parent_type: &'a TypeDefinitionReferenceFromAbstract<S::TypeDefinitionReference>,
+        parent_fragments: &HashSet<&'a str>,
     ) {
-        selection_set.for_each(|selection| match selection.as_ref() {
+        selections.for_each(|selection| match selection.as_ref() {
             Selection::Field(field) => {
                 let fields_definition = match parent_type {
                     TypeDefinitionReference::ObjectType(otd, _) => {
@@ -113,40 +276,44 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> FieldSelectionMerging<'a, E
                 };
                 if let Some(fields_definition) = fields_definition {
                     if let Some(field_definition) = fields_definition.get_field(field.name()) {
-                        groups
+                        fields
                             .entry(field.response_name())
                             .or_default()
                             .push(FieldContext {
                                 field,
                                 field_definition,
                                 parent_type,
+                                parent_fragments: parent_fragments.to_owned(),
                             });
                     }
                 }
             }
             Selection::FragmentSpread(fs) => {
                 let fragment_name = fs.name();
-                if encountered_fragments.contains(fragment_name) {
-                    return;
-                }
-                let fragment_definition = self
-                    .executable_document
-                    .fragment_definitions()
-                    .iter()
-                    .find(|fd| fd.name() == fragment_name);
-                if let Some(fragment_definition) = fragment_definition {
-                    let type_condition = fragment_definition.type_condition();
-                    if let Some(scoped_type) =
-                        self.schema_definition.get_type_definition(type_condition)
+                if !parent_fragments.contains(fragment_name) {
+                    if let Some(fragment_definition) = self
+                        .indexed_fragment_definitions
+                        .get(fragment_name)
+                        .copied()
                     {
-                        let mut encountered_fragments = encountered_fragments.clone();
-                        encountered_fragments.insert(fragment_name);
-                        self.group_fields(
-                            groups,
-                            fragment_definition.selection_set().as_ref().iter(),
-                            scoped_type,
-                            &encountered_fragments,
-                        );
+                        let type_condition = fragment_definition.type_condition();
+                        if let Some(scoped_type) =
+                            self.schema_definition.get_type_definition(type_condition)
+                        {
+                            let mut parent_fragments = parent_fragments.clone();
+                            parent_fragments.insert(fragment_name);
+                            if self.selection_set_valid(
+                                fragment_definition.selection_set(),
+                                parent_type,
+                            ) {
+                                self.visit_selections_for_fields(
+                                    fragment_definition.selection_set().as_ref().iter(),
+                                    fields,
+                                    scoped_type,
+                                    &parent_fragments,
+                                );
+                            }
+                        }
                     }
                 }
             }
@@ -158,97 +325,31 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> FieldSelectionMerging<'a, E
                     None => Some(parent_type),
                 };
                 if let Some(scoped_type) = scoped_type {
-                    self.group_fields(
-                        groups,
-                        i.selection_set().as_ref().iter(),
-                        scoped_type,
-                        encountered_fragments,
-                    );
+                    if self.selection_set_valid(i.selection_set(), scoped_type) {
+                        self.visit_selections_for_fields(
+                            i.selection_set().as_ref().iter(),
+                            fields,
+                            scoped_type,
+                            parent_fragments,
+                        );
+                    }
                 }
             }
         });
     }
 
-    fn same_response_shape(
-        &self,
-        field_a: &FieldContext<'a, E, S>,
-        field_b: &FieldContext<'a, E, S>,
+    fn same_output_type_shape(
+        field_context_a: &FieldContext<'a, E, S>,
+        field_context_b: &FieldContext<'a, E, S>,
     ) -> bool {
-        let types_match = Self::types_match_for_same_response_shape(
-            field_a.field_definition.r#type(),
-            field_b.field_definition.r#type(),
-        );
-
-        if !types_match {
-            return false;
-        }
-
-        let mut field_a_groups = {
-            let mut groups: HashMap<&str, Vec<FieldContext<'a, E, S>>> = HashMap::new();
-
-            if let Some(selection_set) = field_a.field.selection_set() {
-                if let Some(scoped_type) = self
-                    .schema_definition
-                    .get_type_definition(field_a.field_definition.r#type().as_ref().base().name())
-                {
-                    self.group_fields(
-                        &mut groups,
-                        selection_set.as_ref().iter(),
-                        scoped_type,
-                        &HashSet::new(),
-                    );
-                }
-            }
-
-            groups
-        };
-
-        let field_b_groups = {
-            let mut groups: HashMap<&str, Vec<FieldContext<'a, E, S>>> = HashMap::new();
-
-            if let Some(selection_set) = field_b.field.selection_set() {
-                if let Some(scoped_type) = self
-                    .schema_definition
-                    .get_type_definition(field_b.field_definition.r#type().as_ref().base().name())
-                {
-                    self.group_fields(
-                        &mut groups,
-                        selection_set.as_ref().iter(),
-                        scoped_type,
-                        &HashSet::new(),
-                    );
-                }
-            }
-
-            groups
-        };
-
-        field_b_groups.into_iter().for_each(|(key, mut value)| {
-            field_a_groups.entry(key).or_default().append(&mut value);
-        });
-
-        let groups = field_a_groups;
-
-        groups.values().all(|fields_for_name| {
-            fields_for_name
-                .iter()
-                .tuple_combinations()
-                .all(|(field_a, field_b)| self.same_response_shape(field_a, field_b) && todo!())
-        })
-    }
-
-    fn types_match_for_same_response_shape(
-        type_a: &S::OutputTypeReference,
-        type_b: &S::OutputTypeReference,
-    ) -> bool {
-        let mut type_a = type_a.as_ref();
-        let mut type_b = type_b.as_ref();
+        let mut type_a = field_context_a.field_definition.r#type().as_ref();
+        let mut type_b = field_context_b.field_definition.r#type().as_ref();
 
         let (type_a, type_b) = loop {
             let type_a_non_null = type_a.is_required();
             let type_b_non_null = type_b.is_required();
 
-            if (type_a_non_null || type_b_non_null) && (!type_a_non_null || !type_b_non_null) {
+            if type_a_non_null != type_b_non_null {
                 return false;
             }
 
@@ -320,21 +421,29 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> IntoIterator
     for FieldSelectionMerging<'a, E, S>
 {
     type Item = Error<'a, E, S>;
-    type IntoIter = std::vec::IntoIter<Error<'a, E, S>>;
+    type IntoIter = std::iter::Flatten<
+        std::collections::btree_map::IntoValues<&'a E::SelectionSet, Vec<Error<'a, E, S>>>,
+    >;
 
     fn into_iter(self) -> Self::IntoIter {
-        self.errors.into_iter()
+        self.cache.into_values().flatten()
     }
 }
 
-impl<'a, E: ExecutableDocument, S: SchemaDefinition> Rule<'a, E, S>
+impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Rule<'a, E, S>
     for FieldSelectionMerging<'a, E, S>
 {
     fn new(executable_document: &'a E, schema_definition: &'a S) -> Self {
         Self {
-            executable_document,
+            indexed_fragment_definitions: HashMap::from_iter(
+                executable_document
+                    .fragment_definitions()
+                    .as_ref()
+                    .iter()
+                    .map(|fragment_definition| (fragment_definition.name(), fragment_definition)),
+            ),
             schema_definition,
-            errors: Vec::new(),
+            cache: BTreeMap::new(),
         }
     }
 }
@@ -343,4 +452,5 @@ struct FieldContext<'a, E: ExecutableDocument, S: SchemaDefinition> {
     field: &'a E::Field,
     field_definition: &'a S::FieldDefinition,
     parent_type: &'a TypeDefinitionReferenceFromAbstract<S::TypeDefinitionReference>,
+    parent_fragments: HashSet<&'a str>,
 }

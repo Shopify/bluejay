@@ -6,6 +6,7 @@ use crate::{HasSpan, Span};
 pub struct Directive<'a, const CONST: bool> {
     name: Name<'a>,
     arguments: Option<Arguments<'a, CONST>>,
+    span: Span,
 }
 
 impl<'a, const CONST: bool> IsMatch<'a> for Directive<'a, CONST> {
@@ -19,8 +20,16 @@ impl<'a, const CONST: bool> FromTokens<'a> for Directive<'a, CONST> {
         tokens.expect_punctuator(PunctuatorType::At)?;
         let name = tokens.expect_name()?;
         let arguments = Arguments::try_from_tokens(tokens).transpose()?;
+        let span = match &arguments {
+            Some(arguments) => name.span().merge(arguments.span()),
+            None => name.span().clone(),
+        };
 
-        Ok(Self { name, arguments })
+        Ok(Self {
+            name,
+            arguments,
+            span,
+        })
     }
 }
 
@@ -37,10 +46,7 @@ impl<'a, const CONST: bool> bluejay_core::Directive<CONST> for Directive<'a, CON
 }
 
 impl<'a, const CONST: bool> HasSpan for Directive<'a, CONST> {
-    fn span(&self) -> Span {
-        match &self.arguments {
-            Some(arguments) => self.name.span().merge(&arguments.span()),
-            None => self.name.span(),
-        }
+    fn span(&self) -> &Span {
+        &self.span
     }
 }

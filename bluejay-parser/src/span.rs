@@ -1,4 +1,5 @@
 use std::cmp::{max, min};
+use std::cmp::{Ord, Ordering, PartialOrd};
 use std::ops::Add;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -41,6 +42,18 @@ impl Add<usize> for Span {
     }
 }
 
+impl Ord for Span {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.0.start.cmp(&other.0.start)
+    }
+}
+
+impl PartialOrd for Span {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
 pub trait HasSpan {
-    fn span(&self) -> Span;
+    fn span(&self) -> &Span;
 }

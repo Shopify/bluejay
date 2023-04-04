@@ -8,8 +8,14 @@ pub struct IntValue {
 }
 
 impl HasSpan for IntValue {
-    fn span(&self) -> Span {
-        self.span.clone()
+    fn span(&self) -> &Span {
+        &self.span
+    }
+}
+
+impl From<IntValue> for Span {
+    fn from(value: IntValue) -> Self {
+        value.span
     }
 }
 

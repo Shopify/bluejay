@@ -36,11 +36,11 @@ impl<'a, const CONST: bool> FromTokens<'a> for Value<'a, CONST> {
                         Ok(match name.as_str() {
                             "true" => Self::Boolean(BooleanValue {
                                 value: true,
-                                span: name.span(),
+                                span: name.into(),
                             }),
                             "false" => Self::Boolean(BooleanValue {
                                 value: false,
-                                span: name.span(),
+                                span: name.into(),
                             }),
                             "null" => Self::Null(name),
                             _ => Self::Enum(name),
@@ -94,22 +94,22 @@ impl<'a, const CONST: bool> FromTokens<'a> for Value<'a, CONST> {
         .unwrap_or_else(|| {
             Err(tokens
                 .next()
-                .map(|token| ParseError::UnexpectedToken { span: token.span() })
+                .map(|token| ParseError::UnexpectedToken { span: token.into() })
                 .unwrap_or_else(|| tokens.unexpected_eof()))
         })
     }
 }
 
 impl<'a, const CONST: bool> HasSpan for Value<'a, CONST> {
-    fn span(&self) -> Span {
+    fn span(&self) -> &Span {
         match self {
-            Self::Boolean(b) => b.span.clone(),
+            Self::Boolean(b) => &b.span,
             Self::Enum(e) => e.span(),
             Self::Float(f) => f.span(),
             Self::Integer(i) => i.span(),
-            Self::List(l) => l.span.clone(),
+            Self::List(l) => &l.span,
             Self::Null(n) => n.span(),
-            Self::Object(o) => o.span.clone(),
+            Self::Object(o) => &o.span,
             Self::String(s) => s.span(),
             Self::Variable(v) => v.span(),
         }

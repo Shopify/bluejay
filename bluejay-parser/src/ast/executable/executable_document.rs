@@ -8,7 +8,7 @@ use crate::ast::{
     Variable,
 };
 use crate::scanner::LogosScanner;
-use crate::{Error, HasSpan};
+use crate::Error;
 
 #[derive(Debug)]
 pub struct ExecutableDocument<'a> {
@@ -64,7 +64,7 @@ impl<'a> ExecutableDocument<'a> {
                     }
                 } else if let Some(token) = tokens.next() {
                     if !last_pass_had_error {
-                        errors.push(ParseError::UnexpectedToken { span: token.span() });
+                        errors.push(ParseError::UnexpectedToken { span: token.into() });
                     }
                     true
                 } else {

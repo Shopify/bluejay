@@ -7,7 +7,7 @@ use crate::ast::definition::{
 };
 use crate::ast::{FromTokens, ParseError, ScannerTokens, Tokens};
 use crate::scanner::LogosScanner;
-use crate::{Error, HasSpan};
+use crate::Error;
 use bluejay_core::definition::{
     DirectiveDefinition as CoreDirectiveDefinition, FieldDefinition as CoreFieldDefinition,
     InputObjectTypeDefinition as CoreInputObjectTypeDefinition,
@@ -148,7 +148,7 @@ impl<'a> DefinitionDocument<'a> {
                 _ => {
                     if let Some(token) = tokens.next() {
                         if !last_pass_had_error {
-                            errors.push(ParseError::UnexpectedToken { span: token.span() });
+                            errors.push(ParseError::UnexpectedToken { span: token.into() });
                             last_pass_had_error = true;
                         }
                     } else {

@@ -2,7 +2,7 @@ use crate::ast::definition::ObjectTypeDefinition;
 use crate::ast::{FromTokens, ParseError, Tokens};
 use crate::lexical_token::Name;
 use bluejay_core::definition::UnionMemberType as CoreUnionMemberType;
-use once_cell::unsync::OnceCell;
+use once_cell::sync::OnceCell;
 
 #[derive(Debug)]
 pub struct UnionMemberType<'a> {

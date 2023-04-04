@@ -1,6 +1,6 @@
 use crate::ast::{ConstDirectives, FromTokens, ParseError, Tokens, TryFromTokens};
 use crate::lexical_token::{Name, PunctuatorType, StringValue};
-use crate::{HasSpan, Span};
+use crate::Span;
 use bluejay_core::OperationType;
 use std::str::FromStr;
 
@@ -35,12 +35,12 @@ impl<'a> ExplicitSchemaDefinition<'a> {
             .all(|rotd| Self::IMPLICIT_OPERATION_TYPE_NAMES.contains(&rotd.name().as_ref()))
     }
 
-    pub(crate) fn schema_identifier_span(&self) -> Span {
-        self.schema_identifier_span.clone()
+    pub(crate) fn schema_identifier_span(&self) -> &Span {
+        &self.schema_identifier_span
     }
 
-    pub(crate) fn root_operation_type_definitions_span(&self) -> Span {
-        self.root_operation_type_definitions_span.clone()
+    pub(crate) fn root_operation_type_definitions_span(&self) -> &Span {
+        &self.root_operation_type_definitions_span
     }
 }
 
@@ -95,7 +95,7 @@ impl<'a> FromTokens<'a> for RootOperationTypeDefinition<'a> {
     fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
         let operation_type = tokens.expect_name().and_then(|name| {
             OperationType::from_str(name.as_str()).map_err(|_| ParseError::ExpectedOneOf {
-                span: name.span(),
+                span: name.into(),
                 values: OperationType::POSSIBLE_VALUES,
             })
         })?;

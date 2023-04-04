@@ -1,7 +1,7 @@
 use crate::ast::definition::ArgumentsDefinition;
 use crate::ast::{FromTokens, Parse, ParseError, Tokens, TryFromTokens};
 use crate::lexical_token::{Name, PunctuatorType, StringValue};
-use crate::{HasSpan, Span};
+use crate::Span;
 use bluejay_core::definition::{
     DirectiveDefinition as CoreDirectiveDefinition, DirectiveLocation as CoreDirectiveLocation,
 };
@@ -106,17 +106,18 @@ pub struct DirectiveLocation {
 
 impl<'a> FromTokens<'a> for DirectiveLocation {
     fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
-        tokens.expect_name().and_then(|name| {
-            CoreDirectiveLocation::from_str(name.as_ref())
-                .map(|inner| Self {
+        tokens.expect_name().and_then(
+            |name| match CoreDirectiveLocation::from_str(name.as_ref()) {
+                Ok(inner) => Ok(Self {
                     inner,
-                    _span: name.span(),
-                })
-                .map_err(|_| ParseError::ExpectedOneOf {
-                    span: name.span(),
+                    _span: name.into(),
+                }),
+                Err(_) => Err(ParseError::ExpectedOneOf {
+                    span: name.into(),
                     values: CoreDirectiveLocation::POSSIBLE_VALUES,
-                })
-        })
+                }),
+            },
+        )
     }
 }
 

@@ -11,63 +11,111 @@ Error: Field `doesKnowCommand` missing argument(s): dogCommand
     │            ╰───────── Missing argument(s): dogCommand
 ────╯
 
-Error: Field selections do not merge
+Error: Fields in selection set do not merge due to incompatible types
    ╭─[<unknown>:2:7]
    │
  2 │ ╭─▶   dog {
-   ┆ ┆   
+ 3 │ │       name: nickname
+   │ │             ────┬───  
+   │ │                 ╰───── First field has type String
+ 4 │ │       name
+   │ │       ──┬─  
+   │ │         ╰─── Second field has type String!
  5 │ ├─▶   }
    │ │         
-   │ ╰───────── Field selections do not merge
+   │ ╰───────── Fields in selection set do not merge
 ───╯
 
-Error: Field selections do not merge
+Error: Fields in selection set do not merge due to unequal field names
+   ╭─[<unknown>:2:7]
+   │
+ 2 │ ╭─▶   dog {
+ 3 │ │       name: nickname
+   │ │             ────┬───  
+   │ │                 ╰───── First field
+ 4 │ │       name
+   │ │       ──┬─  
+   │ │         ╰─── Second field
+ 5 │ ├─▶   }
+   │ │         
+   │ ╰───────── Fields in selection set do not merge
+───╯
+
+Error: Fields in selection set do not merge due to unequal arguments
     ╭─[<unknown>:9:7]
     │
   9 │ ╭─▶   dog {
-    ┆ ┆   
+ 10 │ │       doesKnowCommand(dogCommand: SIT)
+    │ │       ───────┬───────  
+    │ │              ╰───────── First field
+ 11 │ │       doesKnowCommand(dogCommand: HEEL)
+    │ │       ───────┬───────  
+    │ │              ╰───────── Second field
  12 │ ├─▶   }
     │ │         
-    │ ╰───────── Field selections do not merge
+    │ ╰───────── Fields in selection set do not merge
 ────╯
 
-Error: Field selections do not merge
+Error: Fields in selection set do not merge due to unequal arguments
     ╭─[<unknown>:16:7]
     │
  16 │ ╭─▶   dog {
-    ┆ ┆   
+ 17 │ │       doesKnowCommand(dogCommand: SIT)
+    │ │       ───────┬───────  
+    │ │              ╰───────── First field
+ 18 │ │       doesKnowCommand(dogCommand: $dogCommand)
+    │ │       ───────┬───────  
+    │ │              ╰───────── Second field
  19 │ ├─▶   }
     │ │         
-    │ ╰───────── Field selections do not merge
+    │ ╰───────── Fields in selection set do not merge
 ────╯
 
-Error: Field selections do not merge
+Error: Fields in selection set do not merge due to unequal arguments
     ╭─[<unknown>:23:7]
     │
  23 │ ╭─▶   dog {
-    ┆ ┆   
+ 24 │ │       doesKnowCommand(dogCommand: $varOne)
+    │ │       ───────┬───────  
+    │ │              ╰───────── First field
+ 25 │ │       doesKnowCommand(dogCommand: $varTwo)
+    │ │       ───────┬───────  
+    │ │              ╰───────── Second field
  26 │ ├─▶   }
     │ │         
-    │ ╰───────── Field selections do not merge
+    │ ╰───────── Fields in selection set do not merge
 ────╯
 
-Error: Field selections do not merge
+Error: Fields in selection set do not merge due to unequal arguments
     ╭─[<unknown>:30:7]
     │
  30 │ ╭─▶   dog {
-    ┆ ┆   
+ 31 │ │       doesKnowCommand(dogCommand: SIT)
+    │ │       ───────┬───────  
+    │ │              ╰───────── First field
+ 32 │ │       doesKnowCommand
+    │ │       ───────┬───────  
+    │ │              ╰───────── Second field
  33 │ ├─▶   }
     │ │         
-    │ ╰───────── Field selections do not merge
+    │ ╰───────── Fields in selection set do not merge
 ────╯
 
-Error: Field selections do not merge
+Error: Fields in selection set do not merge due to incompatible types
     ╭─[<unknown>:37:7]
     │
  37 │ ╭─▶   pet {
     ┆ ┆   
+ 39 │ │         someValue: nickname
+    │ │                    ────┬───  
+    │ │                        ╰───── First field has type String
+    ┆ ┆   
+ 42 │ │         someValue: meowVolume
+    │ │                    ─────┬────  
+    │ │                         ╰────── Second field has type Int
+    ┆ ┆   
  44 │ ├─▶   }
     │ │         
-    │ ╰───────── Field selections do not merge
+    │ ╰───────── Fields in selection set do not merge
 ────╯
 

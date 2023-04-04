@@ -1,6 +1,6 @@
 mod error;
 mod rule;
-mod rules;
+pub mod rules;
 mod validator;
 mod visitor;
 

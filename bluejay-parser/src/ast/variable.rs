@@ -18,14 +18,14 @@ impl<'a> FromTokens<'a> for Variable<'a> {
     fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
         let dollar_span = tokens.expect_punctuator(PunctuatorType::Dollar)?;
         let name = tokens.expect_name()?;
-        let span = dollar_span.merge(&name.span());
+        let span = dollar_span.merge(name.span());
         Ok(Self { name, span })
     }
 }
 
 impl<'a> HasSpan for Variable<'a> {
-    fn span(&self) -> Span {
-        self.span.clone()
+    fn span(&self) -> &Span {
+        &self.span
     }
 }
 

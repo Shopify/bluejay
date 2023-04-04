@@ -10,7 +10,7 @@ use bluejay_core::definition::{
     BaseOutputTypeReference as CoreBaseOutputTypeReference, BaseOutputTypeReferenceFromAbstract,
     OutputTypeReference as CoreOutputTypeReference,
 };
-use once_cell::unsync::OnceCell;
+use once_cell::sync::OnceCell;
 
 #[derive(Debug)]
 pub struct BaseOutputTypeReference<'a> {
@@ -146,7 +146,7 @@ impl<'a> FromTokens<'a> for OutputTypeReference<'a> {
             let span = if let Some(bang_span) = &bang_span {
                 base_name.span().merge(bang_span)
             } else {
-                base_name.span()
+                base_name.span().clone()
             };
             let base = BaseOutputTypeReference::new(base_name);
             let inner = CoreOutputTypeReference::Base(base, bang_span.is_some());

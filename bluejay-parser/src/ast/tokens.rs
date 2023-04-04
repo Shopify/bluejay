@@ -61,16 +61,16 @@ impl<'a, T: Scanner<'a>> ScannerTokens<'a, T> {
     pub fn expect_name(&mut self) -> Result<Name<'a>, ParseError> {
         match self.next() {
             Some(LexicalToken::Name(n)) => Ok(n),
-            Some(lt) => Err(ParseError::ExpectedName { span: lt.span() }),
+            Some(lt) => Err(ParseError::ExpectedName { span: lt.into() }),
             None => Err(self.unexpected_eof()),
         }
     }
 
     pub fn expect_name_value(&mut self, value: &str) -> Result<Span, ParseError> {
         match self.next() {
-            Some(LexicalToken::Name(n)) if n.as_str() == value => Ok(n.span()),
+            Some(LexicalToken::Name(n)) if n.as_str() == value => Ok(n.into()),
             Some(lt) => Err(ParseError::ExpectedIdentifier {
-                span: lt.span(),
+                span: lt.into(),
                 value: value.to_string(),
             }),
             None => Err(self.unexpected_eof()),
@@ -82,9 +82,9 @@ impl<'a, T: Scanner<'a>> ScannerTokens<'a, T> {
         punctuator_type: PunctuatorType,
     ) -> Result<Span, ParseError> {
         match self.next() {
-            Some(LexicalToken::Punctuator(p)) if p.r#type() == punctuator_type => Ok(p.span()),
+            Some(LexicalToken::Punctuator(p)) if p.r#type() == punctuator_type => Ok(p.into()),
             Some(lt) => Err(ParseError::ExpectedIdentifier {
-                span: lt.span(),
+                span: lt.into(),
                 value: punctuator_type.to_string(),
             }),
             None => Err(self.unexpected_eof()),
@@ -99,7 +99,7 @@ impl<'a, T: Scanner<'a>> ScannerTokens<'a, T> {
 
     pub fn unexpected_token(&mut self) -> ParseError {
         self.next()
-            .map(|token| ParseError::UnexpectedToken { span: token.span() })
+            .map(|token| ParseError::UnexpectedToken { span: token.into() })
             .unwrap_or_else(|| self.unexpected_eof())
     }
 
@@ -109,7 +109,7 @@ impl<'a, T: Scanner<'a>> ScannerTokens<'a, T> {
     {
         match self.peek_next() {
             Some(token) if f(token) => {
-                let span = token.span();
+                let span = token.span().clone();
                 self.next();
                 Some(span)
             }

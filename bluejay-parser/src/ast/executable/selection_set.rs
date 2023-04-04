@@ -2,6 +2,8 @@ use crate::ast::executable::Selection;
 use crate::ast::{FromTokens, IsMatch, ParseError, Tokens};
 use crate::lexical_token::PunctuatorType;
 use crate::{HasSpan, Span};
+use std::cmp::{Eq, Ord, Ordering, PartialEq, PartialOrd};
+use std::hash::{Hash, Hasher};
 
 #[derive(Debug)]
 pub struct SelectionSet<'a> {
@@ -41,7 +43,33 @@ impl<'a> AsRef<[Selection<'a>]> for SelectionSet<'a> {
 }
 
 impl<'a> HasSpan for SelectionSet<'a> {
-    fn span(&self) -> Span {
-        self.span.clone()
+    fn span(&self) -> &Span {
+        &self.span
+    }
+}
+
+impl<'a> Hash for SelectionSet<'a> {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.span.hash(state);
+    }
+}
+
+impl<'a> PartialEq for SelectionSet<'a> {
+    fn eq(&self, other: &Self) -> bool {
+        self.span == other.span
+    }
+}
+
+impl<'a> Eq for SelectionSet<'a> {}
+
+impl<'a> Ord for SelectionSet<'a> {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.span.cmp(&other.span)
+    }
+}
+
+impl<'a> PartialOrd for SelectionSet<'a> {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
     }
 }

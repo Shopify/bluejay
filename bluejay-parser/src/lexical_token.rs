@@ -22,13 +22,25 @@ pub enum LexicalToken<'a> {
 }
 
 impl<'a> HasSpan for LexicalToken<'a> {
-    fn span(&self) -> Span {
+    fn span(&self) -> &Span {
         match self {
             Self::FloatValue(f) => f.span(),
             Self::IntValue(i) => i.span(),
             Self::StringValue(s) => s.span(),
             Self::Name(n) => n.span(),
             Self::Punctuator(p) => p.span(),
+        }
+    }
+}
+
+impl<'a> From<LexicalToken<'a>> for Span {
+    fn from(value: LexicalToken<'a>) -> Self {
+        match value {
+            LexicalToken::FloatValue(f) => f.into(),
+            LexicalToken::IntValue(i) => i.into(),
+            LexicalToken::StringValue(s) => s.into(),
+            LexicalToken::Name(n) => n.into(),
+            LexicalToken::Punctuator(p) => p.into(),
         }
     }
 }

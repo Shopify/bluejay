@@ -71,7 +71,7 @@ impl<'a> From<DefinitionDocumentError<'a>> for Error {
                         .map(|definition| {
                             Annotation::new(
                                 format!("Directive definition with name `@{name}`"),
-                                definition.name().span(),
+                                definition.name().span().clone(),
                             )
                         })
                         .collect(),
@@ -88,7 +88,7 @@ impl<'a> From<DefinitionDocumentError<'a>> for Error {
                     .map(|rotd| {
                         Annotation::new(
                             format!("Root operation type definition for `{operation_type}`"),
-                            rotd.name().span(),
+                            rotd.name().span().clone(),
                         )
                     })
                     .collect(),
@@ -102,7 +102,7 @@ impl<'a> From<DefinitionDocumentError<'a>> for Error {
                         .map(|definition| {
                             Annotation::new(
                                 "Schema definition",
-                                definition.schema_identifier_span(),
+                                definition.schema_identifier_span().clone(),
                             )
                         })
                         .collect(),
@@ -116,7 +116,10 @@ impl<'a> From<DefinitionDocumentError<'a>> for Error {
                     .map(|definition| {
                         Annotation::new(
                             format!("Type definition with name `{name}`"),
-                            type_definition_reference::name(definition).unwrap().span(),
+                            type_definition_reference::name(definition)
+                                .unwrap()
+                                .span()
+                                .clone(),
                         )
                     })
                     .collect(),
@@ -130,7 +133,7 @@ impl<'a> From<DefinitionDocumentError<'a>> for Error {
                 ),
                 Some(Annotation::new(
                     "No definition for referenced type",
-                    root_operation_type_definition.name().span(),
+                    root_operation_type_definition.name().span().clone(),
                 )),
                 Vec::new(),
             ),
@@ -139,7 +142,7 @@ impl<'a> From<DefinitionDocumentError<'a>> for Error {
                     "Schema definition does not contain a query",
                     Some(Annotation::new(
                         "Does not contain a query",
-                        definition.root_operation_type_definitions_span(),
+                        definition.root_operation_type_definitions_span().clone(),
                     )),
                     Vec::new(),
                 )
@@ -151,25 +154,25 @@ impl<'a> From<DefinitionDocumentError<'a>> for Error {
                 "Document uses implicit and explicit schema definitions",
                 Some(Annotation::new(
                     "Explicit schema definition",
-                    explicit.schema_identifier_span(),
+                    explicit.schema_identifier_span().clone(),
                 )),
                 {
                     let mut annotations = vec![Annotation::new(
                         "Query of implicit schema definition",
-                        implicit.query.name().span(),
+                        implicit.query.name().span().clone(),
                     )];
 
                     if let Some(mutation) = implicit.mutation {
                         annotations.push(Annotation::new(
                             "Mutation of implicit schema definition",
-                            mutation.name().span(),
+                            mutation.name().span().clone(),
                         ));
                     }
 
                     if let Some(subscription) = implicit.subscription {
                         annotations.push(Annotation::new(
                             "Subscription of implicit schema definition",
-                            subscription.name().span(),
+                            subscription.name().span().clone(),
                         ));
                     }
 
@@ -188,28 +191,28 @@ impl<'a> From<DefinitionDocumentError<'a>> for Error {
                 format!("Referenced type `{}` does not exist", name.as_ref()),
                 Some(Annotation::new(
                     "No definition for referenced type",
-                    name.span(),
+                    name.span().clone(),
                 )),
                 Vec::new(),
             ),
             DefinitionDocumentError::ReferencedTypeIsNotAnInputType { name } => Error::new(
                 format!("Referenced type `{}` is not an input type", name.as_ref()),
-                Some(Annotation::new("Not an input type", name.span())),
+                Some(Annotation::new("Not an input type", name.span().clone())),
                 Vec::new(),
             ),
             DefinitionDocumentError::ReferencedTypeIsNotAnInterface { name } => Error::new(
                 format!("Referenced type `{}` is not an interface", name.as_ref()),
-                Some(Annotation::new("Not an interface", name.span())),
+                Some(Annotation::new("Not an interface", name.span().clone())),
                 Vec::new(),
             ),
             DefinitionDocumentError::ReferencedTypeIsNotAnOutputType { name } => Error::new(
                 format!("Referenced type `{}` is not an output type", name.as_ref()),
-                Some(Annotation::new("Not an output type", name.span())),
+                Some(Annotation::new("Not an output type", name.span().clone())),
                 Vec::new(),
             ),
             DefinitionDocumentError::ReferencedUnionMemberTypeIsNotAnObject { name } => Error::new(
                 format!("Referenced type `{}` is not an object", name.as_ref()),
-                Some(Annotation::new("Not an object type", name.span())),
+                Some(Annotation::new("Not an object type", name.span().clone())),
                 Vec::new(),
             ),
             DefinitionDocumentError::ImplicitRootOperationTypeNotAnObject { definition } => {
@@ -218,14 +221,17 @@ impl<'a> From<DefinitionDocumentError<'a>> for Error {
                     Some(Annotation::new(
                         "Not an object type",
                         // ok to unwrap because builtin scalar cannot be an implicit schema definition member
-                        type_definition_reference::name(definition).unwrap().span(),
+                        type_definition_reference::name(definition)
+                            .unwrap()
+                            .span()
+                            .clone(),
                     )),
                     Vec::new(),
                 )
             }
             DefinitionDocumentError::ExplicitRootOperationTypeNotAnObject { name } => Error::new(
                 format!("Referenced type `{}` is not an object", name.as_ref()),
-                Some(Annotation::new("Not an object type", name.span())),
+                Some(Annotation::new("Not an object type", name.span().clone())),
                 Vec::new(),
             ),
         }

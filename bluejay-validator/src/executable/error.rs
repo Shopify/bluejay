@@ -93,6 +93,23 @@ pub enum Error<'a, E: ExecutableDocument, S: SchemaDefinition> {
         fragment_definition: &'a E::FragmentDefinition,
         fragment_spread: &'a E::FragmentSpread,
     },
+    FieldSelectionsDoNotMergeIncompatibleTypes {
+        selection_set: &'a E::SelectionSet,
+        field_a: &'a E::Field,
+        field_definition_a: &'a S::FieldDefinition,
+        field_b: &'a E::Field,
+        field_definition_b: &'a S::FieldDefinition,
+    },
+    FieldSelectionsDoNotMergeDifferingNames {
+        selection_set: &'a E::SelectionSet,
+        field_a: &'a E::Field,
+        field_b: &'a E::Field,
+    },
+    FieldSelectionsDoNotMergeDifferingArguments {
+        selection_set: &'a E::SelectionSet,
+        field_a: &'a E::Field,
+        field_b: &'a E::Field,
+    },
 }
 
 #[cfg(feature = "parser-integration")]
@@ -108,7 +125,7 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                         operation.name().map(|operation_name| {
                             Annotation::new(
                                 format!("Operation definition with name `{name}`"),
-                                operation_name.span(),
+                                operation_name.span().clone(),
                             )
                         })
                     })
@@ -124,7 +141,7 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                     .map(|operation| {
                         Annotation::new(
                             "Anonymous operation definition",
-                            operation.selection_set().span(),
+                            operation.selection_set().span().clone(),
                         )
                     })
                     .collect(),
@@ -133,7 +150,7 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                 "Subscription root is not a single field",
                 Some(Annotation::new(
                     "Selection set contains multiple fields",
-                    operation.selection_set().span(),
+                    operation.selection_set().span().clone(),
                 )),
                 Vec::new(),
             ),
@@ -145,7 +162,7 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                 ),
                 Some(Annotation::new(
                     format!("Field does not exist on type `{}`", r#type.name()),
-                    field.name().span(),
+                    field.name().span().clone(),
                 )),
                 Vec::new(),
             ),
@@ -159,7 +176,7 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                         "Schema does not define a {} root",
                         OperationType::from(operation.operation_type()),
                     ),
-                    operation.operation_type().span(),
+                    operation.operation_type().span().clone(),
                 )),
                 Vec::new(),
             ),
@@ -167,7 +184,7 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                 "Field selections do not merge",
                 Some(Annotation::new(
                     "Field selections do not merge",
-                    selection_set.span(),
+                    selection_set.span().clone(),
                 )),
                 Vec::new(),
             ),
@@ -181,7 +198,7 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                 ),
                 Some(Annotation::new(
                     "Selection set on field of leaf type must be empty",
-                    selection_set.span(),
+                    selection_set.span().clone(),
                 )),
                 Vec::new(),
             ),
@@ -192,7 +209,7 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                 ),
                 Some(Annotation::new(
                     "Fields of non-leaf types must have a selection",
-                    field.name().span(),
+                    field.name().span().clone(),
                 )),
                 Vec::new(),
             ),
@@ -207,7 +224,7 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                 ),
                 Some(Annotation::new(
                     "No argument definition with this name",
-                    argument.name().span(),
+                    argument.name().span().clone(),
                 )),
                 Vec::new(),
             ),
@@ -224,7 +241,7 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                     ),
                     Some(Annotation::new(
                         "No argument definition with this name",
-                        name.span(),
+                        name.span().clone(),
                     )),
                     Vec::new(),
                 )
@@ -237,7 +254,9 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                     .map(|argument| {
                         Annotation::new(
                             format!("Argument with name `{name}`"),
-                            call_const_wrapper_method!(ArgumentWrapper, argument, name).span(),
+                            call_const_wrapper_method!(ArgumentWrapper, argument, name)
+                                .span()
+                                .clone(),
                         )
                     })
                     .collect(),
@@ -255,8 +274,8 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                     ", ",
                 );
                 let span = match field.arguments() {
-                    Some(arguments) => field.name().span().merge(&arguments.span()),
-                    None => field.name().span(),
+                    Some(arguments) => field.name().span().merge(arguments.span()),
+                    None => field.name().span().clone(),
                 };
                 Self::new(
                     format!(
@@ -272,7 +291,7 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                         .map(|argument| {
                             Annotation::new(
                                 "`null` value provided for required argument",
-                                argument.span(),
+                                argument.span().clone(),
                             )
                         })
                         .collect(),
@@ -298,13 +317,13 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                     ),
                     Some(Annotation::new(
                         format!("Missing argument(s): {missing_argument_names}"),
-                        span,
+                        span.clone(),
                     )),
                     arguments_with_null_values
                         .into_iter()
                         .map(|argument| Annotation::new(
-"`null` value provided for required argument",
-call_const_wrapper_method!(ArgumentWrapper, argument, span),
+                    "`null` value provided for required argument",
+                        call_const_wrapper_method!(ArgumentWrapper, argument, span).clone(),
                         ))
                         .collect(),
                     )
@@ -320,7 +339,7 @@ call_const_wrapper_method!(ArgumentWrapper, argument, span),
                     .map(|fragment_definition| {
                         Annotation::new(
                             format!("Fragment definition with name `{name}`"),
-                            fragment_definition.name().span(),
+                            fragment_definition.name().span().clone(),
                         )
                     })
                     .collect(),
@@ -334,7 +353,11 @@ call_const_wrapper_method!(ArgumentWrapper, argument, span),
                 ),
                 Some(Annotation::new(
                     "No type with this name",
-                    fragment_definition.type_condition().named_type().span(),
+                    fragment_definition
+                        .type_condition()
+                        .named_type()
+                        .span()
+                        .clone(),
                 )),
                 Vec::new(),
             ),
@@ -346,9 +369,9 @@ call_const_wrapper_method!(ArgumentWrapper, argument, span),
                         .map(|tc| tc.named_type().as_ref())
                         .unwrap_or_default()
                 ),
-                inline_fragment
-                    .type_condition()
-                    .map(|tc| Annotation::new("No type with this name", tc.named_type().span())),
+                inline_fragment.type_condition().map(|tc| {
+                    Annotation::new("No type with this name", tc.named_type().span().clone())
+                }),
                 Vec::new(),
             ),
             Error::FragmentDefinitionTargetTypeNotComposite {
@@ -360,7 +383,11 @@ call_const_wrapper_method!(ArgumentWrapper, argument, span),
                 ),
                 Some(Annotation::new(
                     "Fragment definition target types must be composite types",
-                    fragment_definition.type_condition().named_type().span(),
+                    fragment_definition
+                        .type_condition()
+                        .named_type()
+                        .span()
+                        .clone(),
                 )),
                 Vec::new(),
             ),
@@ -375,7 +402,7 @@ call_const_wrapper_method!(ArgumentWrapper, argument, span),
                 inline_fragment.type_condition().map(|tc| {
                     Annotation::new(
                         "Inline fragment target types must be composite types",
-                        tc.named_type().span(),
+                        tc.named_type().span().clone(),
                     )
                 }),
                 Vec::new(),
@@ -389,7 +416,7 @@ call_const_wrapper_method!(ArgumentWrapper, argument, span),
                 ),
                 Some(Annotation::new(
                     "Fragment definition is unused",
-                    fragment_definition.name().span(),
+                    fragment_definition.name().span().clone(),
                 )),
                 Vec::new(),
             ),
@@ -400,7 +427,7 @@ call_const_wrapper_method!(ArgumentWrapper, argument, span),
                 ),
                 Some(Annotation::new(
                     "No fragment defined with this name",
-                    fragment_spread.name().span(),
+                    fragment_spread.name().span().clone(),
                 )),
                 Vec::new(),
             ),
@@ -414,12 +441,71 @@ call_const_wrapper_method!(ArgumentWrapper, argument, span),
                 ),
                 Some(Annotation::new(
                     "Cycle introduced by fragment spread",
-                    fragment_spread.name().span(),
+                    fragment_spread.name().span().clone(),
                 )),
                 vec![Annotation::new(
                     "Affected fragment definition",
-                    fragment_definition.name().span(),
+                    fragment_definition.name().span().clone(),
                 )],
+            ),
+            Error::FieldSelectionsDoNotMergeDifferingArguments {
+                selection_set,
+                field_a,
+                field_b,
+            } => Self::new(
+                "Fields in selection set do not merge due to unequal arguments",
+                Some(Annotation::new(
+                    "Fields in selection set do not merge",
+                    selection_set.span().clone(),
+                )),
+                vec![
+                    Annotation::new("First field", field_a.name().span().clone()),
+                    Annotation::new("Second field", field_b.name().span().clone()),
+                ],
+            ),
+            Error::FieldSelectionsDoNotMergeDifferingNames {
+                selection_set,
+                field_a,
+                field_b,
+            } => Self::new(
+                "Fields in selection set do not merge due to unequal field names",
+                Some(Annotation::new(
+                    "Fields in selection set do not merge",
+                    selection_set.span().clone(),
+                )),
+                vec![
+                    Annotation::new("First field", field_a.name().span().clone()),
+                    Annotation::new("Second field", field_b.name().span().clone()),
+                ],
+            ),
+            Error::FieldSelectionsDoNotMergeIncompatibleTypes {
+                selection_set,
+                field_a,
+                field_definition_a,
+                field_b,
+                field_definition_b,
+            } => Self::new(
+                "Fields in selection set do not merge due to incompatible types",
+                Some(Annotation::new(
+                    "Fields in selection set do not merge",
+                    selection_set.span().clone(),
+                )),
+                vec![
+                    Annotation::new(
+                        format!(
+                            "First field has type {}",
+                            field_definition_a.r#type().as_ref().display_name(),
+                        ),
+                        field_a.name().span().clone(),
+                    ),
+                    Annotation::new(
+                        format!(
+                            "Second field has type {}",
+                            field_definition_b.r#type().as_ref().display_name(),
+                        ),
+                        field_b.name().span().clone(),
+                    ),
+                ],
             ),
         }
     }

@@ -10,7 +10,7 @@ use bluejay_core::definition::{
     BaseInputTypeReference as CoreBaseInputTypeReference, BaseInputTypeReferenceFromAbstract,
     InputTypeReference as CoreInputTypeReference,
 };
-use once_cell::unsync::OnceCell;
+use once_cell::sync::OnceCell;
 
 #[derive(Debug)]
 pub struct BaseInputTypeReference<'a> {
@@ -121,7 +121,7 @@ impl<'a> FromTokens<'a> for InputTypeReference<'a> {
             let span = if let Some(bang_span) = &bang_span {
                 base_name.span().merge(bang_span)
             } else {
-                base_name.span()
+                base_name.span().clone()
             };
             let base = BaseInputTypeReference {
                 name: base_name,

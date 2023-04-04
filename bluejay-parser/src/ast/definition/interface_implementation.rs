@@ -2,7 +2,7 @@ use crate::ast::definition::InterfaceTypeDefinition;
 use crate::ast::{FromTokens, ParseError, Tokens};
 use crate::lexical_token::Name;
 use bluejay_core::definition::InterfaceImplementation as CoreInterfaceImplementation;
-use once_cell::unsync::OnceCell;
+use once_cell::sync::OnceCell;
 
 #[derive(Debug)]
 pub struct InterfaceImplementation<'a> {

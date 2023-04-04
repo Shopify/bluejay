@@ -6,6 +6,7 @@ use crate::{HasSpan, Span};
 pub struct Argument<'a, const CONST: bool> {
     name: Name<'a>,
     value: Value<'a, CONST>,
+    span: Span,
 }
 
 impl<'a, const CONST: bool> Argument<'a, CONST> {
@@ -26,7 +27,8 @@ impl<'a, const CONST: bool> FromTokens<'a> for Argument<'a, CONST> {
         let name = tokens.expect_name()?;
         tokens.expect_punctuator(PunctuatorType::Colon)?;
         let value = Value::from_tokens(tokens)?;
-        Ok(Self { name, value })
+        let span = name.span().merge(value.span());
+        Ok(Self { name, value, span })
     }
 }
 
@@ -43,7 +45,7 @@ impl<'a, const CONST: bool> bluejay_core::Argument<CONST> for Argument<'a, CONST
 }
 
 impl<'a, const CONST: bool> HasSpan for Argument<'a, CONST> {
-    fn span(&self) -> Span {
-        self.name.span().merge(&self.value.span())
+    fn span(&self) -> &Span {
+        &self.span
     }
 }

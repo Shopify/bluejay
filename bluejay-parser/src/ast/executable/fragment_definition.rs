@@ -1,7 +1,6 @@
 use crate::ast::executable::{SelectionSet, TypeCondition};
 use crate::ast::{FromTokens, IsMatch, ParseError, Tokens, VariableDirectives};
 use crate::lexical_token::Name;
-use crate::HasSpan;
 
 #[derive(Debug)]
 pub struct FragmentDefinition<'a> {
@@ -23,7 +22,7 @@ impl<'a> FromTokens<'a> for FragmentDefinition<'a> {
         let name = tokens.expect_name()?;
         if name.as_ref() == TypeCondition::ON {
             // TODO: make this error message better
-            return Err(ParseError::UnexpectedToken { span: name.span() });
+            return Err(ParseError::UnexpectedToken { span: name.into() });
         }
         let type_condition = TypeCondition::from_tokens(tokens)?;
         let directives = VariableDirectives::from_tokens(tokens)?;

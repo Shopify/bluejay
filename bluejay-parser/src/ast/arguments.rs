@@ -33,8 +33,8 @@ impl<'a, const CONST: bool> IsMatch<'a> for Arguments<'a, CONST> {
 }
 
 impl<'a, const CONST: bool> HasSpan for Arguments<'a, CONST> {
-    fn span(&self) -> Span {
-        self.span.clone()
+    fn span(&self) -> &Span {
+        &self.span
     }
 }
 

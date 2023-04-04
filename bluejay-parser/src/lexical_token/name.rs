@@ -18,8 +18,14 @@ impl<'a> Name<'a> {
 }
 
 impl<'a> HasSpan for Name<'a> {
-    fn span(&self) -> Span {
-        self.span.clone()
+    fn span(&self) -> &Span {
+        &self.span
+    }
+}
+
+impl<'a> From<Name<'a>> for Span {
+    fn from(value: Name<'a>) -> Self {
+        value.span
     }
 }
 

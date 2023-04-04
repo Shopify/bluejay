@@ -4,6 +4,7 @@ use bluejay_core::definition::{
     TypeDefinitionReference, TypeDefinitionReferenceFromAbstract,
 };
 use bluejay_core::executable::{ExecutableDocument, Field, Selection};
+use std::ops::Not;
 
 pub struct FieldSelections<'a, E: ExecutableDocument, S: SchemaDefinition> {
     errors: Vec<Error<'a, E, S>>,
@@ -33,7 +34,9 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Visitor<'a, E, S>
             .extend(selection_set.as_ref().iter().filter_map(|selection| {
                 if let Selection::Field(field) = selection.as_ref() {
                     let name = field.name();
-                    (!fields_definition.contains_field(name))
+                    fields_definition
+                        .contains_field(name)
+                        .not()
                         .then_some(Error::FieldDoesNotExistOnType { field, r#type })
                 } else {
                     None

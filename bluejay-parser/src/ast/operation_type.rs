@@ -8,8 +8,8 @@ pub struct OperationType {
 }
 
 impl HasSpan for OperationType {
-    fn span(&self) -> Span {
-        self.span.clone()
+    fn span(&self) -> &Span {
+        &self.span
     }
 }
 
@@ -22,15 +22,16 @@ impl From<&OperationType> for bluejay_core::OperationType {
 impl<'a> FromTokens<'a> for OperationType {
     fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
         tokens.expect_name().and_then(|name| {
-            bluejay_core::OperationType::try_from(name.as_str())
-                .map_err(|_| ParseError::ExpectedOneOf {
-                    span: name.span(),
-                    values: bluejay_core::OperationType::POSSIBLE_VALUES,
-                })
-                .map(|operation_type| Self {
+            match bluejay_core::OperationType::try_from(name.as_str()) {
+                Ok(operation_type) => Ok(Self {
                     inner: operation_type,
-                    span: name.span(),
-                })
+                    span: name.into(),
+                }),
+                Err(_) => Err(ParseError::ExpectedOneOf {
+                    span: name.into(),
+                    values: bluejay_core::OperationType::POSSIBLE_VALUES,
+                }),
+            }
         })
     }
 }

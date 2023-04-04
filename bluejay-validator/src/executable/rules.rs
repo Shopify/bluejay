@@ -15,29 +15,30 @@ mod operation_type_is_defined;
 mod required_arguments;
 mod subscription_operation_single_root_field;
 
+pub use argument_names::ArgumentNames;
+pub use argument_uniqueness::ArgumentUniqueness;
+pub use field_selection_merging::FieldSelectionMerging;
+pub use field_selections::FieldSelections;
+pub use fragment_name_uniqueness::FragmentNameUniqueness;
+pub use fragment_spread_target_defined::FragmentSpreadTargetDefined;
+pub use fragment_spread_type_exists::FragmentSpreadTypeExists;
+pub use fragment_spreads_must_not_form_cycles::FragmentSpreadsMustNotFormCycles;
+pub use fragments_must_be_used::FragmentsMustBeUsed;
+pub use fragments_on_composite_types::FragmentsOnCompositeTypes;
+pub use leaf_field_selections::LeafFieldSelections;
+pub use lone_anonymous_operation::LoneAnonymousOperation;
+pub use named_operation_name_uniqueness::NamedOperationNameUniqueness;
+pub use operation_type_is_defined::OperationTypeIsDefined;
+pub use required_arguments::RequiredArguments;
+pub use subscription_operation_single_root_field::SubscriptionOperationSingleRootField;
+
 use crate::executable::{Error, Rule, Visitor};
-use argument_names::ArgumentNames;
-use argument_uniqueness::ArgumentUniqueness;
 use bluejay_core::definition::{
     DirectiveLocation, SchemaDefinition, TypeDefinitionReferenceFromAbstract,
 };
 use bluejay_core::executable::{ExecutableDocument, OperationDefinitionFromExecutableDocument};
-use field_selection_merging::FieldSelectionMerging;
-use field_selections::FieldSelections;
-use fragment_name_uniqueness::FragmentNameUniqueness;
-use fragment_spread_target_defined::FragmentSpreadTargetDefined;
-use fragment_spread_type_exists::FragmentSpreadTypeExists;
-use fragment_spreads_must_not_form_cycles::FragmentSpreadsMustNotFormCycles;
-use fragments_must_be_used::FragmentsMustBeUsed;
-use fragments_on_composite_types::FragmentsOnCompositeTypes;
-use leaf_field_selections::LeafFieldSelections;
-use lone_anonymous_operation::LoneAnonymousOperation;
-use named_operation_name_uniqueness::NamedOperationNameUniqueness;
-use operation_type_is_defined::OperationTypeIsDefined;
 use paste::paste;
-use required_arguments::RequiredArguments;
 use std::iter::Chain;
-use subscription_operation_single_root_field::SubscriptionOperationSingleRootField;
 
 macro_rules! define_rules {
     ( $( $rule:ty ),* $(,)? ) => {
@@ -68,7 +69,11 @@ macro_rules! define_rules {
                     $(self.[<$rule:snake>].visit_operation_definition(operation_definition);)*
                 }
 
-                fn visit_selection_set(&mut self, selection_set: &'a E::SelectionSet, r#type: &'a TypeDefinitionReferenceFromAbstract<S::TypeDefinitionReference>) {
+                fn visit_selection_set(
+                    &mut self,
+                    selection_set: &'a E::SelectionSet,
+                    r#type: &'a TypeDefinitionReferenceFromAbstract<S::TypeDefinitionReference>,
+                ) {
                     $(self.[<$rule:snake>].visit_selection_set(selection_set, r#type);)*
                 }
 

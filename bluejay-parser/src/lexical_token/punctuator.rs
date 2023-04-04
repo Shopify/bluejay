@@ -37,8 +37,14 @@ impl Punctuator {
 }
 
 impl HasSpan for Punctuator {
-    fn span(&self) -> Span {
-        self.span.clone()
+    fn span(&self) -> &Span {
+        &self.span
+    }
+}
+
+impl From<Punctuator> for Span {
+    fn from(value: Punctuator) -> Self {
+        value.span
     }
 }
 

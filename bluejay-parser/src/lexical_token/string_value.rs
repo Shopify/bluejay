@@ -24,8 +24,14 @@ impl ToString for StringValue {
 }
 
 impl HasSpan for StringValue {
-    fn span(&self) -> Span {
-        self.span.clone()
+    fn span(&self) -> &Span {
+        &self.span
+    }
+}
+
+impl From<StringValue> for Span {
+    fn from(value: StringValue) -> Self {
+        value.span
     }
 }
 

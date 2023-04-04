@@ -18,8 +18,14 @@ impl FloatValue {
 }
 
 impl HasSpan for FloatValue {
-    fn span(&self) -> Span {
-        self.span.clone()
+    fn span(&self) -> &Span {
+        &self.span
+    }
+}
+
+impl From<FloatValue> for Span {
+    fn from(value: FloatValue) -> Self {
+        value.span
     }
 }
 
