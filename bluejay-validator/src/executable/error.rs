@@ -29,9 +29,6 @@ pub enum Error<'a, E: ExecutableDocument, S: SchemaDefinition> {
         field: &'a E::Field,
         r#type: &'a TypeDefinitionReferenceFromAbstract<S::TypeDefinitionReference>,
     },
-    FieldSelectionsDoNotMerge {
-        selection_set: &'a E::SelectionSet,
-    },
     OperationTypeNotDefined {
         operation: &'a E::ExplicitOperationDefinition,
     },
@@ -177,14 +174,6 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                         OperationType::from(operation.operation_type()),
                     ),
                     operation.operation_type().span().clone(),
-                )),
-                Vec::new(),
-            ),
-            Error::FieldSelectionsDoNotMerge { selection_set } => Self::new(
-                "Field selections do not merge",
-                Some(Annotation::new(
-                    "Field selections do not merge",
-                    selection_set.span().clone(),
                 )),
                 Vec::new(),
             ),
