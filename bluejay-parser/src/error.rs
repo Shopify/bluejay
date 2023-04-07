@@ -69,4 +69,8 @@ impl Error {
 
         String::from_utf8(buf).unwrap()
     }
+
+    pub fn message(&self) -> &str {
+        self.message.as_ref()
+    }
 }
