@@ -3,6 +3,7 @@ mod argument_uniqueness;
 mod field_selection_merging;
 mod field_selections;
 mod fragment_name_uniqueness;
+mod fragment_spread_is_possible;
 mod fragment_spread_target_defined;
 mod fragment_spread_type_exists;
 mod fragment_spreads_must_not_form_cycles;
@@ -20,6 +21,7 @@ pub use argument_uniqueness::ArgumentUniqueness;
 pub use field_selection_merging::FieldSelectionMerging;
 pub use field_selections::FieldSelections;
 pub use fragment_name_uniqueness::FragmentNameUniqueness;
+pub use fragment_spread_is_possible::FragmentSpreadIsPossible;
 pub use fragment_spread_target_defined::FragmentSpreadTargetDefined;
 pub use fragment_spread_type_exists::FragmentSpreadTypeExists;
 pub use fragment_spreads_must_not_form_cycles::FragmentSpreadsMustNotFormCycles;
@@ -93,12 +95,20 @@ macro_rules! define_rules {
                     $(self.[<$rule:snake>].visit_fragment_definition(fragment_definition);)*
                 }
 
-                fn visit_inline_fragment(&mut self, inline_fragment: &'a E::InlineFragment) {
-                    $(self.[<$rule:snake>].visit_inline_fragment(inline_fragment);)*
+                fn visit_inline_fragment(
+                    &mut self,
+                    inline_fragment: &'a E::InlineFragment,
+                    scoped_type: &'a TypeDefinitionReferenceFromAbstract<S::TypeDefinitionReference>,
+                ) {
+                    $(self.[<$rule:snake>].visit_inline_fragment(inline_fragment, scoped_type);)*
                 }
 
-                fn visit_fragment_spread(&mut self, fragment_spread: &'a E::FragmentSpread) {
-                    $(self.[<$rule:snake>].visit_fragment_spread(fragment_spread);)*
+                fn visit_fragment_spread(
+                    &mut self,
+                    fragment_spread: &'a E::FragmentSpread,
+                    scoped_type: &'a TypeDefinitionReferenceFromAbstract<S::TypeDefinitionReference>
+                ) {
+                    $(self.[<$rule:snake>].visit_fragment_spread(fragment_spread, scoped_type);)*
                 }
             }
         }
@@ -136,4 +146,5 @@ define_rules!(
     FragmentsMustBeUsed,
     FragmentSpreadTargetDefined,
     FragmentSpreadsMustNotFormCycles,
+    FragmentSpreadIsPossible,
 );

@@ -1,5 +1,5 @@
 use crate::executable::{Error, Rule, Visitor};
-use bluejay_core::definition::SchemaDefinition;
+use bluejay_core::definition::{SchemaDefinition, TypeDefinitionReferenceFromAbstract};
 use bluejay_core::executable::{ExecutableDocument, FragmentDefinition, FragmentSpread};
 use std::collections::BTreeMap;
 use std::marker::PhantomData;
@@ -15,6 +15,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> Visitor<'a, E, S>
     fn visit_fragment_spread(
         &mut self,
         fragment_spread: &'a <E as ExecutableDocument>::FragmentSpread,
+        _scoped_type: &'a TypeDefinitionReferenceFromAbstract<S::TypeDefinitionReference>,
     ) {
         self.unused_fragment_definitions
             .remove(fragment_spread.name());

@@ -8,8 +8,12 @@ use crate::ast::definition::{
 };
 use crate::ast::ConstDirectives;
 use crate::lexical_token::StringValue;
-use bluejay_core::definition::SchemaDefinition as CoreSchemaDefinition;
-use std::collections::{btree_map::Values, BTreeMap};
+use bluejay_core::definition::{
+    InterfaceImplementation as CoreInterfaceImplementation,
+    ObjectTypeDefinition as CoreObjectTypeDefinition, SchemaDefinition as CoreSchemaDefinition,
+};
+use bluejay_core::AsIter;
+use std::collections::{btree_map::Values, BTreeMap, HashMap};
 
 #[derive(Debug)]
 pub struct SchemaDefinition<'a> {
@@ -20,6 +24,7 @@ pub struct SchemaDefinition<'a> {
     mutation: Option<&'a ObjectTypeDefinition<'a>>,
     subscription: Option<&'a ObjectTypeDefinition<'a>>,
     schema_directives: Option<&'a ConstDirectives<'a>>,
+    interface_implementors: HashMap<&'a str, Vec<&'a ObjectTypeDefinition<'a>>>,
 }
 
 impl<'a> SchemaDefinition<'a> {
@@ -32,6 +37,7 @@ impl<'a> SchemaDefinition<'a> {
         subscription: Option<&'a ObjectTypeDefinition<'a>>,
         schema_directives: Option<&'a ConstDirectives<'a>>,
     ) -> Self {
+        let interface_implementors = Self::interface_implementors(&type_definitions);
         Self {
             type_definitions,
             directive_definitions,
@@ -40,7 +46,33 @@ impl<'a> SchemaDefinition<'a> {
             mutation,
             subscription,
             schema_directives,
+            interface_implementors,
         }
+    }
+
+    fn interface_implementors(
+        type_definitions: &BTreeMap<&'a str, &'a TypeDefinitionReference<'a>>,
+    ) -> HashMap<&'a str, Vec<&'a ObjectTypeDefinition<'a>>> {
+        type_definitions.values().fold(
+            HashMap::new(),
+            |mut interface_implementors, &type_definition| {
+                if let TypeDefinitionReference::ObjectType(otd, _) = type_definition {
+                    if let Some(interface_implementations) = otd.interface_implementations() {
+                        interface_implementations
+                            .iter()
+                            .for_each(|interface_implementation| {
+                                let itd = interface_implementation.interface();
+                                interface_implementors
+                                    .entry(itd.name().as_ref())
+                                    .or_default()
+                                    .push(otd);
+                            });
+                    }
+                }
+
+                interface_implementors
+            },
+        )
     }
 }
 
@@ -73,6 +105,7 @@ impl<'a> CoreSchemaDefinition for SchemaDefinition<'a> {
         std::iter::Copied<Values<'b, &'b str, &'b TypeDefinitionReference<'a>>> where 'a: 'b;
     type DirectiveDefinitions<'b> =
         std::iter::Copied<Values<'b, &'b str, &'b DirectiveDefinition<'a>>> where 'a: 'b;
+    type IterfaceImplementors<'b> = std::iter::Flatten<std::option::IntoIter<std::iter::Copied<std::slice::Iter<'b, &'b ObjectTypeDefinition<'a>>>>> where 'a: 'b;
 
     fn description(&self) -> Option<&str> {
         self.description.as_ref().map(AsRef::as_ref)
@@ -108,5 +141,16 @@ impl<'a> CoreSchemaDefinition for SchemaDefinition<'a> {
 
     fn directive_definitions(&self) -> Self::DirectiveDefinitions<'_> {
         self.directive_definitions.values().copied()
+    }
+
+    fn get_interface_implementors(
+        &self,
+        itd: &Self::InterfaceTypeDefinition,
+    ) -> Self::IterfaceImplementors<'_> {
+        self.interface_implementors
+            .get(itd.name().as_ref())
+            .map(|implementors| implementors.iter().copied())
+            .into_iter()
+            .flatten()
     }
 }

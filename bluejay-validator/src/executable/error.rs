@@ -107,6 +107,14 @@ pub enum Error<'a, E: ExecutableDocument, S: SchemaDefinition> {
         field_a: &'a E::Field,
         field_b: &'a E::Field,
     },
+    FragmentSpreadIsNotPossible {
+        fragment_spread: &'a E::FragmentSpread,
+        parent_type: &'a TypeDefinitionReferenceFromAbstract<S::TypeDefinitionReference>,
+    },
+    InlineFragmentSpreadIsNotPossible {
+        inline_fragment: &'a E::InlineFragment,
+        parent_type: &'a TypeDefinitionReferenceFromAbstract<S::TypeDefinitionReference>,
+    },
 }
 
 #[cfg(feature = "parser-integration")]
@@ -495,6 +503,39 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                         field_b.name().span().clone(),
                     ),
                 ],
+            ),
+            Error::FragmentSpreadIsNotPossible {
+                fragment_spread,
+                parent_type,
+            } => Self::new(
+                format!(
+                    "Fragment `{}` cannot be spread for type {}",
+                    fragment_spread.name().as_ref(),
+                    parent_type.name()
+                ),
+                Some(Annotation::new(
+                    format!("Cannot be spread for type {}", parent_type.name()),
+                    fragment_spread.name().span().clone(),
+                )),
+                Vec::new(),
+            ),
+            Error::InlineFragmentSpreadIsNotPossible {
+                inline_fragment,
+                parent_type,
+            } => Self::new(
+                format!(
+                    "Fragment targeting type {} cannot be spread for type {}",
+                    inline_fragment
+                        .type_condition()
+                        .map(|type_condition| type_condition.named_type().as_ref())
+                        .unwrap_or_else(|| parent_type.name()),
+                    parent_type.name(),
+                ),
+                Some(Annotation::new(
+                    format!("Cannot be spread for type {}", parent_type.name()),
+                    inline_fragment.span().clone(),
+                )),
+                Vec::new(),
             ),
         }
     }

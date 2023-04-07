@@ -180,19 +180,21 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, R: Rule<'a, E, S>> Validato
             self.visit_selection_set(inline_fragment.selection_set(), fragment_type);
         }
 
-        self.rule.visit_inline_fragment(inline_fragment);
+        self.rule
+            .visit_inline_fragment(inline_fragment, scoped_type);
     }
 
     fn visit_fragment_spread(
         &mut self,
         fragment_spread: &'a E::FragmentSpread,
-        _scoped_type: &'a TypeDefinitionReferenceFromAbstract<S::TypeDefinitionReference>,
+        scoped_type: &'a TypeDefinitionReferenceFromAbstract<S::TypeDefinitionReference>,
     ) {
         self.visit_variable_directives(
             fragment_spread.directives(),
             DirectiveLocation::FragmentSpread,
         );
-        self.rule.visit_fragment_spread(fragment_spread);
+        self.rule
+            .visit_fragment_spread(fragment_spread, scoped_type);
         // fragment will get checked when definition is visited
     }
 

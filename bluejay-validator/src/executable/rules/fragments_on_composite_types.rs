@@ -1,5 +1,5 @@
 use crate::executable::{Error, Rule, Visitor};
-use bluejay_core::definition::SchemaDefinition;
+use bluejay_core::definition::{SchemaDefinition, TypeDefinitionReferenceFromAbstract};
 use bluejay_core::executable::{ExecutableDocument, FragmentDefinition, InlineFragment};
 
 pub struct FragmentsOnCompositeTypes<'a, E: ExecutableDocument, S: SchemaDefinition> {
@@ -30,6 +30,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Visitor<'a, E, S>
     fn visit_inline_fragment(
         &mut self,
         inline_fragment: &'a <E as ExecutableDocument>::InlineFragment,
+        _scoped_type: &'a TypeDefinitionReferenceFromAbstract<S::TypeDefinitionReference>,
     ) {
         if let Some(type_condition) = inline_fragment.type_condition() {
             if matches!(

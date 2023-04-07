@@ -1,0 +1,39 @@
+fragment catInDogFragmentInvalid on Dog {
+  ... on Cat {
+    meowVolume
+  }
+}
+
+fragment sentientInDogFragmentInvalid on Dog {
+  ... on Sentient {
+    name
+  }
+}
+
+fragment sentientFragment on Sentient {
+  ... on Dog {
+    barkVolume
+  }
+}
+
+fragment humanOrAlienFragment on HumanOrAlien {
+  ... on Cat {
+    meowVolume
+  }
+}
+
+fragment nonIntersectingInterfaces on Pet {
+  ...sentientFragment
+}
+
+{
+  dog {
+    ...catInDogFragmentInvalid
+    ...nonIntersectingInterfaces
+    ...sentientInDogFragmentInvalid
+  }
+  human {
+    ...sentientFragment
+    ...humanOrAlienFragment
+  }
+}

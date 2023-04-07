@@ -93,6 +93,9 @@ pub trait SchemaDefinition {
     type DirectiveDefinitions<'a>: Iterator<Item = &'a Self::DirectiveDefinition>
     where
         Self: 'a;
+    type IterfaceImplementors<'a>: Iterator<Item = &'a Self::ObjectTypeDefinition>
+    where
+        Self: 'a;
 
     fn description(&self) -> Option<&str>;
     fn query(&self) -> &Self::ObjectTypeDefinition;
@@ -106,4 +109,8 @@ pub trait SchemaDefinition {
     fn type_definitions(&self) -> Self::TypeDefinitionReferences<'_>;
     fn get_directive_definition(&self, name: &str) -> Option<&Self::DirectiveDefinition>;
     fn directive_definitions(&self) -> Self::DirectiveDefinitions<'_>;
+    fn get_interface_implementors(
+        &self,
+        itd: &Self::InterfaceTypeDefinition,
+    ) -> Self::IterfaceImplementors<'_>;
 }
