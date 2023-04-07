@@ -1,0 +1,60 @@
+fragment dogFragment on Dog {
+  ... on Dog {
+    barkVolume
+  }
+}
+
+fragment petNameFragment on Pet {
+  name
+}
+
+fragment interfaceWithinObjectFragment on Dog {
+  ...petNameFragment
+}
+
+fragment catOrDogNameFragment on CatOrDog {
+  ... on Cat {
+    meowVolume
+  }
+}
+
+fragment unionWithObjectFragment on Dog {
+  ...catOrDogNameFragment
+}
+
+fragment petFragment on Pet {
+  name
+  ... on Dog {
+    barkVolume
+  }
+}
+
+fragment catOrDogFragment on CatOrDog {
+  ... on Cat {
+    meowVolume
+  }
+}
+
+fragment unionWithInterface on Pet {
+  ...dogOrHumanFragment
+}
+
+fragment dogOrHumanFragment on DogOrHuman {
+  ... on Dog {
+    barkVolume
+  }
+}
+
+{
+  dog {
+    ...dogFragment
+    ...petNameFragment
+    ...interfaceWithinObjectFragment
+    ...catOrDogNameFragment
+    ...unionWithObjectFragment
+    ...petFragment
+    ...catOrDogFragment
+    ...unionWithInterface
+    ...dogOrHumanFragment
+  }
+}
