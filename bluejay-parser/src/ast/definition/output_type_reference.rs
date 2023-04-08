@@ -15,7 +15,7 @@ use once_cell::sync::OnceCell;
 #[derive(Debug)]
 pub struct BaseOutputTypeReference<'a> {
     name: Name<'a>,
-    r#type: OnceCell<BaseOutputTypeReferenceFromAbstract<Self>>,
+    r#type: OnceCell<BaseOutputTypeReferenceFromAbstract<'a, Self>>,
 }
 
 impl<'a> AbstractBaseOutputTypeReference for BaseOutputTypeReference<'a> {
@@ -24,16 +24,9 @@ impl<'a> AbstractBaseOutputTypeReference for BaseOutputTypeReference<'a> {
     type InterfaceTypeDefinition = InterfaceTypeDefinition<'a>;
     type ObjectTypeDefinition = ObjectTypeDefinition<'a>;
     type UnionTypeDefinition = UnionTypeDefinition<'a>;
-    type WrappedCustomScalarTypeDefinition = &'a CustomScalarTypeDefinition<'a>;
-    type WrappedEnumTypeDefinition = &'a EnumTypeDefinition<'a>;
-    type WrappedInterfaceTypeDefinition = &'a InterfaceTypeDefinition<'a>;
-    type WrappedObjectTypeDefinition = &'a ObjectTypeDefinition<'a>;
-    type WrappedUnionTypeDefinition = &'a UnionTypeDefinition<'a>;
-}
 
-impl<'a> AsRef<BaseOutputTypeReferenceFromAbstract<Self>> for BaseOutputTypeReference<'a> {
-    fn as_ref(&self) -> &BaseOutputTypeReferenceFromAbstract<Self> {
-        self.r#type.get().unwrap()
+    fn get(&self) -> BaseOutputTypeReferenceFromAbstract<'_, Self> {
+        self.r#type.get().unwrap().clone()
     }
 }
 
@@ -41,14 +34,14 @@ impl<'a> BaseOutputTypeReference<'a> {
     fn new(name: Name<'a>) -> Self {
         Self {
             name,
-            r#type: Default::default(),
+            r#type: OnceCell::new(),
         }
     }
 
     pub(crate) fn set_type_reference(
         &self,
-        type_reference: BaseOutputTypeReferenceFromAbstract<Self>,
-    ) -> Result<(), BaseOutputTypeReferenceFromAbstract<Self>> {
+        type_reference: BaseOutputTypeReferenceFromAbstract<'a, Self>,
+    ) -> Result<(), BaseOutputTypeReferenceFromAbstract<'a, Self>> {
         self.r#type.set(type_reference)
     }
 
@@ -58,26 +51,26 @@ impl<'a> BaseOutputTypeReference<'a> {
 
     pub(crate) fn core_type_from_type_definition_reference(
         type_definition_reference: &'a TypeDefinitionReference<'a>,
-    ) -> Result<BaseOutputTypeReferenceFromAbstract<Self>, ()> {
+    ) -> Result<BaseOutputTypeReferenceFromAbstract<'a, Self>, ()> {
         match type_definition_reference {
             TypeDefinitionReference::BuiltinScalarType(bstd) => {
                 Ok(CoreBaseOutputTypeReference::BuiltinScalarType(*bstd))
             }
-            TypeDefinitionReference::CustomScalarType(cstd, pd) => {
-                Ok(CoreBaseOutputTypeReference::CustomScalarType(cstd, *pd))
+            TypeDefinitionReference::CustomScalarType(cstd, _) => {
+                Ok(CoreBaseOutputTypeReference::CustomScalarType(cstd))
             }
-            TypeDefinitionReference::EnumType(etd, pd) => {
-                Ok(CoreBaseOutputTypeReference::EnumType(etd, *pd))
+            TypeDefinitionReference::EnumType(etd, _) => {
+                Ok(CoreBaseOutputTypeReference::EnumType(etd))
             }
             TypeDefinitionReference::InputObjectType(_, _) => Err(()),
-            TypeDefinitionReference::InterfaceType(itd, pd) => {
-                Ok(CoreBaseOutputTypeReference::InterfaceType(itd, *pd))
+            TypeDefinitionReference::InterfaceType(itd, _) => {
+                Ok(CoreBaseOutputTypeReference::InterfaceType(itd))
             }
-            TypeDefinitionReference::ObjectType(otd, pd) => {
-                Ok(CoreBaseOutputTypeReference::ObjectType(otd, *pd))
+            TypeDefinitionReference::ObjectType(otd, _) => {
+                Ok(CoreBaseOutputTypeReference::ObjectType(otd))
             }
-            TypeDefinitionReference::UnionType(utd, pd) => {
-                Ok(CoreBaseOutputTypeReference::UnionType(utd, *pd))
+            TypeDefinitionReference::UnionType(utd, _) => {
+                Ok(CoreBaseOutputTypeReference::UnionType(utd))
             }
         }
     }

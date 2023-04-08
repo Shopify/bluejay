@@ -1,7 +1,7 @@
 use crate::executable::{Error, Rule, Visitor};
 use bluejay_core::definition::{
-    FieldDefinition, FieldsDefinition, InterfaceTypeDefinition, ObjectTypeDefinition,
-    OutputTypeReference, SchemaDefinition, TypeDefinitionReference,
+    AbstractBaseOutputTypeReference, FieldDefinition, FieldsDefinition, InterfaceTypeDefinition,
+    ObjectTypeDefinition, OutputTypeReference, SchemaDefinition, TypeDefinitionReference,
     TypeDefinitionReferenceFromAbstract,
 };
 use bluejay_core::executable::{
@@ -354,13 +354,13 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition> FieldSelectionMerging<
             }
 
             let double_base = if let OutputTypeReference::Base(type_a_base, _) = &type_a {
-                Some(type_a_base.as_ref())
+                Some(type_a_base.get())
             } else {
                 None
             }
             .and_then(|type_a_base| {
                 if let OutputTypeReference::Base(type_b_base, _) = &type_b {
-                    Some((type_a_base, type_b_base.as_ref()))
+                    Some((type_a_base, type_b_base.get()))
                 } else {
                     None
                 }
@@ -386,7 +386,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition> FieldSelectionMerging<
             }
         };
 
-        if type_a.as_ref().is_scalar_or_enum() || type_b.as_ref().is_scalar_or_enum() {
+        if type_a.is_scalar_or_enum() || type_b.is_scalar_or_enum() {
             return type_a.name() == type_b.name();
         }
 
