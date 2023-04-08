@@ -27,7 +27,7 @@ pub enum Error<'a, E: ExecutableDocument, S: SchemaDefinition> {
     },
     FieldDoesNotExistOnType {
         field: &'a E::Field,
-        r#type: &'a TypeDefinitionReferenceFromAbstract<S::TypeDefinitionReference>,
+        r#type: TypeDefinitionReferenceFromAbstract<'a, S::TypeDefinitionReference>,
     },
     OperationTypeNotDefined {
         operation: &'a E::ExplicitOperationDefinition,
@@ -109,11 +109,11 @@ pub enum Error<'a, E: ExecutableDocument, S: SchemaDefinition> {
     },
     FragmentSpreadIsNotPossible {
         fragment_spread: &'a E::FragmentSpread,
-        parent_type: &'a TypeDefinitionReferenceFromAbstract<S::TypeDefinitionReference>,
+        parent_type: TypeDefinitionReferenceFromAbstract<'a, S::TypeDefinitionReference>,
     },
     InlineFragmentSpreadIsNotPossible {
         inline_fragment: &'a E::InlineFragment,
-        parent_type: &'a TypeDefinitionReferenceFromAbstract<S::TypeDefinitionReference>,
+        parent_type: TypeDefinitionReferenceFromAbstract<'a, S::TypeDefinitionReference>,
     },
 }
 

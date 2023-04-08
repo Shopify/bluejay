@@ -53,25 +53,21 @@ impl<'a> BaseOutputTypeReference<'a> {
         type_definition_reference: &'a TypeDefinitionReference<'a>,
     ) -> Result<BaseOutputTypeReferenceFromAbstract<'a, Self>, ()> {
         match type_definition_reference {
-            TypeDefinitionReference::BuiltinScalarType(bstd) => {
+            TypeDefinitionReference::BuiltinScalar(bstd) => {
                 Ok(CoreBaseOutputTypeReference::BuiltinScalarType(*bstd))
             }
-            TypeDefinitionReference::CustomScalarType(cstd, _) => {
+            TypeDefinitionReference::CustomScalar(cstd) => {
                 Ok(CoreBaseOutputTypeReference::CustomScalarType(cstd))
             }
-            TypeDefinitionReference::EnumType(etd, _) => {
-                Ok(CoreBaseOutputTypeReference::EnumType(etd))
-            }
-            TypeDefinitionReference::InputObjectType(_, _) => Err(()),
-            TypeDefinitionReference::InterfaceType(itd, _) => {
+            TypeDefinitionReference::Enum(etd) => Ok(CoreBaseOutputTypeReference::EnumType(etd)),
+            TypeDefinitionReference::InputObject(_) => Err(()),
+            TypeDefinitionReference::Interface(itd) => {
                 Ok(CoreBaseOutputTypeReference::InterfaceType(itd))
             }
-            TypeDefinitionReference::ObjectType(otd, _) => {
+            TypeDefinitionReference::Object(otd) => {
                 Ok(CoreBaseOutputTypeReference::ObjectType(otd))
             }
-            TypeDefinitionReference::UnionType(utd, _) => {
-                Ok(CoreBaseOutputTypeReference::UnionType(utd))
-            }
+            TypeDefinitionReference::Union(utd) => Ok(CoreBaseOutputTypeReference::UnionType(utd)),
         }
     }
 }

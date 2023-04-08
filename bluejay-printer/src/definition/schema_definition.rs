@@ -51,23 +51,23 @@ impl DisplaySchemaDefinition {
                 }
                 match tdr {
                     TypeDefinitionReference::BuiltinScalarType(_) => Ok(()),
-                    TypeDefinitionReference::CustomScalarType(cstd, _) => {
-                        DisplayScalarTypeDefinition::fmt(cstd.as_ref(), f)
+                    TypeDefinitionReference::CustomScalarType(cstd) => {
+                        DisplayScalarTypeDefinition::fmt(cstd, f)
                     }
-                    TypeDefinitionReference::EnumType(etd, _) => {
-                        DisplayEnumTypeDefinition::fmt(etd.as_ref(), f)
+                    TypeDefinitionReference::EnumType(etd) => {
+                        DisplayEnumTypeDefinition::fmt(etd, f)
                     }
-                    TypeDefinitionReference::InputObjectType(iotd, _) => {
-                        DisplayInputObjectTypeDefinition::fmt(iotd.as_ref(), f)
+                    TypeDefinitionReference::InputObjectType(iotd) => {
+                        DisplayInputObjectTypeDefinition::fmt(iotd, f)
                     }
-                    TypeDefinitionReference::InterfaceType(itd, _) => {
-                        DisplayInterfaceTypeDefinition::fmt(itd.as_ref(), f)
+                    TypeDefinitionReference::InterfaceType(itd) => {
+                        DisplayInterfaceTypeDefinition::fmt(itd, f)
                     }
-                    TypeDefinitionReference::ObjectType(otd, _) => {
-                        DisplayObjectTypeDefinition::fmt(otd.as_ref(), f)
+                    TypeDefinitionReference::ObjectType(otd) => {
+                        DisplayObjectTypeDefinition::fmt(otd, f)
                     }
-                    TypeDefinitionReference::UnionType(utd, _) => {
-                        DisplayUnionTypeDefinition::fmt(utd.as_ref(), f)
+                    TypeDefinitionReference::UnionType(utd) => {
+                        DisplayUnionTypeDefinition::fmt(utd, f)
                     }
                 }
             })?;

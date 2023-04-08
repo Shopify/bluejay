@@ -3,155 +3,101 @@ use crate::definition::{
     ScalarTypeDefinition, UnionTypeDefinition,
 };
 use crate::BuiltinScalarDefinition;
-use std::marker::PhantomData;
 
 #[derive(Debug)]
 pub enum TypeDefinitionReference<
+    'a,
     CS: ScalarTypeDefinition,
-    CSW: AsRef<CS>,
     O: ObjectTypeDefinition,
-    OW: AsRef<O>,
     IO: InputObjectTypeDefinition,
-    IOW: AsRef<IO>,
     E: EnumTypeDefinition,
-    EW: AsRef<E>,
     U: UnionTypeDefinition,
-    UW: AsRef<U>,
     I: InterfaceTypeDefinition,
-    IW: AsRef<I>,
 > {
     BuiltinScalarType(BuiltinScalarDefinition),
-    CustomScalarType(CSW, PhantomData<CS>),
-    ObjectType(OW, PhantomData<O>),
-    InputObjectType(IOW, PhantomData<IO>),
-    EnumType(EW, PhantomData<E>),
-    UnionType(UW, PhantomData<U>),
-    InterfaceType(IW, PhantomData<I>),
+    CustomScalarType(&'a CS),
+    ObjectType(&'a O),
+    InputObjectType(&'a IO),
+    EnumType(&'a E),
+    UnionType(&'a U),
+    InterfaceType(&'a I),
 }
 
-pub trait AbstractTypeDefinitionReference:
-    Into<TypeDefinitionReferenceFromAbstract<Self>> + AsRef<TypeDefinitionReferenceFromAbstract<Self>>
-{
+pub trait AbstractTypeDefinitionReference {
     type CustomScalarTypeDefinition: ScalarTypeDefinition;
     type ObjectTypeDefinition: ObjectTypeDefinition;
     type InputObjectTypeDefinition: InputObjectTypeDefinition;
     type EnumTypeDefinition: EnumTypeDefinition;
     type UnionTypeDefinition: UnionTypeDefinition;
     type InterfaceTypeDefinition: InterfaceTypeDefinition;
-    type WrappedCustomScalarTypeDefinition: AsRef<Self::CustomScalarTypeDefinition>;
-    type WrappedObjectTypeDefinition: AsRef<Self::ObjectTypeDefinition>;
-    type WrappedInputObjectTypeDefinition: AsRef<Self::InputObjectTypeDefinition>;
-    type WrappedEnumTypeDefinition: AsRef<Self::EnumTypeDefinition>;
-    type WrappedUnionTypeDefinition: AsRef<Self::UnionTypeDefinition>;
-    type WrappedInterfaceTypeDefinition: AsRef<Self::InterfaceTypeDefinition>;
+
+    fn get(&self) -> TypeDefinitionReferenceFromAbstract<'_, Self>;
 }
 
-impl<
-        CS: ScalarTypeDefinition,
-        CSW: AsRef<CS>,
-        O: ObjectTypeDefinition,
-        OW: AsRef<O>,
-        IO: InputObjectTypeDefinition,
-        IOW: AsRef<IO>,
-        E: EnumTypeDefinition,
-        EW: AsRef<E>,
-        U: UnionTypeDefinition,
-        UW: AsRef<U>,
-        I: InterfaceTypeDefinition,
-        IW: AsRef<I>,
-    > AsRef<Self> for TypeDefinitionReference<CS, CSW, O, OW, IO, IOW, E, EW, U, UW, I, IW>
-{
-    fn as_ref(&self) -> &TypeDefinitionReference<CS, CSW, O, OW, IO, IOW, E, EW, U, UW, I, IW> {
-        self
-    }
-}
+pub type TypeDefinitionReferenceFromAbstract<'a, T> = TypeDefinitionReference<
+    'a,
+    <T as AbstractTypeDefinitionReference>::CustomScalarTypeDefinition,
+    <T as AbstractTypeDefinitionReference>::ObjectTypeDefinition,
+    <T as AbstractTypeDefinitionReference>::InputObjectTypeDefinition,
+    <T as AbstractTypeDefinitionReference>::EnumTypeDefinition,
+    <T as AbstractTypeDefinitionReference>::UnionTypeDefinition,
+    <T as AbstractTypeDefinitionReference>::InterfaceTypeDefinition,
+>;
 
 impl<
+        'a,
         CS: ScalarTypeDefinition,
-        CSW: AsRef<CS> + Clone,
         O: ObjectTypeDefinition,
-        OW: AsRef<O> + Clone,
         IO: InputObjectTypeDefinition,
-        IOW: AsRef<IO> + Clone,
         E: EnumTypeDefinition,
-        EW: AsRef<E> + Clone,
         U: UnionTypeDefinition,
-        UW: AsRef<U> + Clone,
         I: InterfaceTypeDefinition,
-        IW: AsRef<I> + Clone,
-    > Clone for TypeDefinitionReference<CS, CSW, O, OW, IO, IOW, E, EW, U, UW, I, IW>
+    > Clone for TypeDefinitionReference<'a, CS, O, IO, E, U, I>
 {
     fn clone(&self) -> Self {
         match self {
             Self::BuiltinScalarType(bstd) => Self::BuiltinScalarType(*bstd),
-            Self::CustomScalarType(csw, _) => {
-                Self::CustomScalarType(csw.clone(), Default::default())
-            }
-            Self::EnumType(etw, _) => Self::EnumType(etw.clone(), Default::default()),
-            Self::ObjectType(otw, _) => Self::ObjectType(otw.clone(), Default::default()),
-            Self::InterfaceType(itw, _) => Self::InterfaceType(itw.clone(), Default::default()),
-            Self::UnionType(utw, _) => Self::UnionType(utw.clone(), Default::default()),
-            Self::InputObjectType(iotd, _) => {
-                Self::InputObjectType(iotd.clone(), Default::default())
-            }
+            Self::CustomScalarType(cs) => Self::CustomScalarType(*cs),
+            Self::EnumType(et) => Self::EnumType(*et),
+            Self::ObjectType(ot) => Self::ObjectType(*ot),
+            Self::InterfaceType(it) => Self::InterfaceType(*it),
+            Self::UnionType(ut) => Self::UnionType(*ut),
+            Self::InputObjectType(iot) => Self::InputObjectType(*iot),
         }
     }
 }
 
 impl<
+        'a,
         CS: ScalarTypeDefinition,
-        CSW: AsRef<CS>,
         O: ObjectTypeDefinition,
-        OW: AsRef<O>,
         IO: InputObjectTypeDefinition,
-        IOW: AsRef<IO>,
         E: EnumTypeDefinition,
-        EW: AsRef<E>,
         U: UnionTypeDefinition,
-        UW: AsRef<U>,
         I: InterfaceTypeDefinition,
-        IW: AsRef<I>,
-    > AbstractTypeDefinitionReference
-    for TypeDefinitionReference<CS, CSW, O, OW, IO, IOW, E, EW, U, UW, I, IW>
+    > Copy for TypeDefinitionReference<'a, CS, O, IO, E, U, I>
 {
-    type CustomScalarTypeDefinition = CS;
-    type ObjectTypeDefinition = O;
-    type InputObjectTypeDefinition = IO;
-    type EnumTypeDefinition = E;
-    type UnionTypeDefinition = U;
-    type InterfaceTypeDefinition = I;
-    type WrappedCustomScalarTypeDefinition = CSW;
-    type WrappedObjectTypeDefinition = OW;
-    type WrappedInputObjectTypeDefinition = IOW;
-    type WrappedEnumTypeDefinition = EW;
-    type WrappedUnionTypeDefinition = UW;
-    type WrappedInterfaceTypeDefinition = IW;
 }
 
 impl<
+        'a,
         CS: ScalarTypeDefinition,
-        CSW: AsRef<CS>,
         O: ObjectTypeDefinition,
-        OW: AsRef<O>,
         IO: InputObjectTypeDefinition,
-        IOW: AsRef<IO>,
         E: EnumTypeDefinition,
-        EW: AsRef<E>,
         U: UnionTypeDefinition,
-        UW: AsRef<U>,
         I: InterfaceTypeDefinition,
-        IW: AsRef<I>,
-    > TypeDefinitionReference<CS, CSW, O, OW, IO, IOW, E, EW, U, UW, I, IW>
+    > TypeDefinitionReference<'a, CS, O, IO, E, U, I>
 {
-    pub fn name(&self) -> &str {
+    pub fn name(&self) -> &'a str {
         match self {
             Self::BuiltinScalarType(bsd) => bsd.name(),
-            Self::CustomScalarType(cstd, _) => cstd.as_ref().name(),
-            Self::ObjectType(otd, _) => otd.as_ref().name(),
-            Self::InputObjectType(iotd, _) => iotd.as_ref().name(),
-            Self::EnumType(etd, _) => etd.as_ref().name(),
-            Self::UnionType(utd, _) => utd.as_ref().name(),
-            Self::InterfaceType(itd, _) => itd.as_ref().name(),
+            Self::CustomScalarType(cstd) => cstd.name(),
+            Self::ObjectType(otd) => otd.name(),
+            Self::InputObjectType(iotd) => iotd.name(),
+            Self::EnumType(etd) => etd.name(),
+            Self::UnionType(utd) => utd.name(),
+            Self::InterfaceType(itd) => itd.name(),
         }
     }
 
@@ -162,22 +108,7 @@ impl<
     pub fn is_composite(&self) -> bool {
         matches!(
             self,
-            Self::ObjectType(_, _) | Self::UnionType(_, _) | Self::InterfaceType(_, _)
+            Self::ObjectType(_) | Self::UnionType(_) | Self::InterfaceType(_)
         )
     }
 }
-
-pub type TypeDefinitionReferenceFromAbstract<T> = TypeDefinitionReference<
-    <T as AbstractTypeDefinitionReference>::CustomScalarTypeDefinition,
-    <T as AbstractTypeDefinitionReference>::WrappedCustomScalarTypeDefinition,
-    <T as AbstractTypeDefinitionReference>::ObjectTypeDefinition,
-    <T as AbstractTypeDefinitionReference>::WrappedObjectTypeDefinition,
-    <T as AbstractTypeDefinitionReference>::InputObjectTypeDefinition,
-    <T as AbstractTypeDefinitionReference>::WrappedInputObjectTypeDefinition,
-    <T as AbstractTypeDefinitionReference>::EnumTypeDefinition,
-    <T as AbstractTypeDefinitionReference>::WrappedEnumTypeDefinition,
-    <T as AbstractTypeDefinitionReference>::UnionTypeDefinition,
-    <T as AbstractTypeDefinitionReference>::WrappedUnionTypeDefinition,
-    <T as AbstractTypeDefinitionReference>::InterfaceTypeDefinition,
-    <T as AbstractTypeDefinitionReference>::WrappedInterfaceTypeDefinition,
->;

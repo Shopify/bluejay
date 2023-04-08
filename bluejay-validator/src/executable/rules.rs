@@ -74,7 +74,7 @@ macro_rules! define_rules {
                 fn visit_selection_set(
                     &mut self,
                     selection_set: &'a E::SelectionSet,
-                    r#type: &'a TypeDefinitionReferenceFromAbstract<S::TypeDefinitionReference>,
+                    r#type: TypeDefinitionReferenceFromAbstract<'a, S::TypeDefinitionReference>,
                 ) {
                     $(self.[<$rule:snake>].visit_selection_set(selection_set, r#type);)*
                 }
@@ -98,7 +98,7 @@ macro_rules! define_rules {
                 fn visit_inline_fragment(
                     &mut self,
                     inline_fragment: &'a E::InlineFragment,
-                    scoped_type: &'a TypeDefinitionReferenceFromAbstract<S::TypeDefinitionReference>,
+                    scoped_type: TypeDefinitionReferenceFromAbstract<'a, S::TypeDefinitionReference>,
                 ) {
                     $(self.[<$rule:snake>].visit_inline_fragment(inline_fragment, scoped_type);)*
                 }
@@ -106,7 +106,7 @@ macro_rules! define_rules {
                 fn visit_fragment_spread(
                     &mut self,
                     fragment_spread: &'a E::FragmentSpread,
-                    scoped_type: &'a TypeDefinitionReferenceFromAbstract<S::TypeDefinitionReference>
+                    scoped_type: TypeDefinitionReferenceFromAbstract<'a, S::TypeDefinitionReference>
                 ) {
                     $(self.[<$rule:snake>].visit_fragment_spread(fragment_spread, scoped_type);)*
                 }

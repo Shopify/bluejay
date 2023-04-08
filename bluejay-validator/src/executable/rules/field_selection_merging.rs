@@ -23,7 +23,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition> Visitor<'a, E, S>
     fn visit_selection_set(
         &mut self,
         selection_set: &'a E::SelectionSet,
-        r#type: &'a TypeDefinitionReferenceFromAbstract<S::TypeDefinitionReference>,
+        r#type: TypeDefinitionReferenceFromAbstract<'a, S::TypeDefinitionReference>,
     ) {
         self.selection_set_valid(selection_set, r#type);
     }
@@ -33,7 +33,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition> FieldSelectionMerging<
     fn selection_set_valid(
         &mut self,
         selection_set: &'a E::SelectionSet,
-        parent_type: &'a TypeDefinitionReferenceFromAbstract<S::TypeDefinitionReference>,
+        parent_type: TypeDefinitionReferenceFromAbstract<'a, S::TypeDefinitionReference>,
     ) -> bool {
         if let Some(errors) = self.cache.get(selection_set) {
             errors.is_empty()
@@ -129,11 +129,11 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition> FieldSelectionMerging<
                 (Vec::new(), HashMap::new()),
                 |(mut abstract_group, mut concrete_groups), field_context| {
                     match field_context.parent_type {
-                        TypeDefinitionReference::ObjectType(otd, _) => concrete_groups
-                            .entry(otd.as_ref().name())
+                        TypeDefinitionReference::ObjectType(otd) => concrete_groups
+                            .entry(otd.name())
                             .or_default()
                             .push(field_context),
-                        TypeDefinitionReference::InterfaceType(_, _) => {
+                        TypeDefinitionReference::InterfaceType(_) => {
                             abstract_group.push(field_context)
                         }
                         _ => {}
@@ -208,7 +208,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition> FieldSelectionMerging<
     fn selection_set_contained_fields(
         &mut self,
         selection_set: &'a E::SelectionSet,
-        parent_type: &'a TypeDefinitionReferenceFromAbstract<S::TypeDefinitionReference>,
+        parent_type: TypeDefinitionReferenceFromAbstract<'a, S::TypeDefinitionReference>,
     ) -> HashMap<&'a str, Vec<FieldContext<'a, E, S>>> {
         let mut fields = HashMap::new();
         self.visit_selections_for_fields(
@@ -256,23 +256,19 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition> FieldSelectionMerging<
         &mut self,
         selections: impl Iterator<Item = &'a E::Selection>,
         fields: &mut HashMap<&'a str, Vec<FieldContext<'a, E, S>>>,
-        parent_type: &'a TypeDefinitionReferenceFromAbstract<S::TypeDefinitionReference>,
+        parent_type: TypeDefinitionReferenceFromAbstract<'a, S::TypeDefinitionReference>,
         parent_fragments: &HashSet<&'a str>,
     ) {
         selections.for_each(|selection| match selection.as_ref() {
             Selection::Field(field) => {
                 let fields_definition = match parent_type {
-                    TypeDefinitionReference::ObjectType(otd, _) => {
-                        Some(otd.as_ref().fields_definition())
-                    }
-                    TypeDefinitionReference::InterfaceType(itd, _) => {
-                        Some(itd.as_ref().fields_definition())
-                    }
+                    TypeDefinitionReference::ObjectType(otd) => Some(otd.fields_definition()),
+                    TypeDefinitionReference::InterfaceType(itd) => Some(itd.fields_definition()),
                     TypeDefinitionReference::BuiltinScalarType(_)
-                    | TypeDefinitionReference::CustomScalarType(_, _)
-                    | TypeDefinitionReference::EnumType(_, _)
-                    | TypeDefinitionReference::InputObjectType(_, _)
-                    | TypeDefinitionReference::UnionType(_, _) => None,
+                    | TypeDefinitionReference::CustomScalarType(_)
+                    | TypeDefinitionReference::EnumType(_)
+                    | TypeDefinitionReference::InputObjectType(_)
+                    | TypeDefinitionReference::UnionType(_) => None,
                 };
                 if let Some(fields_definition) = fields_definition {
                     if let Some(field_definition) = fields_definition.get_field(field.name()) {
@@ -282,7 +278,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition> FieldSelectionMerging<
                             .push(FieldContext {
                                 field,
                                 field_definition,
-                                parent_type,
+                                parent_type: parent_type.to_owned(),
                                 parent_fragments: parent_fragments.to_owned(),
                             });
                     }
@@ -451,6 +447,6 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Rule<'a, E, S>
 struct FieldContext<'a, E: ExecutableDocument, S: SchemaDefinition> {
     field: &'a E::Field,
     field_definition: &'a S::FieldDefinition,
-    parent_type: &'a TypeDefinitionReferenceFromAbstract<S::TypeDefinitionReference>,
+    parent_type: TypeDefinitionReferenceFromAbstract<'a, S::TypeDefinitionReference>,
     parent_fragments: HashSet<&'a str>,
 }

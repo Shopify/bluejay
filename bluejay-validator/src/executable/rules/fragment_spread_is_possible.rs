@@ -21,7 +21,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> Visitor<'a, E, S>
     fn visit_fragment_spread(
         &mut self,
         fragment_spread: &'a <E as ExecutableDocument>::FragmentSpread,
-        parent_type: &'a TypeDefinitionReferenceFromAbstract<S::TypeDefinitionReference>,
+        parent_type: TypeDefinitionReferenceFromAbstract<'a, S::TypeDefinitionReference>,
     ) {
         if let Some(fragment_definition) = self
             .indexed_fragment_definitions
@@ -44,9 +44,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> Visitor<'a, E, S>
     fn visit_inline_fragment(
         &mut self,
         inline_fragment: &'a <E as ExecutableDocument>::InlineFragment,
-        parent_type: &'a TypeDefinitionReferenceFromAbstract<
-            <S as SchemaDefinition>::TypeDefinitionReference,
-        >,
+        parent_type: TypeDefinitionReferenceFromAbstract<'a, S::TypeDefinitionReference>,
     ) {
         if let Some(type_condition) = inline_fragment.type_condition() {
             if let Some(fragment_type) = self.schema_definition.get_type_definition(type_condition)
@@ -65,32 +63,31 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> Visitor<'a, E, S>
 impl<'a, E: ExecutableDocument, S: SchemaDefinition> FragmentSpreadIsPossible<'a, E, S> {
     fn get_possible_types(
         &self,
-        t: &'a TypeDefinitionReferenceFromAbstract<S::TypeDefinitionReference>,
+        t: TypeDefinitionReferenceFromAbstract<'a, S::TypeDefinitionReference>,
     ) -> Option<HashSet<&'a str>> {
         match t {
-            TypeDefinitionReference::ObjectType(_, _) => Some(HashSet::from([t.name()])),
-            TypeDefinitionReference::InterfaceType(itd, _) => Some(HashSet::from_iter(
+            TypeDefinitionReference::ObjectType(_) => Some(HashSet::from([t.name()])),
+            TypeDefinitionReference::InterfaceType(itd) => Some(HashSet::from_iter(
                 self.schema_definition
-                    .get_interface_implementors(itd.as_ref())
+                    .get_interface_implementors(itd)
                     .map(ObjectTypeDefinition::name),
             )),
-            TypeDefinitionReference::UnionType(utd, _) => Some(HashSet::from_iter(
-                utd.as_ref()
-                    .union_member_types()
+            TypeDefinitionReference::UnionType(utd) => Some(HashSet::from_iter(
+                utd.union_member_types()
                     .iter()
                     .map(|union_member| union_member.member_type().name()),
             )),
             TypeDefinitionReference::BuiltinScalarType(_)
-            | TypeDefinitionReference::CustomScalarType(_, _)
-            | TypeDefinitionReference::EnumType(_, _)
-            | TypeDefinitionReference::InputObjectType(_, _) => None,
+            | TypeDefinitionReference::CustomScalarType(_)
+            | TypeDefinitionReference::EnumType(_)
+            | TypeDefinitionReference::InputObjectType(_) => None,
         }
     }
 
     fn spread_is_not_possible(
         &self,
-        parent_type: &'a TypeDefinitionReferenceFromAbstract<S::TypeDefinitionReference>,
-        fragment_type: &'a TypeDefinitionReferenceFromAbstract<S::TypeDefinitionReference>,
+        parent_type: TypeDefinitionReferenceFromAbstract<'a, S::TypeDefinitionReference>,
+        fragment_type: TypeDefinitionReferenceFromAbstract<'a, S::TypeDefinitionReference>,
     ) -> bool {
         let parent_type_possible_types = self.get_possible_types(parent_type);
         let fragment_possible_types = self.get_possible_types(fragment_type);

@@ -86,7 +86,7 @@ pub trait SchemaDefinition {
     >;
     type DirectiveDefinition: DirectiveDefinition<ArgumentsDefinition = Self::ArgumentsDefinition>;
     type TypeDefinitionReferences<'a>: Iterator<
-        Item = &'a TypeDefinitionReferenceFromAbstract<Self::TypeDefinitionReference>,
+        Item = TypeDefinitionReferenceFromAbstract<'a, Self::TypeDefinitionReference>,
     >
     where
         Self: 'a;
@@ -105,7 +105,7 @@ pub trait SchemaDefinition {
     fn get_type_definition(
         &self,
         name: &str,
-    ) -> Option<&TypeDefinitionReferenceFromAbstract<Self::TypeDefinitionReference>>;
+    ) -> Option<TypeDefinitionReferenceFromAbstract<Self::TypeDefinitionReference>>;
     fn type_definitions(&self) -> Self::TypeDefinitionReferences<'_>;
     fn get_directive_definition(&self, name: &str) -> Option<&Self::DirectiveDefinition>;
     fn directive_definitions(&self) -> Self::DirectiveDefinitions<'_>;

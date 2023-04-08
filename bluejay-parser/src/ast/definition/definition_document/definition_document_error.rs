@@ -1,10 +1,11 @@
 use crate::ast::definition::{
-    definition_document::ImplicitSchemaDefinition, type_definition_reference, DirectiveDefinition,
-    ExplicitSchemaDefinition, RootOperationTypeDefinition, TypeDefinitionReference,
+    definition_document::ImplicitSchemaDefinition, DirectiveDefinition, ExplicitSchemaDefinition,
+    RootOperationTypeDefinition, TypeDefinitionReference,
 };
 use crate::error::{Annotation, Error};
 use crate::lexical_token::Name;
 use crate::HasSpan;
+use bluejay_core::definition::AbstractTypeDefinitionReference;
 use bluejay_core::OperationType;
 
 #[derive(Debug)]
@@ -116,10 +117,7 @@ impl<'a> From<DefinitionDocumentError<'a>> for Error {
                     .map(|definition| {
                         Annotation::new(
                             format!("Type definition with name `{name}`"),
-                            type_definition_reference::name(definition)
-                                .unwrap()
-                                .span()
-                                .clone(),
+                            definition.name().unwrap().span().clone(),
                         )
                     })
                     .collect(),
@@ -217,14 +215,14 @@ impl<'a> From<DefinitionDocumentError<'a>> for Error {
             ),
             DefinitionDocumentError::ImplicitRootOperationTypeNotAnObject { definition } => {
                 Error::new(
-                    format!("Referenced type `{}` is not an object", definition.name()),
+                    format!(
+                        "Referenced type `{}` is not an object",
+                        definition.get().name()
+                    ),
                     Some(Annotation::new(
                         "Not an object type",
                         // ok to unwrap because builtin scalar cannot be an implicit schema definition member
-                        type_definition_reference::name(definition)
-                            .unwrap()
-                            .span()
-                            .clone(),
+                        definition.name().unwrap().span().clone(),
                     )),
                     Vec::new(),
                 )

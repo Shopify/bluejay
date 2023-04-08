@@ -104,7 +104,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, R: Rule<'a, E, S>> Validato
     fn visit_selection_set(
         &mut self,
         selection_set: &'a E::SelectionSet,
-        scoped_type: &'a TypeDefinitionReferenceFromAbstract<S::TypeDefinitionReference>,
+        scoped_type: TypeDefinitionReferenceFromAbstract<'a, S::TypeDefinitionReference>,
     ) {
         self.rule.visit_selection_set(selection_set, scoped_type);
 
@@ -163,7 +163,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, R: Rule<'a, E, S>> Validato
     fn visit_inline_fragment(
         &mut self,
         inline_fragment: &'a E::InlineFragment,
-        scoped_type: &'a TypeDefinitionReferenceFromAbstract<S::TypeDefinitionReference>,
+        scoped_type: TypeDefinitionReferenceFromAbstract<'a, S::TypeDefinitionReference>,
     ) {
         self.visit_variable_directives(
             inline_fragment.directives(),
@@ -187,7 +187,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, R: Rule<'a, E, S>> Validato
     fn visit_fragment_spread(
         &mut self,
         fragment_spread: &'a E::FragmentSpread,
-        scoped_type: &'a TypeDefinitionReferenceFromAbstract<S::TypeDefinitionReference>,
+        scoped_type: TypeDefinitionReferenceFromAbstract<'a, S::TypeDefinitionReference>,
     ) {
         self.visit_variable_directives(
             fragment_spread.directives(),
@@ -217,18 +217,16 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, R: Rule<'a, E, S>> Validato
     }
 
     fn fields_definition(
-        t: &'a TypeDefinitionReferenceFromAbstract<S::TypeDefinitionReference>,
+        t: TypeDefinitionReferenceFromAbstract<'a, S::TypeDefinitionReference>,
     ) -> Option<&'a S::FieldsDefinition> {
         match t {
             TypeDefinitionReference::BuiltinScalarType(_)
-            | TypeDefinitionReference::CustomScalarType(_, _)
-            | TypeDefinitionReference::EnumType(_, _)
-            | TypeDefinitionReference::UnionType(_, _)
-            | TypeDefinitionReference::InputObjectType(_, _) => None,
-            TypeDefinitionReference::InterfaceType(itd, _) => {
-                Some(itd.as_ref().fields_definition())
-            }
-            TypeDefinitionReference::ObjectType(otd, _) => Some(otd.as_ref().fields_definition()),
+            | TypeDefinitionReference::CustomScalarType(_)
+            | TypeDefinitionReference::EnumType(_)
+            | TypeDefinitionReference::UnionType(_)
+            | TypeDefinitionReference::InputObjectType(_) => None,
+            TypeDefinitionReference::InterfaceType(itd) => Some(itd.fields_definition()),
+            TypeDefinitionReference::ObjectType(otd) => Some(otd.fields_definition()),
         }
     }
 }

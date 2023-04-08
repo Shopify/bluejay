@@ -14,8 +14,8 @@ pub enum BaseInputTypeReference<
     EnumType(&'a E),
 }
 
-impl<'a, CS: ScalarTypeDefinition, I: InputObjectTypeDefinition, E: EnumTypeDefinition>
-    std::clone::Clone for BaseInputTypeReference<'a, CS, I, E>
+impl<'a, CS: ScalarTypeDefinition, I: InputObjectTypeDefinition, E: EnumTypeDefinition> Clone
+    for BaseInputTypeReference<'a, CS, I, E>
 {
     fn clone(&self) -> Self {
         match self {

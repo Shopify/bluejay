@@ -56,7 +56,7 @@ impl<
         O: ObjectTypeDefinition,
         I: InterfaceTypeDefinition,
         U: UnionTypeDefinition,
-    > std::clone::Clone for BaseOutputTypeReference<'a, CS, E, O, I, U>
+    > Clone for BaseOutputTypeReference<'a, CS, E, O, I, U>
 {
     fn clone(&self) -> Self {
         match self {

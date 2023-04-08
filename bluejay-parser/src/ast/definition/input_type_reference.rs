@@ -44,21 +44,19 @@ impl<'a> BaseInputTypeReference<'a> {
         type_definition_reference: &'a TypeDefinitionReference<'a>,
     ) -> Result<BaseInputTypeReferenceFromAbstract<'a, Self>, ()> {
         match type_definition_reference {
-            TypeDefinitionReference::BuiltinScalarType(bstd) => {
+            TypeDefinitionReference::BuiltinScalar(bstd) => {
                 Ok(CoreBaseInputTypeReference::BuiltinScalarType(*bstd))
             }
-            TypeDefinitionReference::CustomScalarType(cstd, _) => {
+            TypeDefinitionReference::CustomScalar(cstd) => {
                 Ok(CoreBaseInputTypeReference::CustomScalarType(cstd))
             }
-            TypeDefinitionReference::EnumType(etd, _) => {
-                Ok(CoreBaseInputTypeReference::EnumType(etd))
-            }
-            TypeDefinitionReference::InputObjectType(iotd, _) => {
+            TypeDefinitionReference::Enum(etd) => Ok(CoreBaseInputTypeReference::EnumType(etd)),
+            TypeDefinitionReference::InputObject(iotd) => {
                 Ok(CoreBaseInputTypeReference::InputObjectType(iotd))
             }
-            TypeDefinitionReference::InterfaceType(_, _)
-            | TypeDefinitionReference::ObjectType(_, _)
-            | TypeDefinitionReference::UnionType(_, _) => Err(()),
+            TypeDefinitionReference::Interface(_)
+            | TypeDefinitionReference::Object(_)
+            | TypeDefinitionReference::Union(_) => Err(()),
         }
     }
 }

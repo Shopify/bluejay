@@ -16,18 +16,18 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Visitor<'a, E, S>
     fn visit_selection_set(
         &mut self,
         selection_set: &'a E::SelectionSet,
-        r#type: &'a TypeDefinitionReferenceFromAbstract<S::TypeDefinitionReference>,
+        r#type: TypeDefinitionReferenceFromAbstract<'a, S::TypeDefinitionReference>,
     ) {
         let fields_definition = match &r#type {
             TypeDefinitionReference::BuiltinScalarType(_)
-            | TypeDefinitionReference::CustomScalarType(_, _)
-            | TypeDefinitionReference::EnumType(_, _)
-            | TypeDefinitionReference::UnionType(_, _)
-            | TypeDefinitionReference::InputObjectType(_, _) => {
+            | TypeDefinitionReference::CustomScalarType(_)
+            | TypeDefinitionReference::EnumType(_)
+            | TypeDefinitionReference::UnionType(_)
+            | TypeDefinitionReference::InputObjectType(_) => {
                 return;
             }
-            TypeDefinitionReference::InterfaceType(itd, _) => itd.as_ref().fields_definition(),
-            TypeDefinitionReference::ObjectType(otd, _) => otd.as_ref().fields_definition(),
+            TypeDefinitionReference::InterfaceType(itd) => itd.fields_definition(),
+            TypeDefinitionReference::ObjectType(otd) => otd.fields_definition(),
         };
 
         self.errors

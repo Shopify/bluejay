@@ -9,8 +9,9 @@ use crate::ast::definition::{
 use crate::ast::ConstDirectives;
 use crate::lexical_token::StringValue;
 use bluejay_core::definition::{
-    InterfaceImplementation as CoreInterfaceImplementation,
+    AbstractTypeDefinitionReference, InterfaceImplementation as CoreInterfaceImplementation,
     ObjectTypeDefinition as CoreObjectTypeDefinition, SchemaDefinition as CoreSchemaDefinition,
+    TypeDefinitionReferenceFromAbstract,
 };
 use bluejay_core::AsIter;
 use std::collections::{btree_map::Values, BTreeMap, HashMap};
@@ -56,7 +57,7 @@ impl<'a> SchemaDefinition<'a> {
         type_definitions.values().fold(
             HashMap::new(),
             |mut interface_implementors, &type_definition| {
-                if let TypeDefinitionReference::ObjectType(otd, _) = type_definition {
+                if let TypeDefinitionReference::Object(otd) = type_definition {
                     if let Some(interface_implementations) = otd.interface_implementations() {
                         interface_implementations
                             .iter()
@@ -101,8 +102,10 @@ impl<'a> CoreSchemaDefinition for SchemaDefinition<'a> {
     type EnumTypeDefinition = EnumTypeDefinition<'a>;
     type TypeDefinitionReference = TypeDefinitionReference<'a>;
     type DirectiveDefinition = DirectiveDefinition<'a>;
-    type TypeDefinitionReferences<'b> =
-        std::iter::Copied<Values<'b, &'b str, &'b TypeDefinitionReference<'a>>> where 'a: 'b;
+    type TypeDefinitionReferences<'b> = std::iter::Map<
+        Values<'b, &'b str, &'b TypeDefinitionReference<'a>>,
+        fn(&&'b TypeDefinitionReference<'a>) -> TypeDefinitionReferenceFromAbstract<'b, TypeDefinitionReference<'a>>
+    > where 'a: 'b;
     type DirectiveDefinitions<'b> =
         std::iter::Copied<Values<'b, &'b str, &'b DirectiveDefinition<'a>>> where 'a: 'b;
     type IterfaceImplementors<'b> = std::iter::Flatten<std::option::IntoIter<std::iter::Copied<std::slice::Iter<'b, &'b ObjectTypeDefinition<'a>>>>> where 'a: 'b;
@@ -127,12 +130,17 @@ impl<'a> CoreSchemaDefinition for SchemaDefinition<'a> {
         self.schema_directives
     }
 
-    fn get_type_definition(&self, name: &str) -> Option<&Self::TypeDefinitionReference> {
-        self.type_definitions.get(name).copied()
+    fn get_type_definition(
+        &self,
+        name: &str,
+    ) -> Option<TypeDefinitionReferenceFromAbstract<'_, Self::TypeDefinitionReference>> {
+        self.type_definitions.get(name).map(|tdr| tdr.get())
     }
 
     fn type_definitions(&self) -> Self::TypeDefinitionReferences<'_> {
-        self.type_definitions.values().copied()
+        self.type_definitions.values().map(|tdr: &&TypeDefinitionReference| -> TypeDefinitionReferenceFromAbstract<'_, TypeDefinitionReference<'a>> {
+            tdr.get()
+        })
     }
 
     fn get_directive_definition(&self, name: &str) -> Option<&Self::DirectiveDefinition> {

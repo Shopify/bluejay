@@ -9,7 +9,8 @@ use crate::ast::{FromTokens, ParseError, ScannerTokens, Tokens};
 use crate::scanner::LogosScanner;
 use crate::Error;
 use bluejay_core::definition::{
-    DirectiveDefinition as CoreDirectiveDefinition, FieldDefinition as CoreFieldDefinition,
+    AbstractTypeDefinitionReference, DirectiveDefinition as CoreDirectiveDefinition,
+    FieldDefinition as CoreFieldDefinition,
     InputObjectTypeDefinition as CoreInputObjectTypeDefinition,
     InputValueDefinition as CoreInputValueDefinition,
     InterfaceTypeDefinition as CoreInterfaceTypeDefinition,
@@ -46,7 +47,7 @@ impl<'a> DefinitionDocument<'a> {
                 DirectiveDefinition::include(),
             ],
             type_definition_references: Vec::from_iter(
-                BuiltinScalarDefinition::iter().map(TypeDefinitionReference::BuiltinScalarType),
+                BuiltinScalarDefinition::iter().map(TypeDefinitionReference::BuiltinScalar),
             ),
         }
     }
@@ -193,7 +194,7 @@ impl<'a> DefinitionDocument<'a> {
             + self
                 .type_definition_references
                 .iter()
-                .filter(|tdr| !tdr.is_builtin())
+                .filter(|tdr| !tdr.get().is_builtin())
                 .count()
     }
 
@@ -238,19 +239,19 @@ impl<'a> DefinitionDocument<'a> {
         let mut indexed: BTreeMap<&str, &TypeDefinitionReference<'a>> = BTreeMap::new();
         let mut duplicates: BTreeMap<&str, Vec<&TypeDefinitionReference<'a>>> = BTreeMap::new();
 
-        self.type_definition_references
-            .iter()
-            .for_each(|tdr| match indexed.entry(tdr.name()) {
+        self.type_definition_references.iter().for_each(|tdr| {
+            match indexed.entry(tdr.name_str()) {
                 Entry::Vacant(entry) => {
                     entry.insert(tdr);
                 }
                 Entry::Occupied(entry) => {
                     duplicates
-                        .entry(tdr.name())
+                        .entry(tdr.name_str())
                         .or_insert_with(|| vec![entry.get()])
                         .push(tdr);
                 }
-            });
+            }
+        });
 
         errors.extend(duplicates.into_iter().map(|(name, definitions)| {
             DefinitionDocumentError::DuplicateTypeDefinitions { name, definitions }
@@ -298,7 +299,7 @@ impl<'a> DefinitionDocument<'a> {
         errors: &mut Vec<DefinitionDocumentError<'a>>,
     ) -> Option<&'a ObjectTypeDefinition<'a>> {
         match indexed_type_definitions.get(name) {
-            Some(TypeDefinitionReference::ObjectType(o, _)) => Some(o),
+            Some(TypeDefinitionReference::Object(o)) => Some(o),
             Some(definition) => {
                 errors.push(
                     DefinitionDocumentError::ImplicitRootOperationTypeNotAnObject { definition },
@@ -380,7 +381,7 @@ impl<'a> DefinitionDocument<'a> {
         if let Some(first) = root_operation_type_definitions.first() {
             if root_operation_type_definitions.len() == 1 {
                 match indexed_type_definitions.get(first.name().as_ref()) {
-                    Some(TypeDefinitionReference::ObjectType(o, _)) => Some(o),
+                    Some(TypeDefinitionReference::Object(o)) => Some(o),
                     Some(_) => {
                         errors.push(
                             DefinitionDocumentError::ExplicitRootOperationTypeNotAnObject {
@@ -420,7 +421,7 @@ impl<'a> DefinitionDocument<'a> {
         indexed_type_definitions
             .values()
             .for_each(|type_definition| match type_definition {
-                TypeDefinitionReference::ObjectType(otd, _) => {
+                TypeDefinitionReference::Object(otd) => {
                     Self::resolve_fields_definition_type_references(
                         indexed_type_definitions,
                         otd.fields_definition(),
@@ -434,7 +435,7 @@ impl<'a> DefinitionDocument<'a> {
                         );
                     }
                 }
-                TypeDefinitionReference::InterfaceType(itd, _) => {
+                TypeDefinitionReference::Interface(itd) => {
                     Self::resolve_fields_definition_type_references(
                         indexed_type_definitions,
                         itd.fields_definition(),
@@ -448,10 +449,10 @@ impl<'a> DefinitionDocument<'a> {
                         );
                     }
                 }
-                TypeDefinitionReference::UnionType(utd, _) => {
+                TypeDefinitionReference::Union(utd) => {
                     utd.union_member_types().iter().for_each(|member_type| {
                         match indexed_type_definitions.get(member_type.name().as_ref()) {
-                            Some(TypeDefinitionReference::ObjectType(otd, _)) => {
+                            Some(TypeDefinitionReference::Object(otd)) => {
                                 member_type.set_type_reference(otd).unwrap();
                             }
                             Some(_) => errors.push(
@@ -467,16 +468,14 @@ impl<'a> DefinitionDocument<'a> {
                         }
                     });
                 }
-                TypeDefinitionReference::InputObjectType(iotd, _) => {
-                    Self::resolve_input_type_references(
-                        indexed_type_definitions,
-                        iotd.input_field_definitions().iter(),
-                        errors,
-                    )
-                }
-                TypeDefinitionReference::BuiltinScalarType(_)
-                | TypeDefinitionReference::CustomScalarType(_, _)
-                | TypeDefinitionReference::EnumType(_, _) => {}
+                TypeDefinitionReference::InputObject(iotd) => Self::resolve_input_type_references(
+                    indexed_type_definitions,
+                    iotd.input_field_definitions().iter(),
+                    errors,
+                ),
+                TypeDefinitionReference::BuiltinScalar(_)
+                | TypeDefinitionReference::CustomScalar(_)
+                | TypeDefinitionReference::Enum(_) => {}
             });
 
         indexed_directive_definitions
@@ -534,7 +533,7 @@ impl<'a> DefinitionDocument<'a> {
             .for_each(|interface_implementation| {
                 let name = interface_implementation.interface_name();
                 match indexed_type_definitions.get(name.as_ref()) {
-                    Some(TypeDefinitionReference::InterfaceType(itd, _)) => {
+                    Some(TypeDefinitionReference::Interface(itd)) => {
                         interface_implementation.set_type_reference(itd).unwrap();
                     }
                     Some(_) => errors
