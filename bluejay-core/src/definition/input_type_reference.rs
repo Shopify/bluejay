@@ -1,88 +1,58 @@
 use crate::definition::{EnumTypeDefinition, InputObjectTypeDefinition, ScalarTypeDefinition};
 use crate::BuiltinScalarDefinition;
-use std::marker::PhantomData;
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub enum BaseInputTypeReference<
+    'a,
     CS: ScalarTypeDefinition,
-    CSW: AsRef<CS>,
     I: InputObjectTypeDefinition,
-    IW: AsRef<I>,
     E: EnumTypeDefinition,
-    EW: AsRef<E>,
 > {
     BuiltinScalarType(BuiltinScalarDefinition),
-    CustomScalarType(CSW, PhantomData<CS>),
-    InputObjectType(IW, PhantomData<I>),
-    EnumType(EW, PhantomData<E>),
+    CustomScalarType(&'a CS),
+    InputObjectType(&'a I),
+    EnumType(&'a E),
 }
 
-impl<
-        CS: ScalarTypeDefinition,
-        CSW: AsRef<CS>,
-        I: InputObjectTypeDefinition,
-        IW: AsRef<I>,
-        E: EnumTypeDefinition,
-        EW: AsRef<E>,
-    > AsRef<Self> for BaseInputTypeReference<CS, CSW, I, IW, E, EW>
+impl<'a, CS: ScalarTypeDefinition, I: InputObjectTypeDefinition, E: EnumTypeDefinition>
+    std::clone::Clone for BaseInputTypeReference<'a, CS, I, E>
 {
-    fn as_ref(&self) -> &Self {
-        self
-    }
-}
-
-impl<
-        CS: ScalarTypeDefinition,
-        CSW: AsRef<CS>,
-        I: InputObjectTypeDefinition,
-        IW: AsRef<I>,
-        E: EnumTypeDefinition,
-        EW: AsRef<E>,
-    > BaseInputTypeReference<CS, CSW, I, IW, E, EW>
-{
-    pub fn name(&self) -> &str {
+    fn clone(&self) -> Self {
         match self {
-            Self::BuiltinScalarType(bstd) => bstd.name(),
-            Self::CustomScalarType(cstd, _) => cstd.as_ref().name(),
-            Self::EnumType(etd, _) => etd.as_ref().name(),
-            Self::InputObjectType(iotd, _) => iotd.as_ref().name(),
+            Self::BuiltinScalarType(bstd) => Self::BuiltinScalarType(*bstd),
+            Self::CustomScalarType(cstd) => Self::CustomScalarType(*cstd),
+            Self::InputObjectType(iotd) => Self::InputObjectType(*iotd),
+            Self::EnumType(etd) => Self::EnumType(*etd),
         }
     }
 }
 
-impl<
-        CS: ScalarTypeDefinition,
-        CSW: AsRef<CS>,
-        I: InputObjectTypeDefinition,
-        IW: AsRef<I>,
-        E: EnumTypeDefinition,
-        EW: AsRef<E>,
-    > AbstractBaseInputTypeReference for BaseInputTypeReference<CS, CSW, I, IW, E, EW>
+impl<'a, CS: ScalarTypeDefinition, I: InputObjectTypeDefinition, E: EnumTypeDefinition>
+    BaseInputTypeReference<'a, CS, I, E>
 {
-    type CustomScalarTypeDefinition = CS;
-    type EnumTypeDefinition = E;
-    type InputObjectTypeDefinition = I;
-    type WrappedCustomScalarTypeDefinition = CSW;
-    type WrappedEnumTypeDefinition = EW;
-    type WrappedInputObjectTypeDefinition = IW;
+    pub fn name(&self) -> &str {
+        match self {
+            Self::BuiltinScalarType(bstd) => bstd.name(),
+            Self::CustomScalarType(cstd) => cstd.name(),
+            Self::EnumType(etd) => etd.name(),
+            Self::InputObjectType(iotd) => iotd.name(),
+        }
+    }
 }
 
-pub type BaseInputTypeReferenceFromAbstract<T> = BaseInputTypeReference<
+pub type BaseInputTypeReferenceFromAbstract<'a, T> = BaseInputTypeReference<
+    'a,
     <T as AbstractBaseInputTypeReference>::CustomScalarTypeDefinition,
-    <T as AbstractBaseInputTypeReference>::WrappedCustomScalarTypeDefinition,
     <T as AbstractBaseInputTypeReference>::InputObjectTypeDefinition,
-    <T as AbstractBaseInputTypeReference>::WrappedInputObjectTypeDefinition,
     <T as AbstractBaseInputTypeReference>::EnumTypeDefinition,
-    <T as AbstractBaseInputTypeReference>::WrappedEnumTypeDefinition,
 >;
 
-pub trait AbstractBaseInputTypeReference: AsRef<BaseInputTypeReferenceFromAbstract<Self>> {
+pub trait AbstractBaseInputTypeReference {
     type CustomScalarTypeDefinition: ScalarTypeDefinition;
     type InputObjectTypeDefinition: InputObjectTypeDefinition;
     type EnumTypeDefinition: EnumTypeDefinition;
-    type WrappedCustomScalarTypeDefinition: AsRef<Self::CustomScalarTypeDefinition>;
-    type WrappedInputObjectTypeDefinition: AsRef<Self::InputObjectTypeDefinition>;
-    type WrappedEnumTypeDefinition: AsRef<Self::EnumTypeDefinition>;
+
+    fn get(&self) -> BaseInputTypeReferenceFromAbstract<'_, Self>;
 }
 
 #[derive(Debug, Clone)]
@@ -99,9 +69,9 @@ impl<B: AbstractBaseInputTypeReference, W: AsRef<Self>> InputTypeReference<B, W>
         }
     }
 
-    pub fn base(&self) -> &BaseInputTypeReferenceFromAbstract<B> {
+    pub fn base(&self) -> BaseInputTypeReferenceFromAbstract<B> {
         match self {
-            Self::Base(b, _) => b.as_ref(),
+            Self::Base(b, _) => b.get(),
             Self::List(l, _) => l.as_ref().base(),
         }
     }
@@ -109,7 +79,7 @@ impl<B: AbstractBaseInputTypeReference, W: AsRef<Self>> InputTypeReference<B, W>
     pub fn display_name(&self) -> String {
         match self {
             Self::Base(b, required) => {
-                format!("{}{}", b.as_ref().name(), if *required { "!" } else { "" })
+                format!("{}{}", b.get().name(), if *required { "!" } else { "" })
             }
             Self::List(inner, required) => {
                 format!(

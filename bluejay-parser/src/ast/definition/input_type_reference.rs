@@ -15,21 +15,16 @@ use once_cell::sync::OnceCell;
 #[derive(Debug)]
 pub struct BaseInputTypeReference<'a> {
     name: Name<'a>,
-    r#type: OnceCell<BaseInputTypeReferenceFromAbstract<Self>>,
+    r#type: OnceCell<BaseInputTypeReferenceFromAbstract<'a, Self>>,
 }
 
 impl<'a> AbstractBaseInputTypeReference for BaseInputTypeReference<'a> {
     type CustomScalarTypeDefinition = CustomScalarTypeDefinition<'a>;
     type EnumTypeDefinition = EnumTypeDefinition<'a>;
     type InputObjectTypeDefinition = InputObjectTypeDefinition<'a>;
-    type WrappedCustomScalarTypeDefinition = &'a CustomScalarTypeDefinition<'a>;
-    type WrappedEnumTypeDefinition = &'a EnumTypeDefinition<'a>;
-    type WrappedInputObjectTypeDefinition = &'a InputObjectTypeDefinition<'a>;
-}
 
-impl<'a> AsRef<BaseInputTypeReferenceFromAbstract<Self>> for BaseInputTypeReference<'a> {
-    fn as_ref(&self) -> &BaseInputTypeReferenceFromAbstract<Self> {
-        self.r#type.get().unwrap()
+    fn get(&self) -> BaseInputTypeReferenceFromAbstract<'a, Self> {
+        self.r#type.get().unwrap().clone()
     }
 }
 
@@ -40,26 +35,26 @@ impl<'a> BaseInputTypeReference<'a> {
 
     pub(crate) fn set_type_reference(
         &self,
-        type_reference: BaseInputTypeReferenceFromAbstract<Self>,
-    ) -> Result<(), BaseInputTypeReferenceFromAbstract<Self>> {
+        type_reference: BaseInputTypeReferenceFromAbstract<'a, Self>,
+    ) -> Result<(), BaseInputTypeReferenceFromAbstract<'a, Self>> {
         self.r#type.set(type_reference)
     }
 
     pub(crate) fn core_type_from_type_definition_reference(
         type_definition_reference: &'a TypeDefinitionReference<'a>,
-    ) -> Result<BaseInputTypeReferenceFromAbstract<Self>, ()> {
+    ) -> Result<BaseInputTypeReferenceFromAbstract<'a, Self>, ()> {
         match type_definition_reference {
             TypeDefinitionReference::BuiltinScalarType(bstd) => {
                 Ok(CoreBaseInputTypeReference::BuiltinScalarType(*bstd))
             }
-            TypeDefinitionReference::CustomScalarType(cstd, pd) => {
-                Ok(CoreBaseInputTypeReference::CustomScalarType(cstd, *pd))
+            TypeDefinitionReference::CustomScalarType(cstd, _) => {
+                Ok(CoreBaseInputTypeReference::CustomScalarType(cstd))
             }
-            TypeDefinitionReference::EnumType(etd, pd) => {
-                Ok(CoreBaseInputTypeReference::EnumType(etd, *pd))
+            TypeDefinitionReference::EnumType(etd, _) => {
+                Ok(CoreBaseInputTypeReference::EnumType(etd))
             }
-            TypeDefinitionReference::InputObjectType(iotd, pd) => {
-                Ok(CoreBaseInputTypeReference::InputObjectType(iotd, *pd))
+            TypeDefinitionReference::InputObjectType(iotd, _) => {
+                Ok(CoreBaseInputTypeReference::InputObjectType(iotd))
             }
             TypeDefinitionReference::InterfaceType(_, _)
             | TypeDefinitionReference::ObjectType(_, _)
