@@ -1,20 +1,43 @@
 use crate::ast::{FromTokens, ParseError, Tokens, TryFromTokens, Variable};
 use crate::lexical_token::{FloatValue, IntValue, Name, PunctuatorType, StringValue};
 use crate::{HasSpan, Span};
-use bluejay_core::AsIter;
+use bluejay_core::{
+    AbstractValue, AsIter, ListValue as CoreListValue, ObjectValue as CoreObjectValue,
+    Value as CoreValue, ValueFromAbstract,
+};
 
-pub type Value<'a, const CONST: bool> = bluejay_core::Value<
-    CONST,
-    Variable<'a>,
-    IntValue,
-    FloatValue,
-    StringValue,
-    BooleanValue,
-    Name<'a>,
-    Name<'a>,
-    ListValue<'a, CONST>,
-    ObjectValue<'a, CONST>,
->;
+#[derive(Debug, strum::Display)]
+#[strum(serialize_all = "lowercase")]
+pub enum Value<'a, const CONST: bool> {
+    Variable(Variable<'a>),
+    Integer(IntValue),
+    Float(FloatValue),
+    String(StringValue),
+    Boolean(BooleanValue),
+    Null(Name<'a>),
+    Enum(Name<'a>),
+    List(ListValue<'a, CONST>),
+    Object(ObjectValue<'a, CONST>),
+}
+
+impl<'a, const CONST: bool> AbstractValue<CONST> for Value<'a, CONST> {
+    type List = ListValue<'a, CONST>;
+    type Object = ObjectValue<'a, CONST>;
+
+    fn as_ref(&self) -> ValueFromAbstract<'_, CONST, Self> {
+        match self {
+            Self::Variable(v) => CoreValue::Variable(v.name()),
+            Self::Integer(i) => CoreValue::Integer(i.value()),
+            Self::Float(f) => CoreValue::Float(f.value()),
+            Self::String(s) => CoreValue::String(s.as_ref()),
+            Self::Boolean(b) => CoreValue::Boolean(b.value()),
+            Self::Null(_) => CoreValue::Null,
+            Self::Enum(e) => CoreValue::Enum(e.as_ref()),
+            Self::List(l) => CoreValue::List(l),
+            Self::Object(o) => CoreValue::Object(o),
+        }
+    }
+}
 
 impl<'a, const CONST: bool> FromTokens<'a> for Value<'a, CONST> {
     fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
@@ -125,8 +148,8 @@ pub struct BooleanValue {
     span: Span,
 }
 
-impl bluejay_core::BooleanValue for BooleanValue {
-    fn to_bool(&self) -> bool {
+impl BooleanValue {
+    fn value(&self) -> bool {
         self.value
     }
 }
@@ -137,13 +160,24 @@ pub struct ListValue<'a, const CONST: bool> {
     span: Span,
 }
 
-impl<'a, const CONST: bool> AsRef<[Value<'a, CONST>]> for ListValue<'a, CONST> {
-    fn as_ref(&self) -> &[Value<'a, CONST>] {
-        &self.elements
+impl<'a, const CONST: bool> CoreListValue<CONST> for ListValue<'a, CONST> {
+    type Value = Value<'a, CONST>;
+}
+
+impl<'a, const CONST: bool> AsIter for ListValue<'a, CONST> {
+    type Item = Value<'a, CONST>;
+    type Iterator<'b> = std::slice::Iter<'b, Self::Item> where 'a: 'b;
+
+    fn iter(&self) -> Self::Iterator<'_> {
+        self.elements.iter()
     }
 }
 
-impl<'a, const CONST: bool> bluejay_core::ListValue<Value<'a, CONST>> for ListValue<'a, CONST> {}
+impl<'a, const CONST: bool> AsRef<[Value<'a, CONST>]> for ListValue<'a, CONST> {
+    fn as_ref(&self) -> &[Value<'a, CONST>] {
+        self.elements.as_slice()
+    }
+}
 
 #[derive(Debug)]
 pub struct ObjectValue<'a, const CONST: bool> {
@@ -151,7 +185,8 @@ pub struct ObjectValue<'a, const CONST: bool> {
     span: Span,
 }
 
-impl<'a, const CONST: bool> bluejay_core::ObjectValue<Value<'a, CONST>> for ObjectValue<'a, CONST> {
+impl<'a, const CONST: bool> CoreObjectValue<CONST> for ObjectValue<'a, CONST> {
+    type Value = Value<'a, CONST>;
     type Iterator<'b> = std::iter::Map<std::slice::Iter<'b, (Name<'a>, Value<'a, CONST>)>, fn(&'b (Name<'a>, Value<'a, CONST>)) -> (&'b str, &'b Value<'a, CONST>)> where 'a: 'b;
 
     fn iter(&self) -> Self::Iterator<'_> {
@@ -167,19 +202,3 @@ impl<'a, const CONST: bool> AsIter for ObjectValue<'a, CONST> {
         self.fields.iter()
     }
 }
-
-impl bluejay_core::IntegerValue for IntValue {
-    fn to_i32(&self) -> i32 {
-        self.value()
-    }
-}
-
-impl bluejay_core::FloatValue for FloatValue {
-    fn to_f64(&self) -> f64 {
-        self.value()
-    }
-}
-
-impl bluejay_core::StringValue for StringValue {}
-
-impl<'a> bluejay_core::EnumValue for Name<'a> {}

@@ -4,12 +4,9 @@ use crate::executable::{
     ImplicitOperationDefinition, InlineFragment, SelectionSet, VariableDefinition,
     VariableDefinitions,
 };
-use crate::{
-    AbstractTypeReference, AbstractValue, Argument, Arguments, Directive, Directives, Variable,
-};
+use crate::{AbstractTypeReference, AbstractValue, Argument, Arguments, Directive, Directives};
 
 pub trait ExecutableDocument {
-    type Variable: Variable;
     type Value<const CONST: bool>: AbstractValue<CONST>;
     type TypeReference: AbstractTypeReference;
     type Argument<const CONST: bool>: Argument<CONST, Value = Self::Value<CONST>>;
@@ -33,7 +30,6 @@ pub trait ExecutableDocument {
         SelectionSet = Self::SelectionSet,
     >;
     type VariableDefinition: VariableDefinition<
-        Variable = Self::Variable,
         TypeReference = Self::TypeReference,
         Directives = Self::Directives<true>,
         Value = Self::Value<true>,

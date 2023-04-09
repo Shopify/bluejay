@@ -34,9 +34,3 @@ impl<'a> Variable<'a> {
         self.name.as_ref()
     }
 }
-
-impl<'a> bluejay_core::Variable for Variable<'a> {
-    fn name(&self) -> &str {
-        self.name.as_ref()
-    }
-}

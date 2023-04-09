@@ -50,10 +50,9 @@ impl<'a> bluejay_core::executable::VariableDefinition for VariableDefinition<'a>
     type Value = ConstValue<'a>;
     type TypeReference = TypeReference<'a>;
     type Directives = ConstDirectives<'a>;
-    type Variable = Variable<'a>;
 
-    fn variable(&self) -> &Self::Variable {
-        &self.variable
+    fn variable(&self) -> &str {
+        self.variable.name()
     }
 
     fn r#type(&self) -> &Self::TypeReference {

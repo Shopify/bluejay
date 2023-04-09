@@ -1,8 +1,5 @@
 use crate::string_value::DisplayStringValue;
-use bluejay_core::{
-    BooleanValue, EnumValue, FloatValue, IntegerValue, ListValue, ObjectValue, StringValue, Value,
-    Variable,
-};
+use bluejay_core::{AbstractValue, ListValue, ObjectValue, Value};
 use std::fmt::{Error, Write};
 
 pub(crate) trait DisplayValue {
@@ -16,43 +13,32 @@ pub(crate) trait DisplayValue {
     }
 }
 
-impl<
-        const CONST: bool,
-        V: Variable,
-        I: IntegerValue,
-        F: FloatValue,
-        S: StringValue,
-        B: BooleanValue,
-        N,
-        E: EnumValue,
-        L: ListValue<Self>,
-        O: ObjectValue<Self>,
-    > DisplayValue for Value<CONST, V, I, F, S, B, N, E, L, O>
+impl<'a, const CONST: bool, L: ListValue<CONST>, O: ObjectValue<CONST, Value = L::Value>>
+    DisplayValue for Value<'a, CONST, L, O>
 {
     fn fmt<W: Write>(&self, f: &mut W) -> Result<(), Error> {
         match self {
-            Self::Boolean(b) => write!(f, "{}", b.to_bool()),
-            Self::Enum(e) => write!(f, "{}", e.as_ref()),
+            Self::Boolean(b) => write!(f, "{}", b),
+            Self::Enum(e) => write!(f, "{}", e),
             Self::Float(fl) => {
-                let fl = fl.to_f64();
                 if fl.fract().abs() < 1e-10 {
                     write!(f, "{fl:.1}")
                 } else {
                     write!(f, "{fl}")
                 }
             }
-            Self::Integer(i) => write!(f, "{}", i.to_i32()),
+            Self::Integer(i) => write!(f, "{}", i),
             Self::List(l) => {
                 write!(f, "[")?;
-                l.as_ref().iter().enumerate().try_for_each(|(idx, el)| {
+                l.iter().enumerate().try_for_each(|(idx, el)| {
                     if idx != 0 {
                         write!(f, ", ")?;
                     }
-                    el.fmt(f)
+                    el.as_ref().fmt(f)
                 })?;
                 write!(f, "]")
             }
-            Self::Null(_) => write!(f, "null"),
+            Self::Null => write!(f, "null"),
             Self::Object(o) => {
                 write!(f, "{{ ")?;
 
@@ -61,13 +47,13 @@ impl<
                         write!(f, ", ")?;
                     }
                     write!(f, "{key}: ")?;
-                    value.fmt(f)
+                    value.as_ref().fmt(f)
                 })?;
 
                 write!(f, " }}")
             }
-            Self::String(s) => DisplayStringValue::fmt(s.as_ref(), f),
-            Self::Variable(v) => write!(f, "${}", v.name()),
+            Self::String(s) => DisplayStringValue::fmt(s, f),
+            Self::Variable(v) => write!(f, "${}", v),
         }
     }
 }
@@ -75,16 +61,17 @@ impl<
 #[cfg(test)]
 mod tests {
     use super::DisplayValue;
+    use bluejay_core::AbstractValue;
     use bluejay_parser::ast::{Parse, VariableValue};
 
     macro_rules! assert_prints {
         ($val:literal) => {
             let parsed = VariableValue::parse($val).unwrap();
-            assert_eq!($val, DisplayValue::to_string(&parsed));
+            assert_eq!($val, DisplayValue::to_string(&parsed.as_ref()));
         };
         ($out:literal, $in:literal) => {
             let parsed = VariableValue::parse($in).unwrap();
-            assert_eq!($out, DisplayValue::to_string(&parsed));
+            assert_eq!($out, DisplayValue::to_string(&parsed.as_ref()));
         };
     }
 

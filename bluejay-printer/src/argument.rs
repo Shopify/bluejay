@@ -1,5 +1,5 @@
 use crate::value::DisplayValue;
-use bluejay_core::{Argument, Arguments};
+use bluejay_core::{AbstractValue, Argument, Arguments};
 use std::fmt::{Error, Write};
 
 pub(crate) struct DisplayArgument;
@@ -10,7 +10,7 @@ impl DisplayArgument {
         f: &mut W,
     ) -> Result<(), Error> {
         write!(f, "{}: ", argument.name())?;
-        DisplayValue::fmt(argument.value().as_ref(), f)
+        DisplayValue::fmt(&argument.value().as_ref(), f)
     }
 }
 

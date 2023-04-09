@@ -5,7 +5,6 @@ use crate::ast::executable::{
 };
 use crate::ast::{
     Argument, Arguments, Directive, Directives, ParseError, ScannerTokens, TryFromTokens, Value,
-    Variable,
 };
 use crate::scanner::LogosScanner;
 use crate::Error;
@@ -95,7 +94,6 @@ impl<'a> ExecutableDocument<'a> {
 }
 
 impl<'a> bluejay_core::executable::ExecutableDocument for ExecutableDocument<'a> {
-    type Variable = Variable<'a>;
     type Value<const CONST: bool> = Value<'a, CONST>;
     type TypeReference = crate::ast::TypeReference<'a>;
     type Argument<const CONST: bool> = Argument<'a, CONST>;

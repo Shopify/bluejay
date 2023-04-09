@@ -7,7 +7,7 @@ use bluejay_core::definition::{
 use bluejay_core::executable::{
     ExecutableDocument, Field, FragmentDefinition, FragmentSpread, InlineFragment, Selection,
 };
-use bluejay_core::{Argument, AsIter};
+use bluejay_core::{AbstractValue, Argument, AsIter};
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::ops::Not;
 

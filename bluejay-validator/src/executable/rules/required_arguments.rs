@@ -4,7 +4,9 @@ use bluejay_core::definition::{
     SchemaDefinition,
 };
 use bluejay_core::executable::{ExecutableDocument, Field};
-use bluejay_core::{Argument, ArgumentWrapper, AsIter, Directive, DirectiveWrapper, Value};
+use bluejay_core::{
+    AbstractValue, Argument, ArgumentWrapper, AsIter, Directive, DirectiveWrapper, Value,
+};
 use std::collections::HashMap;
 
 pub struct RequiredArguments<'a, E: ExecutableDocument, S: SchemaDefinition> {
@@ -75,10 +77,9 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> RequiredArguments
                      ivd| {
                         let argument = indexed_arguments.get(ivd.name()).copied();
                         let argument_null = match argument {
-                            Some(argument) => matches!(
-                                argument.value().as_ref(),
-                                Value::<CONST, _, _, _, _, _, _, _, _, _>::Null(_),
-                            ),
+                            Some(argument) => {
+                                matches!(argument.value().as_ref(), Value::<CONST, _, _>::Null,)
+                            }
                             None => false,
                         };
                         let argument_missing_or_null = argument.is_none() || argument_null;

@@ -4,7 +4,7 @@ use crate::{
 };
 use bluejay_core::{
     definition::{AbstractInputTypeReference, InputValueDefinition},
-    AsIter,
+    AbstractValue, AsIter,
 };
 use std::fmt::{Error, Write};
 
@@ -30,7 +30,7 @@ impl DisplayInputValueDefinition {
 
         if let Some(default_value) = input_value_definition.default_value() {
             write!(f, " = ")?;
-            DisplayValue::fmt(default_value.as_ref(), f)?;
+            DisplayValue::fmt(&default_value.as_ref(), f)?;
         }
 
         if let Some(directives) = input_value_definition.directives() {

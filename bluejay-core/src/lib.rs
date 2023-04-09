@@ -10,7 +10,6 @@ pub mod executable;
 mod operation_type;
 mod type_reference;
 mod value;
-mod variable;
 
 pub use argument::{
     Argument, Arguments, ConstArgument, ConstArguments, VariableArgument, VariableArguments,
@@ -27,7 +26,6 @@ pub use type_reference::{
     AbstractTypeReference, ListTypeReference, NamedTypeReference, TypeReference,
 };
 pub use value::{
-    AbstractConstValue, AbstractValue, AbstractVariableValue, BooleanValue, EnumValue, FloatValue,
-    IntegerValue, ListValue, ObjectValue, StringValue, Value,
+    AbstractConstValue, AbstractValue, AbstractVariableValue, ListValue, ObjectValue, Value,
+    ValueFromAbstract,
 };
-pub use variable::Variable;
