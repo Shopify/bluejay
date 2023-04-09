@@ -117,7 +117,7 @@ impl<'a> From<DefinitionDocumentError<'a>> for Error {
                     .map(|definition| {
                         Annotation::new(
                             format!("Type definition with name `{name}`"),
-                            definition.name().unwrap().span().clone(),
+                            definition.name_token().unwrap().span().clone(),
                         )
                     })
                     .collect(),
@@ -222,7 +222,7 @@ impl<'a> From<DefinitionDocumentError<'a>> for Error {
                     Some(Annotation::new(
                         "Not an object type",
                         // ok to unwrap because builtin scalar cannot be an implicit schema definition member
-                        definition.name().unwrap().span().clone(),
+                        definition.name_token().unwrap().span().clone(),
                     )),
                     Vec::new(),
                 )

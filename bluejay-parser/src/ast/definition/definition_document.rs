@@ -239,19 +239,19 @@ impl<'a> DefinitionDocument<'a> {
         let mut indexed: BTreeMap<&str, &TypeDefinitionReference<'a>> = BTreeMap::new();
         let mut duplicates: BTreeMap<&str, Vec<&TypeDefinitionReference<'a>>> = BTreeMap::new();
 
-        self.type_definition_references.iter().for_each(|tdr| {
-            match indexed.entry(tdr.name_str()) {
+        self.type_definition_references
+            .iter()
+            .for_each(|tdr| match indexed.entry(tdr.name()) {
                 Entry::Vacant(entry) => {
                     entry.insert(tdr);
                 }
                 Entry::Occupied(entry) => {
                     duplicates
-                        .entry(tdr.name_str())
+                        .entry(tdr.name())
                         .or_insert_with(|| vec![entry.get()])
                         .push(tdr);
                 }
-            }
-        });
+            });
 
         errors.extend(duplicates.into_iter().map(|(name, definitions)| {
             DefinitionDocumentError::DuplicateTypeDefinitions { name, definitions }

@@ -21,7 +21,7 @@ pub enum TypeDefinitionReference<'a> {
 }
 
 impl<'a> TypeDefinitionReference<'a> {
-    pub(crate) fn name(&self) -> Option<&Name<'_>> {
+    pub(crate) fn name_token(&self) -> Option<&Name<'_>> {
         match self {
             Self::BuiltinScalar(_) => None,
             Self::CustomScalar(cstd) => Some(cstd.name()),
@@ -33,7 +33,7 @@ impl<'a> TypeDefinitionReference<'a> {
         }
     }
 
-    pub(crate) fn name_str(&self) -> &str {
+    pub(crate) fn name(&self) -> &str {
         match self {
             Self::BuiltinScalar(bstd) => bstd.name(),
             Self::CustomScalar(cstd) => cstd.name().as_ref(),
