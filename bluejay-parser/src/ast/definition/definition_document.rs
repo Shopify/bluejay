@@ -9,7 +9,7 @@ use crate::ast::{FromTokens, ParseError, ScannerTokens, Tokens};
 use crate::scanner::LogosScanner;
 use crate::Error;
 use bluejay_core::definition::{
-    AbstractInputTypeReference, AbstractTypeDefinitionReference,
+    AbstractInputTypeReference, AbstractOutputTypeReference, AbstractTypeDefinitionReference,
     DirectiveDefinition as CoreDirectiveDefinition, FieldDefinition as CoreFieldDefinition,
     InputObjectTypeDefinition as CoreInputObjectTypeDefinition,
     InputValueDefinition as CoreInputValueDefinition,
@@ -497,7 +497,7 @@ impl<'a> DefinitionDocument<'a> {
         errors: &mut Vec<DefinitionDocumentError<'a>>,
     ) {
         fields_definition.iter().for_each(|field_definition| {
-            let t = field_definition.r#type().base();
+            let t = field_definition.r#type().as_ref().base();
             match indexed_type_definitions.get(t.name().as_ref()) {
                 Some(&tdr) => {
                     match BaseOutputTypeReference::core_type_from_type_definition_reference(tdr) {

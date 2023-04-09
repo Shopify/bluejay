@@ -1,5 +1,7 @@
 use crate::executable::{Error, Rule, Visitor};
-use bluejay_core::definition::{FieldDefinition, SchemaDefinition};
+use bluejay_core::definition::{
+    AbstractBaseOutputTypeReference, AbstractOutputTypeReference, FieldDefinition, SchemaDefinition,
+};
 use bluejay_core::executable::{ExecutableDocument, Field};
 
 pub struct LeafFieldSelections<'a, E: ExecutableDocument, S: SchemaDefinition> {
@@ -15,7 +17,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Visitor<'a, E, S>
         field_definition: &'a S::FieldDefinition,
     ) {
         let r#type = field_definition.r#type();
-        if r#type.as_ref().base().is_scalar_or_enum() {
+        if r#type.as_ref().base().as_ref().is_scalar_or_enum() {
             if let Some(selection_set) = field.selection_set() {
                 self.errors.push(Error::LeafFieldSelectionNotEmpty {
                     selection_set,

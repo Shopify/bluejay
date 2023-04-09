@@ -1,8 +1,8 @@
 use crate::executable::{Error, Rule, Visitor};
 use bluejay_core::definition::{
-    AbstractBaseOutputTypeReference, FieldDefinition, FieldsDefinition, InterfaceTypeDefinition,
-    ObjectTypeDefinition, OutputTypeReference, SchemaDefinition, TypeDefinitionReference,
-    TypeDefinitionReferenceFromAbstract,
+    AbstractBaseOutputTypeReference, AbstractOutputTypeReference, FieldDefinition,
+    FieldsDefinition, InterfaceTypeDefinition, ObjectTypeDefinition, OutputTypeReference,
+    SchemaDefinition, TypeDefinitionReference, TypeDefinitionReferenceFromAbstract,
 };
 use bluejay_core::executable::{
     ExecutableDocument, Field, FragmentDefinition, FragmentSpread, InlineFragment, Selection,
@@ -236,6 +236,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition> FieldSelectionMerging<
                         .r#type()
                         .as_ref()
                         .base()
+                        .as_ref()
                         .name(),
                 ) {
                     if self.selection_set_valid(selection_set, parent_type) {

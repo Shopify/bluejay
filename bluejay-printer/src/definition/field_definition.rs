@@ -3,7 +3,7 @@ use crate::{
     string_value::DisplayStringValue, write_indent, INDENTATION_SIZE,
 };
 use bluejay_core::{
-    definition::{FieldDefinition, FieldsDefinition},
+    definition::{AbstractOutputTypeReference, FieldDefinition, FieldsDefinition},
     AsIter,
 };
 use std::fmt::{Error, Write};

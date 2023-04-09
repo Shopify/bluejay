@@ -70,6 +70,17 @@ impl<
     }
 }
 
+impl<
+        'a,
+        CS: ScalarTypeDefinition,
+        E: EnumTypeDefinition,
+        O: ObjectTypeDefinition,
+        I: InterfaceTypeDefinition,
+        U: UnionTypeDefinition,
+    > Copy for BaseOutputTypeReference<'a, CS, E, O, I, U>
+{
+}
+
 pub type BaseOutputTypeReferenceFromAbstract<'a, T> = BaseOutputTypeReference<
     'a,
     <T as AbstractBaseOutputTypeReference>::CustomScalarTypeDefinition,
@@ -89,13 +100,44 @@ pub trait AbstractBaseOutputTypeReference {
     fn as_ref(&self) -> BaseOutputTypeReferenceFromAbstract<'_, Self>;
 }
 
-#[derive(Debug, Clone)]
-pub enum OutputTypeReference<B: AbstractBaseOutputTypeReference, W: AsRef<Self>> {
-    Base(B, bool),
-    List(W, bool),
+#[derive(Debug)]
+pub enum OutputTypeReference<
+    'a,
+    B: AbstractBaseOutputTypeReference,
+    O: AbstractOutputTypeReference<BaseOutputTypeReference = B>,
+> {
+    Base(&'a B, bool),
+    List(&'a O, bool),
 }
 
-impl<B: AbstractBaseOutputTypeReference, W: AsRef<Self>> OutputTypeReference<B, W> {
+impl<
+        'a,
+        B: AbstractBaseOutputTypeReference,
+        O: AbstractOutputTypeReference<BaseOutputTypeReference = B>,
+    > Clone for OutputTypeReference<'a, B, O>
+{
+    fn clone(&self) -> Self {
+        match self {
+            Self::Base(base, required) => Self::Base(*base, *required),
+            Self::List(inner, required) => Self::List(*inner, *required),
+        }
+    }
+}
+
+impl<
+        'a,
+        B: AbstractBaseOutputTypeReference,
+        O: AbstractOutputTypeReference<BaseOutputTypeReference = B>,
+    > Copy for OutputTypeReference<'a, B, O>
+{
+}
+
+impl<
+        'a,
+        B: AbstractBaseOutputTypeReference,
+        O: AbstractOutputTypeReference<BaseOutputTypeReference = B>,
+    > OutputTypeReference<'a, B, O>
+{
     pub fn is_required(&self) -> bool {
         match self {
             Self::Base(_, r) => *r,
@@ -103,9 +145,9 @@ impl<B: AbstractBaseOutputTypeReference, W: AsRef<Self>> OutputTypeReference<B, 
         }
     }
 
-    pub fn base(&self) -> BaseOutputTypeReferenceFromAbstract<'_, B> {
+    pub fn base(&self) -> &'a B {
         match self {
-            Self::Base(b, _) => b.as_ref(),
+            Self::Base(b, _) => b,
             Self::List(l, _) => l.as_ref().base(),
         }
     }
@@ -126,9 +168,11 @@ impl<B: AbstractBaseOutputTypeReference, W: AsRef<Self>> OutputTypeReference<B, 
     }
 }
 
-pub trait AbstractOutputTypeReference:
-    AsRef<OutputTypeReference<Self::BaseOutputTypeReference, Self::Wrapper>>
-{
+pub trait AbstractOutputTypeReference: Sized {
     type BaseOutputTypeReference: AbstractBaseOutputTypeReference;
-    type Wrapper: AsRef<OutputTypeReference<Self::BaseOutputTypeReference, Self::Wrapper>>;
+
+    fn as_ref(&self) -> OutputTypeReferenceFromAbstract<'_, Self>;
 }
+
+pub type OutputTypeReferenceFromAbstract<'a, T> =
+    OutputTypeReference<'a, <T as AbstractOutputTypeReference>::BaseOutputTypeReference, T>;

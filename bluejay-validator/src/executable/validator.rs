@@ -1,8 +1,8 @@
 use crate::executable::{Error, Rule, Rules};
 use bluejay_core::definition::{
-    DirectiveLocation, FieldDefinition, FieldsDefinition, InterfaceTypeDefinition,
-    ObjectTypeDefinition, SchemaDefinition, TypeDefinitionReference,
-    TypeDefinitionReferenceFromAbstract,
+    AbstractBaseOutputTypeReference, AbstractOutputTypeReference, DirectiveLocation,
+    FieldDefinition, FieldsDefinition, InterfaceTypeDefinition, ObjectTypeDefinition,
+    SchemaDefinition, TypeDefinitionReference, TypeDefinitionReferenceFromAbstract,
 };
 use bluejay_core::executable::{
     ExecutableDocument, Field, FragmentDefinition, FragmentSpread, InlineFragment,
@@ -132,7 +132,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, R: Rule<'a, E, S>> Validato
         if let Some((selection_set, nested_type)) =
             field.selection_set().and_then(|selection_set| {
                 self.schema_definition
-                    .get_type_definition(field_definition.r#type().as_ref().base().name())
+                    .get_type_definition(field_definition.r#type().as_ref().base().as_ref().name())
                     .map(|t| (selection_set, t))
             })
         {

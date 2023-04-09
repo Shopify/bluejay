@@ -1,6 +1,6 @@
 use bluejay_core::definition::{
-    DirectiveDefinition, FieldDefinition, InputValueDefinition, SchemaDefinition,
-    TypeDefinitionReferenceFromAbstract,
+    AbstractOutputTypeReference, DirectiveDefinition, FieldDefinition, InputValueDefinition,
+    SchemaDefinition, TypeDefinitionReferenceFromAbstract,
 };
 use bluejay_core::executable::{ExecutableDocument, OperationDefinitionFromExecutableDocument};
 use bluejay_core::{

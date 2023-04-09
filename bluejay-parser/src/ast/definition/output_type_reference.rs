@@ -8,7 +8,7 @@ use crate::{HasSpan, Span};
 use bluejay_core::definition::{
     AbstractBaseOutputTypeReference, AbstractOutputTypeReference,
     BaseOutputTypeReference as CoreBaseOutputTypeReference, BaseOutputTypeReferenceFromAbstract,
-    OutputTypeReference as CoreOutputTypeReference,
+    OutputTypeReference as CoreOutputTypeReference, OutputTypeReferenceFromAbstract,
 };
 use once_cell::sync::OnceCell;
 
@@ -26,7 +26,7 @@ impl<'a> AbstractBaseOutputTypeReference for BaseOutputTypeReference<'a> {
     type UnionTypeDefinition = UnionTypeDefinition<'a>;
 
     fn as_ref(&self) -> BaseOutputTypeReferenceFromAbstract<'_, Self> {
-        self.r#type.get().unwrap().clone()
+        *self.r#type.get().unwrap()
     }
 }
 
@@ -73,63 +73,42 @@ impl<'a> BaseOutputTypeReference<'a> {
 }
 
 #[derive(Debug)]
-pub struct OutputTypeReference<'a> {
-    inner: CoreOutputTypeReference<BaseOutputTypeReference<'a>, Box<Self>>,
-    _span: Span,
+pub enum OutputTypeReference<'a> {
+    Base(BaseOutputTypeReference<'a>, bool, Span),
+    List(Box<Self>, bool, Span),
 }
 
 impl<'a> AbstractOutputTypeReference for OutputTypeReference<'a> {
     type BaseOutputTypeReference = BaseOutputTypeReference<'a>;
-    type Wrapper = Box<Self>;
-}
 
-impl<'a> AsRef<CoreOutputTypeReference<BaseOutputTypeReference<'a>, Box<Self>>>
-    for OutputTypeReference<'a>
-{
-    fn as_ref(&self) -> &CoreOutputTypeReference<BaseOutputTypeReference<'a>, Box<Self>> {
-        &self.inner
-    }
-}
-
-impl<'a> AsRef<CoreOutputTypeReference<BaseOutputTypeReference<'a>, Box<OutputTypeReference<'a>>>>
-    for Box<OutputTypeReference<'a>>
-{
-    fn as_ref(
-        &self,
-    ) -> &CoreOutputTypeReference<BaseOutputTypeReference<'a>, Box<OutputTypeReference<'a>>> {
-        let inner: &OutputTypeReference<'a> = self.as_ref();
-        inner.as_ref()
+    fn as_ref(&self) -> OutputTypeReferenceFromAbstract<'_, Self> {
+        match self {
+            Self::Base(base, required, _) => CoreOutputTypeReference::Base(base, *required),
+            Self::List(inner, required, _) => {
+                CoreOutputTypeReference::List(inner.as_ref(), *required)
+            }
+        }
     }
 }
 
 impl<'a> OutputTypeReference<'a> {
-    pub(crate) fn non_null_string() -> OutputTypeReference<'a> {
-        OutputTypeReference {
-            inner: CoreOutputTypeReference::Base(
-                BaseOutputTypeReference::new(Name::new("String", Span::empty())),
-                true,
-            ),
-            _span: Span::empty(),
-        }
-    }
-
-    pub(crate) fn base(&self) -> &BaseOutputTypeReference<'a> {
-        match &self.inner {
-            CoreOutputTypeReference::Base(b, _) => b,
-            CoreOutputTypeReference::List(inner, _) => inner.base(),
-        }
+    pub(crate) fn non_null_string() -> Self {
+        Self::Base(
+            BaseOutputTypeReference::new(Name::new("String", Span::empty())),
+            true,
+            Span::empty(),
+        )
     }
 }
 
 impl<'a> FromTokens<'a> for OutputTypeReference<'a> {
     fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
         if let Some(open_span) = tokens.next_if_punctuator(PunctuatorType::OpenSquareBracket) {
-            let inner_self = Self::from_tokens(tokens).map(Box::new)?;
+            let inner = Self::from_tokens(tokens).map(Box::new)?;
             let close_span = tokens.expect_punctuator(PunctuatorType::CloseSquareBracket)?;
             let bang_span = tokens.next_if_punctuator(PunctuatorType::Bang);
             let span = open_span.merge(&close_span);
-            let inner = CoreOutputTypeReference::List(inner_self, bang_span.is_some());
-            Ok(Self { inner, _span: span })
+            Ok(Self::List(inner, bang_span.is_some(), span))
         } else if let Some(base_name) = tokens.next_if_name() {
             let bang_span = tokens.next_if_punctuator(PunctuatorType::Bang);
             let span = if let Some(bang_span) = &bang_span {
@@ -138,8 +117,7 @@ impl<'a> FromTokens<'a> for OutputTypeReference<'a> {
                 base_name.span().clone()
             };
             let base = BaseOutputTypeReference::new(base_name);
-            let inner = CoreOutputTypeReference::Base(base, bang_span.is_some());
-            Ok(Self { inner, _span: span })
+            Ok(Self::Base(base, bang_span.is_some(), span))
         } else {
             Err(tokens.unexpected_token())
         }
