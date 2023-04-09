@@ -27,6 +27,11 @@ impl<'a, CS: ScalarTypeDefinition, I: InputObjectTypeDefinition, E: EnumTypeDefi
     }
 }
 
+impl<'a, CS: ScalarTypeDefinition, I: InputObjectTypeDefinition, E: EnumTypeDefinition> Copy
+    for BaseInputTypeReference<'a, CS, I, E>
+{
+}
+
 impl<'a, CS: ScalarTypeDefinition, I: InputObjectTypeDefinition, E: EnumTypeDefinition>
     BaseInputTypeReference<'a, CS, I, E>
 {
@@ -55,13 +60,44 @@ pub trait AbstractBaseInputTypeReference {
     fn as_ref(&self) -> BaseInputTypeReferenceFromAbstract<'_, Self>;
 }
 
-#[derive(Debug, Clone)]
-pub enum InputTypeReference<B: AbstractBaseInputTypeReference, W: AsRef<Self>> {
-    Base(B, bool),
-    List(W, bool),
+#[derive(Debug)]
+pub enum InputTypeReference<
+    'a,
+    B: AbstractBaseInputTypeReference,
+    I: AbstractInputTypeReference<BaseInputTypeReference = B>,
+> {
+    Base(&'a B, bool),
+    List(&'a I, bool),
 }
 
-impl<B: AbstractBaseInputTypeReference, W: AsRef<Self>> InputTypeReference<B, W> {
+impl<
+        'a,
+        B: AbstractBaseInputTypeReference,
+        I: AbstractInputTypeReference<BaseInputTypeReference = B>,
+    > Clone for InputTypeReference<'a, B, I>
+{
+    fn clone(&self) -> Self {
+        match self {
+            Self::Base(base, required) => Self::Base(*base, *required),
+            Self::List(inner, required) => Self::List(*inner, *required),
+        }
+    }
+}
+
+impl<
+        'a,
+        B: AbstractBaseInputTypeReference,
+        I: AbstractInputTypeReference<BaseInputTypeReference = B>,
+    > Copy for InputTypeReference<'a, B, I>
+{
+}
+
+impl<
+        'a,
+        B: AbstractBaseInputTypeReference,
+        I: AbstractInputTypeReference<BaseInputTypeReference = B>,
+    > InputTypeReference<'a, B, I>
+{
     pub fn is_required(&self) -> bool {
         match self {
             Self::Base(_, r) => *r,
@@ -69,9 +105,9 @@ impl<B: AbstractBaseInputTypeReference, W: AsRef<Self>> InputTypeReference<B, W>
         }
     }
 
-    pub fn base(&self) -> BaseInputTypeReferenceFromAbstract<B> {
+    pub fn base(&self) -> &'a B {
         match self {
-            Self::Base(b, _) => b.as_ref(),
+            Self::Base(b, _) => b,
             Self::List(l, _) => l.as_ref().base(),
         }
     }
@@ -92,24 +128,11 @@ impl<B: AbstractBaseInputTypeReference, W: AsRef<Self>> InputTypeReference<B, W>
     }
 }
 
-pub trait AbstractInputTypeReference:
-    AsRef<InputTypeReference<Self::BaseInputTypeReference, Self::Wrapper>>
-{
+pub trait AbstractInputTypeReference: Sized {
     type BaseInputTypeReference: AbstractBaseInputTypeReference;
-    type Wrapper: AsRef<InputTypeReference<Self::BaseInputTypeReference, Self::Wrapper>>;
+
+    fn as_ref(&self) -> InputTypeReferenceFromAbstract<'_, Self>;
 }
 
-impl<B: AbstractBaseInputTypeReference, W: AsRef<InputTypeReference<B, W>>> AsRef<Self>
-    for InputTypeReference<B, W>
-{
-    fn as_ref(&self) -> &Self {
-        self
-    }
-}
-
-impl<B: AbstractBaseInputTypeReference, W: AsRef<InputTypeReference<B, W>>>
-    AbstractInputTypeReference for InputTypeReference<B, W>
-{
-    type BaseInputTypeReference = B;
-    type Wrapper = W;
-}
+pub type InputTypeReferenceFromAbstract<'a, T> =
+    InputTypeReference<'a, <T as AbstractInputTypeReference>::BaseInputTypeReference, T>;

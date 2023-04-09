@@ -2,7 +2,10 @@ use crate::{
     directive::DisplayDirectives, string_value::DisplayStringValue, value::DisplayValue,
     write_indent,
 };
-use bluejay_core::{definition::InputValueDefinition, AsIter};
+use bluejay_core::{
+    definition::{AbstractInputTypeReference, InputValueDefinition},
+    AsIter,
+};
 use std::fmt::{Error, Write};
 
 pub(crate) struct DisplayInputValueDefinition;
