@@ -217,7 +217,7 @@ impl<'a> From<DefinitionDocumentError<'a>> for Error {
                 Error::new(
                     format!(
                         "Referenced type `{}` is not an object",
-                        definition.get().name()
+                        definition.as_ref().name()
                     ),
                     Some(Annotation::new(
                         "Not an object type",

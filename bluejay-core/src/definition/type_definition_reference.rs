@@ -31,7 +31,7 @@ pub trait AbstractTypeDefinitionReference {
     type UnionTypeDefinition: UnionTypeDefinition;
     type InterfaceTypeDefinition: InterfaceTypeDefinition;
 
-    fn get(&self) -> TypeDefinitionReferenceFromAbstract<'_, Self>;
+    fn as_ref(&self) -> TypeDefinitionReferenceFromAbstract<'_, Self>;
 }
 
 pub type TypeDefinitionReferenceFromAbstract<'a, T> = TypeDefinitionReference<

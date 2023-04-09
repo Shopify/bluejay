@@ -54,7 +54,7 @@ impl<'a> AbstractTypeDefinitionReference for TypeDefinitionReference<'a> {
     type UnionTypeDefinition = UnionTypeDefinition<'a>;
     type InterfaceTypeDefinition = InterfaceTypeDefinition<'a>;
 
-    fn get(&self) -> TypeDefinitionReferenceFromAbstract<'_, Self> {
+    fn as_ref(&self) -> TypeDefinitionReferenceFromAbstract<'_, Self> {
         match self {
             Self::BuiltinScalar(bstd) => CoreTypeDefinitionReference::BuiltinScalarType(*bstd),
             Self::CustomScalar(cstd) => CoreTypeDefinitionReference::CustomScalarType(cstd),

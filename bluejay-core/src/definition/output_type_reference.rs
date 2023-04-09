@@ -86,7 +86,7 @@ pub trait AbstractBaseOutputTypeReference {
     type InterfaceTypeDefinition: InterfaceTypeDefinition;
     type UnionTypeDefinition: UnionTypeDefinition;
 
-    fn get(&self) -> BaseOutputTypeReferenceFromAbstract<'_, Self>;
+    fn as_ref(&self) -> BaseOutputTypeReferenceFromAbstract<'_, Self>;
 }
 
 #[derive(Debug, Clone)]
@@ -105,7 +105,7 @@ impl<B: AbstractBaseOutputTypeReference, W: AsRef<Self>> OutputTypeReference<B, 
 
     pub fn base(&self) -> BaseOutputTypeReferenceFromAbstract<'_, B> {
         match self {
-            Self::Base(b, _) => b.get(),
+            Self::Base(b, _) => b.as_ref(),
             Self::List(l, _) => l.as_ref().base(),
         }
     }
@@ -113,7 +113,7 @@ impl<B: AbstractBaseOutputTypeReference, W: AsRef<Self>> OutputTypeReference<B, 
     pub fn display_name(&self) -> String {
         match self {
             Self::Base(b, required) => {
-                format!("{}{}", b.get().name(), if *required { "!" } else { "" })
+                format!("{}{}", b.as_ref().name(), if *required { "!" } else { "" })
             }
             Self::List(inner, required) => {
                 format!(

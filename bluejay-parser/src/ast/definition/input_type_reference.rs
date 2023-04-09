@@ -23,7 +23,7 @@ impl<'a> AbstractBaseInputTypeReference for BaseInputTypeReference<'a> {
     type EnumTypeDefinition = EnumTypeDefinition<'a>;
     type InputObjectTypeDefinition = InputObjectTypeDefinition<'a>;
 
-    fn get(&self) -> BaseInputTypeReferenceFromAbstract<'a, Self> {
+    fn as_ref(&self) -> BaseInputTypeReferenceFromAbstract<'a, Self> {
         self.r#type.get().unwrap().clone()
     }
 }

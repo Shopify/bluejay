@@ -52,7 +52,7 @@ pub trait AbstractBaseInputTypeReference {
     type InputObjectTypeDefinition: InputObjectTypeDefinition;
     type EnumTypeDefinition: EnumTypeDefinition;
 
-    fn get(&self) -> BaseInputTypeReferenceFromAbstract<'_, Self>;
+    fn as_ref(&self) -> BaseInputTypeReferenceFromAbstract<'_, Self>;
 }
 
 #[derive(Debug, Clone)]
@@ -71,7 +71,7 @@ impl<B: AbstractBaseInputTypeReference, W: AsRef<Self>> InputTypeReference<B, W>
 
     pub fn base(&self) -> BaseInputTypeReferenceFromAbstract<B> {
         match self {
-            Self::Base(b, _) => b.get(),
+            Self::Base(b, _) => b.as_ref(),
             Self::List(l, _) => l.as_ref().base(),
         }
     }
@@ -79,7 +79,7 @@ impl<B: AbstractBaseInputTypeReference, W: AsRef<Self>> InputTypeReference<B, W>
     pub fn display_name(&self) -> String {
         match self {
             Self::Base(b, required) => {
-                format!("{}{}", b.get().name(), if *required { "!" } else { "" })
+                format!("{}{}", b.as_ref().name(), if *required { "!" } else { "" })
             }
             Self::List(inner, required) => {
                 format!(

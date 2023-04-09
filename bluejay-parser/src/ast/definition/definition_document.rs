@@ -194,7 +194,7 @@ impl<'a> DefinitionDocument<'a> {
             + self
                 .type_definition_references
                 .iter()
-                .filter(|tdr| !tdr.get().is_builtin())
+                .filter(|tdr| !tdr.as_ref().is_builtin())
                 .count()
     }
 

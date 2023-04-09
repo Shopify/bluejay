@@ -134,12 +134,12 @@ impl<'a> CoreSchemaDefinition for SchemaDefinition<'a> {
         &self,
         name: &str,
     ) -> Option<TypeDefinitionReferenceFromAbstract<'_, Self::TypeDefinitionReference>> {
-        self.type_definitions.get(name).map(|tdr| tdr.get())
+        self.type_definitions.get(name).map(|tdr| tdr.as_ref())
     }
 
     fn type_definitions(&self) -> Self::TypeDefinitionReferences<'_> {
         self.type_definitions.values().map(|tdr: &&TypeDefinitionReference| -> TypeDefinitionReferenceFromAbstract<'_, TypeDefinitionReference<'a>> {
-            tdr.get()
+            tdr.as_ref()
         })
     }
 

@@ -25,7 +25,7 @@ impl<'a> AbstractBaseOutputTypeReference for BaseOutputTypeReference<'a> {
     type ObjectTypeDefinition = ObjectTypeDefinition<'a>;
     type UnionTypeDefinition = UnionTypeDefinition<'a>;
 
-    fn get(&self) -> BaseOutputTypeReferenceFromAbstract<'_, Self> {
+    fn as_ref(&self) -> BaseOutputTypeReferenceFromAbstract<'_, Self> {
         self.r#type.get().unwrap().clone()
     }
 }

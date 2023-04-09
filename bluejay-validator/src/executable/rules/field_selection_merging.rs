@@ -350,13 +350,13 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition> FieldSelectionMerging<
             }
 
             let double_base = if let OutputTypeReference::Base(type_a_base, _) = &type_a {
-                Some(type_a_base.get())
+                Some(type_a_base.as_ref())
             } else {
                 None
             }
             .and_then(|type_a_base| {
                 if let OutputTypeReference::Base(type_b_base, _) = &type_b {
-                    Some((type_a_base, type_b_base.get()))
+                    Some((type_a_base, type_b_base.as_ref()))
                 } else {
                     None
                 }
