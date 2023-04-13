@@ -15,7 +15,9 @@ mod string_scanner;
 #[logos(subpattern decimalpart = r"\.\d+")]
 #[logos(subpattern exponentpart = r"[eE][+-]?\d+")]
 #[logos(subpattern hexdigit = r"[0-9A-Fa-f]")]
-#[logos(subpattern fixedunicode = r"\\u(?&hexdigit)(?&hexdigit)(?&hexdigit)(?&hexdigit)")]
+#[logos(subpattern fixedunicode = r"\\u[0-9A-Fa-f]{4}")]
+#[logos(skip r"[\uFEFF\t \n\r,]+")]
+#[logos(skip r"#[^\n\r]*")] // comments
 pub enum Token<'a> {
     // Punctuators
     #[token("!")]
@@ -68,12 +70,6 @@ pub enum Token<'a> {
 
     #[regex("\"\"\"", parse_block_string)]
     BlockStringValue(String),
-
-    // Skippable
-    #[error]
-    #[regex(r"[\uFEFF\t \n\r,]+", logos::skip)]
-    #[regex(r"#[^\n\r]*", logos::skip)] // comments
-    Error,
 }
 
 fn parse_block_string<'a>(lexer: &mut Lexer<'a, Token<'a>>) -> Option<String> {
@@ -120,39 +116,44 @@ impl<'a> Iterator for LogosScanner<'a> {
     type Item = Result<LexicalToken<'a>, ScanError>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.0.next().map(|token| {
+        self.0.next().map(|result| {
             let span = Span::new(self.0.span());
-            match token {
-                Token::Bang => punctuator(PunctuatorType::Bang, span),
-                Token::Dollar => punctuator(PunctuatorType::Dollar, span),
-                Token::Ampersand => punctuator(PunctuatorType::Ampersand, span),
-                Token::OpenRoundBracket => punctuator(PunctuatorType::OpenRoundBracket, span),
-                Token::CloseRoundBracket => punctuator(PunctuatorType::CloseRoundBracket, span),
-                Token::Ellipse => punctuator(PunctuatorType::Ellipse, span),
-                Token::Colon => punctuator(PunctuatorType::Colon, span),
-                Token::Equals => punctuator(PunctuatorType::Equals, span),
-                Token::At => punctuator(PunctuatorType::At, span),
-                Token::OpenSquareBracket => punctuator(PunctuatorType::OpenSquareBracket, span),
-                Token::CloseSquareBracket => punctuator(PunctuatorType::CloseSquareBracket, span),
-                Token::OpenBrace => punctuator(PunctuatorType::OpenBrace, span),
-                Token::CloseBrace => punctuator(PunctuatorType::CloseBrace, span),
-                Token::Pipe => punctuator(PunctuatorType::Pipe, span),
-                Token::Name(s) => Ok(LexicalToken::Name(Name::new(s, span))),
-                Token::IntValue(res) => match res {
-                    Ok(val) => Ok(LexicalToken::IntValue(IntValue::new(val, span))),
-                    Err(_) => Err(ScanError::IntegerValueTooLarge(span)),
-                },
-                Token::FloatValue(res) => match res {
-                    Ok(val) => Ok(LexicalToken::FloatValue(FloatValue::new(val, span))),
-                    Err(_) => Err(ScanError::FloatValueTooLarge(span)),
-                },
-                Token::StringValue(res) => res
-                    .map(|s| LexicalToken::StringValue(StringValue::new(s, span)))
-                    .map_err(ScanError::StringWithInvalidEscapedUnicode),
-                Token::BlockStringValue(s) => {
-                    Ok(LexicalToken::StringValue(StringValue::new(s, span)))
+            if let Ok(token) = result {
+                match token {
+                    Token::Bang => punctuator(PunctuatorType::Bang, span),
+                    Token::Dollar => punctuator(PunctuatorType::Dollar, span),
+                    Token::Ampersand => punctuator(PunctuatorType::Ampersand, span),
+                    Token::OpenRoundBracket => punctuator(PunctuatorType::OpenRoundBracket, span),
+                    Token::CloseRoundBracket => punctuator(PunctuatorType::CloseRoundBracket, span),
+                    Token::Ellipse => punctuator(PunctuatorType::Ellipse, span),
+                    Token::Colon => punctuator(PunctuatorType::Colon, span),
+                    Token::Equals => punctuator(PunctuatorType::Equals, span),
+                    Token::At => punctuator(PunctuatorType::At, span),
+                    Token::OpenSquareBracket => punctuator(PunctuatorType::OpenSquareBracket, span),
+                    Token::CloseSquareBracket => {
+                        punctuator(PunctuatorType::CloseSquareBracket, span)
+                    }
+                    Token::OpenBrace => punctuator(PunctuatorType::OpenBrace, span),
+                    Token::CloseBrace => punctuator(PunctuatorType::CloseBrace, span),
+                    Token::Pipe => punctuator(PunctuatorType::Pipe, span),
+                    Token::Name(s) => Ok(LexicalToken::Name(Name::new(s, span))),
+                    Token::IntValue(res) => match res {
+                        Ok(val) => Ok(LexicalToken::IntValue(IntValue::new(val, span))),
+                        Err(_) => Err(ScanError::IntegerValueTooLarge(span)),
+                    },
+                    Token::FloatValue(res) => match res {
+                        Ok(val) => Ok(LexicalToken::FloatValue(FloatValue::new(val, span))),
+                        Err(_) => Err(ScanError::FloatValueTooLarge(span)),
+                    },
+                    Token::StringValue(res) => res
+                        .map(|s| LexicalToken::StringValue(StringValue::new(s, span)))
+                        .map_err(ScanError::StringWithInvalidEscapedUnicode),
+                    Token::BlockStringValue(s) => {
+                        Ok(LexicalToken::StringValue(StringValue::new(s, span)))
+                    }
                 }
-                Token::Error => Err(ScanError::UnrecognizedTokenError(span)),
+            } else {
+                Err(ScanError::UnrecognizedTokenError(span))
             }
         })
     }
@@ -183,9 +184,9 @@ mod tests {
     #[test]
     fn block_string_test() {
         assert_eq!(
-            Some(Token::BlockStringValue(
+            Some(Ok(Token::BlockStringValue(
                 "This is my multiline string!\n\nIsn't it cool? 🔥".to_string()
-            )),
+            ))),
             Token::lexer(
                 r#"
                     """
@@ -198,148 +199,161 @@ mod tests {
             .next(),
         );
         assert_eq!(
-            Some((Token::BlockStringValue("Testing span".to_string()), 1..19,)),
+            Some((
+                Ok(Token::BlockStringValue("Testing span".to_string())),
+                1..19,
+            )),
             Token::lexer(r#" """Testing span""" "#).spanned().next(),
         );
         assert_eq!(
-            Some(Token::BlockStringValue(
+            Some(Ok(Token::BlockStringValue(
                 "Testing escaped block quote \"\"\"".to_string()
-            )),
+            ))),
             Token::lexer(r#" """Testing escaped block quote \"""""" "#).next(),
         );
         assert_eq!(
-            Some(Token::BlockStringValue(
+            Some(Ok(Token::BlockStringValue(
                 "Testing \n various \n newlines".to_string()
-            )),
+            ))),
             Token::lexer("\"\"\"\nTesting \r various \r\n newlines\"\"\"").next(),
         );
         assert_eq!(
-            Some(Token::Error),
+            Some(Err(())),
             Token::lexer(r#" """This is a block string that doesn't end "#).next(),
         );
         assert_eq!(
             vec![
-                Token::BlockStringValue("".to_string()),
-                Token::StringValue(Ok("".to_string()))
+                Ok(Token::BlockStringValue("".to_string())),
+                Ok(Token::StringValue(Ok("".to_string()))),
             ],
-            Token::lexer(r#" """""""" "#).collect::<Vec<Token>>(),
+            Token::lexer(r#" """""""" "#).collect::<Vec<_>>(),
         );
     }
 
     #[test]
     fn string_test() {
         assert_eq!(
-            Some(Token::StringValue(Ok(
+            Some(Ok(Token::StringValue(Ok(
                 "This is a string with escaped characters and unicode: 🥳\u{ABCD}\u{10FFFF}!\n"
                     .to_string()
-            ))),
+            )))),
             Token::lexer("\"This is a string with escaped characters and unicode: 🥳\\uABCD\\u{10FFFF}!\\n\"").next(),
         );
         assert_eq!(
-            Some(Token::Error),
+            Some(Err(())),
             Token::lexer("\"This is a string with a newline \n Not allowed!\"").next(),
         );
         assert_eq!(
-            Some((Token::StringValue(Ok("Testing span".to_string())), 1..15,)),
+            Some((
+                Ok(Token::StringValue(Ok("Testing span".to_string()))),
+                1..15,
+            )),
             Token::lexer(r#" "Testing span" "#).spanned().next(),
         );
         assert_eq!(
-            Some(Token::StringValue(Err(vec![Span::from(2..8)]))),
+            Some(Ok(Token::StringValue(Err(vec![Span::from(2..8)])))),
             Token::lexer(r#" "\uD800" "#).next(),
         );
         assert_eq!(
-            Some(Token::StringValue(Err(vec![Span::from(2..12)]))),
+            Some(Ok(Token::StringValue(Err(vec![Span::from(2..12)])))),
             Token::lexer(r#" "\u{00D800}" "#).next(),
         );
         assert_eq!(
-            Some(Token::StringValue(Ok("🔥".to_string()))),
+            Some(Ok(Token::StringValue(Ok("🔥".to_string())))),
             Token::lexer(r#" "\uD83D\uDD25" "#).next(),
         );
         assert_eq!(
-            Some(Token::StringValue(Ok("\u{1234}\u{ABCD}".to_string()))),
+            Some(Ok(Token::StringValue(Ok("\u{1234}\u{ABCD}".to_string())))),
             Token::lexer(r#" "\u1234\uABCD" "#).next(),
         );
         assert_eq!(
-            Some(Token::StringValue(Err(vec![Span::from(2..8)]))),
+            Some(Ok(Token::StringValue(Err(vec![Span::from(2..8)])))),
             Token::lexer(r#" "\uDEAD\uDEAD" "#).next(),
         );
         assert_eq!(
-            Some(Token::StringValue(Err(vec![Span::from(8..14)]))),
+            Some(Ok(Token::StringValue(Err(vec![Span::from(8..14)])))),
             Token::lexer(r#" "\uD800\uD800" "#).next(),
         );
         assert_eq!(
-            Some(Token::Error),
+            Some(Err(())),
             Token::lexer(r#" "This is a string that doesn't end "#).next(),
+        );
+        assert_eq!(
+            Some(Ok(Token::StringValue(Err(vec![Span::from(2..15)])))),
+            Token::lexer(r#" "\u{100000000}" "#).next(),
         );
     }
 
     #[test]
     fn int_test() {
         assert_eq!(
-            Some(Token::IntValue(Ok(12345))),
+            Some(Ok(Token::IntValue(Ok(12345)))),
             Token::lexer("12345").next()
         );
-        assert_eq!(Some(Token::Error), Token::lexer("012345").next(),);
+        assert_eq!(Some(Err(())), Token::lexer("012345").next(),);
         assert_eq!(
-            Some((Token::Error, 0..6)),
+            Some((Err(()), 0..6)),
             Token::lexer("12345A").spanned().next()
         );
         assert_eq!(
-            Some((Token::Error, 0..6)),
+            Some((Err(()), 0..6)),
             Token::lexer("12345_").spanned().next()
         );
-        assert_eq!(Some(Token::IntValue(Ok(0))), Token::lexer("0").next());
-        assert_eq!(Some(Token::IntValue(Ok(0))), Token::lexer("-0").next());
+        assert_eq!(Some(Ok(Token::IntValue(Ok(0)))), Token::lexer("0").next());
+        assert_eq!(Some(Ok(Token::IntValue(Ok(0)))), Token::lexer("-0").next());
         assert_matches!(
             Token::lexer((i64::from(i32::MAX) + 1).to_string().as_str()).next(),
-            Some(Token::IntValue(Err(_)))
+            Some(Ok(Token::IntValue(Err(_))))
         );
         assert_matches!(
             Token::lexer((i64::from(i32::MIN) - 1).to_string().as_str()).next(),
-            Some(Token::IntValue(Err(_)))
+            Some(Ok(Token::IntValue(Err(_))))
         );
     }
 
     #[test]
     fn float_test() {
         assert_eq!(
-            Some(Token::FloatValue(Ok(12345.6789e123))),
+            Some(Ok(Token::FloatValue(Ok(12345.6789e123)))),
             Token::lexer("12345.6789e123").next()
         );
         assert_eq!(
-            Some(Token::FloatValue(Ok(12345e123))),
+            Some(Ok(Token::FloatValue(Ok(12345e123)))),
             Token::lexer("12345e123").next()
         );
         assert_eq!(
-            Some(Token::FloatValue(Ok(12345.6789))),
+            Some(Ok(Token::FloatValue(Ok(12345.6789)))),
             Token::lexer("12345.6789").next()
         );
         assert_eq!(
-            Some(Token::FloatValue(Ok(0.0))),
+            Some(Ok(Token::FloatValue(Ok(0.0)))),
             Token::lexer("0.00000000").next()
         );
         assert_eq!(
-            Some(Token::FloatValue(Ok(-1.23))),
+            Some(Ok(Token::FloatValue(Ok(-1.23)))),
             Token::lexer("-1.23").next()
         );
-        assert_eq!(Some(Token::Error), Token::lexer("012345.6789e123").next());
-        assert_eq!(Some(Token::Error), Token::lexer("-012345.6789e123").next());
-        assert_eq!(Some(Token::Error), Token::lexer("1.").next());
+        assert_eq!(Some(Err(())), Token::lexer("012345.6789e123").next());
+        assert_eq!(Some(Err(())), Token::lexer("-012345.6789e123").next());
+        assert_eq!(Some(Err(())), Token::lexer("1.").next());
         assert_eq!(
-            Some((Token::Error, 0..15)),
+            Some((Err(()), 0..15)),
             Token::lexer("12345.6789e123A").spanned().next()
         );
     }
 
     #[test]
     fn name_test() {
-        assert_eq!(Some(Token::Name("name")), Token::lexer("name").next());
-        assert_eq!(Some(Token::Name("__name")), Token::lexer("__name").next());
-        assert_eq!(Some(Token::Name("name1")), Token::lexer("name1").next());
-        assert_eq!(Some(Token::Error), Token::lexer("1name").next());
+        assert_eq!(Some(Ok(Token::Name("name"))), Token::lexer("name").next());
         assert_eq!(
-            vec![Token::Name("dashed"), Token::Error, Token::Name("name")],
-            Token::lexer("dashed-name").collect::<Vec<Token>>(),
+            Some(Ok(Token::Name("__name"))),
+            Token::lexer("__name").next()
+        );
+        assert_eq!(Some(Ok(Token::Name("name1"))), Token::lexer("name1").next());
+        assert_eq!(Some(Err(())), Token::lexer("1name").next());
+        assert_eq!(
+            vec![Ok(Token::Name("dashed")), Err(()), Ok(Token::Name("name"))],
+            Token::lexer("dashed-name").collect::<Vec<_>>(),
         );
     }
 
@@ -347,7 +361,7 @@ mod tests {
     fn comment_test() {
         assert_eq!(None, Token::lexer("# this is a comment").next());
         assert_eq!(
-            Some(Token::Ampersand),
+            Some(Ok(Token::Ampersand)),
             Token::lexer("# this is a comment\n# this is another comment\r&").next(),
         );
     }

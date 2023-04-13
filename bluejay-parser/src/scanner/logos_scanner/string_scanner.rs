@@ -3,7 +3,7 @@ use logos::{Lexer, Logos, Source};
 
 #[derive(Logos, Debug)]
 #[logos(subpattern hexdigit = r"[0-9A-Fa-f]")]
-#[logos(subpattern fixedunicode = r"\\u(?&hexdigit)(?&hexdigit)(?&hexdigit)(?&hexdigit)")]
+#[logos(subpattern fixedunicode = r"\\u[0-9A-Fa-f]{4}")]
 pub(super) enum Token<'a> {
     #[regex(r#"[^\\"\n\r]+"#)]
     SourceCharacters(&'a str),
@@ -17,7 +17,6 @@ pub(super) enum Token<'a> {
     )]
     SurrogatePairEscapedUnicode(Result<(char, Option<char>), Span>),
 
-    // TODO: limit to 8 once repetition range support is released in next version of Logos
     #[regex(r"\\u\{(?&hexdigit)+\}", parse_escaped_unicode)]
     EscapedUnicode(Option<char>),
 
@@ -44,15 +43,14 @@ pub(super) enum Token<'a> {
 
     #[token("\\t")]
     EscapedTab,
-
-    #[error]
-    Error,
 }
 
 fn parse_escaped_unicode<'a>(lexer: &mut Lexer<'a, Token<'a>>) -> Option<char> {
-    u32::from_str_radix(&lexer.slice()[3..lexer.slice().len() - 1], 16)
-        .ok()
-        .and_then(char::from_u32)
+    (lexer.slice().len() < 13).then_some(()).and_then(|_| {
+        u32::from_str_radix(&lexer.slice()[3..lexer.slice().len() - 1], 16)
+            .ok()
+            .and_then(char::from_u32)
+    })
 }
 
 fn parse_fixed_width_escaped_unicode<'a>(lexer: &mut Lexer<'a, Token<'a>>) -> Option<char> {
@@ -98,8 +96,8 @@ impl<'a> Token<'a> {
         let mut formatted = String::new();
         let mut errors = Vec::new();
 
-        for (token, span) in lexer.spanned() {
-            match token {
+        for (result, span) in lexer.spanned() {
+            match result.expect("Unexpected error") {
                 Self::SourceCharacters(s) => formatted.push_str(s),
                 Self::EscapedUnicode(c) => match c {
                     Some(c) => formatted.push(c),
@@ -125,7 +123,6 @@ impl<'a> Token<'a> {
                 Self::EscapedNewline => formatted.push('\n'),
                 Self::EscapedCarriageReturn => formatted.push('\r'),
                 Self::EscapedTab => formatted.push('\t'),
-                Self::Error => panic!("Unexpected error"),
             }
         }
 

@@ -22,9 +22,6 @@ pub(super) enum Token<'a> {
 
     #[token("\\\"\"\"")]
     EscapedBlockQuote,
-
-    #[error]
-    Error,
 }
 
 impl<'a> Token<'a> {
@@ -35,7 +32,7 @@ impl<'a> Token<'a> {
 
         let mut lines = vec![Vec::new()];
 
-        while let Some(token) = lexer.next() {
+        while let Some(Ok(token)) = lexer.next() {
             match token {
                 Self::BlockQuote => {
                     let consumed = s.len() - lexer.remainder().len();
@@ -45,9 +42,6 @@ impl<'a> Token<'a> {
                     lines.last_mut().unwrap().push(token)
                 }
                 Self::Newline => lines.push(Vec::new()),
-                Self::Error => {
-                    return Err(());
-                }
             }
         }
 
