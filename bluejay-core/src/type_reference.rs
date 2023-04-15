@@ -1,42 +1,29 @@
-pub trait AbstractTypeReference:
-    Into<TypeReference<Self::NamedTypeReference, Self::ListTypeReference>>
-{
-    type NamedTypeReference: NamedTypeReference;
-    type ListTypeReference: ListTypeReference<NamedTypeReference = Self::NamedTypeReference>;
+pub trait AbstractTypeReference: Sized {
+    fn as_ref(&self) -> TypeReference<'_, Self>;
 }
 
 #[derive(Debug)]
-pub enum TypeReference<NTR: NamedTypeReference, LTR: ListTypeReference<NamedTypeReference = NTR>> {
-    NamedType(NTR),
-    ListType(LTR),
+pub enum TypeReference<'a, T: AbstractTypeReference> {
+    NamedType(&'a str, bool),
+    ListType(&'a T, bool),
 }
 
-impl<NTR: NamedTypeReference, LTR: ListTypeReference<NamedTypeReference = NTR>>
-    TypeReference<NTR, LTR>
-{
-    pub fn name(&self) -> &str {
+impl<'a, T: AbstractTypeReference> Clone for TypeReference<'a, T> {
+    fn clone(&self) -> Self {
         match self {
-            Self::NamedType(ntr) => ntr.name(),
-            Self::ListType(ltr) => ltr.inner().name(),
+            Self::NamedType(name, required) => Self::NamedType(name, *required),
+            Self::ListType(inner, required) => Self::ListType(inner, *required),
         }
     }
 }
 
-impl<NTR: NamedTypeReference, LTR: ListTypeReference<NamedTypeReference = NTR>>
-    AbstractTypeReference for TypeReference<NTR, LTR>
-{
-    type NamedTypeReference = NTR;
-    type ListTypeReference = LTR;
-}
+impl<'a, T: AbstractTypeReference> Copy for TypeReference<'a, T> {}
 
-pub trait NamedTypeReference {
-    fn name(&self) -> &str;
-    fn required(&self) -> bool;
-}
-
-pub trait ListTypeReference: Sized {
-    type NamedTypeReference: NamedTypeReference;
-
-    fn inner(&self) -> &TypeReference<Self::NamedTypeReference, Self>;
-    fn required(&self) -> bool;
+impl<'a, T: AbstractTypeReference> TypeReference<'a, T> {
+    pub fn name(&self) -> &'a str {
+        match self {
+            Self::NamedType(name, _) => name,
+            Self::ListType(inner, _) => inner.as_ref().name(),
+        }
+    }
 }

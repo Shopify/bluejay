@@ -22,9 +22,7 @@ pub use directive::{
 };
 pub use operation_type::OperationType;
 pub use strum::IntoEnumIterator;
-pub use type_reference::{
-    AbstractTypeReference, ListTypeReference, NamedTypeReference, TypeReference,
-};
+pub use type_reference::{AbstractTypeReference, TypeReference};
 pub use value::{
     AbstractConstValue, AbstractValue, AbstractVariableValue, ListValue, ObjectValue, Value,
     ValueFromAbstract,
