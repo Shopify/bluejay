@@ -1,4 +1,4 @@
-use crate::executable::{Error, Rule, Visitor};
+use crate::executable::{Cache, Error, Rule, Visitor};
 use bluejay_core::definition::{
     ObjectTypeDefinition, SchemaDefinition, TypeDefinitionReference,
     TypeDefinitionReferenceFromAbstract, UnionMemberType, UnionTypeDefinition,
@@ -116,7 +116,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> IntoIterator
 impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Rule<'a, E, S>
     for FragmentSpreadIsPossible<'a, E, S>
 {
-    fn new(executable_document: &'a E, schema_definition: &'a S) -> Self {
+    fn new(executable_document: &'a E, schema_definition: &'a S, _: &'a Cache<'a, E, S>) -> Self {
         Self {
             errors: Vec::new(),
             indexed_fragment_definitions: HashMap::from_iter(

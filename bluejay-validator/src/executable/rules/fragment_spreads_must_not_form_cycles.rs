@@ -1,4 +1,4 @@
-use crate::executable::{Error, Rule, Visitor};
+use crate::executable::{Cache, Error, Rule, Visitor};
 use bluejay_core::definition::SchemaDefinition;
 use bluejay_core::executable::{
     ExecutableDocument, Field, FragmentDefinition, FragmentSpread, InlineFragment, Selection,
@@ -65,7 +65,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> IntoIterator
 impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Rule<'a, E, S>
     for FragmentSpreadsMustNotFormCycles<'a, E, S>
 {
-    fn new(executable_document: &'a E, _: &'a S) -> Self {
+    fn new(executable_document: &'a E, _: &'a S, _: &'a Cache<'a, E, S>) -> Self {
         let spreads_by_fragment_definition: BTreeMap<
             &'a str,
             (&'a E::FragmentDefinition, Vec<&'a E::FragmentSpread>),

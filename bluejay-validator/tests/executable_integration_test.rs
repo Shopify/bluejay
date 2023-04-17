@@ -3,7 +3,7 @@ use bluejay_parser::{
     ast::executable::ExecutableDocument,
     Error,
 };
-use bluejay_validator::executable::RulesValidator;
+use bluejay_validator::executable::{Cache, RulesValidator};
 
 #[test]
 fn test_error() {
@@ -12,7 +12,8 @@ fn test_error() {
             let input = std::fs::read_to_string(path).unwrap();
             let executable_document =
                 ExecutableDocument::parse(input.as_str()).expect("Document had parse errors");
-            let errors = RulesValidator::validate(&executable_document, &schema_definition);
+            let cache = Cache::new(&executable_document, &schema_definition);
+            let errors = RulesValidator::validate(&executable_document, &schema_definition, &cache);
             let formatted_errors = Error::format_errors(input.as_str(), errors);
             insta::assert_snapshot!(formatted_errors);
         });
@@ -26,13 +27,16 @@ fn test_valid() {
             let input = std::fs::read_to_string(path).unwrap();
             let executable_document = ExecutableDocument::parse(input.as_str())
                 .expect(format!("Document `{}` had parse errors", path.display()).as_str());
-            let errors: Vec<_> = RulesValidator::validate(&executable_document, &schema_definition)
-                .into_iter()
-                .collect();
+            let cache = Cache::new(&executable_document, &schema_definition);
+            let errors: Vec<_> =
+                RulesValidator::validate(&executable_document, &schema_definition, &cache)
+                    .into_iter()
+                    .collect();
             assert!(
                 errors.is_empty(),
-                "Document `{}` had validation errors",
-                path.display()
+                "Document `{}` had validation errors:\n{}",
+                path.display(),
+                Error::format_errors(input.as_str(), errors),
             )
         });
     });

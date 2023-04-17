@@ -1,4 +1,4 @@
-use crate::executable::{Error, Rule, Visitor};
+use crate::executable::{Cache, Error, Rule, Visitor};
 use bluejay_core::definition::SchemaDefinition;
 use bluejay_core::executable::{ExecutableDocument, OperationDefinitionFromExecutableDocument};
 use std::marker::PhantomData;
@@ -41,7 +41,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> IntoIterator
 impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Rule<'a, E, S>
     for LoneAnonymousOperation<'a, E, S>
 {
-    fn new(executable_document: &'a E, _: &'a S) -> Self {
+    fn new(executable_document: &'a E, _: &'a S, _: &'a Cache<'a, E, S>) -> Self {
         Self {
             anonymous_operations: Vec::new(),
             executable_document,

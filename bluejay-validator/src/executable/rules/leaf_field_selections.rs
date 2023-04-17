@@ -1,4 +1,4 @@
-use crate::executable::{Error, Rule, Visitor};
+use crate::executable::{Cache, Error, Rule, Visitor};
 use bluejay_core::definition::{
     AbstractBaseOutputTypeReference, AbstractOutputTypeReference, FieldDefinition, SchemaDefinition,
 };
@@ -45,7 +45,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> IntoIterator
 impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Rule<'a, E, S>
     for LeafFieldSelections<'a, E, S>
 {
-    fn new(_: &'a E, _: &'a S) -> Self {
+    fn new(_: &'a E, _: &'a S, _: &'a Cache<'a, E, S>) -> Self {
         Self { errors: Vec::new() }
     }
 }

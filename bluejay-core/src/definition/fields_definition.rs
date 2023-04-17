@@ -8,7 +8,7 @@ pub trait FieldsDefinition: AsIter<Item = Self::FieldDefinition> {
         self.iter().any(|fd| fd.name() == name)
     }
 
-    fn get_field(&self, name: &str) -> Option<&Self::FieldDefinition> {
+    fn get(&self, name: &str) -> Option<&Self::FieldDefinition> {
         self.iter().find(|fd| fd.name() == name)
     }
 }

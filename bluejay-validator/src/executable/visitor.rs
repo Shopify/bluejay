@@ -48,4 +48,20 @@ pub trait Visitor<'a, E: ExecutableDocument, S: SchemaDefinition> {
         _scoped_type: TypeDefinitionReferenceFromAbstract<'a, S::TypeDefinitionReference>,
     ) {
     }
+
+    fn visit_const_value(
+        &mut self,
+        _value: &'a E::Value<true>,
+        _expected_type: &'a S::InputTypeReference,
+    ) {
+    }
+
+    fn visit_variable_value(
+        &mut self,
+        _value: &'a E::Value<false>,
+        _expected_type: &'a S::InputTypeReference,
+    ) {
+    }
+
+    fn visit_variable_definition(&mut self, _variable_definition: &'a E::VariableDefinition) {}
 }

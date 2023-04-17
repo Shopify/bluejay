@@ -1,4 +1,4 @@
-use crate::executable::{Error, Rule, Visitor};
+use crate::executable::{Cache, Error, Rule, Visitor};
 use bluejay_core::definition::SchemaDefinition;
 use bluejay_core::executable::{ExecutableDocument, Field};
 use bluejay_core::{Argument, ArgumentWrapper, AsIter, Directive};
@@ -100,7 +100,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> IntoIterator
 impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Rule<'a, E, S>
     for ArgumentUniqueness<'a, E, S>
 {
-    fn new(_: &'a E, _: &'a S) -> Self {
+    fn new(_: &'a E, _: &'a S, _: &'a Cache<'a, E, S>) -> Self {
         Self { errors: Vec::new() }
     }
 }

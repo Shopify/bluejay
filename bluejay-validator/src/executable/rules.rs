@@ -15,6 +15,7 @@ mod named_operation_name_uniqueness;
 mod operation_type_is_defined;
 mod required_arguments;
 mod subscription_operation_single_root_field;
+mod value_is_valid;
 
 pub use argument_names::ArgumentNames;
 pub use argument_uniqueness::ArgumentUniqueness;
@@ -33,8 +34,9 @@ pub use named_operation_name_uniqueness::NamedOperationNameUniqueness;
 pub use operation_type_is_defined::OperationTypeIsDefined;
 pub use required_arguments::RequiredArguments;
 pub use subscription_operation_single_root_field::SubscriptionOperationSingleRootField;
+pub use value_is_valid::ValueIsValid;
 
-use crate::executable::{Error, Rule, Visitor};
+use crate::executable::{Cache, Error, Rule, Visitor};
 use bluejay_core::definition::{
     DirectiveLocation, SchemaDefinition, TypeDefinitionReferenceFromAbstract,
 };
@@ -50,9 +52,9 @@ macro_rules! define_rules {
             }
 
             impl<'a, E: ExecutableDocument, S: SchemaDefinition> Rule<'a, E, S> for Rules<'a, E, S> {
-                fn new(executable_document: &'a E, schema_definition: &'a S) -> Self {
+                fn new(executable_document: &'a E, schema_definition: &'a S, cache: &'a Cache<'a, E, S>) -> Self {
                     Self {
-                        $([<$rule:snake>]: $rule::new(executable_document, schema_definition),)*
+                        $([<$rule:snake>]: $rule::new(executable_document, schema_definition, cache),)*
                     }
                 }
             }
@@ -110,6 +112,26 @@ macro_rules! define_rules {
                 ) {
                     $(self.[<$rule:snake>].visit_fragment_spread(fragment_spread, scoped_type);)*
                 }
+
+                fn visit_const_value(
+                    &mut self,
+                    value: &'a E::Value<true>,
+                    expected_type: &'a S::InputTypeReference,
+                ) {
+                    $(self.[<$rule:snake>].visit_const_value(value, expected_type);)*
+                }
+
+                fn visit_variable_value(
+                    &mut self,
+                    value: &'a E::Value<false>,
+                    expected_type: &'a S::InputTypeReference,
+                ) {
+                    $(self.[<$rule:snake>].visit_variable_value(value, expected_type);)*
+                }
+
+                fn visit_variable_definition(&mut self, variable_definition: &'a E::VariableDefinition) {
+                    $(self.[<$rule:snake>].visit_variable_definition(variable_definition);)*
+                }
             }
         }
     };
@@ -147,4 +169,5 @@ define_rules!(
     FragmentSpreadTargetDefined,
     FragmentSpreadsMustNotFormCycles,
     FragmentSpreadIsPossible,
+    ValueIsValid,
 );

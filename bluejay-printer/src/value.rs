@@ -46,7 +46,7 @@ impl<'a, const CONST: bool, L: ListValue<CONST>, O: ObjectValue<CONST, Value = L
                     if idx != 0 {
                         write!(f, ", ")?;
                     }
-                    write!(f, "{key}: ")?;
+                    write!(f, "{}: ", key.as_ref())?;
                     value.as_ref().fmt(f)
                 })?;
 

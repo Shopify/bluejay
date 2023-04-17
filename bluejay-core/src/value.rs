@@ -2,8 +2,9 @@ use crate::AsIter;
 use std::collections::HashMap;
 
 pub trait ObjectValue<const CONST: bool> {
+    type Key: AsRef<str>;
     type Value: AbstractValue<CONST, Object = Self>;
-    type Iterator<'a>: Iterator<Item = (&'a str, &'a Self::Value)>
+    type Iterator<'a>: Iterator<Item = (&'a Self::Key, &'a Self::Value)>
     where
         Self: 'a;
 
@@ -93,8 +94,8 @@ impl<'a, const CONST: bool, L: ListValue<CONST>, O: ObjectValue<CONST, Value = L
                 matches!(other, Self::List(other_l) if Vec::from_iter(l.iter().map(AbstractValue::as_ref)) == Vec::from_iter(other_l.iter().map(AbstractValue::as_ref)))
             }
             Self::Object(o) => matches!(other, Self::Object(other_o) if {
-                let lhs: HashMap<&str, _> = HashMap::from_iter(o.iter().map(|(k, v)| (k, v.as_ref())));
-                let rhs: HashMap<&str, _> = HashMap::from_iter(other_o.iter().map(|(k, v)| (k, v.as_ref())));
+                let lhs: HashMap<&str, _> = HashMap::from_iter(o.iter().map(|(k, v)| (k.as_ref(), v.as_ref())));
+                let rhs: HashMap<&str, _> = HashMap::from_iter(other_o.iter().map(|(k, v)| (k.as_ref(), v.as_ref())));
                 lhs == rhs
             }),
         }

@@ -1,3 +1,4 @@
+use crate::value::input_coercion::Error as InputCoercionError;
 use bluejay_core::definition::{
     AbstractOutputTypeReference, DirectiveDefinition, FieldDefinition, InputValueDefinition,
     SchemaDefinition, TypeDefinitionReferenceFromAbstract,
@@ -56,13 +57,11 @@ pub enum Error<'a, E: ExecutableDocument, S: SchemaDefinition> {
         field: &'a E::Field,
         field_definition: &'a S::FieldDefinition,
         missing_argument_definitions: Vec<&'a S::InputValueDefinition>,
-        arguments_with_null_values: Vec<&'a E::Argument<false>>,
     },
     DirectiveMissingRequiredArguments {
         directive: DirectiveWrapper<'a, E::Directive<true>, E::Directive<false>>,
         directive_definition: &'a S::DirectiveDefinition,
         missing_argument_definitions: Vec<&'a S::InputValueDefinition>,
-        arguments_with_null_values: Vec<ArgumentWrapper<'a, E::Argument<true>, E::Argument<false>>>,
     },
     NonUniqueFragmentDefinitionNames {
         name: &'a str,
@@ -115,6 +114,8 @@ pub enum Error<'a, E: ExecutableDocument, S: SchemaDefinition> {
         inline_fragment: &'a E::InlineFragment,
         parent_type: TypeDefinitionReferenceFromAbstract<'a, S::TypeDefinitionReference>,
     },
+    InvalidConstValue(InputCoercionError<'a, true, E::Value<true>>),
+    InvalidVariableValue(InputCoercionError<'a, false, E::Value<false>>),
 }
 
 #[cfg(feature = "parser-integration")]
@@ -262,7 +263,6 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                 field,
                 field_definition: _,
                 missing_argument_definitions,
-                arguments_with_null_values,
             } => {
                 let missing_argument_names = join(
                     missing_argument_definitions
@@ -283,22 +283,13 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                         format!("Missing argument(s): {missing_argument_names}"),
                         span,
                     )),
-                    arguments_with_null_values
-                        .into_iter()
-                        .map(|argument| {
-                            Annotation::new(
-                                "`null` value provided for required argument",
-                                argument.span().clone(),
-                            )
-                        })
-                        .collect(),
+                    Vec::new(),
                 )
             }
             Error::DirectiveMissingRequiredArguments {
                 directive,
                 directive_definition: _,
                 missing_argument_definitions,
-                arguments_with_null_values,
             } => {
                 let missing_argument_names = join(
                     missing_argument_definitions
@@ -316,14 +307,8 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                         format!("Missing argument(s): {missing_argument_names}"),
                         span.clone(),
                     )),
-                    arguments_with_null_values
-                        .into_iter()
-                        .map(|argument| Annotation::new(
-                    "`null` value provided for required argument",
-                        call_const_wrapper_method!(ArgumentWrapper, argument, span).clone(),
-                        ))
-                        .collect(),
-                    )
+                    Vec::new(),
+                )
             }
             Error::NonUniqueFragmentDefinitionNames {
                 name,
@@ -537,6 +522,8 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                 )),
                 Vec::new(),
             ),
+            Error::InvalidConstValue(error) => Self::from(error),
+            Error::InvalidVariableValue(error) => Self::from(error),
         }
     }
 }

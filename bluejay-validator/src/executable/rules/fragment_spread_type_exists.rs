@@ -1,4 +1,4 @@
-use crate::executable::{Error, Rule, Visitor};
+use crate::executable::{Cache, Error, Rule, Visitor};
 use bluejay_core::definition::{SchemaDefinition, TypeDefinitionReferenceFromAbstract};
 use bluejay_core::executable::{ExecutableDocument, FragmentDefinition, InlineFragment};
 
@@ -58,7 +58,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> IntoIterator
 impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Rule<'a, E, S>
     for FragmentSpreadTypeExists<'a, E, S>
 {
-    fn new(_: &'a E, schema_definition: &'a S) -> Self {
+    fn new(_: &'a E, schema_definition: &'a S, _: &'a Cache<'a, E, S>) -> Self {
         Self {
             errors: Vec::new(),
             schema_definition,

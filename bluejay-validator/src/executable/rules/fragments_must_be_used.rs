@@ -1,4 +1,4 @@
-use crate::executable::{Error, Rule, Visitor};
+use crate::executable::{Cache, Error, Rule, Visitor};
 use bluejay_core::definition::{SchemaDefinition, TypeDefinitionReferenceFromAbstract};
 use bluejay_core::executable::{ExecutableDocument, FragmentDefinition, FragmentSpread};
 use std::collections::BTreeMap;
@@ -43,7 +43,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> IntoIterator
 impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Rule<'a, E, S>
     for FragmentsMustBeUsed<'a, E, S>
 {
-    fn new(executable_document: &'a E, _: &'a S) -> Self {
+    fn new(executable_document: &'a E, _: &'a S, _: &'a Cache<'a, E, S>) -> Self {
         Self {
             unused_fragment_definitions: BTreeMap::from_iter(
                 executable_document

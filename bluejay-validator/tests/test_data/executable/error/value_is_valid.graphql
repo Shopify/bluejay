@@ -1,0 +1,18 @@
+fragment stringIntoInt on Arguments {
+  intArgField(intArg: "123")
+}
+
+query badComplexValue {
+  findDog(complex: { name: 123 }) { name }
+  arguments {
+    ...stringIntoInt
+  }
+}
+
+query inputFieldDoesNotExist {
+  findDog(complex: { favoriteCookieFlavor: "Bacon" }) { name }
+}
+
+query duplicateInputField {
+  findDog(complex: { name: "Fido", name: "Fido" }) { name }
+}

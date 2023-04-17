@@ -1,0 +1,20 @@
+fragment goodBooleanArg on Arguments {
+  booleanArgField(booleanArg: true)
+}
+
+fragment coercedIntIntoFloatArg on Arguments {
+  # Note: The input coercion rules for Float allow Int literals.
+  floatArgField(floatArg: 123)
+}
+
+query goodComplexDefaultValue($search: ComplexInput = { name: "Fido" }) {
+  findDog(complex: $search) { name }
+  arguments {
+    ...goodBooleanArg
+    ...coercedIntIntoFloatArg
+  }
+}
+
+query goodComplexArgValue {
+  findDog(complex: { name: "Fido" }) { name }
+}

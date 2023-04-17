@@ -1,4 +1,7 @@
-use crate::definition::{EnumTypeDefinition, InputObjectTypeDefinition, ScalarTypeDefinition};
+use crate::definition::{
+    EnumTypeDefinition, InputObjectTypeDefinition, InterfaceTypeDefinition, ObjectTypeDefinition,
+    ScalarTypeDefinition, TypeDefinitionReference, UnionTypeDefinition,
+};
 use crate::BuiltinScalarDefinition;
 
 #[derive(Debug)]
@@ -58,6 +61,18 @@ pub trait AbstractBaseInputTypeReference {
     type EnumTypeDefinition: EnumTypeDefinition;
 
     fn as_ref(&self) -> BaseInputTypeReferenceFromAbstract<'_, Self>;
+}
+
+impl<'a, CS: ScalarTypeDefinition, I: InputObjectTypeDefinition, E: EnumTypeDefinition>
+    AbstractBaseInputTypeReference for BaseInputTypeReference<'a, CS, I, E>
+{
+    type CustomScalarTypeDefinition = CS;
+    type InputObjectTypeDefinition = I;
+    type EnumTypeDefinition = E;
+
+    fn as_ref(&self) -> BaseInputTypeReferenceFromAbstract<'_, Self> {
+        *self
+    }
 }
 
 #[derive(Debug)]
@@ -136,3 +151,31 @@ pub trait AbstractInputTypeReference: Sized {
 
 pub type InputTypeReferenceFromAbstract<'a, T> =
     InputTypeReference<'a, <T as AbstractInputTypeReference>::BaseInputTypeReference, T>;
+
+impl<
+        'a,
+        CS: ScalarTypeDefinition,
+        O: ObjectTypeDefinition,
+        IO: InputObjectTypeDefinition,
+        E: EnumTypeDefinition,
+        U: UnionTypeDefinition,
+        I: InterfaceTypeDefinition,
+    > TryFrom<TypeDefinitionReference<'a, CS, O, IO, E, U, I>>
+    for BaseInputTypeReference<'a, CS, IO, E>
+{
+    type Error = ();
+
+    fn try_from(
+        value: TypeDefinitionReference<'a, CS, O, IO, E, U, I>,
+    ) -> Result<Self, Self::Error> {
+        match value {
+            TypeDefinitionReference::BuiltinScalarType(bstd) => Ok(Self::BuiltinScalarType(bstd)),
+            TypeDefinitionReference::CustomScalarType(cstd) => Ok(Self::CustomScalarType(cstd)),
+            TypeDefinitionReference::EnumType(etd) => Ok(Self::EnumType(etd)),
+            TypeDefinitionReference::InputObjectType(iotd) => Ok(Self::InputObjectType(iotd)),
+            TypeDefinitionReference::InterfaceType(_)
+            | TypeDefinitionReference::ObjectType(_)
+            | TypeDefinitionReference::UnionType(_) => Err(()),
+        }
+    }
+}

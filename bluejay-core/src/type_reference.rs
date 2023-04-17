@@ -1,4 +1,7 @@
-pub trait AbstractTypeReference: Sized {
+use std::cmp::{Eq, Ord};
+use std::hash::Hash;
+
+pub trait AbstractTypeReference: Sized + Hash + Eq + Ord {
     fn as_ref(&self) -> TypeReference<'_, Self>;
 }
 

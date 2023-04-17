@@ -1,14 +1,15 @@
-use crate::executable::{Error, Rule, Rules};
+use crate::executable::{Cache, Error, Rule, Rules};
 use bluejay_core::definition::{
-    AbstractBaseOutputTypeReference, AbstractOutputTypeReference, DirectiveLocation,
-    FieldDefinition, FieldsDefinition, InterfaceTypeDefinition, ObjectTypeDefinition,
-    SchemaDefinition, TypeDefinitionReference, TypeDefinitionReferenceFromAbstract,
+    AbstractBaseOutputTypeReference, AbstractOutputTypeReference, ArgumentsDefinition,
+    DirectiveDefinition, DirectiveLocation, FieldDefinition, FieldsDefinition,
+    InputValueDefinition, InterfaceTypeDefinition, ObjectTypeDefinition, SchemaDefinition,
+    TypeDefinitionReference, TypeDefinitionReferenceFromAbstract,
 };
 use bluejay_core::executable::{
     ExecutableDocument, Field, FragmentDefinition, FragmentSpread, InlineFragment,
     OperationDefinitionFromExecutableDocument, Selection, VariableDefinition,
 };
-use bluejay_core::{AsIter, OperationType};
+use bluejay_core::{Argument, AsIter, Directive, OperationType};
 
 pub struct Validator<'a, E: ExecutableDocument, S: SchemaDefinition, R: Rule<'a, E, S>> {
     schema_definition: &'a S,
@@ -19,11 +20,15 @@ pub struct Validator<'a, E: ExecutableDocument, S: SchemaDefinition, R: Rule<'a,
 pub type RulesValidator<'a, E, S> = Validator<'a, E, S, Rules<'a, E, S>>;
 
 impl<'a, E: ExecutableDocument, S: SchemaDefinition, R: Rule<'a, E, S>> Validator<'a, E, S, R> {
-    fn new(executable_document: &'a E, schema_definition: &'a S) -> Self {
+    fn new(
+        executable_document: &'a E,
+        schema_definition: &'a S,
+        cache: &'a Cache<'a, E, S>,
+    ) -> Self {
         Self {
             schema_definition,
             executable_document,
-            rule: Rule::new(executable_document, schema_definition),
+            rule: Rule::new(executable_document, schema_definition, cache),
         }
     }
 
@@ -114,7 +119,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, R: Rule<'a, E, S>> Validato
             .for_each(|selection| match selection.as_ref() {
                 Selection::Field(f) => {
                     let field_definition = Self::fields_definition(scoped_type)
-                        .and_then(|fields_definition| fields_definition.get_field(f.name()));
+                        .and_then(|fields_definition| fields_definition.get(f.name()));
 
                     if let Some(field_definition) = field_definition {
                         self.visit_field(f, field_definition);
@@ -128,6 +133,12 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, R: Rule<'a, E, S>> Validato
     fn visit_field(&mut self, field: &'a E::Field, field_definition: &'a S::FieldDefinition) {
         self.rule.visit_field(field, field_definition);
         self.visit_variable_directives(field.directives(), DirectiveLocation::Field);
+
+        if let Some(arguments) = field.arguments() {
+            if let Some(arguments_definition) = field_definition.arguments_definition() {
+                self.visit_variable_arguments(arguments, arguments_definition);
+            }
+        }
 
         if let Some((selection_set, nested_type)) =
             field.selection_set().and_then(|selection_set| {
@@ -145,9 +156,9 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, R: Rule<'a, E, S>> Validato
         directives: &'a E::Directives<false>,
         location: DirectiveLocation,
     ) {
-        directives.iter().for_each(|directive| {
-            self.rule.visit_variable_directive(directive, location);
-        });
+        directives
+            .iter()
+            .for_each(|directive| self.visit_variable_directive(directive, location));
     }
 
     fn visit_const_directives(
@@ -155,9 +166,45 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, R: Rule<'a, E, S>> Validato
         directives: &'a E::Directives<true>,
         location: DirectiveLocation,
     ) {
-        directives.iter().for_each(|directive| {
-            self.rule.visit_const_directive(directive, location);
-        });
+        directives
+            .iter()
+            .for_each(|directive| self.visit_const_directive(directive, location));
+    }
+
+    fn visit_variable_directive(
+        &mut self,
+        directive: &'a E::Directive<false>,
+        location: DirectiveLocation,
+    ) {
+        self.rule.visit_variable_directive(directive, location);
+        if let Some(directive_definition) = self
+            .schema_definition
+            .get_directive_definition(directive.name())
+        {
+            if let Some(arguments_definition) = directive_definition.arguments_definition() {
+                if let Some(arguments) = directive.arguments() {
+                    self.visit_variable_arguments(arguments, arguments_definition);
+                }
+            }
+        }
+    }
+
+    fn visit_const_directive(
+        &mut self,
+        directive: &'a E::Directive<true>,
+        location: DirectiveLocation,
+    ) {
+        self.rule.visit_const_directive(directive, location);
+        if let Some(directive_definition) = self
+            .schema_definition
+            .get_directive_definition(directive.name())
+        {
+            if let Some(arguments_definition) = directive_definition.arguments_definition() {
+                if let Some(arguments) = directive.arguments() {
+                    self.visit_const_arguments(arguments, arguments_definition);
+                }
+            }
+        }
     }
 
     fn visit_inline_fragment(
@@ -204,14 +251,56 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, R: Rule<'a, E, S>> Validato
                 variable_definition.directives(),
                 DirectiveLocation::VariableDefinition,
             );
-        })
+            self.rule.visit_variable_definition(variable_definition);
+        });
+    }
+
+    fn visit_const_arguments(
+        &mut self,
+        arguments: &'a E::Arguments<true>,
+        arguments_definition: &'a S::ArgumentsDefinition,
+    ) {
+        arguments.iter().for_each(|argument| {
+            if let Some(ivd) = arguments_definition.get(argument.name()) {
+                self.visit_const_value(argument.value(), ivd.r#type());
+            }
+        });
+    }
+
+    fn visit_variable_arguments(
+        &mut self,
+        arguments: &'a E::Arguments<false>,
+        arguments_definition: &'a S::ArgumentsDefinition,
+    ) {
+        arguments.iter().for_each(|argument| {
+            if let Some(ivd) = arguments_definition.get(argument.name()) {
+                self.visit_variable_value(argument.value(), ivd.r#type());
+            }
+        });
+    }
+
+    fn visit_const_value(
+        &mut self,
+        value: &'a E::Value<true>,
+        expected_type: &'a S::InputTypeReference,
+    ) {
+        self.rule.visit_const_value(value, expected_type);
+    }
+
+    fn visit_variable_value(
+        &mut self,
+        value: &'a E::Value<false>,
+        expected_type: &'a S::InputTypeReference,
+    ) {
+        self.rule.visit_variable_value(value, expected_type);
     }
 
     pub fn validate(
         executable_document: &'a E,
         schema_definition: &'a S,
+        cache: &'a Cache<'a, E, S>,
     ) -> <Self as IntoIterator>::IntoIter {
-        let mut instance = Self::new(executable_document, schema_definition);
+        let mut instance = Self::new(executable_document, schema_definition, cache);
         instance.visit();
         instance.into_iter()
     }

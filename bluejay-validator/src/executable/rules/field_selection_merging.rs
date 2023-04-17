@@ -1,4 +1,4 @@
-use crate::executable::{Error, Rule, Visitor};
+use crate::executable::{Cache, Error, Rule, Visitor};
 use bluejay_core::definition::{
     AbstractBaseOutputTypeReference, AbstractOutputTypeReference, FieldDefinition,
     FieldsDefinition, InterfaceTypeDefinition, ObjectTypeDefinition, OutputTypeReference,
@@ -272,7 +272,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition> FieldSelectionMerging<
                     | TypeDefinitionReference::UnionType(_) => None,
                 };
                 if let Some(fields_definition) = fields_definition {
-                    if let Some(field_definition) = fields_definition.get_field(field.name()) {
+                    if let Some(field_definition) = fields_definition.get(field.name()) {
                         fields
                             .entry(field.response_name())
                             .or_default()
@@ -430,7 +430,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> IntoIterator
 impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Rule<'a, E, S>
     for FieldSelectionMerging<'a, E, S>
 {
-    fn new(executable_document: &'a E, schema_definition: &'a S) -> Self {
+    fn new(executable_document: &'a E, schema_definition: &'a S, _: &'a Cache<'a, E, S>) -> Self {
         Self {
             indexed_fragment_definitions: HashMap::from_iter(
                 executable_document

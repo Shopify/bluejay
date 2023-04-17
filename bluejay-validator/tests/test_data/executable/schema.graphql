@@ -4,6 +4,8 @@ type Query {
   pet: Pet
   catOrDog: CatOrDog
   arguments: Arguments
+  findDog(complex: ComplexInput): Dog
+  booleanList(booleanListArg: [Boolean!]): Boolean
 }
 
 type Subscription {
@@ -71,4 +73,9 @@ type Arguments {
   nonNullBooleanArgField(nonNullBooleanArg: Boolean!): Boolean!
   booleanListArgField(booleanListArg: [Boolean]!): [Boolean]
   optionalNonNullBooleanArgField(optionalBooleanArg: Boolean! = false): Boolean!
+}
+
+input ComplexInput {
+  name: String
+  owner: String
 }

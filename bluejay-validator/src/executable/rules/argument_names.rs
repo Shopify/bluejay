@@ -1,4 +1,4 @@
-use crate::executable::{Error, Rule, Visitor};
+use crate::executable::{Cache, Error, Rule, Visitor};
 use bluejay_core::definition::{
     DirectiveDefinition, FieldDefinition, InputValueDefinition, SchemaDefinition,
 };
@@ -111,7 +111,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> IntoIterator
 impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Rule<'a, E, S>
     for ArgumentNames<'a, E, S>
 {
-    fn new(_: &'a E, schema_definition: &'a S) -> Self {
+    fn new(_: &'a E, schema_definition: &'a S, _: &'a Cache<'a, E, S>) -> Self {
         Self {
             schema_definition,
             errors: Vec::new(),

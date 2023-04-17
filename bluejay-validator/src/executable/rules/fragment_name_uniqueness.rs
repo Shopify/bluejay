@@ -1,4 +1,4 @@
-use crate::executable::{Error, Rule, Visitor};
+use crate::executable::{Cache, Error, Rule, Visitor};
 use bluejay_core::definition::SchemaDefinition;
 use bluejay_core::executable::{ExecutableDocument, FragmentDefinition};
 use std::collections::HashMap;
@@ -46,7 +46,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> IntoIterator
 impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Rule<'a, E, S>
     for FragmentNameUniqueness<'a, E, S>
 {
-    fn new(_: &'a E, _: &'a S) -> Self {
+    fn new(_: &'a E, _: &'a S, _: &'a Cache<'a, E, S>) -> Self {
         Self {
             fragment_definitions: HashMap::new(),
             schema_definition: Default::default(),

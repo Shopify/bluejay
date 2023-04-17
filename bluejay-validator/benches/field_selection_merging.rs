@@ -3,7 +3,7 @@ use bluejay_parser::{
     ast::executable::ExecutableDocument,
 };
 use bluejay_validator::executable::rules::FieldSelectionMerging;
-use bluejay_validator::executable::Validator;
+use bluejay_validator::executable::{Cache, Validator};
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
 use once_cell::sync::Lazy;
 
@@ -71,11 +71,11 @@ static EXECUTABLE_DOCUMENTS: Lazy<Vec<(u64, ExecutableDocument<'static>)>> = Laz
         .collect::<Vec<_>>()
 });
 
-type FieldSelectionMergingValidator<'a> = Validator<
+type FieldSelectionMergingValidator<'a, 'e, 's> = Validator<
     'a,
-    ExecutableDocument<'a>,
-    SchemaDefinition<'a>,
-    FieldSelectionMerging<'a, ExecutableDocument<'a>, SchemaDefinition<'a>>,
+    ExecutableDocument<'e>,
+    SchemaDefinition<'s>,
+    FieldSelectionMerging<'a, ExecutableDocument<'e>, SchemaDefinition<'s>>,
 >;
 
 fn field_selection_merging(c: &mut Criterion) {
@@ -87,10 +87,14 @@ fn field_selection_merging(c: &mut Criterion) {
             &executable_document,
             |b, executable_document| {
                 b.iter(|| {
-                    FieldSelectionMergingValidator::validate(
-                        executable_document,
+                    let cache = Cache::new(*executable_document, &*SCHEMA_DEFINITION);
+                    let _ = FieldSelectionMergingValidator::validate(
+                        *executable_document,
                         &*SCHEMA_DEFINITION,
+                        &cache,
                     )
+                    .into_iter()
+                    .collect::<Vec<_>>();
                 });
             },
         );
