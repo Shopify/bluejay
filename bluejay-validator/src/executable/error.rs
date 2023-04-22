@@ -1,10 +1,10 @@
 use crate::value::input_coercion::Error as InputCoercionError;
 use bluejay_core::definition::{
-    AbstractOutputTypeReference, DirectiveDefinition, FieldDefinition, InputValueDefinition,
-    SchemaDefinition, TypeDefinitionReferenceFromAbstract,
+    AbstractOutputTypeReference, FieldDefinition, InputValueDefinition, SchemaDefinition,
+    TypeDefinitionReferenceFromAbstract,
 };
 use bluejay_core::executable::{ExecutableDocument, OperationDefinitionFromExecutableDocument};
-use bluejay_core::{call_const_wrapper_method, ArgumentWrapper, DirectiveWrapper, OperationType};
+use bluejay_core::OperationType;
 #[cfg(feature = "parser-integration")]
 use bluejay_parser::{
     ast::executable::ExecutableDocument as ParserExecutableDocument,
@@ -13,8 +13,10 @@ use bluejay_parser::{
 };
 use itertools::join;
 
+mod argument_error;
 mod directive_error;
 
+pub use argument_error::ArgumentError;
 pub use directive_error::DirectiveError;
 
 pub enum Error<'a, E: ExecutableDocument, S: SchemaDefinition> {
@@ -43,26 +45,9 @@ pub enum Error<'a, E: ExecutableDocument, S: SchemaDefinition> {
         field: &'a E::Field,
         r#type: &'a S::OutputTypeReference,
     },
-    ArgumentDoesNotExistOnField {
-        argument: &'a E::Argument<false>,
-        field_definition: &'a S::FieldDefinition,
-    },
-    ArgumentDoesNotExistOnDirective {
-        argument: ArgumentWrapper<'a, E::Argument<true>, E::Argument<false>>,
-        directive_definition: &'a S::DirectiveDefinition,
-    },
-    NonUniqueArgumentNames {
-        arguments: Vec<ArgumentWrapper<'a, E::Argument<true>, E::Argument<false>>>,
-        name: &'a str,
-    },
     FieldMissingRequiredArguments {
         field: &'a E::Field,
         field_definition: &'a S::FieldDefinition,
-        missing_argument_definitions: Vec<&'a S::InputValueDefinition>,
-    },
-    DirectiveMissingRequiredArguments {
-        directive: DirectiveWrapper<'a, E::Directive<true>, E::Directive<false>>,
-        directive_definition: &'a S::DirectiveDefinition,
         missing_argument_definitions: Vec<&'a S::InputValueDefinition>,
     },
     NonUniqueFragmentDefinitionNames {
@@ -120,6 +105,8 @@ pub enum Error<'a, E: ExecutableDocument, S: SchemaDefinition> {
     InvalidVariableValue(InputCoercionError<'a, false, E::Value<false>>),
     InvalidConstDirective(DirectiveError<'a, true, E>),
     InvalidVariableDirective(DirectiveError<'a, false, E>),
+    InvalidConstArgument(ArgumentError<'a, true, E, S>),
+    InvalidVariableArgument(ArgumentError<'a, false, E, S>),
 }
 
 #[cfg(feature = "parser-integration")]
@@ -215,54 +202,6 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                 )),
                 Vec::new(),
             ),
-            Error::ArgumentDoesNotExistOnField {
-                argument,
-                field_definition,
-            } => Self::new(
-                format!(
-                    "Field `{}` does not define an argument named `{}`",
-                    field_definition.name(),
-                    argument.name().as_ref(),
-                ),
-                Some(Annotation::new(
-                    "No argument definition with this name",
-                    argument.name().span().clone(),
-                )),
-                Vec::new(),
-            ),
-            Error::ArgumentDoesNotExistOnDirective {
-                argument,
-                directive_definition,
-            } => {
-                let name = call_const_wrapper_method!(ArgumentWrapper, argument, name);
-                Self::new(
-                    format!(
-                        "Directive `{}` does not define an argument named `{}`",
-                        directive_definition.name(),
-                        name.as_ref(),
-                    ),
-                    Some(Annotation::new(
-                        "No argument definition with this name",
-                        name.span().clone(),
-                    )),
-                    Vec::new(),
-                )
-            }
-            Error::NonUniqueArgumentNames { arguments, name } => Self::new(
-                format!("Multiple arguments with name `{name}`"),
-                None,
-                arguments
-                    .into_iter()
-                    .map(|argument| {
-                        Annotation::new(
-                            format!("Argument with name `{name}`"),
-                            call_const_wrapper_method!(ArgumentWrapper, argument, name)
-                                .span()
-                                .clone(),
-                        )
-                    })
-                    .collect(),
-            ),
             Error::FieldMissingRequiredArguments {
                 field,
                 field_definition: _,
@@ -286,31 +225,6 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                     Some(Annotation::new(
                         format!("Missing argument(s): {missing_argument_names}"),
                         span,
-                    )),
-                    Vec::new(),
-                )
-            }
-            Error::DirectiveMissingRequiredArguments {
-                directive,
-                directive_definition: _,
-                missing_argument_definitions,
-            } => {
-                let missing_argument_names = join(
-                    missing_argument_definitions
-                        .into_iter()
-                        .map(InputValueDefinition::name),
-                    ", ",
-                );
-                let directive_name =
-                    call_const_wrapper_method!(DirectiveWrapper, directive, name).as_ref();
-                let span = call_const_wrapper_method!(DirectiveWrapper, directive, span);
-                Self::new(
-                    format!(
-                        "Directive `{directive_name}` missing argument(s): {missing_argument_names}",
-                    ),
-                    Some(Annotation::new(
-                        format!("Missing argument(s): {missing_argument_names}"),
-                        span.clone(),
                     )),
                     Vec::new(),
                 )
@@ -531,6 +445,8 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
             Error::InvalidVariableValue(error) => Self::from(error),
             Error::InvalidConstDirective(error) => Self::from(error),
             Error::InvalidVariableDirective(error) => Self::from(error),
+            Error::InvalidConstArgument(error) => Self::from(error),
+            Error::InvalidVariableArgument(error) => Self::from(error),
         }
     }
 }

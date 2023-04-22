@@ -1,10 +1,10 @@
-use crate::executable::{Cache, Error, Rule, Visitor};
+use crate::executable::{ArgumentError, Cache, Error, Rule, Visitor};
 use bluejay_core::definition::{
     AbstractInputTypeReference, DirectiveDefinition, FieldDefinition, InputValueDefinition,
     SchemaDefinition,
 };
 use bluejay_core::executable::{ExecutableDocument, Field};
-use bluejay_core::{Argument, AsIter, Directive, DirectiveWrapper};
+use bluejay_core::{Argument, AsIter, Directive};
 use std::collections::HashMap;
 
 pub struct RequiredArguments<'a, E: ExecutableDocument, S: SchemaDefinition> {
@@ -15,7 +15,7 @@ pub struct RequiredArguments<'a, E: ExecutableDocument, S: SchemaDefinition> {
 impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> RequiredArguments<'a, E, S> {
     fn visit_directive<
         const CONST: bool,
-        F: Fn(&'a S::DirectiveDefinition, Vec<&'a S::InputValueDefinition>) -> Error<'a, E, S>,
+        F: Fn(ArgumentError<'a, CONST, E, S>) -> Error<'a, E, S>,
     >(
         &mut self,
         directive: &'a <E as ExecutableDocument>::Directive<CONST>,
@@ -29,7 +29,11 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> RequiredArguments
                 directive.arguments(),
                 directive_definition.arguments_definition(),
                 |missing_argument_definitions| {
-                    build_error(directive_definition, missing_argument_definitions)
+                    build_error(ArgumentError::DirectiveMissingRequiredArguments {
+                        directive,
+                        directive_definition,
+                        missing_argument_definitions,
+                    })
                 },
             )
         }
@@ -96,16 +100,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Visitor<'a, E, S>
         directive: &'a <E as ExecutableDocument>::Directive<false>,
         _: bluejay_core::definition::DirectiveLocation,
     ) {
-        self.visit_directive(
-            directive,
-            |directive_definition, missing_argument_definitions| {
-                Error::DirectiveMissingRequiredArguments {
-                    directive: DirectiveWrapper::Variable(directive),
-                    directive_definition,
-                    missing_argument_definitions,
-                }
-            },
-        )
+        self.visit_directive(directive, Error::InvalidVariableArgument)
     }
 
     fn visit_const_directive(
@@ -113,16 +108,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Visitor<'a, E, S>
         directive: &'a <E as ExecutableDocument>::Directive<true>,
         _: bluejay_core::definition::DirectiveLocation,
     ) {
-        self.visit_directive(
-            directive,
-            |directive_definition, missing_argument_definitions| {
-                Error::DirectiveMissingRequiredArguments {
-                    directive: DirectiveWrapper::Constant(directive),
-                    directive_definition,
-                    missing_argument_definitions,
-                }
-            },
-        )
+        self.visit_directive(directive, Error::InvalidConstArgument)
     }
 }
 

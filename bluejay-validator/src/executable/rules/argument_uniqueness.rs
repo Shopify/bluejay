@@ -1,7 +1,7 @@
-use crate::executable::{Cache, Error, Rule, Visitor};
+use crate::executable::{ArgumentError, Cache, Error, Rule, Visitor};
 use bluejay_core::definition::SchemaDefinition;
 use bluejay_core::executable::{ExecutableDocument, Field};
-use bluejay_core::{Argument, ArgumentWrapper, AsIter, Directive};
+use bluejay_core::{Argument, AsIter, Directive};
 use std::collections::HashMap;
 
 pub struct ArgumentUniqueness<'a, E: ExecutableDocument, S: SchemaDefinition> {
@@ -11,7 +11,7 @@ pub struct ArgumentUniqueness<'a, E: ExecutableDocument, S: SchemaDefinition> {
 impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> ArgumentUniqueness<'a, E, S> {
     fn visit_arguments<
         const CONST: bool,
-        F: Fn(Vec<&'a E::Argument<CONST>>, &'a str) -> Error<'a, E, S>,
+        F: Fn(ArgumentError<'a, CONST, E, S>) -> Error<'a, E, S>,
     >(
         &mut self,
         arguments: Option<&'a E::Arguments<CONST>>,
@@ -28,7 +28,9 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> ArgumentUniquenes
 
             self.errors
                 .extend(indexed.into_iter().filter_map(|(name, arguments)| {
-                    (arguments.len() > 1).then(|| build_error(arguments, name))
+                    (arguments.len() > 1).then(|| {
+                        build_error(ArgumentError::NonUniqueArgumentNames { name, arguments })
+                    })
                 }))
         }
     }
@@ -42,15 +44,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Visitor<'a, E, S>
         field: &'a <E as ExecutableDocument>::Field,
         _: &'a S::FieldDefinition,
     ) {
-        self.visit_arguments(field.arguments(), |arguments, name| {
-            Error::NonUniqueArgumentNames {
-                arguments: arguments
-                    .into_iter()
-                    .map(ArgumentWrapper::Variable)
-                    .collect(),
-                name,
-            }
-        })
+        self.visit_arguments(field.arguments(), Error::InvalidVariableArgument)
     }
 
     fn visit_variable_directive(
@@ -58,15 +52,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Visitor<'a, E, S>
         directive: &'a <E as ExecutableDocument>::Directive<false>,
         _: bluejay_core::definition::DirectiveLocation,
     ) {
-        self.visit_arguments(directive.arguments(), |arguments, name| {
-            Error::NonUniqueArgumentNames {
-                arguments: arguments
-                    .into_iter()
-                    .map(ArgumentWrapper::Variable)
-                    .collect(),
-                name,
-            }
-        })
+        self.visit_arguments(directive.arguments(), Error::InvalidVariableArgument)
     }
 
     fn visit_const_directive(
@@ -74,15 +60,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Visitor<'a, E, S>
         directive: &'a <E as ExecutableDocument>::Directive<true>,
         _: bluejay_core::definition::DirectiveLocation,
     ) {
-        self.visit_arguments(directive.arguments(), |arguments, name| {
-            Error::NonUniqueArgumentNames {
-                arguments: arguments
-                    .into_iter()
-                    .map(ArgumentWrapper::Constant)
-                    .collect(),
-                name,
-            }
-        })
+        self.visit_arguments(directive.arguments(), Error::InvalidConstArgument)
     }
 }
 

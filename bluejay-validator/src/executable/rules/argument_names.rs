@@ -1,9 +1,9 @@
-use crate::executable::{Cache, Error, Rule, Visitor};
+use crate::executable::{ArgumentError, Cache, Error, Rule, Visitor};
 use bluejay_core::definition::{
     DirectiveDefinition, FieldDefinition, InputValueDefinition, SchemaDefinition,
 };
 use bluejay_core::executable::{ExecutableDocument, Field};
-use bluejay_core::{Argument, ArgumentWrapper, AsIter, Directive};
+use bluejay_core::{Argument, AsIter, Directive};
 
 pub struct ArgumentNames<'a, E: ExecutableDocument, S: SchemaDefinition> {
     schema_definition: &'a S,
@@ -13,7 +13,7 @@ pub struct ArgumentNames<'a, E: ExecutableDocument, S: SchemaDefinition> {
 impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> ArgumentNames<'a, E, S> {
     fn visit_directive<
         const CONST: bool,
-        F: Fn(&'a E::Argument<CONST>, &'a S::DirectiveDefinition) -> Error<'a, E, S>,
+        F: Fn(ArgumentError<'a, CONST, E, S>) -> Error<'a, E, S>,
     >(
         &mut self,
         directive: &'a <E as ExecutableDocument>::Directive<CONST>,
@@ -27,7 +27,12 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> ArgumentNames<'a,
                 self.visit_arguments(
                     Some(arguments),
                     directive_definition.arguments_definition(),
-                    |argument| build_error(argument, directive_definition),
+                    |argument| {
+                        build_error(ArgumentError::ArgumentDoesNotExistOnDirective {
+                            argument,
+                            directive_definition,
+                        })
+                    },
                 )
             }
         }
@@ -63,9 +68,11 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Visitor<'a, E, S>
         self.visit_arguments(
             field.arguments(),
             field_definition.arguments_definition(),
-            |argument| Error::ArgumentDoesNotExistOnField {
-                argument,
-                field_definition,
+            |argument| {
+                Error::InvalidVariableArgument(ArgumentError::ArgumentDoesNotExistOnField {
+                    argument,
+                    field_definition,
+                })
             },
         )
     }
@@ -75,12 +82,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Visitor<'a, E, S>
         directive: &'a <E as ExecutableDocument>::Directive<false>,
         _: bluejay_core::definition::DirectiveLocation,
     ) {
-        self.visit_directive(directive, |argument, directive_definition| {
-            Error::ArgumentDoesNotExistOnDirective {
-                argument: ArgumentWrapper::Variable(argument),
-                directive_definition,
-            }
-        })
+        self.visit_directive(directive, Error::InvalidVariableArgument)
     }
 
     fn visit_const_directive(
@@ -88,12 +90,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Visitor<'a, E, S>
         directive: &'a <E as ExecutableDocument>::Directive<true>,
         _: bluejay_core::definition::DirectiveLocation,
     ) {
-        self.visit_directive(directive, |argument, directive_definition| {
-            Error::ArgumentDoesNotExistOnDirective {
-                argument: ArgumentWrapper::Constant(argument),
-                directive_definition,
-            }
-        })
+        self.visit_directive(directive, Error::InvalidConstArgument)
     }
 }
 
