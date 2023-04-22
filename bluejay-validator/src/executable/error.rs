@@ -4,9 +4,7 @@ use bluejay_core::definition::{
     SchemaDefinition, TypeDefinitionReferenceFromAbstract,
 };
 use bluejay_core::executable::{ExecutableDocument, OperationDefinitionFromExecutableDocument};
-use bluejay_core::{
-    call_const_wrapper_method, ArgumentWrapper, Directive, DirectiveWrapper, OperationType,
-};
+use bluejay_core::{call_const_wrapper_method, ArgumentWrapper, DirectiveWrapper, OperationType};
 #[cfg(feature = "parser-integration")]
 use bluejay_parser::{
     ast::executable::ExecutableDocument as ParserExecutableDocument,
@@ -14,6 +12,10 @@ use bluejay_parser::{
     HasSpan,
 };
 use itertools::join;
+
+mod directive_error;
+
+pub use directive_error::DirectiveError;
 
 pub enum Error<'a, E: ExecutableDocument, S: SchemaDefinition> {
     NonUniqueOperationNames {
@@ -116,6 +118,8 @@ pub enum Error<'a, E: ExecutableDocument, S: SchemaDefinition> {
     },
     InvalidConstValue(InputCoercionError<'a, true, E::Value<true>>),
     InvalidVariableValue(InputCoercionError<'a, false, E::Value<false>>),
+    InvalidConstDirective(DirectiveError<'a, true, E>),
+    InvalidVariableDirective(DirectiveError<'a, false, E>),
 }
 
 #[cfg(feature = "parser-integration")]
@@ -297,7 +301,8 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                         .map(InputValueDefinition::name),
                     ", ",
                 );
-                let directive_name = call_const_wrapper_method!(DirectiveWrapper, directive, name);
+                let directive_name =
+                    call_const_wrapper_method!(DirectiveWrapper, directive, name).as_ref();
                 let span = call_const_wrapper_method!(DirectiveWrapper, directive, span);
                 Self::new(
                     format!(
@@ -524,6 +529,8 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
             ),
             Error::InvalidConstValue(error) => Self::from(error),
             Error::InvalidVariableValue(error) => Self::from(error),
+            Error::InvalidConstDirective(error) => Self::from(error),
+            Error::InvalidVariableDirective(error) => Self::from(error),
         }
     }
 }

@@ -1,0 +1,3 @@
+query {
+  dog @doesNotExist { name }
+}

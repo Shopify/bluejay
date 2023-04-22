@@ -1,5 +1,6 @@
 mod argument_names;
 mod argument_uniqueness;
+mod directives_are_defined;
 mod field_selection_merging;
 mod field_selections;
 mod fragment_name_uniqueness;
@@ -19,6 +20,7 @@ mod value_is_valid;
 
 pub use argument_names::ArgumentNames;
 pub use argument_uniqueness::ArgumentUniqueness;
+pub use directives_are_defined::DirectivesAreDefined;
 pub use field_selection_merging::FieldSelectionMerging;
 pub use field_selections::FieldSelections;
 pub use fragment_name_uniqueness::FragmentNameUniqueness;
@@ -170,4 +172,5 @@ define_rules!(
     FragmentSpreadsMustNotFormCycles,
     FragmentSpreadIsPossible,
     ValueIsValid,
+    DirectivesAreDefined,
 );

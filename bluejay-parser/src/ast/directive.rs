@@ -50,3 +50,9 @@ impl<'a, const CONST: bool> HasSpan for Directive<'a, CONST> {
         &self.span
     }
 }
+
+impl<'a, const CONST: bool> Directive<'a, CONST> {
+    pub fn name(&self) -> &Name<'a> {
+        &self.name
+    }
+}
