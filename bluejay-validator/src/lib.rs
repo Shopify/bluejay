@@ -1,2 +1,2 @@
 pub mod executable;
-mod value;
+pub mod value;
