@@ -87,10 +87,12 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Visitor<'a, E, S>
         self.visit_arguments(
             field.arguments(),
             field_definition.arguments_definition(),
-            |missing_argument_definitions| Error::FieldMissingRequiredArguments {
-                field,
-                field_definition,
-                missing_argument_definitions,
+            |missing_argument_definitions| {
+                Error::InvalidVariableArgument(ArgumentError::FieldMissingRequiredArguments {
+                    field,
+                    field_definition,
+                    missing_argument_definitions,
+                })
             },
         )
     }

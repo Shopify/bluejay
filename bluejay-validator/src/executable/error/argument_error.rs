@@ -28,6 +28,11 @@ pub enum ArgumentError<'a, const CONST: bool, E: ExecutableDocument, S: SchemaDe
         directive_definition: &'a S::DirectiveDefinition,
         missing_argument_definitions: Vec<&'a S::InputValueDefinition>,
     },
+    FieldMissingRequiredArguments {
+        field: &'a E::Field,
+        field_definition: &'a S::FieldDefinition,
+        missing_argument_definitions: Vec<&'a S::InputValueDefinition>,
+    },
 }
 
 #[cfg(feature = "parser-integration")]
@@ -96,6 +101,31 @@ impl<'a, const CONST: bool, S: SchemaDefinition>
                     Some(Annotation::new(
                         format!("Missing argument(s): {missing_argument_names}"),
                         directive.span().clone(),
+                    )),
+                    Vec::new(),
+                )
+            }
+            ArgumentError::FieldMissingRequiredArguments {
+                field,
+                field_definition: _,
+                missing_argument_definitions,
+            } => {
+                let missing_argument_names = missing_argument_definitions
+                    .into_iter()
+                    .map(InputValueDefinition::name)
+                    .join(", ");
+                let span = match field.arguments() {
+                    Some(arguments) => field.name().span().merge(arguments.span()),
+                    None => field.name().span().clone(),
+                };
+                Self::new(
+                    format!(
+                        "Field `{}` missing argument(s): {missing_argument_names}",
+                        field.response_key()
+                    ),
+                    Some(Annotation::new(
+                        format!("Missing argument(s): {missing_argument_names}"),
+                        span,
                     )),
                     Vec::new(),
                 )

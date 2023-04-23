@@ -1,6 +1,6 @@
 use crate::value::input_coercion::Error as InputCoercionError;
 use bluejay_core::definition::{
-    AbstractOutputTypeReference, FieldDefinition, InputValueDefinition, SchemaDefinition,
+    AbstractOutputTypeReference, FieldDefinition, SchemaDefinition,
     TypeDefinitionReferenceFromAbstract,
 };
 use bluejay_core::executable::{ExecutableDocument, OperationDefinitionFromExecutableDocument};
@@ -11,7 +11,6 @@ use bluejay_parser::{
     error::{Annotation, Error as ParserError},
     HasSpan,
 };
-use itertools::join;
 
 mod argument_error;
 mod directive_error;
@@ -44,11 +43,6 @@ pub enum Error<'a, E: ExecutableDocument, S: SchemaDefinition> {
     NonLeafFieldSelectionEmpty {
         field: &'a E::Field,
         r#type: &'a S::OutputTypeReference,
-    },
-    FieldMissingRequiredArguments {
-        field: &'a E::Field,
-        field_definition: &'a S::FieldDefinition,
-        missing_argument_definitions: Vec<&'a S::InputValueDefinition>,
     },
     NonUniqueFragmentDefinitionNames {
         name: &'a str,
@@ -202,33 +196,6 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                 )),
                 Vec::new(),
             ),
-            Error::FieldMissingRequiredArguments {
-                field,
-                field_definition: _,
-                missing_argument_definitions,
-            } => {
-                let missing_argument_names = join(
-                    missing_argument_definitions
-                        .into_iter()
-                        .map(InputValueDefinition::name),
-                    ", ",
-                );
-                let span = match field.arguments() {
-                    Some(arguments) => field.name().span().merge(arguments.span()),
-                    None => field.name().span().clone(),
-                };
-                Self::new(
-                    format!(
-                        "Field `{}` missing argument(s): {missing_argument_names}",
-                        field.response_key()
-                    ),
-                    Some(Annotation::new(
-                        format!("Missing argument(s): {missing_argument_names}"),
-                        span,
-                    )),
-                    Vec::new(),
-                )
-            }
             Error::NonUniqueFragmentDefinitionNames {
                 name,
                 fragment_definitions,
