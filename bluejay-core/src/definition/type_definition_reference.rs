@@ -3,8 +3,9 @@ use crate::definition::{
     ScalarTypeDefinition, UnionTypeDefinition,
 };
 use crate::BuiltinScalarDefinition;
+use enum_as_inner::EnumAsInner;
 
-#[derive(Debug)]
+#[derive(Debug, EnumAsInner)]
 pub enum TypeDefinitionReference<
     'a,
     CS: ScalarTypeDefinition,

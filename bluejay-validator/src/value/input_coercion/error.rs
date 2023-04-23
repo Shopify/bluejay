@@ -9,6 +9,7 @@ use bluejay_parser::{
 #[cfg(feature = "parser-integration")]
 use itertools::Itertools;
 
+#[derive(PartialEq, Debug)]
 pub enum Error<'a, const CONST: bool, V: AbstractValue<CONST>> {
     NullValueForRequiredType {
         value: &'a V,

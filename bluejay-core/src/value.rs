@@ -1,8 +1,11 @@
 use crate::AsIter;
 use std::collections::HashMap;
 
+#[cfg(feature = "serde_json")]
+mod serde_json;
+
 pub trait ObjectValue<const CONST: bool> {
-    type Key: AsRef<str>;
+    type Key: AsRef<str> + PartialEq + std::fmt::Debug;
     type Value: AbstractValue<CONST, Object = Self>;
     type Iterator<'a>: Iterator<Item = (&'a Self::Key, &'a Self::Value)>
     where
@@ -20,6 +23,10 @@ pub trait AbstractValue<const CONST: bool> {
     type Object: ObjectValue<CONST, Value = Self>;
 
     fn as_ref(&self) -> ValueFromAbstract<'_, CONST, Self>;
+
+    fn can_coerce_string_value_to_enum() -> bool {
+        false
+    }
 }
 
 pub trait AbstractConstValue: AbstractValue<true> {}
