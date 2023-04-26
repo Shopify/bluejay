@@ -3,7 +3,7 @@ use bluejay_core::definition::{
     EnumTypeDefinition, EnumValueDefinition, InputFieldsDefinition, InputObjectTypeDefinition,
     InputTypeReference, InputValueDefinition, ScalarTypeDefinition,
 };
-use bluejay_core::{AbstractValue, AsIter, BuiltinScalarDefinition, ObjectValue, Value};
+use bluejay_core::{AbstractValue, AsIter, BuiltinScalarDefinition, Directive, ObjectValue, Value};
 use std::collections::BTreeMap;
 
 mod error;
@@ -292,6 +292,13 @@ fn coerce_input_object_value<
                 }
             });
 
+        #[cfg(feature = "one-of-input-objects")]
+        if let Err(one_of_errors) =
+            validate_one_of_input_object_value(input_object_type_definition, value, object, path)
+        {
+            errors.extend(one_of_errors);
+        }
+
         if !missing_required_values.is_empty() {
             errors.push(Error::NoValueForRequiredFields {
                 value,
@@ -312,6 +319,56 @@ fn coerce_input_object_value<
             input_type_name: input_type_reference.as_ref().display_name(),
             path: path.to_owned(),
         }])
+    }
+}
+
+#[cfg(feature = "one-of-input-objects")]
+fn validate_one_of_input_object_value<'a, const CONST: bool, V: AbstractValue<CONST>>(
+    input_object_type_definition: &'a impl InputObjectTypeDefinition,
+    value: &'a V,
+    object: &'a V::Object,
+    path: &[PathMember<'a>],
+) -> Result<(), Vec<Error<'a, CONST, V>>> {
+    if input_object_type_definition
+        .directives()
+        .map(|directives| {
+            directives
+                .iter()
+                .any(|directive| directive.name() == "oneOf")
+        })
+        .unwrap_or(false)
+    {
+        let (null_entries, non_null_entries): (Vec<_>, Vec<_>) = object
+            .iter()
+            .partition(|(_, value)| matches!(value.as_ref(), Value::Null));
+
+        let mut errors = Vec::new();
+
+        if !null_entries.is_empty() {
+            errors.push(Error::OneOfInputNullValues {
+                value,
+                input_object_type_name: input_object_type_definition.name(),
+                null_entries,
+                path: path.to_owned(),
+            });
+        }
+
+        if non_null_entries.len() != 1 {
+            errors.push(Error::OneOfInputNotSingleNonNullValue {
+                value,
+                input_object_type_name: input_object_type_definition.name(),
+                non_null_entries,
+                path: path.to_owned(),
+            });
+        }
+
+        if errors.is_empty() {
+            Ok(())
+        } else {
+            Err(errors)
+        }
+    } else {
+        Ok(())
     }
 }
 
@@ -375,6 +432,7 @@ mod tests {
         enumArg: Choices!
         inputObjectArg: CustomInput!
         decimalArg: Decimal!
+        oneOfInputObjectArg: InputUnion!
       ): Boolean!
     }
 
@@ -390,6 +448,11 @@ mod tests {
     }
 
     scalar Decimal
+
+    input InputUnion @oneOf {
+        first: String
+        second: Int
+    }
     "#;
 
     static DEFINITION_DOCUMENT: Lazy<DefinitionDocument<'static, CustomContext>> =
@@ -662,5 +725,37 @@ mod tests {
             }]),
             itr.coerce_const_value(&json!(123.456), &[]),
         );
+    }
+
+    #[test]
+    fn test_one_of_input_object() {
+        let itr = input_type_reference("Query", "field", "oneOfInputObjectArg");
+
+        assert_eq!(
+            Ok(()),
+            itr.coerce_const_value(&json!({ "first": "s" }), &[])
+        );
+        assert_eq!(Ok(()), itr.coerce_const_value(&json!({ "second": 1 }), &[]));
+        assert_eq!(
+            Err(vec![Error::OneOfInputNullValues {
+                value: &json!({ "first": null, "second": 1 }),
+                input_object_type_name: "InputUnion",
+                null_entries: vec![(&"first".to_owned(), &json!(null))],
+                path: vec![],
+            }]),
+            itr.coerce_const_value(&json!({ "first": null, "second": 1 }), &[]),
+        );
+        assert_eq!(
+            Err(vec![Error::OneOfInputNotSingleNonNullValue {
+                value: &json!({ "first": "s", "second": 1 }),
+                input_object_type_name: "InputUnion",
+                non_null_entries: vec![
+                    (&"first".to_owned(), &json!("s")),
+                    (&"second".to_owned(), &json!(1))
+                ],
+                path: vec![],
+            }]),
+            itr.coerce_const_value(&json!({ "first": "s", "second": 1 }), &[]),
+        )
     }
 }

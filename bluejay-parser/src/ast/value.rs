@@ -203,3 +203,9 @@ impl<'a, const CONST: bool> AsIter for ObjectValue<'a, CONST> {
         self.fields.iter()
     }
 }
+
+impl<'a, const CONST: bool> HasSpan for ObjectValue<'a, CONST> {
+    fn span(&self) -> &Span {
+        &self.span
+    }
+}

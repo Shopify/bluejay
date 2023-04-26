@@ -51,6 +51,20 @@ pub enum Error<'a, const CONST: bool, V: AbstractValue<CONST>> {
         message: Cow<'static, str>,
         path: Vec<PathMember<'a>>,
     },
+    #[cfg(feature = "one-of-input-objects")]
+    OneOfInputNullValues {
+        value: &'a V,
+        input_object_type_name: &'a str,
+        null_entries: Vec<(&'a <V::Object as ObjectValue<CONST>>::Key, &'a V)>,
+        path: Vec<PathMember<'a>>,
+    },
+    #[cfg(feature = "one-of-input-objects")]
+    OneOfInputNotSingleNonNullValue {
+        value: &'a V,
+        input_object_type_name: &'a str,
+        non_null_entries: Vec<(&'a <V::Object as ObjectValue<CONST>>::Key, &'a V)>,
+        path: Vec<PathMember<'a>>,
+    },
 }
 
 #[cfg(feature = "parser-integration")]
@@ -139,6 +153,34 @@ impl<'a, const CONST: bool> From<Error<'a, CONST, ParserValue<'a, CONST>>> for P
                 message.clone(),
                 Some(Annotation::new(message, value.span().clone())),
                 Vec::new(),
+            ),
+            #[cfg(feature = "one-of-input-objects")]
+            Error::OneOfInputNullValues { value, input_object_type_name, null_entries, .. } => Self::new(
+                format!("Multiple entries with null values for oneOf input object {input_object_type_name}"),
+                Some(Annotation::new(
+                    "oneOf input object must not contain any null values",
+                    value.span().clone(),
+                )),
+                null_entries.into_iter().map(|(key, value)| {
+                    Annotation::new(
+                        "Entry with null value",
+                        key.span().merge(value.span()),
+                    )
+                }).collect(),
+            ),
+            #[cfg(feature = "one-of-input-objects")]
+            Error::OneOfInputNotSingleNonNullValue { value, input_object_type_name, non_null_entries, .. } => Self::new(
+                format!("Got {} entries with non-null values for oneOf input object {input_object_type_name}", non_null_entries.len()),
+                Some(Annotation::new(
+                    "oneOf input object must contain single non-null",
+                    value.span().clone(),
+                )),
+                non_null_entries.into_iter().map(|(key, value)| {
+                    Annotation::new(
+                        "Entry with non-null value",
+                        key.span().merge(value.span()),
+                    )
+                }).collect(),
             ),
         }
     }
