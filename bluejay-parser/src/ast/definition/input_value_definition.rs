@@ -1,19 +1,19 @@
-use crate::ast::definition::InputTypeReference;
+use crate::ast::definition::{Context, InputTypeReference};
 use crate::ast::{ConstDirectives, ConstValue, FromTokens, ParseError, Tokens};
 use crate::lexical_token::{Name, PunctuatorType, StringValue};
 use bluejay_core::definition::InputValueDefinition as CoreInputValueDefinition;
 
 #[derive(Debug)]
-pub struct InputValueDefinition<'a> {
+pub struct InputValueDefinition<'a, C: Context> {
     description: Option<StringValue>,
     name: Name<'a>,
-    r#type: InputTypeReference<'a>,
+    r#type: InputTypeReference<'a, C>,
     default_value: Option<ConstValue<'a>>,
     directives: Option<ConstDirectives<'a>>,
 }
 
-impl<'a> CoreInputValueDefinition for InputValueDefinition<'a> {
-    type InputTypeReference = InputTypeReference<'a>;
+impl<'a, C: Context> CoreInputValueDefinition for InputValueDefinition<'a, C> {
+    type InputTypeReference = InputTypeReference<'a, C>;
     type Value = ConstValue<'a>;
     type Directives = ConstDirectives<'a>;
 
@@ -38,7 +38,7 @@ impl<'a> CoreInputValueDefinition for InputValueDefinition<'a> {
     }
 }
 
-impl<'a> FromTokens<'a> for InputValueDefinition<'a> {
+impl<'a, C: Context> FromTokens<'a> for InputValueDefinition<'a, C> {
     fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
         let description = tokens.next_if_string_value();
         let name = tokens.expect_name()?;

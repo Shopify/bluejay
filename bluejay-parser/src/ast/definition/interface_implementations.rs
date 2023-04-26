@@ -1,16 +1,16 @@
-use crate::ast::definition::InterfaceImplementation;
+use crate::ast::definition::{Context, InterfaceImplementation};
 use crate::ast::{FromTokens, IsMatch, ParseError, Tokens};
 use crate::lexical_token::PunctuatorType;
 use bluejay_core::definition::InterfaceImplementations as CoreInterfaceImplementations;
 use bluejay_core::AsIter;
 
 #[derive(Debug)]
-pub struct InterfaceImplementations<'a> {
-    interface_implementations: Vec<InterfaceImplementation<'a>>,
+pub struct InterfaceImplementations<'a, C: Context + 'a> {
+    interface_implementations: Vec<InterfaceImplementation<'a, C>>,
 }
 
-impl<'a> AsIter for InterfaceImplementations<'a> {
-    type Item = InterfaceImplementation<'a>;
+impl<'a, C: Context + 'a> AsIter for InterfaceImplementations<'a, C> {
+    type Item = InterfaceImplementation<'a, C>;
     type Iterator<'b> = std::slice::Iter<'b, Self::Item> where 'a: 'b;
 
     fn iter(&self) -> Self::Iterator<'_> {
@@ -18,15 +18,15 @@ impl<'a> AsIter for InterfaceImplementations<'a> {
     }
 }
 
-impl<'a> CoreInterfaceImplementations for InterfaceImplementations<'a> {
-    type InterfaceImplementation = InterfaceImplementation<'a>;
+impl<'a, C: Context + 'a> CoreInterfaceImplementations for InterfaceImplementations<'a, C> {
+    type InterfaceImplementation = InterfaceImplementation<'a, C>;
 }
 
-impl<'a> InterfaceImplementations<'a> {
+impl<'a, C: Context + 'a> InterfaceImplementations<'a, C> {
     const IMPLEMENTS_IDENTIFIER: &'static str = "implements";
 }
 
-impl<'a> FromTokens<'a> for InterfaceImplementations<'a> {
+impl<'a, C: Context + 'a> FromTokens<'a> for InterfaceImplementations<'a, C> {
     fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
         tokens.expect_name_value(Self::IMPLEMENTS_IDENTIFIER)?;
         tokens.next_if_punctuator(PunctuatorType::Ampersand);
@@ -43,7 +43,7 @@ impl<'a> FromTokens<'a> for InterfaceImplementations<'a> {
     }
 }
 
-impl<'a> IsMatch<'a> for InterfaceImplementations<'a> {
+impl<'a, C: Context + 'a> IsMatch<'a> for InterfaceImplementations<'a, C> {
     fn is_match(tokens: &mut impl Tokens<'a>) -> bool {
         tokens.peek_name_matches(0, Self::IMPLEMENTS_IDENTIFIER)
     }

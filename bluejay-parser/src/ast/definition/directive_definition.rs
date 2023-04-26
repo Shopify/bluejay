@@ -1,4 +1,4 @@
-use crate::ast::definition::ArgumentsDefinition;
+use crate::ast::definition::{ArgumentsDefinition, Context};
 use crate::ast::{FromTokens, Parse, ParseError, Tokens, TryFromTokens};
 use crate::lexical_token::{Name, PunctuatorType, StringValue};
 use crate::Span;
@@ -9,17 +9,17 @@ use bluejay_core::AsIter;
 use std::str::FromStr;
 
 #[derive(Debug)]
-pub struct DirectiveDefinition<'a> {
+pub struct DirectiveDefinition<'a, C: Context> {
     description: Option<StringValue>,
     name: Name<'a>,
-    arguments_definition: Option<ArgumentsDefinition<'a>>,
+    arguments_definition: Option<ArgumentsDefinition<'a, C>>,
     is_repeatable: bool,
     locations: DirectiveLocations,
     is_builtin: bool,
 }
 
-impl<'a> CoreDirectiveDefinition for DirectiveDefinition<'a> {
-    type ArgumentsDefinition = ArgumentsDefinition<'a>;
+impl<'a, C: Context> CoreDirectiveDefinition for DirectiveDefinition<'a, C> {
+    type ArgumentsDefinition = ArgumentsDefinition<'a, C>;
     type DirectiveLocations = DirectiveLocations;
 
     fn description(&self) -> Option<&str> {
@@ -47,7 +47,7 @@ impl<'a> CoreDirectiveDefinition for DirectiveDefinition<'a> {
     }
 }
 
-impl<'a> DirectiveDefinition<'a> {
+impl<'a, C: Context> DirectiveDefinition<'a, C> {
     pub(crate) const DIRECTIVE_IDENTIFIER: &'static str = "directive";
     const REPEATABLE_IDENTIFIER: &'static str = "repeatable";
     const ON_IDENTIFIER: &'static str = "on";
@@ -75,7 +75,7 @@ impl<'a> DirectiveDefinition<'a> {
     }
 }
 
-impl<'a> FromTokens<'a> for DirectiveDefinition<'a> {
+impl<'a, C: Context> FromTokens<'a> for DirectiveDefinition<'a, C> {
     fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
         let description = tokens.next_if_string_value();
         tokens.expect_name_value(Self::DIRECTIVE_IDENTIFIER)?;

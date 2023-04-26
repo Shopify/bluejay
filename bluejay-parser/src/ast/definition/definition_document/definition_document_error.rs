@@ -1,6 +1,6 @@
 use crate::ast::definition::{
-    definition_document::ImplicitSchemaDefinition, DirectiveDefinition, ExplicitSchemaDefinition,
-    RootOperationTypeDefinition, TypeDefinitionReference,
+    definition_document::ImplicitSchemaDefinition, Context, DirectiveDefinition,
+    ExplicitSchemaDefinition, RootOperationTypeDefinition, TypeDefinitionReference,
 };
 use crate::error::{Annotation, Error};
 use crate::lexical_token::Name;
@@ -9,17 +9,17 @@ use bluejay_core::definition::AbstractTypeDefinitionReference;
 use bluejay_core::OperationType;
 
 #[derive(Debug)]
-pub enum DefinitionDocumentError<'a> {
+pub enum DefinitionDocumentError<'a, C: Context> {
     DuplicateDirectiveDefinitions {
         name: &'a str,
-        definitions: Vec<&'a DirectiveDefinition<'a>>,
+        definitions: Vec<&'a DirectiveDefinition<'a, C>>,
     },
     DuplicateTypeDefinitions {
         name: &'a str,
-        definitions: Vec<&'a TypeDefinitionReference<'a>>,
+        definitions: Vec<&'a TypeDefinitionReference<'a, C>>,
     },
     ImplicitRootOperationTypeNotAnObject {
-        definition: &'a TypeDefinitionReference<'a>,
+        definition: &'a TypeDefinitionReference<'a, C>,
     },
     ExplicitRootOperationTypeNotAnObject {
         name: &'a Name<'a>,
@@ -32,7 +32,7 @@ pub enum DefinitionDocumentError<'a> {
         definitions: &'a [ExplicitSchemaDefinition<'a>],
     },
     ImplicitAndExplicitSchemaDefinitions {
-        implicit: ImplicitSchemaDefinition<'a>,
+        implicit: ImplicitSchemaDefinition<'a, C>,
         explicit: &'a ExplicitSchemaDefinition<'a>,
     },
     DuplicateExplicitRootOperationDefinitions {
@@ -60,8 +60,8 @@ pub enum DefinitionDocumentError<'a> {
     },
 }
 
-impl<'a> From<DefinitionDocumentError<'a>> for Error {
-    fn from(value: DefinitionDocumentError) -> Self {
+impl<'a, C: Context> From<DefinitionDocumentError<'a, C>> for Error {
+    fn from(value: DefinitionDocumentError<C>) -> Self {
         match value {
             DefinitionDocumentError::DuplicateDirectiveDefinitions { name, definitions } => {
                 Error::new(

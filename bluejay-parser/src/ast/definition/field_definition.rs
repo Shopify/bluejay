@@ -1,21 +1,21 @@
-use crate::ast::definition::{ArgumentsDefinition, OutputTypeReference};
+use crate::ast::definition::{ArgumentsDefinition, Context, OutputTypeReference};
 use crate::ast::{ConstDirectives, FromTokens, ParseError, Tokens, TryFromTokens};
 use crate::lexical_token::{Name, PunctuatorType, StringValue};
 use crate::Span;
 use bluejay_core::definition::FieldDefinition as CoreFieldDefinition;
 
 #[derive(Debug)]
-pub struct FieldDefinition<'a> {
+pub struct FieldDefinition<'a, C: Context> {
     description: Option<StringValue>,
     name: Name<'a>,
-    arguments_definition: Option<ArgumentsDefinition<'a>>,
-    r#type: OutputTypeReference<'a>,
+    arguments_definition: Option<ArgumentsDefinition<'a, C>>,
+    r#type: OutputTypeReference<'a, C>,
     directives: Option<ConstDirectives<'a>>,
     is_builtin: bool,
 }
 
-impl<'a> FieldDefinition<'a> {
-    pub(crate) fn typename() -> FieldDefinition<'a> {
+impl<'a, C: Context> FieldDefinition<'a, C> {
+    pub(crate) fn typename() -> Self {
         FieldDefinition {
             description: None,
             name: Name::new("__typename", Span::empty()),
@@ -27,9 +27,9 @@ impl<'a> FieldDefinition<'a> {
     }
 }
 
-impl<'a> CoreFieldDefinition for FieldDefinition<'a> {
-    type ArgumentsDefinition = ArgumentsDefinition<'a>;
-    type OutputTypeReference = OutputTypeReference<'a>;
+impl<'a, C: Context> CoreFieldDefinition for FieldDefinition<'a, C> {
+    type ArgumentsDefinition = ArgumentsDefinition<'a, C>;
+    type OutputTypeReference = OutputTypeReference<'a, C>;
     type Directives = ConstDirectives<'a>;
 
     fn description(&self) -> Option<&str> {
@@ -57,7 +57,7 @@ impl<'a> CoreFieldDefinition for FieldDefinition<'a> {
     }
 }
 
-impl<'a> FromTokens<'a> for FieldDefinition<'a> {
+impl<'a, C: Context> FromTokens<'a> for FieldDefinition<'a, C> {
     fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
         let description = tokens.next_if_string_value();
         let name = tokens.expect_name()?;

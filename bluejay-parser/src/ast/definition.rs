@@ -1,4 +1,5 @@
 mod arguments_definition;
+mod context;
 mod custom_scalar_type_definition;
 mod definition_document;
 mod directive_definition;
@@ -24,6 +25,7 @@ mod union_member_types;
 mod union_type_definition;
 
 pub use arguments_definition::ArgumentsDefinition;
+pub use context::{Context, DefaultContext};
 pub use custom_scalar_type_definition::CustomScalarTypeDefinition;
 pub use definition_document::DefinitionDocument;
 pub use directive_definition::DirectiveDefinition;

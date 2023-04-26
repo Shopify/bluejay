@@ -1,4 +1,4 @@
-use crate::ast::definition::InputValueDefinition;
+use crate::ast::definition::{Context, InputValueDefinition};
 use crate::ast::{FromTokens, IsMatch, ParseError, Tokens};
 use crate::lexical_token::PunctuatorType;
 use crate::Span;
@@ -6,13 +6,13 @@ use bluejay_core::definition::ArgumentsDefinition as CoreArgumentsDefinition;
 use bluejay_core::AsIter;
 
 #[derive(Debug)]
-pub struct ArgumentsDefinition<'a> {
-    argument_definitions: Vec<InputValueDefinition<'a>>,
+pub struct ArgumentsDefinition<'a, C: Context> {
+    argument_definitions: Vec<InputValueDefinition<'a, C>>,
     _span: Span,
 }
 
-impl<'a> AsIter for ArgumentsDefinition<'a> {
-    type Item = InputValueDefinition<'a>;
+impl<'a, C: Context> AsIter for ArgumentsDefinition<'a, C> {
+    type Item = InputValueDefinition<'a, C>;
     type Iterator<'b> = std::slice::Iter<'b, Self::Item> where 'a: 'b;
 
     fn iter(&self) -> Self::Iterator<'_> {
@@ -20,14 +20,14 @@ impl<'a> AsIter for ArgumentsDefinition<'a> {
     }
 }
 
-impl<'a> CoreArgumentsDefinition for ArgumentsDefinition<'a> {
-    type ArgumentDefinition = InputValueDefinition<'a>;
+impl<'a, C: Context> CoreArgumentsDefinition for ArgumentsDefinition<'a, C> {
+    type ArgumentDefinition = InputValueDefinition<'a, C>;
 }
 
-impl<'a> FromTokens<'a> for ArgumentsDefinition<'a> {
+impl<'a, C: Context> FromTokens<'a> for ArgumentsDefinition<'a, C> {
     fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
         let open_span = tokens.expect_punctuator(PunctuatorType::OpenRoundBracket)?;
-        let mut argument_definitions: Vec<InputValueDefinition> = Vec::new();
+        let mut argument_definitions: Vec<InputValueDefinition<C>> = Vec::new();
         let close_span = loop {
             argument_definitions.push(InputValueDefinition::from_tokens(tokens)?);
             if let Some(close_span) = tokens.next_if_punctuator(PunctuatorType::CloseRoundBracket) {
@@ -42,7 +42,7 @@ impl<'a> FromTokens<'a> for ArgumentsDefinition<'a> {
     }
 }
 
-impl<'a> IsMatch<'a> for ArgumentsDefinition<'a> {
+impl<'a, C: Context> IsMatch<'a> for ArgumentsDefinition<'a, C> {
     fn is_match(tokens: &mut impl Tokens<'a>) -> bool {
         tokens.peek_punctuator_matches(0, PunctuatorType::OpenRoundBracket)
     }

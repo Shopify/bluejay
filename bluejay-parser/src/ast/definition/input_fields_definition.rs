@@ -1,4 +1,4 @@
-use crate::ast::definition::InputValueDefinition;
+use crate::ast::definition::{Context, InputValueDefinition};
 use crate::ast::{FromTokens, ParseError, Tokens};
 use crate::lexical_token::PunctuatorType;
 use crate::Span;
@@ -6,13 +6,13 @@ use bluejay_core::definition::InputFieldsDefinition as CoreInputFieldsDefinition
 use bluejay_core::AsIter;
 
 #[derive(Debug)]
-pub struct InputFieldsDefinition<'a> {
-    input_field_definitions: Vec<InputValueDefinition<'a>>,
+pub struct InputFieldsDefinition<'a, C: Context> {
+    input_field_definitions: Vec<InputValueDefinition<'a, C>>,
     _span: Span,
 }
 
-impl<'a> AsIter for InputFieldsDefinition<'a> {
-    type Item = InputValueDefinition<'a>;
+impl<'a, C: Context> AsIter for InputFieldsDefinition<'a, C> {
+    type Item = InputValueDefinition<'a, C>;
     type Iterator<'b> = std::slice::Iter<'b, Self::Item> where 'a: 'b;
 
     fn iter(&self) -> Self::Iterator<'_> {
@@ -20,14 +20,14 @@ impl<'a> AsIter for InputFieldsDefinition<'a> {
     }
 }
 
-impl<'a> CoreInputFieldsDefinition for InputFieldsDefinition<'a> {
-    type InputValueDefinition = InputValueDefinition<'a>;
+impl<'a, C: Context> CoreInputFieldsDefinition for InputFieldsDefinition<'a, C> {
+    type InputValueDefinition = InputValueDefinition<'a, C>;
 }
 
-impl<'a> FromTokens<'a> for InputFieldsDefinition<'a> {
+impl<'a, C: Context> FromTokens<'a> for InputFieldsDefinition<'a, C> {
     fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
         let open_span = tokens.expect_punctuator(PunctuatorType::OpenBrace)?;
-        let mut input_field_definitions: Vec<InputValueDefinition> = Vec::new();
+        let mut input_field_definitions: Vec<InputValueDefinition<'a, C>> = Vec::new();
         let close_span = loop {
             input_field_definitions.push(InputValueDefinition::from_tokens(tokens)?);
             if let Some(close_span) = tokens.next_if_punctuator(PunctuatorType::CloseBrace) {

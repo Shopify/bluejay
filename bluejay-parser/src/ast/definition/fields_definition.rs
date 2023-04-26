@@ -1,4 +1,4 @@
-use crate::ast::definition::FieldDefinition;
+use crate::ast::definition::{Context, FieldDefinition};
 use crate::ast::{FromTokens, ParseError, Tokens};
 use crate::lexical_token::PunctuatorType;
 use crate::Span;
@@ -6,13 +6,13 @@ use bluejay_core::definition::FieldsDefinition as CoreFieldsDefinition;
 use bluejay_core::AsIter;
 
 #[derive(Debug)]
-pub struct FieldsDefinition<'a> {
-    field_definitions: Vec<FieldDefinition<'a>>,
+pub struct FieldsDefinition<'a, C: Context> {
+    field_definitions: Vec<FieldDefinition<'a, C>>,
     _span: Span,
 }
 
-impl<'a> AsIter for FieldsDefinition<'a> {
-    type Item = FieldDefinition<'a>;
+impl<'a, C: Context> AsIter for FieldsDefinition<'a, C> {
+    type Item = FieldDefinition<'a, C>;
     type Iterator<'b> = std::slice::Iter<'b, Self::Item> where 'a: 'b;
 
     fn iter(&self) -> Self::Iterator<'_> {
@@ -20,14 +20,14 @@ impl<'a> AsIter for FieldsDefinition<'a> {
     }
 }
 
-impl<'a> CoreFieldsDefinition for FieldsDefinition<'a> {
-    type FieldDefinition = FieldDefinition<'a>;
+impl<'a, C: Context> CoreFieldsDefinition for FieldsDefinition<'a, C> {
+    type FieldDefinition = FieldDefinition<'a, C>;
 }
 
-impl<'a> FromTokens<'a> for FieldsDefinition<'a> {
+impl<'a, C: Context> FromTokens<'a> for FieldsDefinition<'a, C> {
     fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
         let open_span = tokens.expect_punctuator(PunctuatorType::OpenBrace)?;
-        let mut field_definitions: Vec<FieldDefinition> = vec![FieldDefinition::typename()];
+        let mut field_definitions: Vec<FieldDefinition<'a, C>> = vec![FieldDefinition::typename()];
         let close_span = loop {
             field_definitions.push(FieldDefinition::from_tokens(tokens)?);
             if let Some(close_span) = tokens.next_if_punctuator(PunctuatorType::CloseBrace) {

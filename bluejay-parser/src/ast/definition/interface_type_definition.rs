@@ -1,20 +1,20 @@
-use crate::ast::definition::{FieldsDefinition, InterfaceImplementations};
+use crate::ast::definition::{Context, FieldsDefinition, InterfaceImplementations};
 use crate::ast::{ConstDirectives, FromTokens, ParseError, Tokens, TryFromTokens};
 use crate::lexical_token::{Name, StringValue};
 use bluejay_core::definition::InterfaceTypeDefinition as CoreInterfaceTypeDefinition;
 
 #[derive(Debug)]
-pub struct InterfaceTypeDefinition<'a> {
+pub struct InterfaceTypeDefinition<'a, C: Context> {
     description: Option<StringValue>,
     name: Name<'a>,
-    interface_implementations: Option<InterfaceImplementations<'a>>,
+    interface_implementations: Option<InterfaceImplementations<'a, C>>,
     directives: Option<ConstDirectives<'a>>,
-    fields_definition: FieldsDefinition<'a>,
+    fields_definition: FieldsDefinition<'a, C>,
 }
 
-impl<'a> CoreInterfaceTypeDefinition for InterfaceTypeDefinition<'a> {
-    type FieldsDefinition = FieldsDefinition<'a>;
-    type InterfaceImplementations = InterfaceImplementations<'a>;
+impl<'a, C: Context> CoreInterfaceTypeDefinition for InterfaceTypeDefinition<'a, C> {
+    type FieldsDefinition = FieldsDefinition<'a, C>;
+    type InterfaceImplementations = InterfaceImplementations<'a, C>;
     type Directives = ConstDirectives<'a>;
 
     fn description(&self) -> Option<&str> {
@@ -38,7 +38,7 @@ impl<'a> CoreInterfaceTypeDefinition for InterfaceTypeDefinition<'a> {
     }
 }
 
-impl<'a> InterfaceTypeDefinition<'a> {
+impl<'a, C: Context> InterfaceTypeDefinition<'a, C> {
     pub(crate) const INTERFACE_IDENTIFIER: &'static str = "interface";
 
     pub(crate) fn name(&self) -> &Name<'a> {
@@ -46,7 +46,7 @@ impl<'a> InterfaceTypeDefinition<'a> {
     }
 }
 
-impl<'a> FromTokens<'a> for InterfaceTypeDefinition<'a> {
+impl<'a, C: Context> FromTokens<'a> for InterfaceTypeDefinition<'a, C> {
     fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
         let description = tokens.next_if_string_value();
         tokens.expect_name_value(Self::INTERFACE_IDENTIFIER)?;
@@ -62,11 +62,5 @@ impl<'a> FromTokens<'a> for InterfaceTypeDefinition<'a> {
             directives,
             fields_definition,
         })
-    }
-}
-
-impl<'a> AsRef<InterfaceTypeDefinition<'a>> for InterfaceTypeDefinition<'a> {
-    fn as_ref(&self) -> &InterfaceTypeDefinition<'a> {
-        self
     }
 }

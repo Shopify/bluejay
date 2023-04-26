@@ -8,6 +8,7 @@ use bluejay_parser::{
 };
 #[cfg(feature = "parser-integration")]
 use itertools::Itertools;
+use std::borrow::Cow;
 
 #[derive(PartialEq, Debug)]
 pub enum Error<'a, const CONST: bool, V: AbstractValue<CONST>> {
@@ -42,6 +43,12 @@ pub enum Error<'a, const CONST: bool, V: AbstractValue<CONST>> {
     NoInputFieldWithName {
         field: &'a <V::Object as ObjectValue<CONST>>::Key,
         input_object_type_name: &'a str,
+        path: Vec<PathMember<'a>>,
+    },
+    CustomScalarInvalidValue {
+        value: &'a V,
+        custom_scalar_type_name: &'a str,
+        message: Cow<'static, str>,
         path: Vec<PathMember<'a>>,
     },
 }
@@ -126,6 +133,11 @@ impl<'a, const CONST: bool> From<Error<'a, CONST, ParserValue<'a, CONST>>> for P
                     format!("No field with this name on input type {input_object_type_name}"),
                     field.span().clone(),
                 )),
+                Vec::new(),
+            ),
+            Error::CustomScalarInvalidValue { value, message, .. } => Self::new(
+                message.clone(),
+                Some(Annotation::new(message, value.span().clone())),
                 Vec::new(),
             ),
         }

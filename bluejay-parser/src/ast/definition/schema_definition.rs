@@ -1,10 +1,11 @@
 use crate::ast::definition::{
-    ArgumentsDefinition, BaseInputTypeReference, BaseOutputTypeReference,
-    CustomScalarTypeDefinition, DirectiveDefinition, EnumTypeDefinition, EnumValueDefinition,
-    EnumValueDefinitions, FieldDefinition, FieldsDefinition, InputFieldsDefinition,
-    InputObjectTypeDefinition, InputTypeReference, InputValueDefinition, InterfaceImplementation,
-    InterfaceImplementations, InterfaceTypeDefinition, ObjectTypeDefinition, OutputTypeReference,
-    TypeDefinitionReference, UnionMemberType, UnionMemberTypes, UnionTypeDefinition,
+    ArgumentsDefinition, BaseInputTypeReference, BaseOutputTypeReference, Context,
+    CustomScalarTypeDefinition, DefaultContext, DirectiveDefinition, EnumTypeDefinition,
+    EnumValueDefinition, EnumValueDefinitions, FieldDefinition, FieldsDefinition,
+    InputFieldsDefinition, InputObjectTypeDefinition, InputTypeReference, InputValueDefinition,
+    InterfaceImplementation, InterfaceImplementations, InterfaceTypeDefinition,
+    ObjectTypeDefinition, OutputTypeReference, TypeDefinitionReference, UnionMemberType,
+    UnionMemberTypes, UnionTypeDefinition,
 };
 use crate::ast::ConstDirectives;
 use crate::lexical_token::StringValue;
@@ -17,25 +18,25 @@ use bluejay_core::AsIter;
 use std::collections::{btree_map::Values, BTreeMap, HashMap};
 
 #[derive(Debug)]
-pub struct SchemaDefinition<'a> {
-    type_definitions: BTreeMap<&'a str, &'a TypeDefinitionReference<'a>>,
-    directive_definitions: BTreeMap<&'a str, &'a DirectiveDefinition<'a>>,
+pub struct SchemaDefinition<'a, C: Context = DefaultContext> {
+    type_definitions: BTreeMap<&'a str, &'a TypeDefinitionReference<'a, C>>,
+    directive_definitions: BTreeMap<&'a str, &'a DirectiveDefinition<'a, C>>,
     description: Option<&'a StringValue>,
-    query: &'a ObjectTypeDefinition<'a>,
-    mutation: Option<&'a ObjectTypeDefinition<'a>>,
-    subscription: Option<&'a ObjectTypeDefinition<'a>>,
+    query: &'a ObjectTypeDefinition<'a, C>,
+    mutation: Option<&'a ObjectTypeDefinition<'a, C>>,
+    subscription: Option<&'a ObjectTypeDefinition<'a, C>>,
     schema_directives: Option<&'a ConstDirectives<'a>>,
-    interface_implementors: HashMap<&'a str, Vec<&'a ObjectTypeDefinition<'a>>>,
+    interface_implementors: HashMap<&'a str, Vec<&'a ObjectTypeDefinition<'a, C>>>,
 }
 
-impl<'a> SchemaDefinition<'a> {
+impl<'a, C: Context> SchemaDefinition<'a, C> {
     pub(crate) fn new(
-        type_definitions: BTreeMap<&'a str, &'a TypeDefinitionReference<'a>>,
-        directive_definitions: BTreeMap<&'a str, &'a DirectiveDefinition<'a>>,
+        type_definitions: BTreeMap<&'a str, &'a TypeDefinitionReference<'a, C>>,
+        directive_definitions: BTreeMap<&'a str, &'a DirectiveDefinition<'a, C>>,
         description: Option<&'a StringValue>,
-        query: &'a ObjectTypeDefinition<'a>,
-        mutation: Option<&'a ObjectTypeDefinition<'a>>,
-        subscription: Option<&'a ObjectTypeDefinition<'a>>,
+        query: &'a ObjectTypeDefinition<'a, C>,
+        mutation: Option<&'a ObjectTypeDefinition<'a, C>>,
+        subscription: Option<&'a ObjectTypeDefinition<'a, C>>,
         schema_directives: Option<&'a ConstDirectives<'a>>,
     ) -> Self {
         let interface_implementors = Self::interface_implementors(&type_definitions);
@@ -52,8 +53,8 @@ impl<'a> SchemaDefinition<'a> {
     }
 
     fn interface_implementors(
-        type_definitions: &BTreeMap<&'a str, &'a TypeDefinitionReference<'a>>,
-    ) -> HashMap<&'a str, Vec<&'a ObjectTypeDefinition<'a>>> {
+        type_definitions: &BTreeMap<&'a str, &'a TypeDefinitionReference<'a, C>>,
+    ) -> HashMap<&'a str, Vec<&'a ObjectTypeDefinition<'a, C>>> {
         type_definitions.values().fold(
             HashMap::new(),
             |mut interface_implementors, &type_definition| {
@@ -77,38 +78,38 @@ impl<'a> SchemaDefinition<'a> {
     }
 }
 
-impl<'a> CoreSchemaDefinition for SchemaDefinition<'a> {
+impl<'a, C: Context> CoreSchemaDefinition for SchemaDefinition<'a, C> {
     type Directives = ConstDirectives<'a>;
-    type InputValueDefinition = InputValueDefinition<'a>;
-    type InputFieldsDefinition = InputFieldsDefinition<'a>;
-    type ArgumentsDefinition = ArgumentsDefinition<'a>;
+    type InputValueDefinition = InputValueDefinition<'a, C>;
+    type InputFieldsDefinition = InputFieldsDefinition<'a, C>;
+    type ArgumentsDefinition = ArgumentsDefinition<'a, C>;
     type EnumValueDefinition = EnumValueDefinition<'a>;
     type EnumValueDefinitions = EnumValueDefinitions<'a>;
-    type FieldDefinition = FieldDefinition<'a>;
-    type FieldsDefinition = FieldsDefinition<'a>;
-    type InterfaceImplementation = InterfaceImplementation<'a>;
-    type InterfaceImplementations = InterfaceImplementations<'a>;
-    type UnionMemberType = UnionMemberType<'a>;
-    type UnionMemberTypes = UnionMemberTypes<'a>;
-    type BaseInputTypeReference = BaseInputTypeReference<'a>;
-    type InputTypeReference = InputTypeReference<'a>;
-    type BaseOutputTypeReference = BaseOutputTypeReference<'a>;
-    type OutputTypeReference = OutputTypeReference<'a>;
-    type CustomScalarTypeDefinition = CustomScalarTypeDefinition<'a>;
-    type ObjectTypeDefinition = ObjectTypeDefinition<'a>;
-    type InterfaceTypeDefinition = InterfaceTypeDefinition<'a>;
-    type UnionTypeDefinition = UnionTypeDefinition<'a>;
-    type InputObjectTypeDefinition = InputObjectTypeDefinition<'a>;
+    type FieldDefinition = FieldDefinition<'a, C>;
+    type FieldsDefinition = FieldsDefinition<'a, C>;
+    type InterfaceImplementation = InterfaceImplementation<'a, C>;
+    type InterfaceImplementations = InterfaceImplementations<'a, C>;
+    type UnionMemberType = UnionMemberType<'a, C>;
+    type UnionMemberTypes = UnionMemberTypes<'a, C>;
+    type BaseInputTypeReference = BaseInputTypeReference<'a, C>;
+    type InputTypeReference = InputTypeReference<'a, C>;
+    type BaseOutputTypeReference = BaseOutputTypeReference<'a, C>;
+    type OutputTypeReference = OutputTypeReference<'a, C>;
+    type CustomScalarTypeDefinition = CustomScalarTypeDefinition<'a, C>;
+    type ObjectTypeDefinition = ObjectTypeDefinition<'a, C>;
+    type InterfaceTypeDefinition = InterfaceTypeDefinition<'a, C>;
+    type UnionTypeDefinition = UnionTypeDefinition<'a, C>;
+    type InputObjectTypeDefinition = InputObjectTypeDefinition<'a, C>;
     type EnumTypeDefinition = EnumTypeDefinition<'a>;
-    type TypeDefinitionReference = TypeDefinitionReference<'a>;
-    type DirectiveDefinition = DirectiveDefinition<'a>;
+    type TypeDefinitionReference = TypeDefinitionReference<'a, C>;
+    type DirectiveDefinition = DirectiveDefinition<'a, C>;
     type TypeDefinitionReferences<'b> = std::iter::Map<
-        Values<'b, &'b str, &'b TypeDefinitionReference<'a>>,
-        fn(&&'b TypeDefinitionReference<'a>) -> TypeDefinitionReferenceFromAbstract<'b, TypeDefinitionReference<'a>>
+        Values<'b, &'b str, &'b TypeDefinitionReference<'a, C>>,
+        fn(&&'b TypeDefinitionReference<'a, C>) -> TypeDefinitionReferenceFromAbstract<'b, TypeDefinitionReference<'a, C>>
     > where 'a: 'b;
     type DirectiveDefinitions<'b> =
-        std::iter::Copied<Values<'b, &'b str, &'b DirectiveDefinition<'a>>> where 'a: 'b;
-    type IterfaceImplementors<'b> = std::iter::Flatten<std::option::IntoIter<std::iter::Copied<std::slice::Iter<'b, &'b ObjectTypeDefinition<'a>>>>> where 'a: 'b;
+        std::iter::Copied<Values<'b, &'b str, &'b DirectiveDefinition<'a, C>>> where 'a: 'b;
+    type IterfaceImplementors<'b> = std::iter::Flatten<std::option::IntoIter<std::iter::Copied<std::slice::Iter<'b, &'b ObjectTypeDefinition<'a, C>>>>> where 'a: 'b;
 
     fn description(&self) -> Option<&str> {
         self.description.as_ref().map(AsRef::as_ref)
@@ -138,7 +139,7 @@ impl<'a> CoreSchemaDefinition for SchemaDefinition<'a> {
     }
 
     fn type_definitions(&self) -> Self::TypeDefinitionReferences<'_> {
-        self.type_definitions.values().map(|tdr: &&TypeDefinitionReference| -> TypeDefinitionReferenceFromAbstract<'_, TypeDefinitionReference<'a>> {
+        self.type_definitions.values().map(|tdr: &&TypeDefinitionReference<C>| -> TypeDefinitionReferenceFromAbstract<'_, TypeDefinitionReference<'a, C>> {
             tdr.as_ref()
         })
     }

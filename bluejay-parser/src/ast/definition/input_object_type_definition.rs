@@ -1,18 +1,18 @@
-use crate::ast::definition::InputFieldsDefinition;
+use crate::ast::definition::{Context, InputFieldsDefinition};
 use crate::ast::{ConstDirectives, FromTokens, ParseError, Tokens, TryFromTokens};
 use crate::lexical_token::{Name, StringValue};
 use bluejay_core::definition::InputObjectTypeDefinition as CoreInputObjectTypeDefinition;
 
 #[derive(Debug)]
-pub struct InputObjectTypeDefinition<'a> {
+pub struct InputObjectTypeDefinition<'a, C: Context> {
     description: Option<StringValue>,
     name: Name<'a>,
     directives: Option<ConstDirectives<'a>>,
-    input_fields_definition: InputFieldsDefinition<'a>,
+    input_fields_definition: InputFieldsDefinition<'a, C>,
 }
 
-impl<'a> CoreInputObjectTypeDefinition for InputObjectTypeDefinition<'a> {
-    type InputFieldsDefinition = InputFieldsDefinition<'a>;
+impl<'a, C: Context> CoreInputObjectTypeDefinition for InputObjectTypeDefinition<'a, C> {
+    type InputFieldsDefinition = InputFieldsDefinition<'a, C>;
     type Directives = ConstDirectives<'a>;
 
     fn description(&self) -> Option<&str> {
@@ -32,7 +32,7 @@ impl<'a> CoreInputObjectTypeDefinition for InputObjectTypeDefinition<'a> {
     }
 }
 
-impl<'a> InputObjectTypeDefinition<'a> {
+impl<'a, C: Context> InputObjectTypeDefinition<'a, C> {
     pub(crate) const INPUT_IDENTIFIER: &'static str = "input";
 
     pub(crate) fn name(&self) -> &Name<'a> {
@@ -40,7 +40,7 @@ impl<'a> InputObjectTypeDefinition<'a> {
     }
 }
 
-impl<'a> FromTokens<'a> for InputObjectTypeDefinition<'a> {
+impl<'a, C: Context> FromTokens<'a> for InputObjectTypeDefinition<'a, C> {
     fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
         let description = tokens.next_if_string_value();
         tokens.expect_name_value(Self::INPUT_IDENTIFIER)?;
@@ -53,11 +53,5 @@ impl<'a> FromTokens<'a> for InputObjectTypeDefinition<'a> {
             directives,
             input_fields_definition,
         })
-    }
-}
-
-impl<'a> AsRef<InputObjectTypeDefinition<'a>> for InputObjectTypeDefinition<'a> {
-    fn as_ref(&self) -> &InputObjectTypeDefinition<'a> {
-        self
     }
 }

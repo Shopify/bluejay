@@ -1,20 +1,20 @@
-use crate::ast::definition::{FieldsDefinition, InterfaceImplementations};
+use crate::ast::definition::{Context, FieldsDefinition, InterfaceImplementations};
 use crate::ast::{ConstDirectives, FromTokens, ParseError, Tokens, TryFromTokens};
 use crate::lexical_token::{Name, StringValue};
 use bluejay_core::definition::ObjectTypeDefinition as CoreObjectTypeDefinition;
 
 #[derive(Debug)]
-pub struct ObjectTypeDefinition<'a> {
+pub struct ObjectTypeDefinition<'a, C: Context> {
     description: Option<StringValue>,
     name: Name<'a>,
-    interface_implementations: Option<InterfaceImplementations<'a>>,
+    interface_implementations: Option<InterfaceImplementations<'a, C>>,
     directives: Option<ConstDirectives<'a>>,
-    fields_definition: FieldsDefinition<'a>,
+    fields_definition: FieldsDefinition<'a, C>,
 }
 
-impl<'a> CoreObjectTypeDefinition for ObjectTypeDefinition<'a> {
-    type FieldsDefinition = FieldsDefinition<'a>;
-    type InterfaceImplementations = InterfaceImplementations<'a>;
+impl<'a, C: Context> CoreObjectTypeDefinition for ObjectTypeDefinition<'a, C> {
+    type FieldsDefinition = FieldsDefinition<'a, C>;
+    type InterfaceImplementations = InterfaceImplementations<'a, C>;
     type Directives = ConstDirectives<'a>;
 
     fn description(&self) -> Option<&str> {
@@ -38,7 +38,7 @@ impl<'a> CoreObjectTypeDefinition for ObjectTypeDefinition<'a> {
     }
 }
 
-impl<'a> ObjectTypeDefinition<'a> {
+impl<'a, C: Context> ObjectTypeDefinition<'a, C> {
     pub(crate) const TYPE_IDENTIFIER: &'static str = "type";
 
     pub(crate) fn name(&self) -> &Name<'a> {
@@ -46,7 +46,7 @@ impl<'a> ObjectTypeDefinition<'a> {
     }
 }
 
-impl<'a> FromTokens<'a> for ObjectTypeDefinition<'a> {
+impl<'a, C: Context> FromTokens<'a> for ObjectTypeDefinition<'a, C> {
     fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
         let description = tokens.next_if_string_value();
         tokens.expect_name_value(Self::TYPE_IDENTIFIER)?;
@@ -62,11 +62,5 @@ impl<'a> FromTokens<'a> for ObjectTypeDefinition<'a> {
             directives,
             fields_definition,
         })
-    }
-}
-
-impl<'a> AsRef<ObjectTypeDefinition<'a>> for ObjectTypeDefinition<'a> {
-    fn as_ref(&self) -> &ObjectTypeDefinition<'a> {
-        self
     }
 }

@@ -1,16 +1,16 @@
-use crate::ast::definition::UnionMemberType;
+use crate::ast::definition::{Context, UnionMemberType};
 use crate::ast::{FromTokens, ParseError, Tokens};
 use crate::lexical_token::PunctuatorType;
 use bluejay_core::definition::UnionMemberTypes as CoreUnionMemberTypes;
 use bluejay_core::AsIter;
 
 #[derive(Debug)]
-pub struct UnionMemberTypes<'a> {
-    union_member_types: Vec<UnionMemberType<'a>>,
+pub struct UnionMemberTypes<'a, C: Context> {
+    union_member_types: Vec<UnionMemberType<'a, C>>,
 }
 
-impl<'a> AsIter for UnionMemberTypes<'a> {
-    type Item = UnionMemberType<'a>;
+impl<'a, C: Context> AsIter for UnionMemberTypes<'a, C> {
+    type Item = UnionMemberType<'a, C>;
     type Iterator<'b> = std::slice::Iter<'b, Self::Item> where 'a: 'b;
 
     fn iter(&self) -> Self::Iterator<'_> {
@@ -18,11 +18,11 @@ impl<'a> AsIter for UnionMemberTypes<'a> {
     }
 }
 
-impl<'a> CoreUnionMemberTypes for UnionMemberTypes<'a> {
-    type UnionMemberType = UnionMemberType<'a>;
+impl<'a, C: Context> CoreUnionMemberTypes for UnionMemberTypes<'a, C> {
+    type UnionMemberType = UnionMemberType<'a, C>;
 }
 
-impl<'a> FromTokens<'a> for UnionMemberTypes<'a> {
+impl<'a, C: Context> FromTokens<'a> for UnionMemberTypes<'a, C> {
     fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
         tokens.next_if_punctuator(PunctuatorType::Pipe);
         let mut union_member_types = vec![UnionMemberType::from_tokens(tokens)?];

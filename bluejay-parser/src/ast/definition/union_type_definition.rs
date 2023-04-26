@@ -1,18 +1,18 @@
-use crate::ast::definition::UnionMemberTypes;
+use crate::ast::definition::{Context, UnionMemberTypes};
 use crate::ast::{ConstDirectives, FromTokens, ParseError, Tokens, TryFromTokens};
 use crate::lexical_token::{Name, PunctuatorType, StringValue};
 use bluejay_core::definition::UnionTypeDefinition as CoreUnionTypeDefinition;
 
 #[derive(Debug)]
-pub struct UnionTypeDefinition<'a> {
+pub struct UnionTypeDefinition<'a, C: Context> {
     description: Option<StringValue>,
     name: Name<'a>,
     directives: Option<ConstDirectives<'a>>,
-    member_types: UnionMemberTypes<'a>,
+    member_types: UnionMemberTypes<'a, C>,
 }
 
-impl<'a> CoreUnionTypeDefinition for UnionTypeDefinition<'a> {
-    type UnionMemberTypes = UnionMemberTypes<'a>;
+impl<'a, C: Context> CoreUnionTypeDefinition for UnionTypeDefinition<'a, C> {
+    type UnionMemberTypes = UnionMemberTypes<'a, C>;
     type Directives = ConstDirectives<'a>;
 
     fn description(&self) -> Option<&str> {
@@ -32,7 +32,7 @@ impl<'a> CoreUnionTypeDefinition for UnionTypeDefinition<'a> {
     }
 }
 
-impl<'a> UnionTypeDefinition<'a> {
+impl<'a, C: Context> UnionTypeDefinition<'a, C> {
     pub(crate) const UNION_IDENTIFIER: &'static str = "union";
 
     pub(crate) fn name(&self) -> &Name<'a> {
@@ -40,7 +40,7 @@ impl<'a> UnionTypeDefinition<'a> {
     }
 }
 
-impl<'a> FromTokens<'a> for UnionTypeDefinition<'a> {
+impl<'a, C: Context> FromTokens<'a> for UnionTypeDefinition<'a, C> {
     fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
         let description = tokens.next_if_string_value();
         tokens.expect_name_value(Self::UNION_IDENTIFIER)?;
@@ -54,11 +54,5 @@ impl<'a> FromTokens<'a> for UnionTypeDefinition<'a> {
             directives,
             member_types,
         })
-    }
-}
-
-impl<'a> AsRef<UnionTypeDefinition<'a>> for UnionTypeDefinition<'a> {
-    fn as_ref(&self) -> &UnionTypeDefinition<'a> {
-        self
     }
 }

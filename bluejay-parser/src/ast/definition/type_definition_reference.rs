@@ -1,5 +1,5 @@
 use crate::ast::definition::{
-    CustomScalarTypeDefinition, EnumTypeDefinition, InputObjectTypeDefinition,
+    Context, CustomScalarTypeDefinition, EnumTypeDefinition, InputObjectTypeDefinition,
     InterfaceTypeDefinition, ObjectTypeDefinition, UnionTypeDefinition,
 };
 use crate::lexical_token::Name;
@@ -10,17 +10,17 @@ use bluejay_core::definition::{
 use bluejay_core::BuiltinScalarDefinition;
 
 #[derive(Debug)]
-pub enum TypeDefinitionReference<'a> {
+pub enum TypeDefinitionReference<'a, C: Context> {
     BuiltinScalar(BuiltinScalarDefinition),
-    CustomScalar(CustomScalarTypeDefinition<'a>),
-    Object(ObjectTypeDefinition<'a>),
-    InputObject(InputObjectTypeDefinition<'a>),
+    CustomScalar(CustomScalarTypeDefinition<'a, C>),
+    Object(ObjectTypeDefinition<'a, C>),
+    InputObject(InputObjectTypeDefinition<'a, C>),
     Enum(EnumTypeDefinition<'a>),
-    Union(UnionTypeDefinition<'a>),
-    Interface(InterfaceTypeDefinition<'a>),
+    Union(UnionTypeDefinition<'a, C>),
+    Interface(InterfaceTypeDefinition<'a, C>),
 }
 
-impl<'a> TypeDefinitionReference<'a> {
+impl<'a, C: Context> TypeDefinitionReference<'a, C> {
     pub(crate) fn name_token(&self) -> Option<&Name<'_>> {
         match self {
             Self::BuiltinScalar(_) => None,
@@ -46,13 +46,13 @@ impl<'a> TypeDefinitionReference<'a> {
     }
 }
 
-impl<'a> AbstractTypeDefinitionReference for TypeDefinitionReference<'a> {
-    type CustomScalarTypeDefinition = CustomScalarTypeDefinition<'a>;
-    type ObjectTypeDefinition = ObjectTypeDefinition<'a>;
-    type InputObjectTypeDefinition = InputObjectTypeDefinition<'a>;
+impl<'a, C: Context> AbstractTypeDefinitionReference for TypeDefinitionReference<'a, C> {
+    type CustomScalarTypeDefinition = CustomScalarTypeDefinition<'a, C>;
+    type ObjectTypeDefinition = ObjectTypeDefinition<'a, C>;
+    type InputObjectTypeDefinition = InputObjectTypeDefinition<'a, C>;
     type EnumTypeDefinition = EnumTypeDefinition<'a>;
-    type UnionTypeDefinition = UnionTypeDefinition<'a>;
-    type InterfaceTypeDefinition = InterfaceTypeDefinition<'a>;
+    type UnionTypeDefinition = UnionTypeDefinition<'a, C>;
+    type InterfaceTypeDefinition = InterfaceTypeDefinition<'a, C>;
 
     fn as_ref(&self) -> TypeDefinitionReferenceFromAbstract<'_, Self> {
         match self {
@@ -67,38 +67,38 @@ impl<'a> AbstractTypeDefinitionReference for TypeDefinitionReference<'a> {
     }
 }
 
-impl<'a> From<CustomScalarTypeDefinition<'a>> for TypeDefinitionReference<'a> {
-    fn from(value: CustomScalarTypeDefinition<'a>) -> Self {
+impl<'a, C: Context> From<CustomScalarTypeDefinition<'a, C>> for TypeDefinitionReference<'a, C> {
+    fn from(value: CustomScalarTypeDefinition<'a, C>) -> Self {
         Self::CustomScalar(value)
     }
 }
 
-impl<'a> From<ObjectTypeDefinition<'a>> for TypeDefinitionReference<'a> {
-    fn from(value: ObjectTypeDefinition<'a>) -> Self {
+impl<'a, C: Context> From<ObjectTypeDefinition<'a, C>> for TypeDefinitionReference<'a, C> {
+    fn from(value: ObjectTypeDefinition<'a, C>) -> Self {
         Self::Object(value)
     }
 }
 
-impl<'a> From<InputObjectTypeDefinition<'a>> for TypeDefinitionReference<'a> {
-    fn from(value: InputObjectTypeDefinition<'a>) -> Self {
+impl<'a, C: Context> From<InputObjectTypeDefinition<'a, C>> for TypeDefinitionReference<'a, C> {
+    fn from(value: InputObjectTypeDefinition<'a, C>) -> Self {
         Self::InputObject(value)
     }
 }
 
-impl<'a> From<InterfaceTypeDefinition<'a>> for TypeDefinitionReference<'a> {
-    fn from(value: InterfaceTypeDefinition<'a>) -> Self {
+impl<'a, C: Context> From<InterfaceTypeDefinition<'a, C>> for TypeDefinitionReference<'a, C> {
+    fn from(value: InterfaceTypeDefinition<'a, C>) -> Self {
         Self::Interface(value)
     }
 }
 
-impl<'a> From<EnumTypeDefinition<'a>> for TypeDefinitionReference<'a> {
+impl<'a, C: Context> From<EnumTypeDefinition<'a>> for TypeDefinitionReference<'a, C> {
     fn from(value: EnumTypeDefinition<'a>) -> Self {
         Self::Enum(value)
     }
 }
 
-impl<'a> From<UnionTypeDefinition<'a>> for TypeDefinitionReference<'a> {
-    fn from(value: UnionTypeDefinition<'a>) -> Self {
+impl<'a, C: Context> From<UnionTypeDefinition<'a, C>> for TypeDefinitionReference<'a, C> {
+    fn from(value: UnionTypeDefinition<'a, C>) -> Self {
         Self::Union(value)
     }
 }

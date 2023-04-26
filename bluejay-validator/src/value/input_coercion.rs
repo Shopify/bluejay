@@ -1,7 +1,7 @@
 use bluejay_core::definition::{
     AbstractBaseInputTypeReference, AbstractInputTypeReference, BaseInputTypeReference,
     EnumTypeDefinition, EnumValueDefinition, InputFieldsDefinition, InputObjectTypeDefinition,
-    InputTypeReference, InputValueDefinition,
+    InputTypeReference, InputValueDefinition, ScalarTypeDefinition,
 };
 use bluejay_core::{AbstractValue, AsIter, BuiltinScalarDefinition, ObjectValue, Value};
 use std::collections::BTreeMap;
@@ -114,7 +114,9 @@ fn coerce_value_for_base_input_type_reference<
         BaseInputTypeReference::BuiltinScalarType(bstd) => {
             coerce_builtin_scalar_value(input_type_reference, bstd, value, path)
         }
-        BaseInputTypeReference::CustomScalarType(_) => Ok(()),
+        BaseInputTypeReference::CustomScalarType(cstd) => {
+            coerce_custom_scalar_value(cstd, value, path)
+        }
         BaseInputTypeReference::EnumType(etd) => {
             coerce_enum_value(input_type_reference, etd, value, path)
         }
@@ -148,6 +150,21 @@ fn coerce_builtin_scalar_value<
             path: path.to_owned(),
         }]),
     }
+}
+
+fn coerce_custom_scalar_value<'a, const CONST: bool, V: AbstractValue<CONST>>(
+    cstd: &'a impl ScalarTypeDefinition,
+    value: &'a V,
+    path: &[PathMember<'a>],
+) -> Result<(), Vec<Error<'a, CONST, V>>> {
+    cstd.coerce_input(value).map_err(|message| {
+        vec![Error::CustomScalarInvalidValue {
+            value,
+            custom_scalar_type_name: cstd.name(),
+            message,
+            path: path.to_owned(),
+        }]
+    })
 }
 
 fn coerce_enum_value<
@@ -303,14 +320,46 @@ mod tests {
     use super::{CoerceInput, Error, PathMember};
     use bluejay_core::definition::{
         AbstractInputTypeReference, ArgumentsDefinition, FieldDefinition, FieldsDefinition,
-        InputValueDefinition, ObjectTypeDefinition, SchemaDefinition,
+        InputValueDefinition, ObjectTypeDefinition, ScalarTypeDefinition, SchemaDefinition,
     };
+    use bluejay_core::{AbstractValue, Value};
     use bluejay_parser::ast::definition::{
-        DefinitionDocument, InputTypeReference as ParserInputTypeReference,
-        SchemaDefinition as ParserSchemaDefinition,
+        Context, CustomScalarTypeDefinition, DefinitionDocument,
+        InputTypeReference as ParserInputTypeReference, SchemaDefinition as ParserSchemaDefinition,
     };
     use once_cell::sync::Lazy;
     use serde_json::json;
+    use std::borrow::Cow;
+
+    #[derive(Debug)]
+    struct CustomContext;
+
+    impl Context for CustomContext {
+        fn coerce_custom_scalar_input<const CONST: bool>(
+            cstd: &CustomScalarTypeDefinition<Self>,
+            value: &impl AbstractValue<CONST>,
+        ) -> Result<(), Cow<'static, str>> {
+            let value = value.as_ref();
+            match cstd.name() {
+                "Decimal" => {
+                    if let Value::String(s) = value {
+                        s.parse::<f64>()
+                            .map_err(|_| Cow::Owned(format!("Unable to parse `{s}` to Decimal")))
+                            .and_then(|f| {
+                                if f.is_finite() {
+                                    Ok(())
+                                } else {
+                                    Err(Cow::Borrowed("Decimal values must be finite"))
+                                }
+                            })
+                    } else {
+                        Err(Cow::Owned(format!("Cannot coerce {value} to Decimal")))
+                    }
+                }
+                _ => Ok(()),
+            }
+        }
+    }
 
     const SCHEMA: &'static str = r#"
     type Query {
@@ -325,6 +374,7 @@ mod tests {
         optionalListOfListArg: [[Int]]
         enumArg: Choices!
         inputObjectArg: CustomInput!
+        decimalArg: Decimal!
       ): Boolean!
     }
 
@@ -338,19 +388,22 @@ mod tests {
       optionalStringArg: String
       stringArgWithDefault: String! = ""
     }
+
+    scalar Decimal
     "#;
 
-    static DEFINITION_DOCUMENT: Lazy<DefinitionDocument<'static>> =
+    static DEFINITION_DOCUMENT: Lazy<DefinitionDocument<'static, CustomContext>> =
         Lazy::new(|| DefinitionDocument::parse(SCHEMA).expect("Schema had parse errors"));
-    static SCHEMA_DEFINITION: Lazy<ParserSchemaDefinition<'static>> = Lazy::new(|| {
-        ParserSchemaDefinition::try_from(&*DEFINITION_DOCUMENT).expect("Schema had errors")
-    });
+    static SCHEMA_DEFINITION: Lazy<ParserSchemaDefinition<'static, CustomContext>> =
+        Lazy::new(|| {
+            ParserSchemaDefinition::try_from(&*DEFINITION_DOCUMENT).expect("Schema had errors")
+        });
 
     fn input_type_reference(
         type_name: &str,
         field_name: &str,
         arg_name: &str,
-    ) -> &'static ParserInputTypeReference<'static> {
+    ) -> &'static ParserInputTypeReference<'static, CustomContext> {
         SCHEMA_DEFINITION
             .get_type_definition(type_name)
             .unwrap()
@@ -592,6 +645,22 @@ mod tests {
                 &json!({ "stringArg": "abc", "stringArgWithDefault": null }),
                 &[]
             ),
+        );
+    }
+
+    #[test]
+    fn test_custom_scalar() {
+        let itr = input_type_reference("Query", "field", "decimalArg");
+
+        assert_eq!(Ok(()), itr.coerce_const_value(&json!("123.456"), &[]));
+        assert_eq!(
+            Err(vec![Error::CustomScalarInvalidValue {
+                value: &json!(123.456),
+                custom_scalar_type_name: "Decimal",
+                message: Cow::Owned("Cannot coerce float to Decimal".to_owned()),
+                path: vec![],
+            }]),
+            itr.coerce_const_value(&json!(123.456), &[]),
         );
     }
 }

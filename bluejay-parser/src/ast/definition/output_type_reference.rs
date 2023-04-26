@@ -1,6 +1,6 @@
 use crate::ast::definition::{
-    CustomScalarTypeDefinition, EnumTypeDefinition, InterfaceTypeDefinition, ObjectTypeDefinition,
-    TypeDefinitionReference, UnionTypeDefinition,
+    Context, CustomScalarTypeDefinition, EnumTypeDefinition, InterfaceTypeDefinition,
+    ObjectTypeDefinition, TypeDefinitionReference, UnionTypeDefinition,
 };
 use crate::ast::{FromTokens, ParseError, Tokens};
 use crate::lexical_token::{Name, PunctuatorType};
@@ -11,30 +11,33 @@ use bluejay_core::definition::{
     OutputTypeReference as CoreOutputTypeReference, OutputTypeReferenceFromAbstract,
 };
 use once_cell::sync::OnceCell;
+use std::marker::PhantomData;
 
 #[derive(Debug)]
-pub struct BaseOutputTypeReference<'a> {
+pub struct BaseOutputTypeReference<'a, C: Context + 'a> {
     name: Name<'a>,
     r#type: OnceCell<BaseOutputTypeReferenceFromAbstract<'a, Self>>,
+    context: PhantomData<C>,
 }
 
-impl<'a> AbstractBaseOutputTypeReference for BaseOutputTypeReference<'a> {
-    type CustomScalarTypeDefinition = CustomScalarTypeDefinition<'a>;
+impl<'a, C: Context + 'a> AbstractBaseOutputTypeReference for BaseOutputTypeReference<'a, C> {
+    type CustomScalarTypeDefinition = CustomScalarTypeDefinition<'a, C>;
     type EnumTypeDefinition = EnumTypeDefinition<'a>;
-    type InterfaceTypeDefinition = InterfaceTypeDefinition<'a>;
-    type ObjectTypeDefinition = ObjectTypeDefinition<'a>;
-    type UnionTypeDefinition = UnionTypeDefinition<'a>;
+    type InterfaceTypeDefinition = InterfaceTypeDefinition<'a, C>;
+    type ObjectTypeDefinition = ObjectTypeDefinition<'a, C>;
+    type UnionTypeDefinition = UnionTypeDefinition<'a, C>;
 
     fn as_ref(&self) -> BaseOutputTypeReferenceFromAbstract<'_, Self> {
         *self.r#type.get().unwrap()
     }
 }
 
-impl<'a> BaseOutputTypeReference<'a> {
+impl<'a, C: Context + 'a> BaseOutputTypeReference<'a, C> {
     fn new(name: Name<'a>) -> Self {
         Self {
             name,
             r#type: OnceCell::new(),
+            context: Default::default(),
         }
     }
 
@@ -50,7 +53,7 @@ impl<'a> BaseOutputTypeReference<'a> {
     }
 
     pub(crate) fn core_type_from_type_definition_reference(
-        type_definition_reference: &'a TypeDefinitionReference<'a>,
+        type_definition_reference: &'a TypeDefinitionReference<'a, C>,
     ) -> Result<BaseOutputTypeReferenceFromAbstract<'a, Self>, ()> {
         match type_definition_reference {
             TypeDefinitionReference::BuiltinScalar(bstd) => {
@@ -73,13 +76,13 @@ impl<'a> BaseOutputTypeReference<'a> {
 }
 
 #[derive(Debug)]
-pub enum OutputTypeReference<'a> {
-    Base(BaseOutputTypeReference<'a>, bool, Span),
+pub enum OutputTypeReference<'a, C: Context + 'a> {
+    Base(BaseOutputTypeReference<'a, C>, bool, Span),
     List(Box<Self>, bool, Span),
 }
 
-impl<'a> AbstractOutputTypeReference for OutputTypeReference<'a> {
-    type BaseOutputTypeReference = BaseOutputTypeReference<'a>;
+impl<'a, C: Context + 'a> AbstractOutputTypeReference for OutputTypeReference<'a, C> {
+    type BaseOutputTypeReference = BaseOutputTypeReference<'a, C>;
 
     fn as_ref(&self) -> OutputTypeReferenceFromAbstract<'_, Self> {
         match self {
@@ -91,7 +94,7 @@ impl<'a> AbstractOutputTypeReference for OutputTypeReference<'a> {
     }
 }
 
-impl<'a> OutputTypeReference<'a> {
+impl<'a, C: Context + 'a> OutputTypeReference<'a, C> {
     pub(crate) fn non_null_string() -> Self {
         Self::Base(
             BaseOutputTypeReference::new(Name::new("String", Span::empty())),
@@ -101,7 +104,7 @@ impl<'a> OutputTypeReference<'a> {
     }
 }
 
-impl<'a> FromTokens<'a> for OutputTypeReference<'a> {
+impl<'a, C: Context + 'a> FromTokens<'a> for OutputTypeReference<'a, C> {
     fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
         if let Some(open_span) = tokens.next_if_punctuator(PunctuatorType::OpenSquareBracket) {
             let inner = Self::from_tokens(tokens).map(Box::new)?;

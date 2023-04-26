@@ -149,7 +149,7 @@ mod tests {
     fn test_schema_dump() {
         insta::glob!("test_data/schema_definition/*.graphql", |path| {
             let input = std::fs::read_to_string(path).unwrap();
-            let document = DefinitionDocument::parse(input.as_str()).unwrap();
+            let document: DefinitionDocument = DefinitionDocument::parse(input.as_str()).unwrap();
             let schema_definition = SchemaDefinition::try_from(&document).unwrap();
             similar_asserts::assert_eq!(
                 input,
