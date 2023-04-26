@@ -1,7 +1,4 @@
-#![feature(assert_matches)]
-
 use bluejay_parser::ast::definition::{DefinitionDocument, SchemaDefinition};
-use std::assert_matches::assert_matches;
 
 #[test]
 fn test_parser() {
@@ -10,5 +7,5 @@ fn test_parser() {
     assert_eq!(1246, document.definition_count());
 
     let schema_definition: Result<SchemaDefinition, _> = (&document).try_into();
-    assert_matches!(schema_definition, Ok(_))
+    assert!(schema_definition.is_ok())
 }

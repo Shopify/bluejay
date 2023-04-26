@@ -179,7 +179,6 @@ impl<'a> LogosScanner<'a> {
 #[cfg(test)]
 mod tests {
     use super::{Logos, Span, Token};
-    use std::assert_matches::assert_matches;
 
     #[test]
     fn block_string_test() {
@@ -301,13 +300,19 @@ mod tests {
         );
         assert_eq!(Some(Ok(Token::IntValue(Ok(0)))), Token::lexer("0").next());
         assert_eq!(Some(Ok(Token::IntValue(Ok(0)))), Token::lexer("-0").next());
-        assert_matches!(
-            Token::lexer((i64::from(i32::MAX) + 1).to_string().as_str()).next(),
-            Some(Ok(Token::IntValue(Err(_))))
+        let int_too_positive = (i64::from(i32::MAX) + 1).to_string();
+        assert_eq!(
+            Token::lexer(&int_too_positive).next(),
+            Some(Ok(Token::IntValue(Err(int_too_positive
+                .parse::<i32>()
+                .unwrap_err()))))
         );
-        assert_matches!(
-            Token::lexer((i64::from(i32::MIN) - 1).to_string().as_str()).next(),
-            Some(Ok(Token::IntValue(Err(_))))
+        let int_too_negative = (i64::from(i32::MIN) - 1).to_string();
+        assert_eq!(
+            Token::lexer(&int_too_negative).next(),
+            Some(Ok(Token::IntValue(Err(int_too_negative
+                .parse::<i32>()
+                .unwrap_err()))))
         );
     }
 

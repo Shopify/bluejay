@@ -1,5 +1,3 @@
-#![feature(never_type)]
-
 mod argument;
 mod as_iter;
 mod builtin_scalar_definition;
