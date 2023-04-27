@@ -1,0 +1,8 @@
+"""
+Custom scalar override of builtin scalar
+"""
+scalar ID
+
+type Query {
+  id: ID
+}

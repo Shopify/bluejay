@@ -19,7 +19,7 @@ use bluejay_core::definition::{
 };
 use bluejay_core::{AsIter, BuiltinScalarDefinition, IntoEnumIterator, OperationType};
 use std::collections::btree_map::Entry;
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashMap};
 
 mod definition_document_error;
 use definition_document_error::DefinitionDocumentError;
@@ -53,9 +53,7 @@ impl<'a, C: Context> DefinitionDocument<'a, C> {
                 DirectiveDefinition::skip(),
                 DirectiveDefinition::include(),
             ],
-            type_definition_references: Vec::from_iter(
-                BuiltinScalarDefinition::iter().map(TypeDefinitionReference::BuiltinScalar),
-            ),
+            type_definition_references: Vec::new(),
         }
     }
 
@@ -177,10 +175,28 @@ impl<'a, C: Context> DefinitionDocument<'a, C> {
         };
 
         if errors.is_empty() {
+            instance.insert_builtin_scalar_definitions();
             Ok(instance)
         } else {
             Err(errors)
         }
+    }
+
+    /// Inserts builtin scalars only for type names that have not already been parsed
+    /// to allow overriding of builtin scalars
+    fn insert_builtin_scalar_definitions(&mut self) {
+        let mut builtin_scalars_by_name: HashMap<&str, BuiltinScalarDefinition> =
+            HashMap::from_iter(BuiltinScalarDefinition::iter().map(|bstd| (bstd.name(), bstd)));
+
+        self.type_definition_references.iter().for_each(|tdr| {
+            builtin_scalars_by_name.remove(tdr.name());
+        });
+
+        self.type_definition_references.extend(
+            builtin_scalars_by_name
+                .into_values()
+                .map(TypeDefinitionReference::BuiltinScalar),
+        );
     }
 
     fn is_empty(&self) -> bool {
