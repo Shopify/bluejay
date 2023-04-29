@@ -3,7 +3,7 @@ source: bluejay-validator/tests/executable_integration_test.rs
 expression: formatted_errors
 input_file: bluejay-validator/tests/test_data/executable/error/directives_are_defined.graphql
 ---
-Error: No directive definition with name `doesNotExist`
+Error: No directive definition with name `@doesNotExist`
    ╭─[<unknown>:2:8]
    │
  2 │   dog @doesNotExist { name }

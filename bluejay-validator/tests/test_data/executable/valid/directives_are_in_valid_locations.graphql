@@ -1,0 +1,11 @@
+query($skip: Boolean!) {
+  dog @skip(if: $skip) {
+    name
+    ...Dog @skip(if: $skip)
+    ...on Dog @skip(if: $skip) { name }
+  }
+}
+
+fragment Dog on Dog {
+  name
+}

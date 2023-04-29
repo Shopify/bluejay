@@ -2,7 +2,9 @@ use crate::definition::ArgumentsDefinition;
 use crate::AsIter;
 use strum::{AsRefStr, Display, EnumIter, EnumString, EnumVariantNames, VariantNames};
 
-#[derive(Debug, Clone, Copy, EnumString, EnumVariantNames, EnumIter, AsRefStr, Display)]
+#[derive(
+    Debug, Clone, Copy, EnumString, EnumVariantNames, EnumIter, AsRefStr, Display, PartialEq, Eq,
+)]
 #[strum(serialize_all = "SCREAMING_SNAKE_CASE")]
 pub enum DirectiveLocation {
     Query,

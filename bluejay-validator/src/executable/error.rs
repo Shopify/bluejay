@@ -97,8 +97,8 @@ pub enum Error<'a, E: ExecutableDocument, S: SchemaDefinition> {
     },
     InvalidConstValue(InputCoercionError<'a, true, E::Value<true>>),
     InvalidVariableValue(InputCoercionError<'a, false, E::Value<false>>),
-    InvalidConstDirective(DirectiveError<'a, true, E>),
-    InvalidVariableDirective(DirectiveError<'a, false, E>),
+    InvalidConstDirective(DirectiveError<'a, true, E, S>),
+    InvalidVariableDirective(DirectiveError<'a, false, E, S>),
     InvalidConstArgument(ArgumentError<'a, true, E, S>),
     InvalidVariableArgument(ArgumentError<'a, false, E, S>),
 }
