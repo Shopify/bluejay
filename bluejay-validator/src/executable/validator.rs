@@ -134,20 +134,20 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, R: Rule<'a, E, S>> Validato
         self.rule.visit_field(field, field_definition);
         self.visit_variable_directives(field.directives(), DirectiveLocation::Field);
 
-        if let Some(arguments) = field.arguments() {
-            if let Some(arguments_definition) = field_definition.arguments_definition() {
-                self.visit_variable_arguments(arguments, arguments_definition);
-            }
+        if let Some((arguments, arguments_definition)) = field
+            .arguments()
+            .zip(field_definition.arguments_definition())
+        {
+            self.visit_variable_arguments(arguments, arguments_definition);
         }
 
-        if let Some((selection_set, nested_type)) =
-            field.selection_set().and_then(|selection_set| {
-                self.schema_definition
-                    .get_type_definition(field_definition.r#type().as_ref().base().as_ref().name())
-                    .map(|t| (selection_set, t))
-            })
-        {
-            self.visit_selection_set(selection_set, nested_type);
+        if let Some(selection_set) = field.selection_set() {
+            if let Some(nested_type) = self
+                .schema_definition
+                .get_type_definition(field_definition.r#type().as_ref().base().as_ref().name())
+            {
+                self.visit_selection_set(selection_set, nested_type);
+            }
         }
     }
 
@@ -177,14 +177,13 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, R: Rule<'a, E, S>> Validato
         location: DirectiveLocation,
     ) {
         self.rule.visit_variable_directive(directive, location);
-        if let Some(directive_definition) = self
-            .schema_definition
-            .get_directive_definition(directive.name())
-        {
-            if let Some(arguments_definition) = directive_definition.arguments_definition() {
-                if let Some(arguments) = directive.arguments() {
-                    self.visit_variable_arguments(arguments, arguments_definition);
-                }
+        if let Some(arguments) = directive.arguments() {
+            if let Some(arguments_definition) = self
+                .schema_definition
+                .get_directive_definition(directive.name())
+                .and_then(DirectiveDefinition::arguments_definition)
+            {
+                self.visit_variable_arguments(arguments, arguments_definition);
             }
         }
     }
@@ -195,14 +194,13 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, R: Rule<'a, E, S>> Validato
         location: DirectiveLocation,
     ) {
         self.rule.visit_const_directive(directive, location);
-        if let Some(directive_definition) = self
-            .schema_definition
-            .get_directive_definition(directive.name())
-        {
-            if let Some(arguments_definition) = directive_definition.arguments_definition() {
-                if let Some(arguments) = directive.arguments() {
-                    self.visit_const_arguments(arguments, arguments_definition);
-                }
+        if let Some(arguments) = directive.arguments() {
+            if let Some(arguments_definition) = self
+                .schema_definition
+                .get_directive_definition(directive.name())
+                .and_then(DirectiveDefinition::arguments_definition)
+            {
+                self.visit_const_arguments(arguments, arguments_definition);
             }
         }
     }

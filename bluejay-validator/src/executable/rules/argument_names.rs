@@ -19,22 +19,20 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> ArgumentNames<'a,
         directive: &'a <E as ExecutableDocument>::Directive<CONST>,
         build_error: F,
     ) {
-        if let Some(arguments) = directive.arguments() {
-            if let Some(directive_definition) = self
-                .schema_definition
-                .get_directive_definition(directive.name())
-            {
-                self.visit_arguments(
-                    Some(arguments),
-                    directive_definition.arguments_definition(),
-                    |argument| {
-                        build_error(ArgumentError::ArgumentDoesNotExistOnDirective {
-                            argument,
-                            directive_definition,
-                        })
-                    },
-                )
-            }
+        if let Some((arguments, directive_definition)) = directive.arguments().zip(
+            self.schema_definition
+                .get_directive_definition(directive.name()),
+        ) {
+            self.visit_arguments(
+                Some(arguments),
+                directive_definition.arguments_definition(),
+                |argument| {
+                    build_error(ArgumentError::ArgumentDoesNotExistOnDirective {
+                        argument,
+                        directive_definition,
+                    })
+                },
+            )
         }
     }
 

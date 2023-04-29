@@ -271,18 +271,18 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition> FieldSelectionMerging<
                     | TypeDefinitionReference::InputObjectType(_)
                     | TypeDefinitionReference::UnionType(_) => None,
                 };
-                if let Some(fields_definition) = fields_definition {
-                    if let Some(field_definition) = fields_definition.get(field.name()) {
-                        fields
-                            .entry(field.response_name())
-                            .or_default()
-                            .push(FieldContext {
-                                field,
-                                field_definition,
-                                parent_type: parent_type.to_owned(),
-                                parent_fragments: parent_fragments.to_owned(),
-                            });
-                    }
+                if let Some(field_definition) = fields_definition
+                    .and_then(|fields_definition| fields_definition.get(field.name()))
+                {
+                    fields
+                        .entry(field.response_name())
+                        .or_default()
+                        .push(FieldContext {
+                            field,
+                            field_definition,
+                            parent_type: parent_type.to_owned(),
+                            parent_fragments: parent_fragments.to_owned(),
+                        });
                 }
             }
             Selection::FragmentSpread(fs) => {
@@ -350,18 +350,13 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition> FieldSelectionMerging<
                 return false;
             }
 
-            let double_base = if let OutputTypeReference::Base(type_a_base, _) = &type_a {
-                Some(type_a_base.as_ref())
-            } else {
-                None
-            }
-            .and_then(|type_a_base| {
-                if let OutputTypeReference::Base(type_b_base, _) = &type_b {
-                    Some((type_a_base, type_b_base.as_ref()))
-                } else {
-                    None
-                }
-            });
+            let double_base = match (&type_a, &type_b) {
+                (
+                    OutputTypeReference::Base(type_a_base, _),
+                    OutputTypeReference::Base(type_b_base, _),
+                ) => Some((type_a_base.as_ref(), type_b_base.as_ref())),
+                _ => None,
+            };
 
             if let Some(double_base) = double_base {
                 break double_base;
