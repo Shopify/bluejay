@@ -2,6 +2,7 @@ use crate::executable::{Cache, Error, Rule, Visitor};
 use crate::value::input_coercion::CoerceInput;
 use bluejay_core::definition::SchemaDefinition;
 use bluejay_core::executable::{ExecutableDocument, VariableDefinition};
+
 pub struct ValueIsValid<'a, E: ExecutableDocument, S: SchemaDefinition> {
     errors: Vec<Error<'a, E, S>>,
     cache: &'a Cache<'a, E, S>,

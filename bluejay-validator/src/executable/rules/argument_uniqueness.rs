@@ -2,7 +2,7 @@ use crate::executable::{ArgumentError, Cache, Error, Rule, Visitor};
 use bluejay_core::definition::SchemaDefinition;
 use bluejay_core::executable::{ExecutableDocument, Field};
 use bluejay_core::{Argument, AsIter, Directive};
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 
 pub struct ArgumentUniqueness<'a, E: ExecutableDocument, S: SchemaDefinition> {
     errors: Vec<Error<'a, E, S>>,
@@ -19,8 +19,8 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> ArgumentUniquenes
     ) {
         if let Some(arguments) = arguments {
             let indexed = arguments.iter().fold(
-                HashMap::new(),
-                |mut indexed: HashMap<&'a str, Vec<&'a E::Argument<CONST>>>, argument| {
+                BTreeMap::new(),
+                |mut indexed: BTreeMap<&'a str, Vec<&'a E::Argument<CONST>>>, argument| {
                     indexed.entry(argument.name()).or_default().push(argument);
                     indexed
                 },

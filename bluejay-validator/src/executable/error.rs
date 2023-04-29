@@ -101,6 +101,10 @@ pub enum Error<'a, E: ExecutableDocument, S: SchemaDefinition> {
     InvalidVariableDirective(DirectiveError<'a, false, E, S>),
     InvalidConstArgument(ArgumentError<'a, true, E, S>),
     InvalidVariableArgument(ArgumentError<'a, false, E, S>),
+    NonUniqueVariableDefinitionNames {
+        name: &'a str,
+        variable_definitions: Vec<&'a E::VariableDefinition>,
+    },
 }
 
 #[cfg(feature = "parser-integration")]
@@ -414,6 +418,22 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
             Error::InvalidVariableDirective(error) => Self::from(error),
             Error::InvalidConstArgument(error) => Self::from(error),
             Error::InvalidVariableArgument(error) => Self::from(error),
+            Error::NonUniqueVariableDefinitionNames {
+                name,
+                variable_definitions,
+            } => Self::new(
+                format!("Multiple variable definitions named ${name}"),
+                None,
+                variable_definitions
+                    .iter()
+                    .map(|variable_definition| {
+                        Annotation::new(
+                            format!("Variable definition with name ${name}"),
+                            variable_definition.variable().span().clone(),
+                        )
+                    })
+                    .collect(),
+            ),
         }
     }
 }

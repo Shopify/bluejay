@@ -1,11 +1,11 @@
 use crate::executable::{Cache, Error, Rule, Visitor};
 use bluejay_core::definition::SchemaDefinition;
 use bluejay_core::executable::{ExecutableDocument, FragmentDefinition};
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use std::marker::PhantomData;
 
 pub struct FragmentNameUniqueness<'a, E: ExecutableDocument, S: SchemaDefinition> {
-    fragment_definitions: HashMap<&'a str, Vec<&'a E::FragmentDefinition>>,
+    fragment_definitions: BTreeMap<&'a str, Vec<&'a E::FragmentDefinition>>,
     schema_definition: PhantomData<S>,
 }
 
@@ -25,7 +25,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> IntoIterator
 {
     type Item = Error<'a, E, S>;
     type IntoIter = std::iter::FilterMap<
-        std::collections::hash_map::IntoIter<&'a str, Vec<&'a E::FragmentDefinition>>,
+        std::collections::btree_map::IntoIter<&'a str, Vec<&'a E::FragmentDefinition>>,
         fn((&'a str, Vec<&'a E::FragmentDefinition>)) -> Option<Error<'a, E, S>>,
     >;
 
@@ -48,7 +48,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Rule<'a, E, S>
 {
     fn new(_: &'a E, _: &'a S, _: &'a Cache<'a, E, S>) -> Self {
         Self {
-            fragment_definitions: HashMap::new(),
+            fragment_definitions: BTreeMap::new(),
             schema_definition: Default::default(),
         }
     }

@@ -19,6 +19,7 @@ mod operation_type_is_defined;
 mod required_arguments;
 mod subscription_operation_single_root_field;
 mod value_is_valid;
+mod variable_uniqueness;
 
 pub use argument_names::ArgumentNames;
 pub use argument_uniqueness::ArgumentUniqueness;
@@ -41,6 +42,7 @@ pub use operation_type_is_defined::OperationTypeIsDefined;
 pub use required_arguments::RequiredArguments;
 pub use subscription_operation_single_root_field::SubscriptionOperationSingleRootField;
 pub use value_is_valid::ValueIsValid;
+pub use variable_uniqueness::VariableUniqueness;
 
 use crate::executable::{Cache, Error, Rule, Visitor};
 use bluejay_core::definition::{
@@ -154,6 +156,10 @@ macro_rules! define_rules {
                 fn visit_variable_definition(&mut self, variable_definition: &'a E::VariableDefinition) {
                     $(self.[<$rule:snake>].visit_variable_definition(variable_definition);)*
                 }
+
+                fn visit_variable_definitions(&mut self, variable_definitions: &'a E::VariableDefinitions) {
+                    $(self.[<$rule:snake>].visit_variable_definitions(variable_definitions);)*
+                }
             }
         }
     };
@@ -195,4 +201,5 @@ define_rules!(
     DirectivesAreDefined,
     DirectivesAreInValidLocations,
     DirectivesAreUniquePerLocation,
+    VariableUniqueness,
 );

@@ -246,6 +246,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, R: Rule<'a, E, S>> Validato
     }
 
     fn visit_variable_definitions(&mut self, variable_definitions: &'a E::VariableDefinitions) {
+        self.rule.visit_variable_definitions(variable_definitions);
         variable_definitions.iter().for_each(|variable_definition| {
             self.visit_const_directives(
                 variable_definition.directives(),

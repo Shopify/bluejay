@@ -78,4 +78,6 @@ pub trait Visitor<'a, E: ExecutableDocument, S: SchemaDefinition> {
     }
 
     fn visit_variable_definition(&mut self, _variable_definition: &'a E::VariableDefinition) {}
+
+    fn visit_variable_definitions(&mut self, _variable_definitions: &'a E::VariableDefinitions) {}
 }
