@@ -29,7 +29,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition> Visitor<'a, E, S>
     }
 }
 
-impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition> FieldSelectionMerging<'a, E, S> {
+impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> FieldSelectionMerging<'a, E, S> {
     fn selection_set_valid(
         &mut self,
         selection_set: &'a E::SelectionSet,
@@ -85,7 +85,12 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition> FieldSelectionMerging<
                 let errors: Vec<_> = rest
                     .iter()
                     .filter_map(|other| {
-                        Self::same_output_type_shape(first, other).not().then_some(
+                        Self::same_output_type_shape(
+                            first.field_definition.r#type(),
+                            other.field_definition.r#type(),
+                        )
+                        .not()
+                        .then_some(
                             Error::FieldSelectionsDoNotMergeIncompatibleTypes {
                                 selection_set,
                                 field_a: first.field,
@@ -336,53 +341,27 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition> FieldSelectionMerging<
     }
 
     fn same_output_type_shape(
-        field_context_a: &FieldContext<'a, E, S>,
-        field_context_b: &FieldContext<'a, E, S>,
+        type_a: &S::OutputTypeReference,
+        type_b: &S::OutputTypeReference,
     ) -> bool {
-        let mut type_a = field_context_a.field_definition.r#type().as_ref();
-        let mut type_b = field_context_b.field_definition.r#type().as_ref();
-
-        let (type_a, type_b) = loop {
-            let type_a_non_null = type_a.is_required();
-            let type_b_non_null = type_b.is_required();
-
-            if type_a_non_null != type_b_non_null {
-                return false;
+        match (type_a.as_ref(), type_b.as_ref()) {
+            (
+                OutputTypeReference::Base(type_a_base, type_a_required),
+                OutputTypeReference::Base(type_b_base, type_b_required),
+            ) if type_a_required == type_b_required => {
+                let type_a_base = type_a_base.as_ref();
+                let type_b_base = type_b_base.as_ref();
+                !(type_a_base.is_scalar_or_enum() || type_b_base.is_scalar_or_enum())
+                    || type_a_base.name() == type_b_base.name()
             }
-
-            let double_base = match (&type_a, &type_b) {
-                (
-                    OutputTypeReference::Base(type_a_base, _),
-                    OutputTypeReference::Base(type_b_base, _),
-                ) => Some((type_a_base.as_ref(), type_b_base.as_ref())),
-                _ => None,
-            };
-
-            if let Some(double_base) = double_base {
-                break double_base;
-            } else {
-                let type_a_list = matches!(type_a, OutputTypeReference::List(_, _));
-                let type_b_list = matches!(type_b, OutputTypeReference::List(_, _));
-
-                if !type_a_list || !type_b_list {
-                    return false;
-                }
-
-                if let OutputTypeReference::List(list, _) = type_a {
-                    type_a = list.as_ref();
-                }
-
-                if let OutputTypeReference::List(list, _) = type_b {
-                    type_b = list.as_ref();
-                }
+            (
+                OutputTypeReference::List(type_a_inner, type_a_required),
+                OutputTypeReference::List(type_b_inner, type_b_required),
+            ) if type_a_required == type_b_required => {
+                Self::same_output_type_shape(type_a_inner, type_b_inner)
             }
-        };
-
-        if type_a.is_scalar_or_enum() || type_b.is_scalar_or_enum() {
-            return type_a.name() == type_b.name();
+            _ => false,
         }
-
-        true
     }
 
     fn arguments_equal(
