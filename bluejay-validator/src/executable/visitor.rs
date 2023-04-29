@@ -33,6 +33,20 @@ pub trait Visitor<'a, E: ExecutableDocument, S: SchemaDefinition> {
     ) {
     }
 
+    fn visit_const_directives(
+        &mut self,
+        _directives: &'a E::Directives<true>,
+        _location: DirectiveLocation,
+    ) {
+    }
+
+    fn visit_variable_directives(
+        &mut self,
+        _directives: &'a E::Directives<false>,
+        _location: DirectiveLocation,
+    ) {
+    }
+
     fn visit_fragment_definition(&mut self, _fragment_definition: &'a E::FragmentDefinition) {}
 
     fn visit_inline_fragment(

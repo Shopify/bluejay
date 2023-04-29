@@ -18,6 +18,10 @@ pub enum DirectiveError<'a, const CONST: bool, E: ExecutableDocument, S: SchemaD
         directive_definition: &'a S::DirectiveDefinition,
         location: DirectiveLocation,
     },
+    DirectivesNotUniquePerLocation {
+        directives: Vec<&'a E::Directive<CONST>>,
+        directive_definition: &'a S::DirectiveDefinition,
+    },
 }
 
 #[cfg(feature = "parser-integration")]
@@ -52,6 +56,17 @@ impl<'a, const CONST: bool, S: SchemaDefinition>
                     directive.span().clone(),
                 )),
                 Vec::new(),
+            ),
+            DirectiveError::DirectivesNotUniquePerLocation { directives, directive_definition } => Self::new(
+                format!(
+                    "Directive @{} is not repeatable but was used multiple times in the same location",
+                    directive_definition.name(),
+                ),
+                None,
+                directives.into_iter().map(|directive| Annotation::new(
+                    "Usage of directive",
+                    directive.span().clone(),
+                )).collect(),
             ),
         }
     }

@@ -2,6 +2,7 @@ mod argument_names;
 mod argument_uniqueness;
 mod directives_are_defined;
 mod directives_are_in_valid_locations;
+mod directives_are_unique_per_location;
 mod field_selection_merging;
 mod field_selections;
 mod fragment_name_uniqueness;
@@ -23,6 +24,7 @@ pub use argument_names::ArgumentNames;
 pub use argument_uniqueness::ArgumentUniqueness;
 pub use directives_are_defined::DirectivesAreDefined;
 pub use directives_are_in_valid_locations::DirectivesAreInValidLocations;
+pub use directives_are_unique_per_location::DirectivesAreUniquePerLocation;
 pub use field_selection_merging::FieldSelectionMerging;
 pub use field_selections::FieldSelections;
 pub use fragment_name_uniqueness::FragmentNameUniqueness;
@@ -95,6 +97,22 @@ macro_rules! define_rules {
 
                 fn visit_variable_directive(&mut self, directive: &'a E::Directive<false>, location: DirectiveLocation) {
                     $(self.[<$rule:snake>].visit_variable_directive(directive, location);)*
+                }
+
+                fn visit_const_directives(
+                    &mut self,
+                    directives: &'a E::Directives<true>,
+                    location: DirectiveLocation,
+                ) {
+                    $(self.[<$rule:snake>].visit_const_directives(directives, location);)*
+                }
+
+                fn visit_variable_directives(
+                    &mut self,
+                    directives: &'a E::Directives<false>,
+                    location: DirectiveLocation,
+                ) {
+                    $(self.[<$rule:snake>].visit_variable_directives(directives, location);)*
                 }
 
                 fn visit_fragment_definition(&mut self, fragment_definition: &'a E::FragmentDefinition) {
@@ -176,4 +194,5 @@ define_rules!(
     ValueIsValid,
     DirectivesAreDefined,
     DirectivesAreInValidLocations,
+    DirectivesAreUniquePerLocation,
 );

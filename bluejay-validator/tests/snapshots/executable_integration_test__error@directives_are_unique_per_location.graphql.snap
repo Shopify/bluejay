@@ -1,0 +1,15 @@
+---
+source: bluejay-validator/tests/executable_integration_test.rs
+expression: formatted_errors
+input_file: bluejay-validator/tests/test_data/executable/error/directives_are_unique_per_location.graphql
+---
+Error: Directive @skip is not repeatable but was used multiple times in the same location
+   ╭─[<unknown>:1:1]
+   │
+ 2 │   dog @skip(if: $foo) @skip(if: $bar) { name }
+   │        ───────┬──────  ───────┬──────  
+   │               ╰──────────────────────── Usage of directive
+   │                               │        
+   │                               ╰──────── Usage of directive
+───╯
+

@@ -156,6 +156,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, R: Rule<'a, E, S>> Validato
         directives: &'a E::Directives<false>,
         location: DirectiveLocation,
     ) {
+        self.rule.visit_variable_directives(directives, location);
         directives
             .iter()
             .for_each(|directive| self.visit_variable_directive(directive, location));
@@ -166,6 +167,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, R: Rule<'a, E, S>> Validato
         directives: &'a E::Directives<true>,
         location: DirectiveLocation,
     ) {
+        self.rule.visit_const_directives(directives, location);
         directives
             .iter()
             .for_each(|directive| self.visit_const_directive(directive, location));

@@ -79,3 +79,5 @@ input ComplexInput {
   name: String
   owner: String
 }
+
+directive @repeatableDirective repeatable on FIELD
