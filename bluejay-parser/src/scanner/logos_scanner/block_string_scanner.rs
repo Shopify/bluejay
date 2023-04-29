@@ -1,4 +1,5 @@
 use logos::Logos;
+use std::borrow::Cow;
 use std::cmp::min;
 
 #[derive(Logos, Debug)]
@@ -25,7 +26,7 @@ pub(super) enum Token<'a> {
 }
 
 impl<'a> Token<'a> {
-    pub(super) fn parse(s: &'a <Self as Logos<'a>>::Source) -> Result<(String, usize), ()> {
+    pub(super) fn parse(s: &'a <Self as Logos<'a>>::Source) -> Result<(Cow<'a, str>, usize), ()> {
         let mut lexer = Self::lexer(s);
 
         // starting BlockQuote should already have been parsed
@@ -48,23 +49,24 @@ impl<'a> Token<'a> {
         Err(())
     }
 
-    fn block_string_value(lines: Vec<Vec<Token<'a>>>) -> String {
-        let mut common_indent = None;
-
-        for line in &lines[1..] {
-            let leading_whitespace = line
-                .iter()
-                .position(|token| !matches!(token, Self::Whitespace(_)));
-            if let Some(leading_whitespace) = leading_whitespace {
-                if let Some(ci) = common_indent {
-                    common_indent = Some(min(ci, leading_whitespace));
+    fn block_string_value(lines: Vec<Vec<Token<'a>>>) -> Cow<'a, str> {
+        let common_indent = lines[1..]
+            .iter()
+            .fold(None, |common_indent, line| {
+                let leading_whitespace = line
+                    .iter()
+                    .position(|token| !matches!(token, Self::Whitespace(_)));
+                if let Some(leading_whitespace) = leading_whitespace {
+                    if let Some(ci) = common_indent {
+                        Some(min(ci, leading_whitespace))
+                    } else {
+                        Some(leading_whitespace)
+                    }
                 } else {
-                    common_indent = Some(leading_whitespace);
+                    common_indent
                 }
-            }
-        }
-
-        let common_indent = common_indent.unwrap_or(0);
+            })
+            .unwrap_or(0);
 
         let front_offset = lines.iter().enumerate().position(|(idx, line)| {
             let indent = if idx == 0 { 0 } else { common_indent };
@@ -79,30 +81,36 @@ impl<'a> Token<'a> {
                 .any(|token| !matches!(token, Token::Whitespace(_)))
         });
 
-        let mut formatted = String::new();
+        let mut formatted = Cow::Borrowed("");
 
-        if let Some(front_offset) = front_offset {
-            if let Some(end_offset) = end_offset {
-                let start = front_offset;
-                let end = lines.len() - end_offset;
-                formatted.extend(lines[start..end].iter().enumerate().flat_map(
-                    |(offset_idx, line)| {
-                        let actual_idx = start + offset_idx;
-                        let indent = if actual_idx == 0 { 0 } else { common_indent };
-                        let prepend = if offset_idx == 0 { "" } else { "\u{000A}" };
-                        std::iter::once(prepend).chain(
-                            line[min(line.len(), indent)..].iter().filter_map(
-                                |token| match token {
-                                    Self::BlockStringCharacters(s) => Some(*s),
-                                    Self::Whitespace(s) => Some(*s),
-                                    Self::EscapedBlockQuote => Some("\"\"\""),
-                                    _ => None,
-                                },
-                            ),
-                        )
-                    },
-                ))
-            }
+        if let Some((front_offset, end_offset)) = front_offset.zip(end_offset) {
+            let start = front_offset;
+            let end = lines.len() - end_offset;
+
+            lines[start..end]
+                .iter()
+                .enumerate()
+                .for_each(|(offset_idx, line)| {
+                    let actual_idx = start + offset_idx;
+                    let indent = if actual_idx == 0 { 0 } else { common_indent };
+                    if offset_idx != 0 {
+                        formatted += "\n";
+                    }
+                    line[min(line.len(), indent)..]
+                        .iter()
+                        .for_each(|token| match token {
+                            Self::BlockStringCharacters(s) => {
+                                formatted += *s;
+                            }
+                            Self::Whitespace(s) => {
+                                formatted += *s;
+                            }
+                            Self::EscapedBlockQuote => {
+                                formatted += "\"\"\"";
+                            }
+                            _ => {}
+                        });
+                });
         }
 
         formatted

@@ -5,7 +5,7 @@ use bluejay_core::definition::UnionTypeDefinition as CoreUnionTypeDefinition;
 
 #[derive(Debug)]
 pub struct UnionTypeDefinition<'a, C: Context> {
-    description: Option<StringValue>,
+    description: Option<StringValue<'a>>,
     name: Name<'a>,
     directives: Option<ConstDirectives<'a>>,
     member_types: UnionMemberTypes<'a, C>,

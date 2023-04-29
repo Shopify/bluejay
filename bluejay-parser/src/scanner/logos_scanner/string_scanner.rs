@@ -1,5 +1,6 @@
 use crate::Span;
 use logos::{Lexer, Logos, Source};
+use std::borrow::Cow;
 
 #[derive(Logos, Debug)]
 #[logos(subpattern hexdigit = r"[0-9A-Fa-f]")]
@@ -90,39 +91,41 @@ impl<'a> Token<'a> {
     pub(super) fn parse(
         s: &'a <Self as Logos<'a>>::Source,
         span_offset: usize,
-    ) -> Result<String, Vec<Span>> {
+    ) -> Result<Cow<'a, str>, Vec<Span>> {
         let lexer = Self::lexer(s.slice(1..(s.len() - 1)).unwrap());
 
-        let mut formatted = String::new();
+        let mut formatted = Cow::Borrowed("");
         let mut errors = Vec::new();
 
         for (result, span) in lexer.spanned() {
             match result.expect("Unexpected error") {
-                Self::SourceCharacters(s) => formatted.push_str(s),
+                Self::SourceCharacters(s) => {
+                    formatted += s;
+                }
                 Self::EscapedUnicode(c) => match c {
-                    Some(c) => formatted.push(c),
+                    Some(c) => formatted.to_mut().push(c),
                     None => errors.push(Span::from(span) + span_offset + 1),
                 },
                 Self::FixedWidthEscapedUnicode(c) => match c {
-                    Some(c) => formatted.push(c),
+                    Some(c) => formatted.to_mut().push(c),
                     None => errors.push(Span::from(span) + span_offset + 1),
                 },
                 Self::SurrogatePairEscapedUnicode(chars) => match chars {
-                    Ok((c, None)) => formatted.push(c),
+                    Ok((c, None)) => formatted.to_mut().push(c),
                     Ok((leading, Some(trailing))) => {
-                        formatted.push(leading);
-                        formatted.push(trailing);
+                        formatted.to_mut().push(leading);
+                        formatted.to_mut().push(trailing);
                     }
                     Err(span) => errors.push(span + span_offset + 1),
                 },
-                Self::EscapedQuote => formatted.push('\"'),
-                Self::EscapedBackslash => formatted.push('\\'),
-                Self::EscapedSlash => formatted.push('/'),
-                Self::EscapedBackspace => formatted.push('\u{0008}'),
-                Self::EscapedFormFeed => formatted.push('\u{000C}'),
-                Self::EscapedNewline => formatted.push('\n'),
-                Self::EscapedCarriageReturn => formatted.push('\r'),
-                Self::EscapedTab => formatted.push('\t'),
+                Self::EscapedQuote => formatted.to_mut().push('\"'),
+                Self::EscapedBackslash => formatted.to_mut().push('\\'),
+                Self::EscapedSlash => formatted.to_mut().push('/'),
+                Self::EscapedBackspace => formatted.to_mut().push('\u{0008}'),
+                Self::EscapedFormFeed => formatted.to_mut().push('\u{000C}'),
+                Self::EscapedNewline => formatted.to_mut().push('\n'),
+                Self::EscapedCarriageReturn => formatted.to_mut().push('\r'),
+                Self::EscapedTab => formatted.to_mut().push('\t'),
             }
         }
 

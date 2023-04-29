@@ -5,7 +5,7 @@ use bluejay_core::definition::InputObjectTypeDefinition as CoreInputObjectTypeDe
 
 #[derive(Debug)]
 pub struct InputObjectTypeDefinition<'a, C: Context> {
-    description: Option<StringValue>,
+    description: Option<StringValue<'a>>,
     name: Name<'a>,
     directives: Option<ConstDirectives<'a>>,
     input_fields_definition: InputFieldsDefinition<'a, C>,

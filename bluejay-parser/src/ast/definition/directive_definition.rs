@@ -10,7 +10,7 @@ use std::str::FromStr;
 
 #[derive(Debug)]
 pub struct DirectiveDefinition<'a, C: Context> {
-    description: Option<StringValue>,
+    description: Option<StringValue<'a>>,
     name: Name<'a>,
     arguments_definition: Option<ArgumentsDefinition<'a, C>>,
     is_repeatable: bool,

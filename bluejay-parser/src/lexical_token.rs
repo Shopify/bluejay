@@ -18,7 +18,7 @@ pub enum LexicalToken<'a> {
     Name(Name<'a>),
     IntValue(IntValue),
     FloatValue(FloatValue),
-    StringValue(StringValue),
+    StringValue(StringValue<'a>),
 }
 
 impl<'a> HasSpan for LexicalToken<'a> {

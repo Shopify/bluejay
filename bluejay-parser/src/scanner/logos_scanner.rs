@@ -6,6 +6,7 @@ use crate::lexical_token::{
 use crate::scanner::{ScanError, Scanner};
 use crate::Span;
 use logos::{Lexer, Logos};
+use std::borrow::Cow;
 
 mod block_string_scanner;
 mod string_scanner;
@@ -66,13 +67,13 @@ pub enum Token<'a> {
 
     // StringValue
     #[regex(r#""(?:[^\\"\n\r]|(?&fixedunicode)|\\u\{(?&hexdigit)+\}|\\["\\/bfnrt])*""#r, parse_string)]
-    StringValue(Result<String, Vec<Span>>),
+    StringValue(Result<Cow<'a, str>, Vec<Span>>),
 
     #[regex("\"\"\"", parse_block_string)]
-    BlockStringValue(String),
+    BlockStringValue(Cow<'a, str>),
 }
 
-fn parse_block_string<'a>(lexer: &mut Lexer<'a, Token<'a>>) -> Option<String> {
+fn parse_block_string<'a>(lexer: &mut Lexer<'a, Token<'a>>) -> Option<Cow<'a, str>> {
     match block_string_scanner::Token::parse(lexer.remainder()) {
         Ok((s, bytes_consumed)) => {
             lexer.bump(bytes_consumed);
@@ -85,7 +86,7 @@ fn parse_block_string<'a>(lexer: &mut Lexer<'a, Token<'a>>) -> Option<String> {
     }
 }
 
-fn parse_string<'a>(lexer: &mut Lexer<'a, Token<'a>>) -> Result<String, Vec<Span>> {
+fn parse_string<'a>(lexer: &mut Lexer<'a, Token<'a>>) -> Result<Cow<'a, str>, Vec<Span>> {
     string_scanner::Token::parse(lexer.slice(), lexer.span().start)
 }
 
@@ -184,7 +185,7 @@ mod tests {
     fn block_string_test() {
         assert_eq!(
             Some(Ok(Token::BlockStringValue(
-                "This is my multiline string!\n\nIsn't it cool? 🔥".to_string()
+                "This is my multiline string!\n\nIsn't it cool? 🔥".into()
             ))),
             Token::lexer(
                 r#"
@@ -198,21 +199,18 @@ mod tests {
             .next(),
         );
         assert_eq!(
-            Some((
-                Ok(Token::BlockStringValue("Testing span".to_string())),
-                1..19,
-            )),
+            Some((Ok(Token::BlockStringValue("Testing span".into())), 1..19,)),
             Token::lexer(r#" """Testing span""" "#).spanned().next(),
         );
         assert_eq!(
             Some(Ok(Token::BlockStringValue(
-                "Testing escaped block quote \"\"\"".to_string()
+                "Testing escaped block quote \"\"\"".into()
             ))),
             Token::lexer(r#" """Testing escaped block quote \"""""" "#).next(),
         );
         assert_eq!(
             Some(Ok(Token::BlockStringValue(
-                "Testing \n various \n newlines".to_string()
+                "Testing \n various \n newlines".into()
             ))),
             Token::lexer("\"\"\"\nTesting \r various \r\n newlines\"\"\"").next(),
         );
@@ -222,8 +220,8 @@ mod tests {
         );
         assert_eq!(
             vec![
-                Ok(Token::BlockStringValue("".to_string())),
-                Ok(Token::StringValue(Ok("".to_string()))),
+                Ok(Token::BlockStringValue("".into())),
+                Ok(Token::StringValue(Ok("".into()))),
             ],
             Token::lexer(r#" """""""" "#).collect::<Vec<_>>(),
         );
@@ -234,7 +232,7 @@ mod tests {
         assert_eq!(
             Some(Ok(Token::StringValue(Ok(
                 "This is a string with escaped characters and unicode: 🥳\u{ABCD}\u{10FFFF}!\n"
-                    .to_string()
+                    .into()
             )))),
             Token::lexer("\"This is a string with escaped characters and unicode: 🥳\\uABCD\\u{10FFFF}!\\n\"").next(),
         );
@@ -243,10 +241,7 @@ mod tests {
             Token::lexer("\"This is a string with a newline \n Not allowed!\"").next(),
         );
         assert_eq!(
-            Some((
-                Ok(Token::StringValue(Ok("Testing span".to_string()))),
-                1..15,
-            )),
+            Some((Ok(Token::StringValue(Ok("Testing span".into()))), 1..15,)),
             Token::lexer(r#" "Testing span" "#).spanned().next(),
         );
         assert_eq!(
@@ -258,11 +253,11 @@ mod tests {
             Token::lexer(r#" "\u{00D800}" "#).next(),
         );
         assert_eq!(
-            Some(Ok(Token::StringValue(Ok("🔥".to_string())))),
+            Some(Ok(Token::StringValue(Ok("🔥".into())))),
             Token::lexer(r#" "\uD83D\uDD25" "#).next(),
         );
         assert_eq!(
-            Some(Ok(Token::StringValue(Ok("\u{1234}\u{ABCD}".to_string())))),
+            Some(Ok(Token::StringValue(Ok("\u{1234}\u{ABCD}".into())))),
             Token::lexer(r#" "\u1234\uABCD" "#).next(),
         );
         assert_eq!(

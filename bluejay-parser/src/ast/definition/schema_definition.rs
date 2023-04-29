@@ -21,7 +21,7 @@ use std::collections::{btree_map::Values, BTreeMap, HashMap};
 pub struct SchemaDefinition<'a, C: Context = DefaultContext> {
     type_definitions: BTreeMap<&'a str, &'a TypeDefinitionReference<'a, C>>,
     directive_definitions: BTreeMap<&'a str, &'a DirectiveDefinition<'a, C>>,
-    description: Option<&'a StringValue>,
+    description: Option<&'a StringValue<'a>>,
     query: &'a ObjectTypeDefinition<'a, C>,
     mutation: Option<&'a ObjectTypeDefinition<'a, C>>,
     subscription: Option<&'a ObjectTypeDefinition<'a, C>>,

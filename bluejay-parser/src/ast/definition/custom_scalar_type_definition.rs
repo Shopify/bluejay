@@ -10,7 +10,7 @@ use std::marker::PhantomData;
 
 #[derive(Debug)]
 pub struct CustomScalarTypeDefinition<'a, C: Context> {
-    description: Option<StringValue>,
+    description: Option<StringValue<'a>>,
     _scalar_identifier_span: Span,
     name: Name<'a>,
     directives: Option<ConstDirectives<'a>>,

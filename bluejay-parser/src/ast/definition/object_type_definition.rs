@@ -5,7 +5,7 @@ use bluejay_core::definition::ObjectTypeDefinition as CoreObjectTypeDefinition;
 
 #[derive(Debug)]
 pub struct ObjectTypeDefinition<'a, C: Context> {
-    description: Option<StringValue>,
+    description: Option<StringValue<'a>>,
     name: Name<'a>,
     interface_implementations: Option<InterfaceImplementations<'a, C>>,
     directives: Option<ConstDirectives<'a>>,

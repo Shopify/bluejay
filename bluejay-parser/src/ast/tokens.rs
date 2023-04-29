@@ -13,7 +13,7 @@ pub trait Tokens<'a>: Iterator<Item = LexicalToken<'a>> {
     fn next_if_punctuator(&mut self, punctuator_type: PunctuatorType) -> Option<Span>;
     fn next_if_int_value(&mut self) -> Option<IntValue>;
     fn next_if_float_value(&mut self) -> Option<FloatValue>;
-    fn next_if_string_value(&mut self) -> Option<StringValue>;
+    fn next_if_string_value(&mut self) -> Option<StringValue<'a>>;
     fn next_if_name(&mut self) -> Option<Name<'a>>;
     fn next_if_name_matches(&mut self, name: &str) -> Option<Span>;
     fn peek_name(&mut self, n: usize) -> Option<&Name>;
@@ -131,7 +131,7 @@ impl<'a, T: Scanner<'a>> ScannerTokens<'a, T> {
             .then(|| self.next().unwrap().into_float_value().unwrap())
     }
 
-    pub fn next_if_string_value(&mut self) -> Option<StringValue> {
+    pub fn next_if_string_value(&mut self) -> Option<StringValue<'a>> {
         matches!(self.peek_next(), Some(LexicalToken::StringValue(_)))
             .then(|| self.next().unwrap().into_string_value().unwrap())
     }
@@ -210,7 +210,7 @@ impl<'a, T: Scanner<'a>> Tokens<'a> for ScannerTokens<'a, T> {
         self.next_if_float_value()
     }
 
-    fn next_if_string_value(&mut self) -> Option<StringValue> {
+    fn next_if_string_value(&mut self) -> Option<StringValue<'a>> {
         self.next_if_string_value()
     }
 

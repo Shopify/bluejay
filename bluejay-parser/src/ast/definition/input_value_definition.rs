@@ -5,7 +5,7 @@ use bluejay_core::definition::InputValueDefinition as CoreInputValueDefinition;
 
 #[derive(Debug)]
 pub struct InputValueDefinition<'a, C: Context> {
-    description: Option<StringValue>,
+    description: Option<StringValue<'a>>,
     name: Name<'a>,
     r#type: InputTypeReference<'a, C>,
     default_value: Option<ConstValue<'a>>,

@@ -6,7 +6,7 @@ use bluejay_core::definition::FieldDefinition as CoreFieldDefinition;
 
 #[derive(Debug)]
 pub struct FieldDefinition<'a, C: Context> {
-    description: Option<StringValue>,
+    description: Option<StringValue<'a>>,
     name: Name<'a>,
     arguments_definition: Option<ArgumentsDefinition<'a, C>>,
     r#type: OutputTypeReference<'a, C>,

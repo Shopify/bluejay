@@ -6,7 +6,7 @@ use std::str::FromStr;
 
 #[derive(Debug)]
 pub struct ExplicitSchemaDefinition<'a> {
-    description: Option<StringValue>,
+    description: Option<StringValue<'a>>,
     schema_identifier_span: Span,
     directives: Option<ConstDirectives<'a>>,
     root_operation_type_definitions: Vec<RootOperationTypeDefinition<'a>>,

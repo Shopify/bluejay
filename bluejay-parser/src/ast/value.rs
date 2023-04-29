@@ -12,7 +12,7 @@ pub enum Value<'a, const CONST: bool> {
     Variable(Variable<'a>),
     Integer(IntValue),
     Float(FloatValue),
-    String(StringValue),
+    String(StringValue<'a>),
     Boolean(BooleanValue),
     Null(Name<'a>),
     Enum(Name<'a>),

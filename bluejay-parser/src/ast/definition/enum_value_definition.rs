@@ -4,7 +4,7 @@ use bluejay_core::definition::EnumValueDefinition as CoreEnumValueDefinition;
 
 #[derive(Debug)]
 pub struct EnumValueDefinition<'a> {
-    description: Option<StringValue>,
+    description: Option<StringValue<'a>>,
     name: Name<'a>,
     directives: Option<ConstDirectives<'a>>,
 }

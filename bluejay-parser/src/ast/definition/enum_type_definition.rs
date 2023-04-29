@@ -5,7 +5,7 @@ use bluejay_core::definition::EnumTypeDefinition as CoreEnumTypeDefinition;
 
 #[derive(Debug)]
 pub struct EnumTypeDefinition<'a> {
-    description: Option<StringValue>,
+    description: Option<StringValue<'a>>,
     name: Name<'a>,
     directives: Option<ConstDirectives<'a>>,
     enum_value_definitions: EnumValueDefinitions<'a>,
