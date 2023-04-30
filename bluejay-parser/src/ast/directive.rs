@@ -17,12 +17,12 @@ impl<'a, const CONST: bool> IsMatch<'a> for Directive<'a, CONST> {
 
 impl<'a, const CONST: bool> FromTokens<'a> for Directive<'a, CONST> {
     fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
-        tokens.expect_punctuator(PunctuatorType::At)?;
+        let at_span = tokens.expect_punctuator(PunctuatorType::At)?;
         let name = tokens.expect_name()?;
         let arguments = Arguments::try_from_tokens(tokens).transpose()?;
         let span = match &arguments {
-            Some(arguments) => name.span().merge(arguments.span()),
-            None => name.span().clone(),
+            Some(arguments) => at_span.merge(arguments.span()),
+            None => at_span.merge(name.span()),
         };
 
         Ok(Self {

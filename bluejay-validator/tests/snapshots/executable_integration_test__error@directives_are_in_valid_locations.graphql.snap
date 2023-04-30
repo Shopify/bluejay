@@ -4,10 +4,10 @@ expression: formatted_errors
 input_file: bluejay-validator/tests/test_data/executable/error/directives_are_in_valid_locations.graphql
 ---
 Error: Directive @skip cannot be used at location QUERY. It is only allowed at the following locations: FIELD, FRAGMENT_SPREAD, INLINE_FRAGMENT
-   ╭─[<unknown>:1:8]
+   ╭─[<unknown>:1:7]
    │
  1 │ query @skip(if: true) {
-   │        ───────┬──────  
-   │               ╰──────── Cannot be used at location QUERY
+   │       ───────┬───────  
+   │              ╰───────── Cannot be used at location QUERY
 ───╯
 

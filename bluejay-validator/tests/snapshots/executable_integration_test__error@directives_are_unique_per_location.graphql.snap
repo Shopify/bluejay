@@ -7,9 +7,9 @@ Error: Directive @skip is not repeatable but was used multiple times in the same
    ╭─[<unknown>:1:1]
    │
  2 │   dog @skip(if: $foo) @skip(if: $bar) { name }
-   │        ───────┬──────  ───────┬──────  
-   │               ╰──────────────────────── Usage of directive
-   │                               │        
-   │                               ╰──────── Usage of directive
+   │       ───────┬─────── ───────┬───────  
+   │              ╰───────────────────────── Usage of directive
+   │                              │         
+   │                              ╰───────── Usage of directive
 ───╯
 
