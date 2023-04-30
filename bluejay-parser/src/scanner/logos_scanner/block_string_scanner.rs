@@ -52,20 +52,11 @@ impl<'a> Token<'a> {
     fn block_string_value(lines: Vec<Vec<Token<'a>>>) -> Cow<'a, str> {
         let common_indent = lines[1..]
             .iter()
-            .fold(None, |common_indent, line| {
-                let leading_whitespace = line
-                    .iter()
-                    .position(|token| !matches!(token, Self::Whitespace(_)));
-                if let Some(leading_whitespace) = leading_whitespace {
-                    if let Some(ci) = common_indent {
-                        Some(min(ci, leading_whitespace))
-                    } else {
-                        Some(leading_whitespace)
-                    }
-                } else {
-                    common_indent
-                }
+            .filter_map(|line| {
+                line.iter()
+                    .position(|token| !matches!(token, Self::Whitespace(_)))
             })
+            .min()
             .unwrap_or(0);
 
         let front_offset = lines.iter().enumerate().position(|(idx, line)| {
