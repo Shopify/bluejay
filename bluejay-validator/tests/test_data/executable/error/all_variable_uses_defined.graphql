@@ -1,0 +1,31 @@
+query variableIsNotDefined {
+  dog {
+    isHouseTrained(atOtherHomes: $atOtherHomes)
+  }
+}
+
+query variableIsNotDefinedUsedInNestedFragment {
+  dog {
+    ...outerHouseTrainedFragment
+  }
+}
+
+fragment outerHouseTrainedFragment on Dog {
+  ...isHouseTrainedFragment
+}
+
+fragment isHouseTrainedFragment on Dog {
+  isHouseTrained(atOtherHomes: $atOtherHomes)
+}
+
+query houseTrainedQueryOne($atOtherHomes: Boolean) {
+  dog {
+    ...isHouseTrainedFragment
+  }
+}
+
+query houseTrainedQueryTwoNotDefined {
+  dog {
+    ...isHouseTrainedFragment
+  }
+}

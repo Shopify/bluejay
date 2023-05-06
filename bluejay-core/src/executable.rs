@@ -1,4 +1,3 @@
-mod executable_definition;
 mod executable_document;
 mod field;
 mod fragment_definition;
@@ -9,7 +8,6 @@ mod selection;
 mod selection_set;
 mod variable_definition;
 
-pub use executable_definition::{AbstractExecutableDefinition, ExecutableDefinition};
 pub use executable_document::ExecutableDocument;
 pub use field::Field;
 pub use fragment_definition::FragmentDefinition;
@@ -17,7 +15,7 @@ pub use fragment_spread::FragmentSpread;
 pub use inline_fragment::InlineFragment;
 pub use operation_definition::{
     AbstractOperationDefinition, ExplicitOperationDefinition, ImplicitOperationDefinition,
-    OperationDefinition, OperationDefinitionFromExecutableDocument,
+    OperationDefinition, OperationDefinitionFromAbstract,
 };
 pub use selection::{AbstractSelection, Selection};
 pub use selection_set::SelectionSet;

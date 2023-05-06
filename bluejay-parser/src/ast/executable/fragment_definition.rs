@@ -1,6 +1,9 @@
 use crate::ast::executable::{SelectionSet, TypeCondition};
 use crate::ast::{FromTokens, IsMatch, ParseError, Tokens, VariableDirectives};
 use crate::lexical_token::Name;
+use crate::{HasSpan, Span};
+use std::cmp::{Eq, Ord, Ordering, PartialEq, PartialOrd};
+use std::hash::{Hash, Hasher};
 
 #[derive(Debug)]
 pub struct FragmentDefinition<'a> {
@@ -8,6 +11,7 @@ pub struct FragmentDefinition<'a> {
     type_condition: TypeCondition<'a>,
     directives: VariableDirectives<'a>,
     selection_set: SelectionSet<'a>,
+    span: Span,
 }
 
 impl<'a> IsMatch<'a> for FragmentDefinition<'a> {
@@ -18,7 +22,7 @@ impl<'a> IsMatch<'a> for FragmentDefinition<'a> {
 
 impl<'a> FromTokens<'a> for FragmentDefinition<'a> {
     fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
-        tokens.expect_name_value("fragment")?;
+        let fragment_identifier_span = tokens.expect_name_value("fragment")?;
         let name = tokens.expect_name()?;
         if name.as_ref() == TypeCondition::ON {
             // TODO: make this error message better
@@ -27,11 +31,13 @@ impl<'a> FromTokens<'a> for FragmentDefinition<'a> {
         let type_condition = TypeCondition::from_tokens(tokens)?;
         let directives = VariableDirectives::from_tokens(tokens)?;
         let selection_set = SelectionSet::from_tokens(tokens)?;
+        let span = fragment_identifier_span.merge(selection_set.span());
         Ok(Self {
             name,
             type_condition,
             directives,
             selection_set,
+            span,
         })
     }
 }
@@ -68,5 +74,37 @@ impl<'a> bluejay_core::executable::FragmentDefinition for FragmentDefinition<'a>
 
     fn selection_set(&self) -> &Self::SelectionSet {
         &self.selection_set
+    }
+}
+
+impl<'a> HasSpan for FragmentDefinition<'a> {
+    fn span(&self) -> &Span {
+        &self.span
+    }
+}
+
+impl<'a> Hash for FragmentDefinition<'a> {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.span().hash(state);
+    }
+}
+
+impl<'a> PartialEq for FragmentDefinition<'a> {
+    fn eq(&self, other: &Self) -> bool {
+        self.span() == other.span()
+    }
+}
+
+impl<'a> Eq for FragmentDefinition<'a> {}
+
+impl<'a> Ord for FragmentDefinition<'a> {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.span().cmp(other.span())
+    }
+}
+
+impl<'a> PartialOrd for FragmentDefinition<'a> {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
     }
 }

@@ -1,14 +1,11 @@
+use crate::executable::Path;
 use bluejay_core::definition::{
     DirectiveLocation, SchemaDefinition, TypeDefinitionReferenceFromAbstract,
 };
-use bluejay_core::executable::{ExecutableDocument, OperationDefinitionFromExecutableDocument};
+use bluejay_core::executable::ExecutableDocument;
 
 pub trait Visitor<'a, E: ExecutableDocument, S: SchemaDefinition> {
-    fn visit_operation_definition(
-        &mut self,
-        _operation_definition: &'a OperationDefinitionFromExecutableDocument<E>,
-    ) {
-    }
+    fn visit_operation_definition(&mut self, _operation_definition: &'a E::OperationDefinition) {}
 
     fn visit_selection_set(
         &mut self,
@@ -17,7 +14,13 @@ pub trait Visitor<'a, E: ExecutableDocument, S: SchemaDefinition> {
     ) {
     }
 
-    fn visit_field(&mut self, _field: &'a E::Field, _field_definition: &'a S::FieldDefinition) {}
+    fn visit_field(
+        &mut self,
+        _field: &'a E::Field,
+        _field_definition: &'a S::FieldDefinition,
+        _path: &Path<'a, E>,
+    ) {
+    }
 
     fn visit_const_directive(
         &mut self,
@@ -60,6 +63,7 @@ pub trait Visitor<'a, E: ExecutableDocument, S: SchemaDefinition> {
         &mut self,
         _fragment_spread: &'a E::FragmentSpread,
         _scoped_type: TypeDefinitionReferenceFromAbstract<'a, S::TypeDefinitionReference>,
+        _path: &Path<'a, E>,
     ) {
     }
 
@@ -74,6 +78,7 @@ pub trait Visitor<'a, E: ExecutableDocument, S: SchemaDefinition> {
         &mut self,
         _value: &'a E::Value<false>,
         _expected_type: &'a S::InputTypeReference,
+        _path: &Path<'a, E>,
     ) {
     }
 

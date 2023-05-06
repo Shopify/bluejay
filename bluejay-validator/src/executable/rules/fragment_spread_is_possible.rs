@@ -1,4 +1,4 @@
-use crate::executable::{Cache, Error, Rule, Visitor};
+use crate::executable::{Cache, Error, Path, Rule, Visitor};
 use bluejay_core::definition::{
     ObjectTypeDefinition, SchemaDefinition, TypeDefinitionReference,
     TypeDefinitionReferenceFromAbstract, UnionMemberType, UnionTypeDefinition,
@@ -7,11 +7,11 @@ use bluejay_core::executable::{
     ExecutableDocument, FragmentDefinition, FragmentSpread, InlineFragment,
 };
 use bluejay_core::AsIter;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 
 pub struct FragmentSpreadIsPossible<'a, E: ExecutableDocument, S: SchemaDefinition> {
     errors: Vec<Error<'a, E, S>>,
-    indexed_fragment_definitions: HashMap<&'a str, &'a E::FragmentDefinition>,
+    cache: &'a Cache<'a, E, S>,
     schema_definition: &'a S,
 }
 
@@ -22,11 +22,9 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> Visitor<'a, E, S>
         &mut self,
         fragment_spread: &'a <E as ExecutableDocument>::FragmentSpread,
         parent_type: TypeDefinitionReferenceFromAbstract<'a, S::TypeDefinitionReference>,
+        _path: &Path<'a, E>,
     ) {
-        if let Some(fragment_definition) = self
-            .indexed_fragment_definitions
-            .get(fragment_spread.name())
-        {
+        if let Some(fragment_definition) = self.cache.fragment_definition(fragment_spread.name()) {
             if let Some(fragment_type) = self
                 .schema_definition
                 .get_type_definition(fragment_definition.type_condition())
@@ -116,16 +114,10 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> IntoIterator
 impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Rule<'a, E, S>
     for FragmentSpreadIsPossible<'a, E, S>
 {
-    fn new(executable_document: &'a E, schema_definition: &'a S, _: &'a Cache<'a, E, S>) -> Self {
+    fn new(_: &'a E, schema_definition: &'a S, cache: &'a Cache<'a, E, S>) -> Self {
         Self {
             errors: Vec::new(),
-            indexed_fragment_definitions: HashMap::from_iter(
-                executable_document
-                    .fragment_definitions()
-                    .as_ref()
-                    .iter()
-                    .map(|fragment_definition| (fragment_definition.name(), fragment_definition)),
-            ),
+            cache,
             schema_definition,
         }
     }

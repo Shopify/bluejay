@@ -1,0 +1,29 @@
+---
+source: bluejay-validator/tests/executable_integration_test.rs
+expression: formatted_errors
+input_file: bluejay-validator/tests/test_data/executable/error/all_variable_uses_defined.graphql
+---
+Error: Variable $atOtherHomes not defined in operation variableIsNotDefined
+   ╭─[<unknown>:3:34]
+   │
+ 3 │     isHouseTrained(atOtherHomes: $atOtherHomes)
+   │                                  ──────┬──────  
+   │                                        ╰──────── No variable definition with this name defined in operation variableIsNotDefined
+───╯
+
+Error: Variable $atOtherHomes not defined in operation variableIsNotDefinedUsedInNestedFragment
+    ╭─[<unknown>:18:32]
+    │
+ 18 │   isHouseTrained(atOtherHomes: $atOtherHomes)
+    │                                ──────┬──────  
+    │                                      ╰──────── No variable definition with this name defined in operation variableIsNotDefinedUsedInNestedFragment
+────╯
+
+Error: Variable $atOtherHomes not defined in operation houseTrainedQueryTwoNotDefined
+    ╭─[<unknown>:18:32]
+    │
+ 18 │   isHouseTrained(atOtherHomes: $atOtherHomes)
+    │                                ──────┬──────  
+    │                                      ╰──────── No variable definition with this name defined in operation houseTrainedQueryTwoNotDefined
+────╯
+

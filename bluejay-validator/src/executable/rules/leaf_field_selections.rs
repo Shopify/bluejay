@@ -1,4 +1,4 @@
-use crate::executable::{Cache, Error, Rule, Visitor};
+use crate::executable::{Cache, Error, Path, Rule, Visitor};
 use bluejay_core::definition::{
     AbstractBaseOutputTypeReference, AbstractOutputTypeReference, FieldDefinition, SchemaDefinition,
 };
@@ -15,6 +15,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Visitor<'a, E, S>
         &mut self,
         field: &'a <E as ExecutableDocument>::Field,
         field_definition: &'a S::FieldDefinition,
+        _: &Path<'a, E>,
     ) {
         let r#type = field_definition.r#type();
         if r#type.as_ref().base().as_ref().is_scalar_or_enum() {

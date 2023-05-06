@@ -23,10 +23,11 @@ pub enum Value<'a, const CONST: bool> {
 impl<'a, const CONST: bool> AbstractValue<CONST> for Value<'a, CONST> {
     type List = ListValue<'a, CONST>;
     type Object = ObjectValue<'a, CONST>;
+    type Variable = Variable<'a>;
 
     fn as_ref(&self) -> ValueFromAbstract<'_, CONST, Self> {
         match self {
-            Self::Variable(v) => CoreValue::Variable(v.name()),
+            Self::Variable(v) => CoreValue::Variable(v),
             Self::Integer(i) => CoreValue::Integer(i.value()),
             Self::Float(f) => CoreValue::Float(f.value()),
             Self::String(s) => CoreValue::String(s.as_ref()),

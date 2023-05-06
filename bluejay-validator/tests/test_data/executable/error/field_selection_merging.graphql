@@ -12,14 +12,14 @@ query conflictingArgsOnValues {
   }
 }
 
-query conflictingArgsValueAndVar {
+query conflictingArgsValueAndVar($dogCommand: DogCommand!) {
   dog {
     doesKnowCommand(dogCommand: SIT)
     doesKnowCommand(dogCommand: $dogCommand)
   }
 }
 
-query conflictingArgsWithVars {
+query conflictingArgsWithVars($varOne: DogCommand!, $varTwo: DogCommand!) {
   dog {
     doesKnowCommand(dogCommand: $varOne)
     doesKnowCommand(dogCommand: $varTwo)

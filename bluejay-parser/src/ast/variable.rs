@@ -4,7 +4,7 @@ use crate::{HasSpan, Span};
 
 #[derive(Debug)]
 pub struct Variable<'a> {
-    pub(crate) name: Name<'a>,
+    name: Name<'a>,
     span: Span,
 }
 
@@ -31,6 +31,12 @@ impl<'a> HasSpan for Variable<'a> {
 
 impl<'a> Variable<'a> {
     pub fn name(&self) -> &str {
+        self.name.as_ref()
+    }
+}
+
+impl<'a> bluejay_core::Variable for Variable<'a> {
+    fn name(&self) -> &str {
         self.name.as_ref()
     }
 }

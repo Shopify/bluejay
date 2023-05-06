@@ -1,5 +1,13 @@
-use crate::{AbstractValue, ListValue, ObjectValue, Value, ValueFromAbstract};
+use crate::{AbstractValue, ListValue, ObjectValue, Value, ValueFromAbstract, Variable};
 use serde_json::{map, Map, Value as JsonValue};
+
+pub enum Never {}
+
+impl Variable for Never {
+    fn name(&self) -> &str {
+        unreachable!()
+    }
+}
 
 impl<const CONST: bool> ObjectValue<CONST> for Map<String, JsonValue> {
     type Key = String;
@@ -18,6 +26,7 @@ impl<const CONST: bool> ListValue<CONST> for Vec<JsonValue> {
 impl<const CONST: bool> AbstractValue<CONST> for JsonValue {
     type List = Vec<JsonValue>;
     type Object = Map<String, JsonValue>;
+    type Variable = Never;
 
     fn as_ref(&self) -> ValueFromAbstract<'_, CONST, Self> {
         match self {

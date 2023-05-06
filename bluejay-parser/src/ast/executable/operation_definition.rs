@@ -3,11 +3,31 @@ use crate::ast::{
     FromTokens, IsMatch, OperationType, ParseError, Tokens, TryFromTokens, VariableDirectives,
 };
 use crate::lexical_token::Name;
+use crate::{HasSpan, Span};
+use bluejay_core::executable::{
+    AbstractOperationDefinition, OperationDefinition as CoreOperationDefinition,
+    OperationDefinitionFromAbstract,
+};
+use std::cmp::{Eq, Ord, Ordering, PartialEq, PartialOrd};
+use std::hash::{Hash, Hasher};
 
-pub type OperationDefinition<'a> = bluejay_core::executable::OperationDefinition<
-    ExplicitOperationDefinition<'a>,
-    ImplicitOperationDefinition<'a>,
->;
+#[derive(Debug)]
+pub enum OperationDefinition<'a> {
+    Explicit(ExplicitOperationDefinition<'a>),
+    Implicit(ImplicitOperationDefinition<'a>),
+}
+
+impl<'a> AbstractOperationDefinition for OperationDefinition<'a> {
+    type ExplicitOperationDefinition = ExplicitOperationDefinition<'a>;
+    type ImplicitOperationDefinition = ImplicitOperationDefinition<'a>;
+
+    fn as_ref(&self) -> OperationDefinitionFromAbstract<'_, Self> {
+        match self {
+            Self::Explicit(e) => CoreOperationDefinition::Explicit(e),
+            Self::Implicit(i) => CoreOperationDefinition::Implicit(i),
+        }
+    }
+}
 
 impl<'a> FromTokens<'a> for OperationDefinition<'a> {
     fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
@@ -16,12 +36,14 @@ impl<'a> FromTokens<'a> for OperationDefinition<'a> {
             let variable_definitions = VariableDefinitions::try_from_tokens(tokens).transpose()?;
             let directives = VariableDirectives::from_tokens(tokens)?;
             let selection_set = SelectionSet::from_tokens(tokens)?;
+            let span = operation_type.span().merge(selection_set.span());
             Ok(Self::Explicit(ExplicitOperationDefinition {
                 operation_type,
                 name,
                 variable_definitions,
                 directives,
                 selection_set,
+                span,
             }))
         } else if let Some(selection_set) = SelectionSet::try_from_tokens(tokens).transpose()? {
             Ok(Self::Implicit(ImplicitOperationDefinition {
@@ -39,6 +61,41 @@ impl<'a> IsMatch<'a> for OperationDefinition<'a> {
     }
 }
 
+impl<'a> HasSpan for OperationDefinition<'a> {
+    fn span(&self) -> &Span {
+        match self {
+            Self::Explicit(e) => e.span(),
+            Self::Implicit(i) => i.span(),
+        }
+    }
+}
+
+impl<'a> Hash for OperationDefinition<'a> {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.span().hash(state);
+    }
+}
+
+impl<'a> PartialEq for OperationDefinition<'a> {
+    fn eq(&self, other: &Self) -> bool {
+        self.span() == other.span()
+    }
+}
+
+impl<'a> Eq for OperationDefinition<'a> {}
+
+impl<'a> Ord for OperationDefinition<'a> {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.span().cmp(other.span())
+    }
+}
+
+impl<'a> PartialOrd for OperationDefinition<'a> {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
 #[derive(Debug)]
 pub struct ExplicitOperationDefinition<'a> {
     operation_type: OperationType,
@@ -46,6 +103,7 @@ pub struct ExplicitOperationDefinition<'a> {
     variable_definitions: Option<VariableDefinitions<'a>>,
     directives: VariableDirectives<'a>,
     selection_set: SelectionSet<'a>,
+    span: Span,
 }
 
 impl<'a> bluejay_core::executable::ExplicitOperationDefinition for ExplicitOperationDefinition<'a> {
@@ -84,6 +142,12 @@ impl<'a> ExplicitOperationDefinition<'a> {
     }
 }
 
+impl<'a> HasSpan for ExplicitOperationDefinition<'a> {
+    fn span(&self) -> &Span {
+        &self.span
+    }
+}
+
 #[derive(Debug)]
 pub struct ImplicitOperationDefinition<'a> {
     selection_set: SelectionSet<'a>,
@@ -94,5 +158,11 @@ impl<'a> bluejay_core::executable::ImplicitOperationDefinition for ImplicitOpera
 
     fn selection_set(&self) -> &Self::SelectionSet {
         &self.selection_set
+    }
+}
+
+impl<'a> HasSpan for ImplicitOperationDefinition<'a> {
+    fn span(&self) -> &Span {
+        self.selection_set.span()
     }
 }

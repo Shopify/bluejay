@@ -1,7 +1,9 @@
 use crate::executable::SelectionSet;
 use crate::VariableDirectives;
+use std::cmp::{Eq, Ord};
+use std::hash::Hash;
 
-pub trait FragmentDefinition {
+pub trait FragmentDefinition: Eq + Hash + Ord {
     type Directives: VariableDirectives;
     type SelectionSet: SelectionSet;
 

@@ -18,9 +18,14 @@ pub trait ListValue<const CONST: bool>: AsIter<Item = Self::Value> {
     type Value: AbstractValue<CONST, List = Self>;
 }
 
+pub trait Variable {
+    fn name(&self) -> &str;
+}
+
 pub trait AbstractValue<const CONST: bool> {
     type List: ListValue<CONST, Value = Self>;
     type Object: ObjectValue<CONST, Value = Self>;
+    type Variable: Variable;
 
     fn as_ref(&self) -> ValueFromAbstract<'_, CONST, Self>;
 
@@ -37,8 +42,8 @@ impl<T: AbstractValue<false>> AbstractVariableValue for T {}
 
 #[derive(Debug, strum::Display)]
 #[strum(serialize_all = "lowercase")]
-pub enum Value<'a, const CONST: bool, L: ListValue<CONST>, O: ObjectValue<CONST>> {
-    Variable(&'a str),
+pub enum Value<'a, const CONST: bool, L: ListValue<CONST>, O: ObjectValue<CONST>, V: Variable> {
+    Variable(&'a V),
     Integer(i32),
     Float(f64),
     String(&'a str),
@@ -49,8 +54,8 @@ pub enum Value<'a, const CONST: bool, L: ListValue<CONST>, O: ObjectValue<CONST>
     Object(&'a O),
 }
 
-impl<'a, const CONST: bool, L: ListValue<CONST>, O: ObjectValue<CONST>> Clone
-    for Value<'a, CONST, L, O>
+impl<'a, const CONST: bool, L: ListValue<CONST>, O: ObjectValue<CONST>, V: Variable> Clone
+    for Value<'a, CONST, L, O, V>
 {
     fn clone(&self) -> Self {
         match self {
@@ -67,21 +72,31 @@ impl<'a, const CONST: bool, L: ListValue<CONST>, O: ObjectValue<CONST>> Clone
     }
 }
 
-impl<'a, const CONST: bool, L: ListValue<CONST>, O: ObjectValue<CONST>> Copy
-    for Value<'a, CONST, L, O>
+impl<'a, const CONST: bool, L: ListValue<CONST>, O: ObjectValue<CONST>, V: Variable> Copy
+    for Value<'a, CONST, L, O, V>
 {
 }
 
-pub type ValueFromAbstract<'a, const CONST: bool, T> =
-    Value<'a, CONST, <T as AbstractValue<CONST>>::List, <T as AbstractValue<CONST>>::Object>;
+pub type ValueFromAbstract<'a, const CONST: bool, T> = Value<
+    'a,
+    CONST,
+    <T as AbstractValue<CONST>>::List,
+    <T as AbstractValue<CONST>>::Object,
+    <T as AbstractValue<CONST>>::Variable,
+>;
 
-impl<'a, const CONST: bool, L: ListValue<CONST>, O: ObjectValue<CONST, Value = L::Value>>
-    std::cmp::PartialEq for Value<'a, CONST, L, O>
+impl<
+        'a,
+        const CONST: bool,
+        L: ListValue<CONST>,
+        O: ObjectValue<CONST, Value = L::Value>,
+        V: Variable,
+    > std::cmp::PartialEq for Value<'a, CONST, L, O, V>
 {
     fn eq(&self, other: &Self) -> bool {
         match self {
             Self::Variable(v) => {
-                matches!(other, Self::Variable(other_v) if v == other_v)
+                matches!(other, Self::Variable(other_v) if v.name() == other_v.name())
             }
             Self::Integer(i) => {
                 matches!(other, Self::Integer(other_i) if i == other_i)

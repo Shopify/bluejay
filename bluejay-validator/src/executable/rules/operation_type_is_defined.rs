@@ -1,8 +1,8 @@
 use crate::executable::{Cache, Error, Rule, Visitor};
 use bluejay_core::definition::SchemaDefinition;
 use bluejay_core::executable::{
-    ExecutableDocument, ExplicitOperationDefinition, OperationDefinition,
-    OperationDefinitionFromExecutableDocument,
+    AbstractOperationDefinition, ExecutableDocument, ExplicitOperationDefinition,
+    OperationDefinition,
 };
 use bluejay_core::OperationType;
 
@@ -11,14 +11,11 @@ pub struct OperationTypeIsDefined<'a, E: ExecutableDocument, S: SchemaDefinition
     schema_definition: &'a S,
 }
 
-impl<'a, E: ExecutableDocument, S: SchemaDefinition> Visitor<'a, E, S>
+impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition> Visitor<'a, E, S>
     for OperationTypeIsDefined<'a, E, S>
 {
-    fn visit_operation_definition(
-        &mut self,
-        operation_definition: &'a OperationDefinitionFromExecutableDocument<E>,
-    ) {
-        if let OperationDefinition::Explicit(eod) = operation_definition {
+    fn visit_operation_definition(&mut self, operation_definition: &'a E::OperationDefinition) {
+        if let OperationDefinition::Explicit(eod) = operation_definition.as_ref() {
             match eod.operation_type() {
                 OperationType::Query => {}
                 OperationType::Mutation if self.schema_definition.mutation().is_some() => {}

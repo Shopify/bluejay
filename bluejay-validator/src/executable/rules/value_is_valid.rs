@@ -1,4 +1,4 @@
-use crate::executable::{Cache, Error, Rule, Visitor};
+use crate::executable::{Cache, Error, Path, Rule, Visitor};
 use crate::value::input_coercion::CoerceInput;
 use bluejay_core::definition::SchemaDefinition;
 use bluejay_core::executable::{ExecutableDocument, VariableDefinition};
@@ -45,6 +45,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Visitor<'a, E, S>
         &mut self,
         value: &'a <E as ExecutableDocument>::Value<false>,
         expected_type: &'a <S as SchemaDefinition>::InputTypeReference,
+        _: &Path<'a, E>,
     ) {
         if let Err(coercion_errors) = expected_type.coerce_value(value, &[]) {
             self.errors

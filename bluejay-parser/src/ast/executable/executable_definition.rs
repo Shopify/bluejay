@@ -1,8 +1,11 @@
 use crate::ast::executable::{FragmentDefinition, OperationDefinition};
 use crate::ast::{FromTokens, IsMatch, ParseError, Tokens};
 
-pub type ExecutableDefinition<'a> =
-    bluejay_core::executable::ExecutableDefinition<OperationDefinition<'a>, FragmentDefinition<'a>>;
+#[derive(Debug)]
+pub enum ExecutableDefinition<'a> {
+    Operation(OperationDefinition<'a>),
+    Fragment(FragmentDefinition<'a>),
+}
 
 impl<'a> FromTokens<'a> for ExecutableDefinition<'a> {
     fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {

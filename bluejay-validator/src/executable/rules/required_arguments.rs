@@ -1,4 +1,4 @@
-use crate::executable::{ArgumentError, Cache, Error, Rule, Visitor};
+use crate::executable::{ArgumentError, Cache, Error, Path, Rule, Visitor};
 use bluejay_core::definition::{
     AbstractInputTypeReference, DirectiveDefinition, FieldDefinition, InputValueDefinition,
     SchemaDefinition,
@@ -83,6 +83,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Visitor<'a, E, S>
         &mut self,
         field: &'a <E as ExecutableDocument>::Field,
         field_definition: &'a S::FieldDefinition,
+        _: &Path<'a, E>,
     ) {
         self.visit_arguments(
             field.arguments(),

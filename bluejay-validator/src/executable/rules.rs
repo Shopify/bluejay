@@ -1,3 +1,4 @@
+mod all_variable_uses_defined;
 mod argument_names;
 mod argument_uniqueness;
 mod directives_are_defined;
@@ -22,6 +23,7 @@ mod value_is_valid;
 mod variable_uniqueness;
 mod variables_are_input_types;
 
+pub use all_variable_uses_defined::AllVariableUsesDefined;
 pub use argument_names::ArgumentNames;
 pub use argument_uniqueness::ArgumentUniqueness;
 pub use directives_are_defined::DirectivesAreDefined;
@@ -46,11 +48,11 @@ pub use value_is_valid::ValueIsValid;
 pub use variable_uniqueness::VariableUniqueness;
 pub use variables_are_input_types::VariablesAreInputTypes;
 
-use crate::executable::{Cache, Error, Rule, Visitor};
+use crate::executable::{Cache, Error, Path, Rule, Visitor};
 use bluejay_core::definition::{
     DirectiveLocation, SchemaDefinition, TypeDefinitionReferenceFromAbstract,
 };
-use bluejay_core::executable::{ExecutableDocument, OperationDefinitionFromExecutableDocument};
+use bluejay_core::executable::ExecutableDocument;
 use paste::paste;
 use std::iter::Chain;
 
@@ -79,7 +81,7 @@ macro_rules! define_rules {
             }
 
             impl<'a, E: ExecutableDocument, S: SchemaDefinition> Visitor<'a, E, S> for Rules<'a, E, S> {
-                fn visit_operation_definition(&mut self, operation_definition: &'a OperationDefinitionFromExecutableDocument<E>) {
+                fn visit_operation_definition(&mut self, operation_definition: &'a E::OperationDefinition) {
                     $(self.[<$rule:snake>].visit_operation_definition(operation_definition);)*
                 }
 
@@ -91,8 +93,8 @@ macro_rules! define_rules {
                     $(self.[<$rule:snake>].visit_selection_set(selection_set, r#type);)*
                 }
 
-                fn visit_field(&mut self, field: &'a E::Field, field_definition: &'a S::FieldDefinition) {
-                    $(self.[<$rule:snake>].visit_field(field, field_definition);)*
+                fn visit_field(&mut self, field: &'a E::Field, field_definition: &'a S::FieldDefinition, path: &Path<'a, E>) {
+                    $(self.[<$rule:snake>].visit_field(field, field_definition, path);)*
                 }
 
                 fn visit_const_directive(&mut self, directive: &'a E::Directive<true>, location: DirectiveLocation) {
@@ -134,9 +136,10 @@ macro_rules! define_rules {
                 fn visit_fragment_spread(
                     &mut self,
                     fragment_spread: &'a E::FragmentSpread,
-                    scoped_type: TypeDefinitionReferenceFromAbstract<'a, S::TypeDefinitionReference>
+                    scoped_type: TypeDefinitionReferenceFromAbstract<'a, S::TypeDefinitionReference>,
+                    path: &Path<'a, E>,
                 ) {
-                    $(self.[<$rule:snake>].visit_fragment_spread(fragment_spread, scoped_type);)*
+                    $(self.[<$rule:snake>].visit_fragment_spread(fragment_spread, scoped_type, path);)*
                 }
 
                 fn visit_const_value(
@@ -151,8 +154,9 @@ macro_rules! define_rules {
                     &mut self,
                     value: &'a E::Value<false>,
                     expected_type: &'a S::InputTypeReference,
+                    path: &Path<'a, E>,
                 ) {
-                    $(self.[<$rule:snake>].visit_variable_value(value, expected_type);)*
+                    $(self.[<$rule:snake>].visit_variable_value(value, expected_type, path);)*
                 }
 
                 fn visit_variable_definition(&mut self, variable_definition: &'a E::VariableDefinition) {
@@ -205,4 +209,5 @@ define_rules!(
     DirectivesAreUniquePerLocation,
     VariableUniqueness,
     VariablesAreInputTypes,
+    AllVariableUsesDefined,
 );

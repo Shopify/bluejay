@@ -1,10 +1,10 @@
 use crate::executable::{Cache, Error, Rule, Visitor};
 use bluejay_core::definition::SchemaDefinition;
-use bluejay_core::executable::{ExecutableDocument, OperationDefinitionFromExecutableDocument};
+use bluejay_core::executable::{AbstractOperationDefinition, ExecutableDocument};
 use std::marker::PhantomData;
 
 pub struct LoneAnonymousOperation<'a, E: ExecutableDocument, S: SchemaDefinition> {
-    anonymous_operations: Vec<&'a OperationDefinitionFromExecutableDocument<E>>,
+    anonymous_operations: Vec<&'a E::OperationDefinition>,
     executable_document: &'a E,
     schema_definition: PhantomData<S>,
 }
@@ -12,11 +12,8 @@ pub struct LoneAnonymousOperation<'a, E: ExecutableDocument, S: SchemaDefinition
 impl<'a, E: ExecutableDocument, S: SchemaDefinition> Visitor<'a, E, S>
     for LoneAnonymousOperation<'a, E, S>
 {
-    fn visit_operation_definition(
-        &mut self,
-        operation_definition: &'a OperationDefinitionFromExecutableDocument<E>,
-    ) {
-        if operation_definition.name().is_none() {
+    fn visit_operation_definition(&mut self, operation_definition: &'a E::OperationDefinition) {
+        if operation_definition.as_ref().name().is_none() {
             self.anonymous_operations.push(operation_definition);
         }
     }

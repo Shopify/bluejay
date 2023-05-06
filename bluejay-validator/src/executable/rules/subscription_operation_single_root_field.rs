@@ -1,14 +1,14 @@
 use crate::executable::{Cache, Error, Rule, Visitor};
 use bluejay_core::definition::SchemaDefinition;
 use bluejay_core::executable::{
-    ExecutableDocument, FragmentDefinition, FragmentSpread, InlineFragment,
-    OperationDefinitionFromExecutableDocument, Selection,
+    AbstractOperationDefinition, ExecutableDocument, FragmentDefinition, FragmentSpread,
+    InlineFragment, Selection,
 };
 use bluejay_core::OperationType;
 use std::marker::PhantomData;
 
 pub struct SubscriptionOperationSingleRootField<'a, E: ExecutableDocument, S: SchemaDefinition> {
-    invalid_operation_definitions: Vec<&'a OperationDefinitionFromExecutableDocument<E>>,
+    invalid_operation_definitions: Vec<&'a E::OperationDefinition>,
     executable_document: &'a E,
     schema_definition: PhantomData<S>,
 }
@@ -16,17 +16,15 @@ pub struct SubscriptionOperationSingleRootField<'a, E: ExecutableDocument, S: Sc
 impl<'a, E: ExecutableDocument, S: SchemaDefinition> Visitor<'a, E, S>
     for SubscriptionOperationSingleRootField<'a, E, S>
 {
-    fn visit_operation_definition(
-        &mut self,
-        operation_definition: &'a OperationDefinitionFromExecutableDocument<E>,
-    ) {
+    fn visit_operation_definition(&mut self, operation_definition: &'a E::OperationDefinition) {
+        let core_operation_definition = operation_definition.as_ref();
         if !matches!(
-            operation_definition.operation_type(),
+            core_operation_definition.operation_type(),
             OperationType::Subscription
         ) {
             return;
         }
-        let selection_set = operation_definition.selection_set();
+        let selection_set = core_operation_definition.selection_set();
         if selection_set.as_ref().len() != 1 {
             self.invalid_operation_definitions
                 .push(operation_definition);
@@ -58,8 +56,8 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> IntoIterator
 {
     type Item = Error<'a, E, S>;
     type IntoIter = std::iter::Map<
-        std::vec::IntoIter<&'a OperationDefinitionFromExecutableDocument<E>>,
-        fn(&'a OperationDefinitionFromExecutableDocument<E>) -> Error<'a, E, S>,
+        std::vec::IntoIter<&'a E::OperationDefinition>,
+        fn(&'a E::OperationDefinition) -> Error<'a, E, S>,
     >;
 
     fn into_iter(self) -> Self::IntoIter {

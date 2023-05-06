@@ -1,5 +1,5 @@
 use crate::string_value::DisplayStringValue;
-use bluejay_core::{AbstractValue, ListValue, ObjectValue, Value};
+use bluejay_core::{AbstractValue, ListValue, ObjectValue, Value, Variable};
 use std::fmt::{Error, Write};
 
 pub(crate) trait DisplayValue {
@@ -13,8 +13,13 @@ pub(crate) trait DisplayValue {
     }
 }
 
-impl<'a, const CONST: bool, L: ListValue<CONST>, O: ObjectValue<CONST, Value = L::Value>>
-    DisplayValue for Value<'a, CONST, L, O>
+impl<
+        'a,
+        const CONST: bool,
+        L: ListValue<CONST>,
+        O: ObjectValue<CONST, Value = L::Value>,
+        V: Variable,
+    > DisplayValue for Value<'a, CONST, L, O, V>
 {
     fn fmt<W: Write>(&self, f: &mut W) -> Result<(), Error> {
         match self {
@@ -53,7 +58,7 @@ impl<'a, const CONST: bool, L: ListValue<CONST>, O: ObjectValue<CONST, Value = L
                 write!(f, " }}")
             }
             Self::String(s) => DisplayStringValue::fmt(s, f),
-            Self::Variable(v) => write!(f, "${}", v),
+            Self::Variable(v) => write!(f, "${}", v.name()),
         }
     }
 }

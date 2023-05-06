@@ -1,8 +1,7 @@
 use crate::executable::{
-    AbstractExecutableDefinition, AbstractOperationDefinition, AbstractSelection,
-    ExplicitOperationDefinition, Field, FragmentDefinition, FragmentSpread,
-    ImplicitOperationDefinition, InlineFragment, SelectionSet, VariableDefinition,
-    VariableDefinitions,
+    AbstractOperationDefinition, AbstractSelection, ExplicitOperationDefinition, Field,
+    FragmentDefinition, FragmentSpread, ImplicitOperationDefinition, InlineFragment, SelectionSet,
+    VariableDefinition, VariableDefinitions,
 };
 use crate::{AbstractTypeReference, AbstractValue, Argument, Arguments, Directive, Directives};
 
@@ -48,10 +47,6 @@ pub trait ExecutableDocument {
     type FragmentDefinition: FragmentDefinition<
         Directives = Self::Directives<false>,
         SelectionSet = Self::SelectionSet,
-    >;
-    type ExecutableDefinition: AbstractExecutableDefinition<
-        OperationDefinition = Self::OperationDefinition,
-        FragmentDefinition = Self::FragmentDefinition,
     >;
 
     fn operation_definitions(&self) -> &[Self::OperationDefinition];

@@ -1,6 +1,8 @@
 use crate::executable::VariableDefinitionInputTypeReference;
 use bluejay_core::definition::SchemaDefinition;
-use bluejay_core::executable::{ExecutableDocument, VariableDefinition};
+use bluejay_core::executable::{
+    AbstractOperationDefinition, ExecutableDocument, FragmentDefinition, VariableDefinition,
+};
 use bluejay_core::AsIter;
 use std::collections::HashMap;
 
@@ -9,6 +11,7 @@ pub struct Cache<'a, E: ExecutableDocument, S: SchemaDefinition> {
         &'a E::TypeReference,
         VariableDefinitionInputTypeReference<'a, S::BaseInputTypeReference>,
     >,
+    indexed_fragment_definitions: HashMap<&'a str, &'a E::FragmentDefinition>,
 }
 
 impl<'a, E: ExecutableDocument, S: SchemaDefinition> Cache<'a, E, S> {
@@ -37,8 +40,16 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> Cache<'a, E, S> {
                         })
                 },
             ));
+        let indexed_fragment_definitions = HashMap::from_iter(
+            executable_document
+                .fragment_definitions()
+                .as_ref()
+                .iter()
+                .map(|fragment_definition| (fragment_definition.name(), fragment_definition)),
+        );
         Self {
             variable_definition_input_type_references,
+            indexed_fragment_definitions,
         }
     }
 
@@ -48,5 +59,9 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> Cache<'a, E, S> {
     ) -> Option<&VariableDefinitionInputTypeReference<'a, S::BaseInputTypeReference>> {
         self.variable_definition_input_type_references
             .get(type_reference)
+    }
+
+    pub fn fragment_definition(&self, name: &str) -> Option<&'a E::FragmentDefinition> {
+        self.indexed_fragment_definitions.get(name).copied()
     }
 }

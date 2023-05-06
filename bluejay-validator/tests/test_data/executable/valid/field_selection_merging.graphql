@@ -19,7 +19,7 @@ query mergeIdenticalFieldsWithIdenticalArgs {
   }
 }
 
-query mergeIdenticalFieldsWithIdenticalValues {
+query mergeIdenticalFieldsWithIdenticalValues($dogCommand: DogCommand!) {
   dog {
     doesKnowCommand(dogCommand: $dogCommand)
     doesKnowCommand(dogCommand: $dogCommand)

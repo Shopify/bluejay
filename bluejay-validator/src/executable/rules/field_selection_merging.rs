@@ -12,9 +12,9 @@ use std::collections::{BTreeMap, HashMap, HashSet};
 use std::ops::Not;
 
 pub struct FieldSelectionMerging<'a, E: ExecutableDocument, S: SchemaDefinition> {
-    indexed_fragment_definitions: HashMap<&'a str, &'a E::FragmentDefinition>,
+    cache: &'a Cache<'a, E, S>,
     schema_definition: &'a S,
-    cache: BTreeMap<&'a E::SelectionSet, Vec<Error<'a, E, S>>>,
+    cached_errors: BTreeMap<&'a E::SelectionSet, Vec<Error<'a, E, S>>>,
 }
 
 impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition> Visitor<'a, E, S>
@@ -35,10 +35,10 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> FieldSelectionMer
         selection_set: &'a E::SelectionSet,
         parent_type: TypeDefinitionReferenceFromAbstract<'a, S::TypeDefinitionReference>,
     ) -> bool {
-        if let Some(errors) = self.cache.get(selection_set) {
+        if let Some(errors) = self.cached_errors.get(selection_set) {
             errors.is_empty()
         } else {
-            self.cache.insert(selection_set, Vec::new());
+            self.cached_errors.insert(selection_set, Vec::new());
 
             let grouped_fields = self.selection_set_contained_fields(selection_set, parent_type);
 
@@ -46,7 +46,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> FieldSelectionMer
 
             let is_valid = errors.is_empty();
 
-            self.cache.insert(selection_set, errors);
+            self.cached_errors.insert(selection_set, errors);
 
             is_valid
         }
@@ -293,10 +293,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> FieldSelectionMer
             Selection::FragmentSpread(fs) => {
                 let fragment_name = fs.name();
                 if !parent_fragments.contains(fragment_name) {
-                    if let Some(fragment_definition) = self
-                        .indexed_fragment_definitions
-                        .get(fragment_name)
-                        .copied()
+                    if let Some(fragment_definition) = self.cache.fragment_definition(fragment_name)
                     {
                         let type_condition = fragment_definition.type_condition();
                         if let Some(scoped_type) =
@@ -397,24 +394,18 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> IntoIterator
     >;
 
     fn into_iter(self) -> Self::IntoIter {
-        self.cache.into_values().flatten()
+        self.cached_errors.into_values().flatten()
     }
 }
 
 impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Rule<'a, E, S>
     for FieldSelectionMerging<'a, E, S>
 {
-    fn new(executable_document: &'a E, schema_definition: &'a S, _: &'a Cache<'a, E, S>) -> Self {
+    fn new(_: &'a E, schema_definition: &'a S, cache: &'a Cache<'a, E, S>) -> Self {
         Self {
-            indexed_fragment_definitions: HashMap::from_iter(
-                executable_document
-                    .fragment_definitions()
-                    .as_ref()
-                    .iter()
-                    .map(|fragment_definition| (fragment_definition.name(), fragment_definition)),
-            ),
+            cache,
             schema_definition,
-            cache: BTreeMap::new(),
+            cached_errors: BTreeMap::new(),
         }
     }
 }

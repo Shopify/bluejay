@@ -111,7 +111,6 @@ impl<'a> bluejay_core::executable::ExecutableDocument for ExecutableDocument<'a>
     type ImplicitOperationDefinition = ImplicitOperationDefinition<'a>;
     type OperationDefinition = OperationDefinition<'a>;
     type FragmentDefinition = FragmentDefinition<'a>;
-    type ExecutableDefinition = ExecutableDefinition<'a>;
 
     fn operation_definitions(&self) -> &[Self::OperationDefinition] {
         &self.operation_definitions

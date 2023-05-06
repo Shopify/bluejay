@@ -3,14 +3,15 @@ use bluejay_core::definition::{
     AbstractOutputTypeReference, FieldDefinition, SchemaDefinition,
     TypeDefinitionReferenceFromAbstract,
 };
-use bluejay_core::executable::{ExecutableDocument, OperationDefinitionFromExecutableDocument};
-use bluejay_core::{AbstractTypeReference, OperationType};
+use bluejay_core::executable::{AbstractOperationDefinition, ExecutableDocument};
+use bluejay_core::{AbstractTypeReference, AbstractValue, OperationType};
 #[cfg(feature = "parser-integration")]
 use bluejay_parser::{
     ast::executable::ExecutableDocument as ParserExecutableDocument,
     error::{Annotation, Error as ParserError},
     HasSpan,
 };
+use std::borrow::Cow;
 
 mod argument_error;
 mod directive_error;
@@ -24,10 +25,10 @@ pub enum Error<'a, E: ExecutableDocument, S: SchemaDefinition> {
         operations: Vec<&'a E::ExplicitOperationDefinition>,
     },
     NotLoneAnonymousOperation {
-        anonymous_operations: Vec<&'a OperationDefinitionFromExecutableDocument<E>>,
+        anonymous_operations: Vec<&'a E::OperationDefinition>,
     },
     SubscriptionRootNotSingleField {
-        operation: &'a OperationDefinitionFromExecutableDocument<E>,
+        operation: &'a E::OperationDefinition,
     },
     FieldDoesNotExistOnType {
         field: &'a E::Field,
@@ -108,6 +109,10 @@ pub enum Error<'a, E: ExecutableDocument, S: SchemaDefinition> {
     VariableDefinitionTypeNotInput {
         variable_definition: &'a E::VariableDefinition,
     },
+    VariableNotDefined {
+        variable: &'a <E::Value<false> as AbstractValue<false>>::Variable,
+        operation_definition: &'a E::OperationDefinition,
+    },
 }
 
 #[cfg(feature = "parser-integration")]
@@ -139,7 +144,7 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                     .map(|operation| {
                         Annotation::new(
                             "Anonymous operation definition",
-                            operation.selection_set().span().clone(),
+                            operation.as_ref().selection_set().span().clone(),
                         )
                     })
                     .collect(),
@@ -148,7 +153,7 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                 "Subscription root is not a single field",
                 Some(Annotation::new(
                     "Selection set contains multiple fields",
-                    operation.selection_set().span().clone(),
+                    operation.as_ref().selection_set().span().clone(),
                 )),
                 Vec::new(),
             ),
@@ -451,6 +456,28 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                 )),
                 Vec::new(),
             ),
+            Error::VariableNotDefined {
+                variable,
+                operation_definition,
+            } => {
+                let operation_name = match operation_definition.as_ref().name() {
+                    Some(name) => Cow::Owned(format!("operation {name}")),
+                    None => Cow::Borrowed("anonymous operation"),
+                };
+                Self::new(
+                    format!(
+                        "Variable ${} not defined in {operation_name}",
+                        variable.name(),
+                    ),
+                    Some(Annotation::new(
+                        format!(
+                            "No variable definition with this name defined in {operation_name}",
+                        ),
+                        variable.span().clone(),
+                    )),
+                    Vec::new(),
+                )
+            }
         }
     }
 }
