@@ -1,0 +1,19 @@
+query takesCat($cat: Cat) {
+  findDog(complex: $cat) { name }
+}
+
+query takesDogBang($dog: Dog!) {
+  findDog(complex: $dog) { name }
+}
+
+query takesListOfPet($pets: [Pet]) {
+  findDog(complex: $pets) { name }
+}
+
+query takesCatOrDog($catOrDog: CatOrDog) {
+  findDog(complex: $catOrDog) { name }
+}
+
+query takesNonExistent($nonExistent: NonExistent) {
+  findDog(complex: $nonExistent) { name }
+}

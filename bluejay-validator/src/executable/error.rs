@@ -4,7 +4,7 @@ use bluejay_core::definition::{
     TypeDefinitionReferenceFromAbstract,
 };
 use bluejay_core::executable::{ExecutableDocument, OperationDefinitionFromExecutableDocument};
-use bluejay_core::OperationType;
+use bluejay_core::{AbstractTypeReference, OperationType};
 #[cfg(feature = "parser-integration")]
 use bluejay_parser::{
     ast::executable::ExecutableDocument as ParserExecutableDocument,
@@ -104,6 +104,9 @@ pub enum Error<'a, E: ExecutableDocument, S: SchemaDefinition> {
     NonUniqueVariableDefinitionNames {
         name: &'a str,
         variable_definitions: Vec<&'a E::VariableDefinition>,
+    },
+    VariableDefinitionTypeNotInput {
+        variable_definition: &'a E::VariableDefinition,
     },
 }
 
@@ -433,6 +436,20 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                         )
                     })
                     .collect(),
+            ),
+            Error::VariableDefinitionTypeNotInput {
+                variable_definition,
+            } => Self::new(
+                format!(
+                    "Type of variable ${}, {}, is not an input type",
+                    variable_definition.variable().name(),
+                    variable_definition.r#type().as_ref().name()
+                ),
+                Some(Annotation::new(
+                    "Not an input type",
+                    variable_definition.r#type().span().clone(),
+                )),
+                Vec::new(),
             ),
         }
     }

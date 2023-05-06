@@ -20,6 +20,7 @@ mod required_arguments;
 mod subscription_operation_single_root_field;
 mod value_is_valid;
 mod variable_uniqueness;
+mod variables_are_input_types;
 
 pub use argument_names::ArgumentNames;
 pub use argument_uniqueness::ArgumentUniqueness;
@@ -43,6 +44,7 @@ pub use required_arguments::RequiredArguments;
 pub use subscription_operation_single_root_field::SubscriptionOperationSingleRootField;
 pub use value_is_valid::ValueIsValid;
 pub use variable_uniqueness::VariableUniqueness;
+pub use variables_are_input_types::VariablesAreInputTypes;
 
 use crate::executable::{Cache, Error, Rule, Visitor};
 use bluejay_core::definition::{
@@ -202,4 +204,5 @@ define_rules!(
     DirectivesAreInValidLocations,
     DirectivesAreUniquePerLocation,
     VariableUniqueness,
+    VariablesAreInputTypes,
 );

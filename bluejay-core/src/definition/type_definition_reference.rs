@@ -112,4 +112,14 @@ impl<
             Self::ObjectType(_) | Self::UnionType(_) | Self::InterfaceType(_)
         )
     }
+
+    pub fn is_input(&self) -> bool {
+        matches!(
+            self,
+            Self::BuiltinScalarType(_)
+                | Self::CustomScalarType(_)
+                | Self::InputObjectType(_)
+                | Self::EnumType(_),
+        )
+    }
 }
