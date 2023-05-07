@@ -1,4 +1,5 @@
 mod all_variable_uses_defined;
+mod all_variables_used;
 mod argument_names;
 mod argument_uniqueness;
 mod directives_are_defined;
@@ -24,6 +25,7 @@ mod variable_uniqueness;
 mod variables_are_input_types;
 
 pub use all_variable_uses_defined::AllVariableUsesDefined;
+pub use all_variables_used::AllVariablesUsed;
 pub use argument_names::ArgumentNames;
 pub use argument_uniqueness::ArgumentUniqueness;
 pub use directives_are_defined::DirectivesAreDefined;
@@ -210,4 +212,5 @@ define_rules!(
     VariableUniqueness,
     VariablesAreInputTypes,
     AllVariableUsesDefined,
+    AllVariablesUsed,
 );

@@ -113,6 +113,9 @@ pub enum Error<'a, E: ExecutableDocument, S: SchemaDefinition> {
         variable: &'a <E::Value<false> as AbstractValue<false>>::Variable,
         operation_definition: &'a E::OperationDefinition,
     },
+    VariableDefinitionUnused {
+        variable_definition: &'a E::VariableDefinition,
+    },
 }
 
 #[cfg(feature = "parser-integration")]
@@ -478,6 +481,19 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                     Vec::new(),
                 )
             }
+            Error::VariableDefinitionUnused {
+                variable_definition,
+            } => Self::new(
+                format!(
+                    "Variable definition ${} not used",
+                    variable_definition.variable().name(),
+                ),
+                Some(Annotation::new(
+                    "Variable definition not used",
+                    variable_definition.variable().span().clone(),
+                )),
+                Vec::new(),
+            ),
         }
     }
 }

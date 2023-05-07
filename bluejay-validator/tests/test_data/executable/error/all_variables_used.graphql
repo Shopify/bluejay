@@ -1,0 +1,31 @@
+query variableUnused($atOtherHomes: Boolean) {
+  dog {
+    isHouseTrained
+  }
+}
+
+query variableNotUsedWithinFragment($atOtherHomes: Boolean) {
+  dog {
+    ...isHouseTrainedWithoutVariableFragment
+  }
+}
+
+fragment isHouseTrainedWithoutVariableFragment on Dog {
+  isHouseTrained
+}
+
+query queryWithUsedVar($atOtherHomes: Boolean) {
+  dog {
+    ...isHouseTrainedFragment
+  }
+}
+
+query queryWithExtraVar($atOtherHomes: Boolean, $extra: Int) {
+  dog {
+    ...isHouseTrainedFragment
+  }
+}
+
+fragment isHouseTrainedFragment on Dog {
+  isHouseTrained(atOtherHomes: $atOtherHomes)
+}

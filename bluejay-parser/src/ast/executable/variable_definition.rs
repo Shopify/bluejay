@@ -5,10 +5,10 @@ use crate::lexical_token::PunctuatorType;
 
 #[derive(Debug)]
 pub struct VariableDefinition<'a> {
-    pub(crate) variable: Variable<'a>,
-    pub(crate) r#type: TypeReference<'a>,
-    pub(crate) default_value: Option<ConstValue<'a>>,
-    pub(crate) directives: ConstDirectives<'a>,
+    variable: Variable<'a>,
+    r#type: TypeReference<'a>,
+    default_value: Option<ConstValue<'a>>,
+    directives: ConstDirectives<'a>,
 }
 
 impl<'a> FromTokens<'a> for VariableDefinition<'a> {
