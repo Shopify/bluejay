@@ -2,8 +2,8 @@ use crate::executable::{Cache, Error, Path, PathRoot, Rule, Rules};
 use bluejay_core::definition::{
     AbstractBaseOutputTypeReference, AbstractOutputTypeReference, ArgumentsDefinition,
     DirectiveDefinition, DirectiveLocation, FieldDefinition, FieldsDefinition,
-    InputValueDefinition, InterfaceTypeDefinition, ObjectTypeDefinition, SchemaDefinition,
-    TypeDefinitionReference, TypeDefinitionReferenceFromAbstract,
+    InterfaceTypeDefinition, ObjectTypeDefinition, SchemaDefinition, TypeDefinitionReference,
+    TypeDefinitionReferenceFromAbstract,
 };
 use bluejay_core::executable::{
     AbstractOperationDefinition, ExecutableDocument, Field, FragmentDefinition, FragmentSpread,
@@ -280,7 +280,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, R: Rule<'a, E, S>> Validato
     ) {
         arguments.iter().for_each(|argument| {
             if let Some(ivd) = arguments_definition.get(argument.name()) {
-                self.visit_const_value(argument.value(), ivd.r#type());
+                self.visit_const_argument(argument, ivd);
             }
         });
     }
@@ -293,26 +293,28 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, R: Rule<'a, E, S>> Validato
     ) {
         arguments.iter().for_each(|argument| {
             if let Some(ivd) = arguments_definition.get(argument.name()) {
-                self.visit_variable_value(argument.value(), ivd.r#type(), path);
+                self.visit_variable_argument(argument, ivd, path);
             }
         });
     }
 
-    fn visit_const_value(
+    fn visit_const_argument(
         &mut self,
-        value: &'a E::Value<true>,
-        expected_type: &'a S::InputTypeReference,
+        argument: &'a E::Argument<true>,
+        input_value_definition: &'a S::InputValueDefinition,
     ) {
-        self.rule.visit_const_value(value, expected_type);
+        self.rule
+            .visit_const_argument(argument, input_value_definition);
     }
 
-    fn visit_variable_value(
+    fn visit_variable_argument(
         &mut self,
-        value: &'a E::Value<false>,
-        expected_type: &'a S::InputTypeReference,
+        argument: &'a E::Argument<false>,
+        input_value_definition: &'a S::InputValueDefinition,
         path: &Path<'a, E>,
     ) {
-        self.rule.visit_variable_value(value, expected_type, path);
+        self.rule
+            .visit_variable_argument(argument, input_value_definition, path);
     }
 
     pub fn validate(

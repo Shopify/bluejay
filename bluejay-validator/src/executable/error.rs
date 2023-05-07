@@ -1,6 +1,6 @@
 use crate::value::input_coercion::Error as InputCoercionError;
 use bluejay_core::definition::{
-    AbstractOutputTypeReference, FieldDefinition, SchemaDefinition,
+    AbstractInputTypeReference, AbstractOutputTypeReference, FieldDefinition, SchemaDefinition,
     TypeDefinitionReferenceFromAbstract,
 };
 use bluejay_core::executable::{AbstractOperationDefinition, ExecutableDocument};
@@ -115,6 +115,11 @@ pub enum Error<'a, E: ExecutableDocument, S: SchemaDefinition> {
     },
     VariableDefinitionUnused {
         variable_definition: &'a E::VariableDefinition,
+    },
+    InvalidVariableUsage {
+        variable: &'a <E::Value<false> as AbstractValue<false>>::Variable,
+        variable_type: &'a E::TypeReference,
+        location_type: &'a S::InputTypeReference,
     },
 }
 
@@ -491,6 +496,27 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                 Some(Annotation::new(
                     "Variable definition not used",
                     variable_definition.variable().span().clone(),
+                )),
+                Vec::new(),
+            ),
+            Error::InvalidVariableUsage {
+                variable,
+                variable_type,
+                location_type,
+            } => Self::new(
+                format!(
+                    "Variable ${} of type {} cannot be used here, where {} is expected",
+                    variable.name(),
+                    variable_type.as_ref().display_name(),
+                    location_type.as_ref().display_name(),
+                ),
+                Some(Annotation::new(
+                    format!(
+                        "Cannot use variable of type {} where {} is expected",
+                        variable_type.as_ref().display_name(),
+                        location_type.as_ref().display_name(),
+                    ),
+                    variable.span().clone(),
                 )),
                 Vec::new(),
             ),

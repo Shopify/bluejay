@@ -3,7 +3,7 @@ use bluejay_core::definition::{SchemaDefinition, TypeDefinitionReferenceFromAbst
 use bluejay_core::executable::{
     AbstractOperationDefinition, ExecutableDocument, FragmentSpread, VariableDefinition,
 };
-use bluejay_core::{AbstractValue, AsIter, ObjectValue, Value, Variable};
+use bluejay_core::{AbstractValue, Argument, AsIter, ObjectValue, Value, Variable};
 use itertools::Either;
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 
@@ -17,13 +17,13 @@ pub struct AllVariableUsesDefined<'a, E: ExecutableDocument, S: SchemaDefinition
 impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Visitor<'a, E, S>
     for AllVariableUsesDefined<'a, E, S>
 {
-    fn visit_variable_value(
+    fn visit_variable_argument(
         &mut self,
-        value: &'a <E as ExecutableDocument>::Value<false>,
-        _: &'a <S as SchemaDefinition>::InputTypeReference,
+        argument: &'a <E as ExecutableDocument>::Argument<false>,
+        _: &'a <S as SchemaDefinition>::InputValueDefinition,
         path: &Path<'a, E>,
     ) {
-        self.visit_value(value, *path.root());
+        self.visit_value(argument.value(), *path.root());
     }
 
     fn visit_fragment_spread(

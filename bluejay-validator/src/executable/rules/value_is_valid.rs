@@ -1,7 +1,8 @@
 use crate::executable::{Cache, Error, Path, Rule, Visitor};
 use crate::value::input_coercion::CoerceInput;
-use bluejay_core::definition::SchemaDefinition;
+use bluejay_core::definition::{InputValueDefinition, SchemaDefinition};
 use bluejay_core::executable::{ExecutableDocument, VariableDefinition};
+use bluejay_core::Argument;
 
 pub struct ValueIsValid<'a, E: ExecutableDocument, S: SchemaDefinition> {
     errors: Vec<Error<'a, E, S>>,
@@ -30,24 +31,30 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Visitor<'a, E, S>
         }
     }
 
-    fn visit_const_value(
+    fn visit_const_argument(
         &mut self,
-        value: &'a <E as ExecutableDocument>::Value<true>,
-        expected_type: &'a <S as SchemaDefinition>::InputTypeReference,
+        argument: &'a <E as ExecutableDocument>::Argument<true>,
+        input_value_definition: &'a <S as SchemaDefinition>::InputValueDefinition,
     ) {
-        if let Err(coercion_errors) = expected_type.coerce_value(value, &[]) {
+        if let Err(coercion_errors) = input_value_definition
+            .r#type()
+            .coerce_value(argument.value(), &[])
+        {
             self.errors
                 .extend(coercion_errors.into_iter().map(Error::InvalidConstValue));
         }
     }
 
-    fn visit_variable_value(
+    fn visit_variable_argument(
         &mut self,
-        value: &'a <E as ExecutableDocument>::Value<false>,
-        expected_type: &'a <S as SchemaDefinition>::InputTypeReference,
+        argument: &'a <E as ExecutableDocument>::Argument<false>,
+        input_value_definition: &'a <S as SchemaDefinition>::InputValueDefinition,
         _: &Path<'a, E>,
     ) {
-        if let Err(coercion_errors) = expected_type.coerce_value(value, &[]) {
+        if let Err(coercion_errors) = input_value_definition
+            .r#type()
+            .coerce_value(argument.value(), &[])
+        {
             self.errors
                 .extend(coercion_errors.into_iter().map(Error::InvalidVariableValue));
         }

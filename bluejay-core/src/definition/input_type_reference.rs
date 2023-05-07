@@ -141,6 +141,13 @@ impl<
             }
         }
     }
+
+    pub fn unwrap_nullable(&self) -> Self {
+        match self {
+            Self::Base(b, _) => Self::Base(b, false),
+            Self::List(l, _) => Self::List(l, false),
+        }
+    }
 }
 
 pub trait AbstractInputTypeReference: Sized {

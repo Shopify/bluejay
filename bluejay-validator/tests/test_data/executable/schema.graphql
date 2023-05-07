@@ -71,6 +71,7 @@ type Arguments {
   floatArgField(floatArg: Float): Float
   intArgField(intArg: Int): Int
   nonNullBooleanArgField(nonNullBooleanArg: Boolean!): Boolean!
+  nonNullBooleanListField(nonNullBooleanListArg: [Boolean!]): Boolean!
   booleanListArgField(booleanListArg: [Boolean]!): [Boolean]
   optionalNonNullBooleanArgField(optionalBooleanArg: Boolean! = false): Boolean!
 }

@@ -123,3 +123,11 @@ impl<
         }
     }
 }
+
+impl<'a, const CONST: bool, L: ListValue<CONST>, O: ObjectValue<CONST>, V: Variable>
+    Value<'a, CONST, L, O, V>
+{
+    pub fn is_null(&self) -> bool {
+        matches!(self, Self::Null)
+    }
+}

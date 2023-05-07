@@ -67,17 +67,17 @@ pub trait Visitor<'a, E: ExecutableDocument, S: SchemaDefinition> {
     ) {
     }
 
-    fn visit_const_value(
+    fn visit_const_argument(
         &mut self,
-        _value: &'a E::Value<true>,
-        _expected_type: &'a S::InputTypeReference,
+        _argument: &'a E::Argument<true>,
+        _input_value_definition: &'a S::InputValueDefinition,
     ) {
     }
 
-    fn visit_variable_value(
+    fn visit_variable_argument(
         &mut self,
-        _value: &'a E::Value<false>,
-        _expected_type: &'a S::InputTypeReference,
+        _argument: &'a E::Argument<false>,
+        _input_value_definition: &'a S::InputValueDefinition,
         _path: &Path<'a, E>,
     ) {
     }

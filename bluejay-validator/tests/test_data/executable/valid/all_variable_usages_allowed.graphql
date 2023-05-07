@@ -1,0 +1,17 @@
+query nonNullListToList($nonNullBooleanList: [Boolean]!) {
+  arguments {
+    booleanListArgField(booleanListArg: $nonNullBooleanList)
+  }
+}
+
+query booleanArgQueryWithDefault($booleanArg: Boolean) {
+  arguments {
+    optionalNonNullBooleanArgField(optionalBooleanArg: $booleanArg)
+  }
+}
+
+query booleanArgQueryWithVariableDefault($booleanArg: Boolean = true) {
+  arguments {
+    nonNullBooleanArgField(nonNullBooleanArg: $booleanArg)
+  }
+}

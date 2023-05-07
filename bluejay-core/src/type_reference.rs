@@ -29,4 +29,33 @@ impl<'a, T: AbstractTypeReference> TypeReference<'a, T> {
             Self::ListType(inner, _) => inner.as_ref().name(),
         }
     }
+
+    pub fn is_required(&self) -> bool {
+        match self {
+            Self::NamedType(_, required) => *required,
+            Self::ListType(_, required) => *required,
+        }
+    }
+
+    pub fn unwrap_nullable(&self) -> Self {
+        match self {
+            Self::NamedType(n, _) => Self::NamedType(n, false),
+            Self::ListType(l, _) => Self::ListType(l, false),
+        }
+    }
+
+    pub fn display_name(&self) -> String {
+        match self {
+            Self::NamedType(name, required) => {
+                format!("{}{}", name, if *required { "!" } else { "" })
+            }
+            Self::ListType(inner, required) => {
+                format!(
+                    "[{}]{}",
+                    inner.as_ref().display_name(),
+                    if *required { "!" } else { "" }
+                )
+            }
+        }
+    }
 }

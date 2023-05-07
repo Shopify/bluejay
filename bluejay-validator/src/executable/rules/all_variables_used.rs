@@ -3,12 +3,12 @@ use bluejay_core::definition::{SchemaDefinition, TypeDefinitionReferenceFromAbst
 use bluejay_core::executable::{
     AbstractOperationDefinition, ExecutableDocument, FragmentSpread, VariableDefinition,
 };
-use bluejay_core::{AbstractValue, AsIter, ObjectValue, Value, Variable};
-use std::collections::{BTreeSet, HashMap, HashSet};
+use bluejay_core::{AbstractValue, Argument, AsIter, ObjectValue, Value, Variable};
+use std::collections::{HashMap, HashSet};
 use std::ops::Not;
 
 pub struct AllVariablesUsed<'a, E: ExecutableDocument, S: SchemaDefinition> {
-    fragment_references: HashMap<PathRoot<'a, E>, BTreeSet<&'a E::FragmentDefinition>>,
+    fragment_references: HashMap<PathRoot<'a, E>, HashSet<&'a E::FragmentDefinition>>,
     variable_usages: HashMap<PathRoot<'a, E>, HashSet<&'a str>>,
     cache: &'a Cache<'a, E, S>,
     executable_document: &'a E,
@@ -17,13 +17,13 @@ pub struct AllVariablesUsed<'a, E: ExecutableDocument, S: SchemaDefinition> {
 impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Visitor<'a, E, S>
     for AllVariablesUsed<'a, E, S>
 {
-    fn visit_variable_value(
+    fn visit_variable_argument(
         &mut self,
-        value: &'a <E as ExecutableDocument>::Value<false>,
-        _: &'a <S as SchemaDefinition>::InputTypeReference,
+        argument: &'a <E as ExecutableDocument>::Argument<false>,
+        _: &'a <S as SchemaDefinition>::InputValueDefinition,
         path: &Path<'a, E>,
     ) {
-        self.visit_value(value, *path.root());
+        self.visit_value(argument.value(), *path.root());
     }
 
     fn visit_fragment_spread(

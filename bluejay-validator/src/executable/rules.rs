@@ -1,3 +1,4 @@
+mod all_variable_usages_allowed;
 mod all_variable_uses_defined;
 mod all_variables_used;
 mod argument_names;
@@ -24,6 +25,7 @@ mod value_is_valid;
 mod variable_uniqueness;
 mod variables_are_input_types;
 
+pub use all_variable_usages_allowed::AllVariableUsagesAllowed;
 pub use all_variable_uses_defined::AllVariableUsesDefined;
 pub use all_variables_used::AllVariablesUsed;
 pub use argument_names::ArgumentNames;
@@ -144,21 +146,21 @@ macro_rules! define_rules {
                     $(self.[<$rule:snake>].visit_fragment_spread(fragment_spread, scoped_type, path);)*
                 }
 
-                fn visit_const_value(
+                fn visit_const_argument(
                     &mut self,
-                    value: &'a E::Value<true>,
-                    expected_type: &'a S::InputTypeReference,
+                    argument: &'a E::Argument<true>,
+                    input_value_definition: &'a S::InputValueDefinition,
                 ) {
-                    $(self.[<$rule:snake>].visit_const_value(value, expected_type);)*
+                    $(self.[<$rule:snake>].visit_const_argument(argument, input_value_definition);)*
                 }
 
-                fn visit_variable_value(
+                fn visit_variable_argument(
                     &mut self,
-                    value: &'a E::Value<false>,
-                    expected_type: &'a S::InputTypeReference,
+                    argument: &'a E::Argument<false>,
+                    input_value_definition: &'a S::InputValueDefinition,
                     path: &Path<'a, E>,
                 ) {
-                    $(self.[<$rule:snake>].visit_variable_value(value, expected_type, path);)*
+                    $(self.[<$rule:snake>].visit_variable_argument(argument, input_value_definition, path);)*
                 }
 
                 fn visit_variable_definition(&mut self, variable_definition: &'a E::VariableDefinition) {
@@ -213,4 +215,5 @@ define_rules!(
     VariablesAreInputTypes,
     AllVariableUsesDefined,
     AllVariablesUsed,
+    AllVariableUsagesAllowed,
 );
