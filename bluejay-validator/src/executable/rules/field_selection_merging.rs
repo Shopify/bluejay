@@ -217,7 +217,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> FieldSelectionMer
     ) -> HashMap<&'a str, Vec<FieldContext<'a, E, S>>> {
         let mut fields = HashMap::new();
         self.visit_selections_for_fields(
-            selection_set.as_ref().iter(),
+            selection_set.iter(),
             &mut fields,
             parent_type,
             &HashSet::new(),
@@ -246,7 +246,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> FieldSelectionMer
                 ) {
                     if self.selection_set_valid(selection_set, parent_type) {
                         self.visit_selections_for_fields(
-                            selection_set.as_ref().iter(),
+                            selection_set.iter(),
                             &mut fields,
                             parent_type,
                             &field_context.parent_fragments,
@@ -306,7 +306,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> FieldSelectionMer
                                 parent_type,
                             ) {
                                 self.visit_selections_for_fields(
-                                    fragment_definition.selection_set().as_ref().iter(),
+                                    fragment_definition.selection_set().iter(),
                                     fields,
                                     scoped_type,
                                     &parent_fragments,
@@ -326,7 +326,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> FieldSelectionMer
                 if let Some(scoped_type) = scoped_type {
                     if self.selection_set_valid(i.selection_set(), scoped_type) {
                         self.visit_selections_for_fields(
-                            i.selection_set().as_ref().iter(),
+                            i.selection_set().iter(),
                             fields,
                             scoped_type,
                             parent_fragments,

@@ -4,7 +4,7 @@ use bluejay_core::executable::{
     AbstractOperationDefinition, ExecutableDocument, FragmentDefinition, FragmentSpread,
     InlineFragment, Selection,
 };
-use bluejay_core::OperationType;
+use bluejay_core::{AsIter, OperationType};
 use std::marker::PhantomData;
 
 pub struct SubscriptionOperationSingleRootField<'a, E: ExecutableDocument, S: SchemaDefinition> {
@@ -25,10 +25,10 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> Visitor<'a, E, S>
             return;
         }
         let selection_set = core_operation_definition.selection_set();
-        if selection_set.as_ref().len() != 1 {
+        if selection_set.len() != 1 {
             self.invalid_operation_definitions
                 .push(operation_definition);
-        } else if let Some(first_selection) = selection_set.as_ref().first() {
+        } else if let Some(first_selection) = selection_set.iter().next() {
             let fields_count = match first_selection.as_ref() {
                 Selection::Field(_) => Some(1),
                 Selection::FragmentSpread(fs) => {
@@ -37,10 +37,10 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> Visitor<'a, E, S>
                         .fragment_definitions()
                         .iter()
                         .find(|fd| fd.name() == fs.name());
-                    fragment_definition.map(|fd| fd.selection_set().as_ref().len())
+                    fragment_definition.map(|fd| fd.selection_set().len())
                 }
                 Selection::InlineFragment(inline_fragment) => {
-                    Some(inline_fragment.selection_set().as_ref().len())
+                    Some(inline_fragment.selection_set().len())
                 }
             };
             if matches!(fields_count, Some(fc) if fc != 1) {

@@ -2,6 +2,7 @@ use crate::ast::executable::Selection;
 use crate::ast::{FromTokens, IsMatch, ParseError, Tokens};
 use crate::lexical_token::PunctuatorType;
 use crate::{HasSpan, Span};
+use bluejay_core::AsIter;
 use std::cmp::{Eq, Ord, Ordering, PartialEq, PartialOrd};
 use std::hash::{Hash, Hasher};
 
@@ -36,9 +37,16 @@ impl<'a> bluejay_core::executable::SelectionSet for SelectionSet<'a> {
     type Selection = Selection<'a>;
 }
 
-impl<'a> AsRef<[Selection<'a>]> for SelectionSet<'a> {
-    fn as_ref(&self) -> &[Selection<'a>] {
-        &self.selections
+impl<'a> AsIter for SelectionSet<'a> {
+    type Item = Selection<'a>;
+    type Iterator<'b> = std::slice::Iter<'b, Self::Item> where 'a: 'b;
+
+    fn iter(&self) -> Self::Iterator<'_> {
+        self.selections.iter()
+    }
+
+    fn len(&self) -> usize {
+        self.selections.len()
     }
 }
 

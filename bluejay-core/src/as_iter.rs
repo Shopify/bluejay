@@ -9,6 +9,10 @@ pub trait AsIter {
     fn is_empty(&self) -> bool {
         self.iter().next().is_none()
     }
+
+    fn len(&self) -> usize {
+        self.iter().count()
+    }
 }
 
 impl<T> AsIter for Vec<T> {

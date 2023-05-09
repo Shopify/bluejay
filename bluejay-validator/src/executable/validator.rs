@@ -117,7 +117,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, R: Rule<'a, E, S>> Validato
     ) {
         self.rule.visit_selection_set(selection_set, scoped_type);
 
-        selection_set.as_ref().iter().for_each(|selection| {
+        selection_set.iter().for_each(|selection| {
             let nested_path = path.with_selection(selection);
             match selection.as_ref() {
                 Selection::Field(f) => {

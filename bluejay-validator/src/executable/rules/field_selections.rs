@@ -4,6 +4,7 @@ use bluejay_core::definition::{
     TypeDefinitionReference, TypeDefinitionReferenceFromAbstract,
 };
 use bluejay_core::executable::{ExecutableDocument, Field, Selection};
+use bluejay_core::AsIter;
 use std::ops::Not;
 
 pub struct FieldSelections<'a, E: ExecutableDocument, S: SchemaDefinition> {
@@ -31,7 +32,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Visitor<'a, E, S>
         };
 
         self.errors
-            .extend(selection_set.as_ref().iter().filter_map(|selection| {
+            .extend(selection_set.iter().filter_map(|selection| {
                 if let Selection::Field(field) = selection.as_ref() {
                     let name = field.name();
                     fields_definition

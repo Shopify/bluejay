@@ -3,6 +3,7 @@ use bluejay_core::definition::SchemaDefinition;
 use bluejay_core::executable::{
     ExecutableDocument, Field, FragmentDefinition, FragmentSpread, InlineFragment, Selection,
 };
+use bluejay_core::AsIter;
 use std::collections::{BTreeMap, HashSet};
 
 pub struct FragmentSpreadsMustNotFormCycles<'a, E: ExecutableDocument, S: SchemaDefinition> {
@@ -111,7 +112,6 @@ fn visit_selection_for_fragment_spreads<'a, E: ExecutableDocument + 'a>(
     fragment_spreads: &mut Vec<&'a E::FragmentSpread>,
 ) {
     selection_set
-        .as_ref()
         .iter()
         .for_each(|selection| match selection.as_ref() {
             Selection::Field(f) => {
