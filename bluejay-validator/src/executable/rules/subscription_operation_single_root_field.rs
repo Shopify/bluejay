@@ -1,8 +1,8 @@
 use crate::executable::{Cache, Error, Rule, Visitor};
 use bluejay_core::definition::SchemaDefinition;
 use bluejay_core::executable::{
-    AbstractOperationDefinition, ExecutableDocument, FragmentDefinition, FragmentSpread,
-    InlineFragment, Selection,
+    AbstractOperationDefinition, AbstractSelection, ExecutableDocument, FragmentDefinition,
+    FragmentSpread, InlineFragment, Selection,
 };
 use bluejay_core::{AsIter, OperationType};
 use std::marker::PhantomData;

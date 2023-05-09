@@ -1,7 +1,8 @@
 use crate::executable::{Cache, Error, Rule, Visitor};
 use bluejay_core::definition::SchemaDefinition;
 use bluejay_core::executable::{
-    ExecutableDocument, Field, FragmentDefinition, FragmentSpread, InlineFragment, Selection,
+    AbstractSelection, ExecutableDocument, Field, FragmentDefinition, FragmentSpread,
+    InlineFragment, Selection,
 };
 use bluejay_core::AsIter;
 use std::collections::{BTreeMap, HashSet};

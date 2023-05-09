@@ -3,7 +3,7 @@ use bluejay_core::definition::{
     FieldsDefinition, InterfaceTypeDefinition, ObjectTypeDefinition, SchemaDefinition,
     TypeDefinitionReference, TypeDefinitionReferenceFromAbstract,
 };
-use bluejay_core::executable::{ExecutableDocument, Field, Selection};
+use bluejay_core::executable::{AbstractSelection, ExecutableDocument, Field, Selection};
 use bluejay_core::AsIter;
 use std::ops::Not;
 

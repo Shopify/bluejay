@@ -5,7 +5,8 @@ use bluejay_core::definition::{
     SchemaDefinition, TypeDefinitionReference, TypeDefinitionReferenceFromAbstract,
 };
 use bluejay_core::executable::{
-    ExecutableDocument, Field, FragmentDefinition, FragmentSpread, InlineFragment, Selection,
+    AbstractSelection, ExecutableDocument, Field, FragmentDefinition, FragmentSpread,
+    InlineFragment, Selection,
 };
 use bluejay_core::{AbstractValue, Argument, AsIter};
 use std::collections::{BTreeMap, HashMap, HashSet};

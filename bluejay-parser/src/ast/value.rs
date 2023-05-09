@@ -174,12 +174,6 @@ impl<'a, const CONST: bool> AsIter for ListValue<'a, CONST> {
     }
 }
 
-impl<'a, const CONST: bool> AsRef<[Value<'a, CONST>]> for ListValue<'a, CONST> {
-    fn as_ref(&self) -> &[Value<'a, CONST>] {
-        self.elements.as_slice()
-    }
-}
-
 #[derive(Debug)]
 pub struct ObjectValue<'a, const CONST: bool> {
     fields: Vec<(Name<'a>, Value<'a, CONST>)>,
