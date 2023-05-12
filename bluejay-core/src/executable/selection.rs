@@ -1,35 +1,22 @@
 use crate::executable::{Field, FragmentSpread, InlineFragment};
 
 #[derive(Debug)]
-pub enum Selection<'a, F: Field, FS: FragmentSpread, IF: InlineFragment> {
-    Field(&'a F),
-    FragmentSpread(&'a FS),
-    InlineFragment(&'a IF),
+pub enum SelectionReference<'a, S: Selection> {
+    Field(&'a S::Field),
+    FragmentSpread(&'a S::FragmentSpread),
+    InlineFragment(&'a S::InlineFragment),
 }
 
-pub trait AbstractSelection {
+pub trait Selection: Sized {
     type Field: Field;
-    type FragmentSpread: FragmentSpread;
-    type InlineFragment: InlineFragment;
+    type FragmentSpread: FragmentSpread<Directives = <Self::Field as Field>::Directives>;
+    type InlineFragment: InlineFragment<Directives = <Self::Field as Field>::Directives>;
 
-    fn as_ref(&self) -> SelectionFromAbstract<'_, Self>;
+    fn as_ref(&self) -> SelectionReference<'_, Self>;
 }
 
-pub type SelectionFromAbstract<'a, T> = Selection<
-    'a,
-    <T as AbstractSelection>::Field,
-    <T as AbstractSelection>::FragmentSpread,
-    <T as AbstractSelection>::InlineFragment,
->;
-
-impl<
-        'a,
-        F: Field,
-        FS: FragmentSpread<Directives = F::Directives>,
-        IF: InlineFragment<Directives = F::Directives>,
-    > Selection<'a, F, FS, IF>
-{
-    pub fn directives(&self) -> &'a F::Directives {
+impl<'a, S: Selection> SelectionReference<'a, S> {
+    pub fn directives(&self) -> &'a <S::Field as Field>::Directives {
         match self {
             Self::Field(f) => f.directives(),
             Self::FragmentSpread(fs) => fs.directives(),

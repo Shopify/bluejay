@@ -6,8 +6,8 @@ use bluejay_core::definition::{
     TypeDefinitionReferenceFromAbstract,
 };
 use bluejay_core::executable::{
-    AbstractSelection, ExecutableDocument, Field, FragmentDefinition, FragmentSpread,
-    InlineFragment, OperationDefinition, Selection, VariableDefinition,
+    ExecutableDocument, Field, FragmentDefinition, FragmentSpread, InlineFragment,
+    OperationDefinition, Selection, SelectionReference, VariableDefinition,
 };
 use bluejay_core::{Argument, AsIter, Directive, OperationType};
 
@@ -120,7 +120,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, R: Rule<'a, E, S>> Validato
         selection_set.iter().for_each(|selection| {
             let nested_path = path.with_selection(selection);
             match selection.as_ref() {
-                Selection::Field(f) => {
+                SelectionReference::Field(f) => {
                     let field_definition = Self::fields_definition(scoped_type)
                         .and_then(|fields_definition| fields_definition.get(f.name()));
 
@@ -128,10 +128,12 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, R: Rule<'a, E, S>> Validato
                         self.visit_field(f, field_definition, &nested_path);
                     }
                 }
-                Selection::InlineFragment(i) => {
+                SelectionReference::InlineFragment(i) => {
                     self.visit_inline_fragment(i, scoped_type, &nested_path)
                 }
-                Selection::FragmentSpread(fs) => self.visit_fragment_spread(fs, scoped_type, path),
+                SelectionReference::FragmentSpread(fs) => {
+                    self.visit_fragment_spread(fs, scoped_type, path)
+                }
             }
         })
     }

@@ -5,8 +5,8 @@ use bluejay_core::definition::{
     SchemaDefinition, TypeDefinitionReference, TypeDefinitionReferenceFromAbstract,
 };
 use bluejay_core::executable::{
-    AbstractSelection, ExecutableDocument, Field, FragmentDefinition, FragmentSpread,
-    InlineFragment, Selection,
+    ExecutableDocument, Field, FragmentDefinition, FragmentSpread, InlineFragment, Selection,
+    SelectionReference,
 };
 use bluejay_core::{Argument, AsIter, Value};
 use std::collections::{BTreeMap, HashMap, HashSet};
@@ -267,7 +267,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> FieldSelectionMer
         parent_fragments: &HashSet<&'a str>,
     ) {
         selections.for_each(|selection| match selection.as_ref() {
-            Selection::Field(field) => {
+            SelectionReference::Field(field) => {
                 let fields_definition = match parent_type {
                     TypeDefinitionReference::ObjectType(otd) => Some(otd.fields_definition()),
                     TypeDefinitionReference::InterfaceType(itd) => Some(itd.fields_definition()),
@@ -291,7 +291,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> FieldSelectionMer
                         });
                 }
             }
-            Selection::FragmentSpread(fs) => {
+            SelectionReference::FragmentSpread(fs) => {
                 let fragment_name = fs.name();
                 if !parent_fragments.contains(fragment_name) {
                     if let Some(fragment_definition) = self.cache.fragment_definition(fragment_name)
@@ -317,7 +317,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> FieldSelectionMer
                     }
                 }
             }
-            Selection::InlineFragment(i) => {
+            SelectionReference::InlineFragment(i) => {
                 let scoped_type = match i.type_condition() {
                     Some(type_condition) => {
                         self.schema_definition.get_type_definition(type_condition)

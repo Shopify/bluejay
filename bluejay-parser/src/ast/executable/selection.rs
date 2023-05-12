@@ -1,9 +1,7 @@
 use crate::ast::executable::{Field, FragmentSpread, InlineFragment};
 use crate::ast::{FromTokens, IsMatch, ParseError, Tokens};
 use crate::lexical_token::PunctuatorType;
-use bluejay_core::executable::{
-    AbstractSelection, Selection as CoreSelection, SelectionFromAbstract,
-};
+use bluejay_core::executable::{Selection as CoreSelection, SelectionReference};
 
 #[derive(Debug)]
 pub enum Selection<'a> {
@@ -12,16 +10,16 @@ pub enum Selection<'a> {
     InlineFragment(InlineFragment<'a>),
 }
 
-impl<'a> AbstractSelection for Selection<'a> {
+impl<'a> CoreSelection for Selection<'a> {
     type Field = Field<'a>;
     type FragmentSpread = FragmentSpread<'a>;
     type InlineFragment = InlineFragment<'a>;
 
-    fn as_ref(&self) -> SelectionFromAbstract<'_, Self> {
+    fn as_ref(&self) -> SelectionReference<'_, Self> {
         match self {
-            Self::Field(f) => CoreSelection::Field(f),
-            Self::FragmentSpread(fs) => CoreSelection::FragmentSpread(fs),
-            Self::InlineFragment(i) => CoreSelection::InlineFragment(i),
+            Self::Field(f) => SelectionReference::Field(f),
+            Self::FragmentSpread(fs) => SelectionReference::FragmentSpread(fs),
+            Self::InlineFragment(i) => SelectionReference::InlineFragment(i),
         }
     }
 }

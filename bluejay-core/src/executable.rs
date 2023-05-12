@@ -18,7 +18,7 @@ pub use operation_definition::{
     ExplicitOperationDefinition, ImplicitOperationDefinition, OperationDefinition,
     OperationDefinitionReference,
 };
-pub use selection::{AbstractSelection, Selection, SelectionFromAbstract};
+pub use selection::{Selection, SelectionReference};
 pub use selection_set::SelectionSet;
 pub use variable_definition::{VariableDefinition, VariableDefinitions};
 pub use variable_type::{VariableType, VariableTypeReference};

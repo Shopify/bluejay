@@ -3,7 +3,7 @@ use bluejay_core::definition::{
     FieldsDefinition, InterfaceTypeDefinition, ObjectTypeDefinition, SchemaDefinition,
     TypeDefinitionReference, TypeDefinitionReferenceFromAbstract,
 };
-use bluejay_core::executable::{AbstractSelection, ExecutableDocument, Field, Selection};
+use bluejay_core::executable::{ExecutableDocument, Field, Selection, SelectionReference};
 use bluejay_core::AsIter;
 use std::ops::Not;
 
@@ -33,7 +33,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Visitor<'a, E, S>
 
         self.errors
             .extend(selection_set.iter().filter_map(|selection| {
-                if let Selection::Field(field) = selection.as_ref() {
+                if let SelectionReference::Field(field) = selection.as_ref() {
                     let name = field.name();
                     fields_definition
                         .contains_field(name)

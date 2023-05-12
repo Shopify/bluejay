@@ -1,8 +1,8 @@
 use crate::executable::{Cache, Error, Rule, Visitor};
 use bluejay_core::definition::SchemaDefinition;
 use bluejay_core::executable::{
-    AbstractSelection, ExecutableDocument, FragmentDefinition, FragmentSpread, InlineFragment,
-    OperationDefinition, Selection,
+    ExecutableDocument, FragmentDefinition, FragmentSpread, InlineFragment, OperationDefinition,
+    Selection, SelectionReference,
 };
 use bluejay_core::{AsIter, OperationType};
 use std::marker::PhantomData;
@@ -30,8 +30,8 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> Visitor<'a, E, S>
                 .push(operation_definition);
         } else if let Some(first_selection) = selection_set.iter().next() {
             let fields_count = match first_selection.as_ref() {
-                Selection::Field(_) => Some(1),
-                Selection::FragmentSpread(fs) => {
+                SelectionReference::Field(_) => Some(1),
+                SelectionReference::FragmentSpread(fs) => {
                     let fragment_definition = self
                         .executable_document
                         .fragment_definitions()
@@ -39,7 +39,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> Visitor<'a, E, S>
                         .find(|fd| fd.name() == fs.name());
                     fragment_definition.map(|fd| fd.selection_set().len())
                 }
-                Selection::InlineFragment(inline_fragment) => {
+                SelectionReference::InlineFragment(inline_fragment) => {
                     Some(inline_fragment.selection_set().len())
                 }
             };

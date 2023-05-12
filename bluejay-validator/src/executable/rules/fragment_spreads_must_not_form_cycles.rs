@@ -1,8 +1,8 @@
 use crate::executable::{Cache, Error, Rule, Visitor};
 use bluejay_core::definition::SchemaDefinition;
 use bluejay_core::executable::{
-    AbstractSelection, ExecutableDocument, Field, FragmentDefinition, FragmentSpread,
-    InlineFragment, Selection,
+    ExecutableDocument, Field, FragmentDefinition, FragmentSpread, InlineFragment, Selection,
+    SelectionReference,
 };
 use bluejay_core::AsIter;
 use std::collections::{BTreeMap, HashSet};
@@ -115,15 +115,15 @@ fn visit_selection_for_fragment_spreads<'a, E: ExecutableDocument + 'a>(
     selection_set
         .iter()
         .for_each(|selection| match selection.as_ref() {
-            Selection::Field(f) => {
+            SelectionReference::Field(f) => {
                 if let Some(selection_set) = f.selection_set() {
                     visit_selection_for_fragment_spreads::<E>(selection_set, fragment_spreads)
                 }
             }
-            Selection::FragmentSpread(fs) => {
+            SelectionReference::FragmentSpread(fs) => {
                 fragment_spreads.push(fs);
             }
-            Selection::InlineFragment(f) => {
+            SelectionReference::InlineFragment(f) => {
                 visit_selection_for_fragment_spreads::<E>(f.selection_set(), fragment_spreads)
             }
         })
