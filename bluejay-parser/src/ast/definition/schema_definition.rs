@@ -1,5 +1,5 @@
 use crate::ast::definition::{
-    ArgumentsDefinition, BaseInputTypeReference, BaseOutputTypeReference, Context,
+    ArgumentsDefinition, BaseInputType, BaseOutputTypeReference, Context,
     CustomScalarTypeDefinition, DefaultContext, DirectiveDefinition, EnumTypeDefinition,
     EnumValueDefinition, EnumValueDefinitions, FieldDefinition, FieldsDefinition,
     InputFieldsDefinition, InputObjectTypeDefinition, InputTypeReference, InputValueDefinition,
@@ -91,7 +91,7 @@ impl<'a, C: Context> CoreSchemaDefinition for SchemaDefinition<'a, C> {
     type InterfaceImplementations = InterfaceImplementations<'a, C>;
     type UnionMemberType = UnionMemberType<'a, C>;
     type UnionMemberTypes = UnionMemberTypes<'a, C>;
-    type BaseInputTypeReference = BaseInputTypeReference<'a, C>;
+    type BaseInputType = BaseInputType<'a, C>;
     type InputTypeReference = InputTypeReference<'a, C>;
     type BaseOutputTypeReference = BaseOutputTypeReference<'a, C>;
     type OutputTypeReference = OutputTypeReference<'a, C>;

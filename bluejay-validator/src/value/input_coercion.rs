@@ -1,7 +1,7 @@
 use bluejay_core::definition::{
-    AbstractBaseInputTypeReference, AbstractInputTypeReference, BaseInputTypeReference,
-    EnumTypeDefinition, EnumValueDefinition, InputFieldsDefinition, InputObjectTypeDefinition,
-    InputTypeReference, InputValueDefinition, ScalarTypeDefinition,
+    AbstractInputTypeReference, BaseInputType, BaseInputTypeReference, EnumTypeDefinition,
+    EnumValueDefinition, InputFieldsDefinition, InputObjectTypeDefinition, InputTypeReference,
+    InputValueDefinition, ScalarTypeDefinition,
 };
 use bluejay_core::{
     AsIter, BuiltinScalarDefinition, Directive, ObjectValue, Value, ValueReference,
@@ -113,16 +113,14 @@ fn coerce_value_for_base_input_type_reference<
 ) -> Result<(), Vec<Error<'a, CONST, V>>> {
     let base = input_type_reference.as_ref().base().as_ref();
     match base {
-        BaseInputTypeReference::BuiltinScalarType(bstd) => {
+        BaseInputTypeReference::BuiltinScalar(bstd) => {
             coerce_builtin_scalar_value(input_type_reference, bstd, value, path)
         }
-        BaseInputTypeReference::CustomScalarType(cstd) => {
-            coerce_custom_scalar_value(cstd, value, path)
-        }
-        BaseInputTypeReference::EnumType(etd) => {
+        BaseInputTypeReference::CustomScalar(cstd) => coerce_custom_scalar_value(cstd, value, path),
+        BaseInputTypeReference::Enum(etd) => {
             coerce_enum_value(input_type_reference, etd, value, path)
         }
-        BaseInputTypeReference::InputObjectType(iotd) => {
+        BaseInputTypeReference::InputObject(iotd) => {
             coerce_input_object_value(input_type_reference, iotd, value, path)
         }
     }
@@ -174,7 +172,7 @@ fn coerce_custom_scalar_value<'a, const CONST: bool, V: Value<CONST>>(
 
 fn coerce_enum_value<'a, const CONST: bool, V: Value<CONST>, T: AbstractInputTypeReference>(
     input_type_reference: &'a T,
-    enum_type_definition: &'a <T::BaseInputTypeReference as AbstractBaseInputTypeReference>::EnumTypeDefinition,
+    enum_type_definition: &'a <T::BaseInputType as BaseInputType>::EnumTypeDefinition,
     value: &'a V,
     path: &[PathMember<'a>],
 ) -> Result<(), Vec<Error<'a, CONST, V>>> {
@@ -222,7 +220,7 @@ fn coerce_input_object_value<
     T: AbstractInputTypeReference,
 >(
     input_type_reference: &'a T,
-    input_object_type_definition: &'a <T::BaseInputTypeReference as AbstractBaseInputTypeReference>::InputObjectTypeDefinition,
+    input_object_type_definition: &'a <T::BaseInputType as BaseInputType>::InputObjectTypeDefinition,
     value: &'a V,
     path: &[PathMember<'a>],
 ) -> Result<(), Vec<Error<'a, CONST, V>>> {

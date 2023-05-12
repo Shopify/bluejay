@@ -1,7 +1,7 @@
 use crate::ast::definition::{
-    BaseInputTypeReference, BaseOutputTypeReference, Context, CustomScalarTypeDefinition,
-    DefaultContext, DirectiveDefinition, EnumTypeDefinition, ExplicitSchemaDefinition,
-    FieldsDefinition, InputObjectTypeDefinition, InputValueDefinition, InterfaceImplementations,
+    BaseInputType, BaseOutputTypeReference, Context, CustomScalarTypeDefinition, DefaultContext,
+    DirectiveDefinition, EnumTypeDefinition, ExplicitSchemaDefinition, FieldsDefinition,
+    InputObjectTypeDefinition, InputValueDefinition, InterfaceImplementations,
     InterfaceTypeDefinition, ObjectTypeDefinition, SchemaDefinition, TypeDefinitionReference,
     UnionTypeDefinition,
 };
@@ -571,16 +571,14 @@ impl<'a, C: Context> DefinitionDocument<'a, C> {
         input_value_definitions.for_each(|input_value_definition| {
             let t = input_value_definition.r#type().as_ref().base();
             match indexed_type_definitions.get(t.name().as_ref()) {
-                Some(&tdr) => {
-                    match BaseInputTypeReference::core_type_from_type_definition_reference(tdr) {
-                        Ok(core_t) => t.set_type_reference(core_t).unwrap(),
-                        Err(_) => {
-                            errors.push(DefinitionDocumentError::ReferencedTypeIsNotAnInputType {
-                                name: t.name(),
-                            })
-                        }
+                Some(&tdr) => match BaseInputType::core_type_from_type_definition_reference(tdr) {
+                    Ok(core_t) => t.set_type_reference(core_t).unwrap(),
+                    Err(_) => {
+                        errors.push(DefinitionDocumentError::ReferencedTypeIsNotAnInputType {
+                            name: t.name(),
+                        })
                     }
-                }
+                },
                 None => errors
                     .push(DefinitionDocumentError::ReferencedTypeDoesNotExist { name: t.name() }),
             }

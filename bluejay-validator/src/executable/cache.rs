@@ -7,10 +7,8 @@ use bluejay_core::AsIter;
 use std::collections::HashMap;
 
 pub struct Cache<'a, E: ExecutableDocument, S: SchemaDefinition> {
-    variable_definition_input_type_references: HashMap<
-        &'a E::VariableType,
-        VariableDefinitionInputTypeReference<'a, S::BaseInputTypeReference>,
-    >,
+    variable_definition_input_type_references:
+        HashMap<&'a E::VariableType, VariableDefinitionInputTypeReference<'a, S::BaseInputType>>,
     indexed_fragment_definitions: HashMap<&'a str, &'a E::FragmentDefinition>,
 }
 
@@ -56,7 +54,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> Cache<'a, E, S> {
     pub fn variable_definition_input_type_reference(
         &self,
         variable_type: &E::VariableType,
-    ) -> Option<&VariableDefinitionInputTypeReference<'a, S::BaseInputTypeReference>> {
+    ) -> Option<&VariableDefinitionInputTypeReference<'a, S::BaseInputType>> {
         self.variable_definition_input_type_references
             .get(variable_type)
     }

@@ -1,9 +1,8 @@
 use crate::executable::{Cache, Error, Path, PathRoot, Rule, Visitor};
 use bluejay_core::definition::{
-    AbstractBaseInputTypeReference, AbstractInputTypeReference, BaseInputTypeReference,
-    InputFieldsDefinition, InputObjectTypeDefinition, InputTypeReference,
-    InputTypeReferenceFromAbstract, InputValueDefinition, SchemaDefinition,
-    TypeDefinitionReferenceFromAbstract,
+    AbstractInputTypeReference, BaseInputType, BaseInputTypeReference, InputFieldsDefinition,
+    InputObjectTypeDefinition, InputTypeReference, InputTypeReferenceFromAbstract,
+    InputValueDefinition, SchemaDefinition, TypeDefinitionReferenceFromAbstract,
 };
 use bluejay_core::executable::{
     ExecutableDocument, FragmentSpread, OperationDefinition, VariableDefinition, VariableType,
@@ -73,7 +72,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> AllVariableUsagesAllowed<'a
             }),
             ValueReference::Object(o) => o.iter().for_each(|(key, value)| {
                 if let Some(ivd) = location.input_value_definition() {
-                    if let BaseInputTypeReference::InputObjectType(iotd) =
+                    if let BaseInputTypeReference::InputObject(iotd) =
                         ivd.r#type().as_ref().base().as_ref()
                     {
                         if let Some(ivd) = iotd.input_field_definitions().get(key.as_ref()) {

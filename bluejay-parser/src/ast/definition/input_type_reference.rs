@@ -6,55 +6,54 @@ use crate::ast::{FromTokens, ParseError, Tokens};
 use crate::lexical_token::{Name, PunctuatorType};
 use crate::{HasSpan, Span};
 use bluejay_core::definition::{
-    AbstractBaseInputTypeReference, AbstractInputTypeReference,
-    BaseInputTypeReference as CoreBaseInputTypeReference, BaseInputTypeReferenceFromAbstract,
+    AbstractInputTypeReference, BaseInputType as CoreBaseInputType, BaseInputTypeReference,
     InputTypeReference as CoreInputTypeReference, InputTypeReferenceFromAbstract,
 };
 use once_cell::sync::OnceCell;
 use std::marker::PhantomData;
 
 #[derive(Debug)]
-pub struct BaseInputTypeReference<'a, C: Context + 'a> {
+pub struct BaseInputType<'a, C: Context + 'a> {
     name: Name<'a>,
-    r#type: OnceCell<BaseInputTypeReferenceFromAbstract<'a, Self>>,
+    r#type: OnceCell<BaseInputTypeReference<'a, Self>>,
     context: PhantomData<C>,
 }
 
-impl<'a, C: Context + 'a> AbstractBaseInputTypeReference for BaseInputTypeReference<'a, C> {
+impl<'a, C: Context + 'a> CoreBaseInputType for BaseInputType<'a, C> {
     type CustomScalarTypeDefinition = CustomScalarTypeDefinition<'a, C>;
     type EnumTypeDefinition = EnumTypeDefinition<'a>;
     type InputObjectTypeDefinition = InputObjectTypeDefinition<'a, C>;
 
-    fn as_ref(&self) -> BaseInputTypeReferenceFromAbstract<'a, Self> {
+    fn as_ref(&self) -> BaseInputTypeReference<'a, Self> {
         *self.r#type.get().unwrap()
     }
 }
 
-impl<'a, C: Context + 'a> BaseInputTypeReference<'a, C> {
+impl<'a, C: Context + 'a> BaseInputType<'a, C> {
     pub(crate) fn name(&self) -> &Name<'a> {
         &self.name
     }
 
     pub(crate) fn set_type_reference(
         &self,
-        type_reference: BaseInputTypeReferenceFromAbstract<'a, Self>,
-    ) -> Result<(), BaseInputTypeReferenceFromAbstract<'a, Self>> {
+        type_reference: BaseInputTypeReference<'a, Self>,
+    ) -> Result<(), BaseInputTypeReference<'a, Self>> {
         self.r#type.set(type_reference)
     }
 
     pub(crate) fn core_type_from_type_definition_reference(
         type_definition_reference: &'a TypeDefinitionReference<'a, C>,
-    ) -> Result<BaseInputTypeReferenceFromAbstract<'a, Self>, ()> {
+    ) -> Result<BaseInputTypeReference<'a, Self>, ()> {
         match type_definition_reference {
             TypeDefinitionReference::BuiltinScalar(bstd) => {
-                Ok(CoreBaseInputTypeReference::BuiltinScalarType(*bstd))
+                Ok(BaseInputTypeReference::BuiltinScalar(*bstd))
             }
             TypeDefinitionReference::CustomScalar(cstd) => {
-                Ok(CoreBaseInputTypeReference::CustomScalarType(cstd))
+                Ok(BaseInputTypeReference::CustomScalar(cstd))
             }
-            TypeDefinitionReference::Enum(etd) => Ok(CoreBaseInputTypeReference::EnumType(etd)),
+            TypeDefinitionReference::Enum(etd) => Ok(BaseInputTypeReference::Enum(etd)),
             TypeDefinitionReference::InputObject(iotd) => {
-                Ok(CoreBaseInputTypeReference::InputObjectType(iotd))
+                Ok(BaseInputTypeReference::InputObject(iotd))
             }
             TypeDefinitionReference::Interface(_)
             | TypeDefinitionReference::Object(_)
@@ -65,12 +64,12 @@ impl<'a, C: Context + 'a> BaseInputTypeReference<'a, C> {
 
 #[derive(Debug)]
 pub enum InputTypeReference<'a, C: Context = DefaultContext> {
-    Base(BaseInputTypeReference<'a, C>, bool, Span),
+    Base(BaseInputType<'a, C>, bool, Span),
     List(Box<Self>, bool, Span),
 }
 
 impl<'a, C: Context + 'a> AbstractInputTypeReference for InputTypeReference<'a, C> {
-    type BaseInputTypeReference = BaseInputTypeReference<'a, C>;
+    type BaseInputType = BaseInputType<'a, C>;
 
     fn as_ref(&self) -> InputTypeReferenceFromAbstract<'_, Self> {
         match self {
@@ -97,7 +96,7 @@ impl<'a, C: Context + 'a> FromTokens<'a> for InputTypeReference<'a, C> {
             } else {
                 base_name.span().clone()
             };
-            let base = BaseInputTypeReference {
+            let base = BaseInputType {
                 name: base_name,
                 r#type: OnceCell::new(),
                 context: Default::default(),

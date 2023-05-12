@@ -1,20 +1,19 @@
 use bluejay_core::definition::{
-    AbstractBaseInputTypeReference, AbstractInputTypeReference,
-    BaseInputTypeReference as CoreBaseInputTypeReference, BaseInputTypeReferenceFromAbstract,
+    AbstractInputTypeReference, BaseInputType, BaseInputTypeReference,
     InputTypeReference as CoreInputTypeReference, InputTypeReferenceFromAbstract, SchemaDefinition,
 };
 use bluejay_core::executable::{VariableType, VariableTypeReference as CoreTypeReference};
 
 #[derive(Clone)]
-pub enum VariableDefinitionInputTypeReference<'a, B: AbstractBaseInputTypeReference> {
-    Base(BaseInputTypeReferenceFromAbstract<'a, B>, bool),
+pub enum VariableDefinitionInputTypeReference<'a, B: BaseInputType> {
+    Base(BaseInputTypeReference<'a, B>, bool),
     List(Box<Self>, bool),
 }
 
-impl<'a, B: AbstractBaseInputTypeReference> AbstractInputTypeReference
+impl<'a, B: BaseInputType> AbstractInputTypeReference
     for VariableDefinitionInputTypeReference<'a, B>
 {
-    type BaseInputTypeReference = BaseInputTypeReferenceFromAbstract<'a, B>;
+    type BaseInputType = BaseInputTypeReference<'a, B>;
 
     fn as_ref(&self) -> InputTypeReferenceFromAbstract<'_, Self> {
         match self {
@@ -25,7 +24,7 @@ impl<'a, B: AbstractBaseInputTypeReference> AbstractInputTypeReference
 }
 
 impl<'a, S: SchemaDefinition, T: VariableType> TryFrom<(&'a S, &T)>
-    for VariableDefinitionInputTypeReference<'a, S::BaseInputTypeReference>
+    for VariableDefinitionInputTypeReference<'a, S::BaseInputType>
 {
     type Error = ();
 
@@ -33,19 +32,18 @@ impl<'a, S: SchemaDefinition, T: VariableType> TryFrom<(&'a S, &T)>
         let type_name = type_reference.as_ref().name();
         let type_definition_reference =
             schema_definition.get_type_definition(type_name).ok_or(())?;
-        let base = CoreBaseInputTypeReference::try_from(type_definition_reference)?;
+        let base = BaseInputTypeReference::try_from(type_definition_reference)?;
         Self::try_from((base, type_reference))
     }
 }
 
-impl<'a, B: AbstractBaseInputTypeReference, T: VariableType>
-    TryFrom<(BaseInputTypeReferenceFromAbstract<'a, B>, &T)>
+impl<'a, B: BaseInputType, T: VariableType> TryFrom<(BaseInputTypeReference<'a, B>, &T)>
     for VariableDefinitionInputTypeReference<'a, B>
 {
     type Error = ();
 
     fn try_from(
-        (base, type_reference): (BaseInputTypeReferenceFromAbstract<'a, B>, &T),
+        (base, type_reference): (BaseInputTypeReference<'a, B>, &T),
     ) -> Result<Self, Self::Error> {
         match type_reference.as_ref() {
             CoreTypeReference::Named(_, required) => {

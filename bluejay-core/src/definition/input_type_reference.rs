@@ -5,91 +5,69 @@ use crate::definition::{
 use crate::BuiltinScalarDefinition;
 
 #[derive(Debug)]
-pub enum BaseInputTypeReference<
-    'a,
-    CS: ScalarTypeDefinition,
-    I: InputObjectTypeDefinition,
-    E: EnumTypeDefinition,
-> {
-    BuiltinScalarType(BuiltinScalarDefinition),
-    CustomScalarType(&'a CS),
-    InputObjectType(&'a I),
-    EnumType(&'a E),
+pub enum BaseInputTypeReference<'a, B: BaseInputType> {
+    BuiltinScalar(BuiltinScalarDefinition),
+    CustomScalar(&'a B::CustomScalarTypeDefinition),
+    InputObject(&'a B::InputObjectTypeDefinition),
+    Enum(&'a B::EnumTypeDefinition),
 }
 
-impl<'a, CS: ScalarTypeDefinition, I: InputObjectTypeDefinition, E: EnumTypeDefinition> Clone
-    for BaseInputTypeReference<'a, CS, I, E>
-{
+impl<'a, B: BaseInputType> Clone for BaseInputTypeReference<'a, B> {
     fn clone(&self) -> Self {
         match self {
-            Self::BuiltinScalarType(bstd) => Self::BuiltinScalarType(*bstd),
-            Self::CustomScalarType(cstd) => Self::CustomScalarType(*cstd),
-            Self::InputObjectType(iotd) => Self::InputObjectType(*iotd),
-            Self::EnumType(etd) => Self::EnumType(*etd),
+            Self::BuiltinScalar(bstd) => Self::BuiltinScalar(*bstd),
+            Self::CustomScalar(cstd) => Self::CustomScalar(*cstd),
+            Self::InputObject(iotd) => Self::InputObject(*iotd),
+            Self::Enum(etd) => Self::Enum(*etd),
         }
     }
 }
 
-impl<'a, CS: ScalarTypeDefinition, I: InputObjectTypeDefinition, E: EnumTypeDefinition> Copy
-    for BaseInputTypeReference<'a, CS, I, E>
-{
-}
+impl<'a, B: BaseInputType> Copy for BaseInputTypeReference<'a, B> {}
 
-impl<'a, CS: ScalarTypeDefinition, I: InputObjectTypeDefinition, E: EnumTypeDefinition>
-    BaseInputTypeReference<'a, CS, I, E>
-{
+impl<'a, B: BaseInputType> BaseInputTypeReference<'a, B> {
     pub fn name(&self) -> &str {
         match self {
-            Self::BuiltinScalarType(bstd) => bstd.name(),
-            Self::CustomScalarType(cstd) => cstd.name(),
-            Self::EnumType(etd) => etd.name(),
-            Self::InputObjectType(iotd) => iotd.name(),
+            Self::BuiltinScalar(bstd) => bstd.name(),
+            Self::CustomScalar(cstd) => cstd.name(),
+            Self::Enum(etd) => etd.name(),
+            Self::InputObject(iotd) => iotd.name(),
         }
     }
 }
 
-pub type BaseInputTypeReferenceFromAbstract<'a, T> = BaseInputTypeReference<
-    'a,
-    <T as AbstractBaseInputTypeReference>::CustomScalarTypeDefinition,
-    <T as AbstractBaseInputTypeReference>::InputObjectTypeDefinition,
-    <T as AbstractBaseInputTypeReference>::EnumTypeDefinition,
->;
-
-pub trait AbstractBaseInputTypeReference {
+pub trait BaseInputType: Sized {
     type CustomScalarTypeDefinition: ScalarTypeDefinition;
     type InputObjectTypeDefinition: InputObjectTypeDefinition;
     type EnumTypeDefinition: EnumTypeDefinition;
 
-    fn as_ref(&self) -> BaseInputTypeReferenceFromAbstract<'_, Self>;
+    fn as_ref(&self) -> BaseInputTypeReference<'_, Self>;
 }
 
-impl<'a, CS: ScalarTypeDefinition, I: InputObjectTypeDefinition, E: EnumTypeDefinition>
-    AbstractBaseInputTypeReference for BaseInputTypeReference<'a, CS, I, E>
-{
-    type CustomScalarTypeDefinition = CS;
-    type InputObjectTypeDefinition = I;
-    type EnumTypeDefinition = E;
+impl<'a, B: BaseInputType> BaseInputType for BaseInputTypeReference<'a, B> {
+    type CustomScalarTypeDefinition = B::CustomScalarTypeDefinition;
+    type InputObjectTypeDefinition = B::InputObjectTypeDefinition;
+    type EnumTypeDefinition = B::EnumTypeDefinition;
 
-    fn as_ref(&self) -> BaseInputTypeReferenceFromAbstract<'_, Self> {
-        *self
+    fn as_ref(&self) -> BaseInputTypeReference<'_, Self> {
+        match self {
+            Self::BuiltinScalar(bstd) => BaseInputTypeReference::BuiltinScalar(*bstd),
+            Self::CustomScalar(cstd) => BaseInputTypeReference::CustomScalar(*cstd),
+            Self::Enum(etd) => BaseInputTypeReference::Enum(*etd),
+            Self::InputObject(iotd) => BaseInputTypeReference::InputObject(*iotd),
+        }
     }
 }
 
 #[derive(Debug)]
-pub enum InputTypeReference<
-    'a,
-    B: AbstractBaseInputTypeReference,
-    I: AbstractInputTypeReference<BaseInputTypeReference = B>,
-> {
+pub enum InputTypeReference<'a, B: BaseInputType, I: AbstractInputTypeReference<BaseInputType = B>>
+{
     Base(&'a B, bool),
     List(&'a I, bool),
 }
 
-impl<
-        'a,
-        B: AbstractBaseInputTypeReference,
-        I: AbstractInputTypeReference<BaseInputTypeReference = B>,
-    > Clone for InputTypeReference<'a, B, I>
+impl<'a, B: BaseInputType, I: AbstractInputTypeReference<BaseInputType = B>> Clone
+    for InputTypeReference<'a, B, I>
 {
     fn clone(&self) -> Self {
         match self {
@@ -99,19 +77,13 @@ impl<
     }
 }
 
-impl<
-        'a,
-        B: AbstractBaseInputTypeReference,
-        I: AbstractInputTypeReference<BaseInputTypeReference = B>,
-    > Copy for InputTypeReference<'a, B, I>
+impl<'a, B: BaseInputType, I: AbstractInputTypeReference<BaseInputType = B>> Copy
+    for InputTypeReference<'a, B, I>
 {
 }
 
-impl<
-        'a,
-        B: AbstractBaseInputTypeReference,
-        I: AbstractInputTypeReference<BaseInputTypeReference = B>,
-    > InputTypeReference<'a, B, I>
+impl<'a, B: BaseInputType, I: AbstractInputTypeReference<BaseInputType = B>>
+    InputTypeReference<'a, B, I>
 {
     pub fn is_required(&self) -> bool {
         match self {
@@ -151,13 +123,13 @@ impl<
 }
 
 pub trait AbstractInputTypeReference: Sized {
-    type BaseInputTypeReference: AbstractBaseInputTypeReference;
+    type BaseInputType: BaseInputType;
 
     fn as_ref(&self) -> InputTypeReferenceFromAbstract<'_, Self>;
 }
 
 pub type InputTypeReferenceFromAbstract<'a, T> =
-    InputTypeReference<'a, <T as AbstractInputTypeReference>::BaseInputTypeReference, T>;
+    InputTypeReference<'a, <T as AbstractInputTypeReference>::BaseInputType, T>;
 
 impl<
         'a,
@@ -167,8 +139,12 @@ impl<
         E: EnumTypeDefinition,
         U: UnionTypeDefinition,
         I: InterfaceTypeDefinition,
-    > TryFrom<TypeDefinitionReference<'a, CS, O, IO, E, U, I>>
-    for BaseInputTypeReference<'a, CS, IO, E>
+        B: BaseInputType<
+            CustomScalarTypeDefinition = CS,
+            InputObjectTypeDefinition = IO,
+            EnumTypeDefinition = E,
+        >,
+    > TryFrom<TypeDefinitionReference<'a, CS, O, IO, E, U, I>> for BaseInputTypeReference<'a, B>
 {
     type Error = ();
 
@@ -176,10 +152,10 @@ impl<
         value: TypeDefinitionReference<'a, CS, O, IO, E, U, I>,
     ) -> Result<Self, Self::Error> {
         match value {
-            TypeDefinitionReference::BuiltinScalarType(bstd) => Ok(Self::BuiltinScalarType(bstd)),
-            TypeDefinitionReference::CustomScalarType(cstd) => Ok(Self::CustomScalarType(cstd)),
-            TypeDefinitionReference::EnumType(etd) => Ok(Self::EnumType(etd)),
-            TypeDefinitionReference::InputObjectType(iotd) => Ok(Self::InputObjectType(iotd)),
+            TypeDefinitionReference::BuiltinScalarType(bstd) => Ok(Self::BuiltinScalar(bstd)),
+            TypeDefinitionReference::CustomScalarType(cstd) => Ok(Self::CustomScalar(cstd)),
+            TypeDefinitionReference::EnumType(etd) => Ok(Self::Enum(etd)),
+            TypeDefinitionReference::InputObjectType(iotd) => Ok(Self::InputObject(iotd)),
             TypeDefinitionReference::InterfaceType(_)
             | TypeDefinitionReference::ObjectType(_)
             | TypeDefinitionReference::UnionType(_) => Err(()),
