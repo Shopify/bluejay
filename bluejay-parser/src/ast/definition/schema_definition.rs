@@ -1,11 +1,10 @@
 use crate::ast::definition::{
-    ArgumentsDefinition, BaseInputType, BaseOutputTypeReference, Context,
-    CustomScalarTypeDefinition, DefaultContext, DirectiveDefinition, EnumTypeDefinition,
-    EnumValueDefinition, EnumValueDefinitions, FieldDefinition, FieldsDefinition,
-    InputFieldsDefinition, InputObjectTypeDefinition, InputType, InputValueDefinition,
-    InterfaceImplementation, InterfaceImplementations, InterfaceTypeDefinition,
-    ObjectTypeDefinition, OutputTypeReference, TypeDefinitionReference, UnionMemberType,
-    UnionMemberTypes, UnionTypeDefinition,
+    ArgumentsDefinition, BaseInputType, BaseOutputType, Context, CustomScalarTypeDefinition,
+    DefaultContext, DirectiveDefinition, EnumTypeDefinition, EnumValueDefinition,
+    EnumValueDefinitions, FieldDefinition, FieldsDefinition, InputFieldsDefinition,
+    InputObjectTypeDefinition, InputType, InputValueDefinition, InterfaceImplementation,
+    InterfaceImplementations, InterfaceTypeDefinition, ObjectTypeDefinition, OutputTypeReference,
+    TypeDefinitionReference, UnionMemberType, UnionMemberTypes, UnionTypeDefinition,
 };
 use crate::ast::ConstDirectives;
 use crate::lexical_token::StringValue;
@@ -93,7 +92,7 @@ impl<'a, C: Context> CoreSchemaDefinition for SchemaDefinition<'a, C> {
     type UnionMemberTypes = UnionMemberTypes<'a, C>;
     type BaseInputType = BaseInputType<'a, C>;
     type InputType = InputType<'a, C>;
-    type BaseOutputTypeReference = BaseOutputTypeReference<'a, C>;
+    type BaseOutputType = BaseOutputType<'a, C>;
     type OutputTypeReference = OutputTypeReference<'a, C>;
     type CustomScalarTypeDefinition = CustomScalarTypeDefinition<'a, C>;
     type ObjectTypeDefinition = ObjectTypeDefinition<'a, C>;

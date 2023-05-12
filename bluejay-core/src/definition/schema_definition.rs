@@ -1,11 +1,10 @@
 use crate::definition::{
-    AbstractBaseOutputTypeReference, AbstractOutputTypeReference, AbstractTypeDefinitionReference,
-    ArgumentsDefinition, BaseInputType, DirectiveDefinition, EnumTypeDefinition,
-    EnumValueDefinition, EnumValueDefinitions, FieldDefinition, FieldsDefinition,
-    InputFieldsDefinition, InputObjectTypeDefinition, InputType, InputValueDefinition,
-    InterfaceImplementation, InterfaceImplementations, InterfaceTypeDefinition,
-    ObjectTypeDefinition, ScalarTypeDefinition, TypeDefinitionReferenceFromAbstract,
-    UnionMemberType, UnionMemberTypes, UnionTypeDefinition,
+    AbstractOutputTypeReference, AbstractTypeDefinitionReference, ArgumentsDefinition,
+    BaseInputType, BaseOutputType, DirectiveDefinition, EnumTypeDefinition, EnumValueDefinition,
+    EnumValueDefinitions, FieldDefinition, FieldsDefinition, InputFieldsDefinition,
+    InputObjectTypeDefinition, InputType, InputValueDefinition, InterfaceImplementation,
+    InterfaceImplementations, InterfaceTypeDefinition, ObjectTypeDefinition, ScalarTypeDefinition,
+    TypeDefinitionReferenceFromAbstract, UnionMemberType, UnionMemberTypes, UnionTypeDefinition,
 };
 use crate::ConstDirectives;
 
@@ -41,16 +40,14 @@ pub trait SchemaDefinition {
         EnumTypeDefinition = Self::EnumTypeDefinition,
     >;
     type InputType: InputType<BaseInputType = Self::BaseInputType>;
-    type BaseOutputTypeReference: AbstractBaseOutputTypeReference<
+    type BaseOutputType: BaseOutputType<
         CustomScalarTypeDefinition = Self::CustomScalarTypeDefinition,
         EnumTypeDefinition = Self::EnumTypeDefinition,
         ObjectTypeDefinition = Self::ObjectTypeDefinition,
         InterfaceTypeDefinition = Self::InterfaceTypeDefinition,
         UnionTypeDefinition = Self::UnionTypeDefinition,
     >;
-    type OutputTypeReference: AbstractOutputTypeReference<
-        BaseOutputTypeReference = Self::BaseOutputTypeReference,
-    >;
+    type OutputTypeReference: AbstractOutputTypeReference<BaseOutputType = Self::BaseOutputType>;
     type CustomScalarTypeDefinition: ScalarTypeDefinition<Directives = Self::Directives>;
     type ObjectTypeDefinition: ObjectTypeDefinition<
         FieldsDefinition = Self::FieldsDefinition,

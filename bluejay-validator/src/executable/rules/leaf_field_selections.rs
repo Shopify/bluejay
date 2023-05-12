@@ -1,6 +1,6 @@
 use crate::executable::{Cache, Error, Path, Rule, Visitor};
 use bluejay_core::definition::{
-    AbstractBaseOutputTypeReference, AbstractOutputTypeReference, FieldDefinition, SchemaDefinition,
+    AbstractOutputTypeReference, BaseOutputType, FieldDefinition, SchemaDefinition,
 };
 use bluejay_core::executable::{ExecutableDocument, Field};
 

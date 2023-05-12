@@ -1,8 +1,8 @@
 use crate::executable::{Cache, Error, Rule, Visitor};
 use bluejay_core::definition::{
-    AbstractBaseOutputTypeReference, AbstractOutputTypeReference, FieldDefinition,
-    FieldsDefinition, InterfaceTypeDefinition, ObjectTypeDefinition, OutputTypeReference,
-    SchemaDefinition, TypeDefinitionReference, TypeDefinitionReferenceFromAbstract,
+    AbstractOutputTypeReference, BaseOutputType, FieldDefinition, FieldsDefinition,
+    InterfaceTypeDefinition, ObjectTypeDefinition, OutputTypeReference, SchemaDefinition,
+    TypeDefinitionReference, TypeDefinitionReferenceFromAbstract,
 };
 use bluejay_core::executable::{
     ExecutableDocument, Field, FragmentDefinition, FragmentSpread, InlineFragment, Selection,

@@ -43,7 +43,7 @@ pub use interface_implementation::InterfaceImplementation;
 pub use interface_implementations::InterfaceImplementations;
 pub use interface_type_definition::InterfaceTypeDefinition;
 pub use object_type_definition::ObjectTypeDefinition;
-pub use output_type_reference::{BaseOutputTypeReference, OutputTypeReference};
+pub use output_type_reference::{BaseOutputType, OutputTypeReference};
 pub use schema_definition::SchemaDefinition;
 pub use type_definition_reference::TypeDefinitionReference;
 pub use union_member_type::UnionMemberType;
