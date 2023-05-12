@@ -60,18 +60,12 @@ pub trait BaseOutputType: Sized {
 }
 
 #[derive(Debug)]
-pub enum OutputTypeReference<
-    'a,
-    B: BaseOutputType,
-    O: AbstractOutputTypeReference<BaseOutputType = B>,
-> {
-    Base(&'a B, bool),
+pub enum OutputTypeReference<'a, O: OutputType> {
+    Base(&'a O::BaseOutputType, bool),
     List(&'a O, bool),
 }
 
-impl<'a, B: BaseOutputType, O: AbstractOutputTypeReference<BaseOutputType = B>> Clone
-    for OutputTypeReference<'a, B, O>
-{
+impl<'a, O: OutputType> Clone for OutputTypeReference<'a, O> {
     fn clone(&self) -> Self {
         match self {
             Self::Base(base, required) => Self::Base(*base, *required),
@@ -80,14 +74,9 @@ impl<'a, B: BaseOutputType, O: AbstractOutputTypeReference<BaseOutputType = B>> 
     }
 }
 
-impl<'a, B: BaseOutputType, O: AbstractOutputTypeReference<BaseOutputType = B>> Copy
-    for OutputTypeReference<'a, B, O>
-{
-}
+impl<'a, O: OutputType> Copy for OutputTypeReference<'a, O> {}
 
-impl<'a, B: BaseOutputType, O: AbstractOutputTypeReference<BaseOutputType = B>>
-    OutputTypeReference<'a, B, O>
-{
+impl<'a, O: OutputType> OutputTypeReference<'a, O> {
     pub fn is_required(&self) -> bool {
         match self {
             Self::Base(_, r) => *r,
@@ -95,7 +84,7 @@ impl<'a, B: BaseOutputType, O: AbstractOutputTypeReference<BaseOutputType = B>>
         }
     }
 
-    pub fn base(&self) -> &'a B {
+    pub fn base(&self) -> &'a O::BaseOutputType {
         match self {
             Self::Base(b, _) => b,
             Self::List(l, _) => l.as_ref().base(),
@@ -118,11 +107,8 @@ impl<'a, B: BaseOutputType, O: AbstractOutputTypeReference<BaseOutputType = B>>
     }
 }
 
-pub trait AbstractOutputTypeReference: Sized {
+pub trait OutputType: Sized {
     type BaseOutputType: BaseOutputType;
 
-    fn as_ref(&self) -> OutputTypeReferenceFromAbstract<'_, Self>;
+    fn as_ref(&self) -> OutputTypeReference<'_, Self>;
 }
-
-pub type OutputTypeReferenceFromAbstract<'a, T> =
-    OutputTypeReference<'a, <T as AbstractOutputTypeReference>::BaseOutputType, T>;

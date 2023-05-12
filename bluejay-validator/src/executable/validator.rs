@@ -1,9 +1,8 @@
 use crate::executable::{Cache, Error, Path, PathRoot, Rule, Rules};
 use bluejay_core::definition::{
-    AbstractOutputTypeReference, ArgumentsDefinition, BaseOutputType, DirectiveDefinition,
-    DirectiveLocation, FieldDefinition, FieldsDefinition, InterfaceTypeDefinition,
-    ObjectTypeDefinition, SchemaDefinition, TypeDefinitionReference,
-    TypeDefinitionReferenceFromAbstract,
+    ArgumentsDefinition, BaseOutputType, DirectiveDefinition, DirectiveLocation, FieldDefinition,
+    FieldsDefinition, InterfaceTypeDefinition, ObjectTypeDefinition, OutputType, SchemaDefinition,
+    TypeDefinitionReference, TypeDefinitionReferenceFromAbstract,
 };
 use bluejay_core::executable::{
     ExecutableDocument, Field, FragmentDefinition, FragmentSpread, InlineFragment,

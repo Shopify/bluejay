@@ -1,9 +1,9 @@
 use crate::definition::{
-    AbstractOutputTypeReference, AbstractTypeDefinitionReference, ArgumentsDefinition,
-    BaseInputType, BaseOutputType, DirectiveDefinition, EnumTypeDefinition, EnumValueDefinition,
-    EnumValueDefinitions, FieldDefinition, FieldsDefinition, InputFieldsDefinition,
-    InputObjectTypeDefinition, InputType, InputValueDefinition, InterfaceImplementation,
-    InterfaceImplementations, InterfaceTypeDefinition, ObjectTypeDefinition, ScalarTypeDefinition,
+    AbstractTypeDefinitionReference, ArgumentsDefinition, BaseInputType, BaseOutputType,
+    DirectiveDefinition, EnumTypeDefinition, EnumValueDefinition, EnumValueDefinitions,
+    FieldDefinition, FieldsDefinition, InputFieldsDefinition, InputObjectTypeDefinition, InputType,
+    InputValueDefinition, InterfaceImplementation, InterfaceImplementations,
+    InterfaceTypeDefinition, ObjectTypeDefinition, OutputType, ScalarTypeDefinition,
     TypeDefinitionReferenceFromAbstract, UnionMemberType, UnionMemberTypes, UnionTypeDefinition,
 };
 use crate::ConstDirectives;
@@ -22,7 +22,7 @@ pub trait SchemaDefinition {
     type EnumValueDefinitions: EnumValueDefinitions<EnumValueDefinition = Self::EnumValueDefinition>;
     type FieldDefinition: FieldDefinition<
         ArgumentsDefinition = Self::ArgumentsDefinition,
-        OutputTypeReference = Self::OutputTypeReference,
+        OutputType = Self::OutputType,
         Directives = Self::Directives,
     >;
     type FieldsDefinition: FieldsDefinition<FieldDefinition = Self::FieldDefinition>;
@@ -47,7 +47,7 @@ pub trait SchemaDefinition {
         InterfaceTypeDefinition = Self::InterfaceTypeDefinition,
         UnionTypeDefinition = Self::UnionTypeDefinition,
     >;
-    type OutputTypeReference: AbstractOutputTypeReference<BaseOutputType = Self::BaseOutputType>;
+    type OutputType: OutputType<BaseOutputType = Self::BaseOutputType>;
     type CustomScalarTypeDefinition: ScalarTypeDefinition<Directives = Self::Directives>;
     type ObjectTypeDefinition: ObjectTypeDefinition<
         FieldsDefinition = Self::FieldsDefinition,

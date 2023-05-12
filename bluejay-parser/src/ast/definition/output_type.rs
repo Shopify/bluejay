@@ -6,8 +6,8 @@ use crate::ast::{FromTokens, ParseError, Tokens};
 use crate::lexical_token::{Name, PunctuatorType};
 use crate::{HasSpan, Span};
 use bluejay_core::definition::{
-    AbstractOutputTypeReference, BaseOutputType as CoreBaseOutputType, BaseOutputTypeReference,
-    OutputTypeReference as CoreOutputTypeReference, OutputTypeReferenceFromAbstract,
+    BaseOutputType as CoreBaseOutputType, BaseOutputTypeReference, OutputType as CoreOutputType,
+    OutputTypeReference,
 };
 use once_cell::sync::OnceCell;
 use std::marker::PhantomData;
@@ -71,25 +71,23 @@ impl<'a, C: Context + 'a> BaseOutputType<'a, C> {
 }
 
 #[derive(Debug)]
-pub enum OutputTypeReference<'a, C: Context + 'a> {
+pub enum OutputType<'a, C: Context + 'a> {
     Base(BaseOutputType<'a, C>, bool, Span),
     List(Box<Self>, bool, Span),
 }
 
-impl<'a, C: Context + 'a> AbstractOutputTypeReference for OutputTypeReference<'a, C> {
+impl<'a, C: Context + 'a> CoreOutputType for OutputType<'a, C> {
     type BaseOutputType = BaseOutputType<'a, C>;
 
-    fn as_ref(&self) -> OutputTypeReferenceFromAbstract<'_, Self> {
+    fn as_ref(&self) -> OutputTypeReference<'_, Self> {
         match self {
-            Self::Base(base, required, _) => CoreOutputTypeReference::Base(base, *required),
-            Self::List(inner, required, _) => {
-                CoreOutputTypeReference::List(inner.as_ref(), *required)
-            }
+            Self::Base(base, required, _) => OutputTypeReference::Base(base, *required),
+            Self::List(inner, required, _) => OutputTypeReference::List(inner.as_ref(), *required),
         }
     }
 }
 
-impl<'a, C: Context + 'a> OutputTypeReference<'a, C> {
+impl<'a, C: Context + 'a> OutputType<'a, C> {
     pub(crate) fn non_null_string() -> Self {
         Self::Base(
             BaseOutputType::new(Name::new("String", Span::empty())),
@@ -99,7 +97,7 @@ impl<'a, C: Context + 'a> OutputTypeReference<'a, C> {
     }
 }
 
-impl<'a, C: Context + 'a> FromTokens<'a> for OutputTypeReference<'a, C> {
+impl<'a, C: Context + 'a> FromTokens<'a> for OutputType<'a, C> {
     fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
         if let Some(open_span) = tokens.next_if_punctuator(PunctuatorType::OpenSquareBracket) {
             let inner = Self::from_tokens(tokens).map(Box::new)?;

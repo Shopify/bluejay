@@ -1,7 +1,7 @@
 use crate::executable::{Cache, Error, Rule, Visitor};
 use bluejay_core::definition::{
-    AbstractOutputTypeReference, BaseOutputType, FieldDefinition, FieldsDefinition,
-    InterfaceTypeDefinition, ObjectTypeDefinition, OutputTypeReference, SchemaDefinition,
+    BaseOutputType, FieldDefinition, FieldsDefinition, InterfaceTypeDefinition,
+    ObjectTypeDefinition, OutputType, OutputTypeReference, SchemaDefinition,
     TypeDefinitionReference, TypeDefinitionReferenceFromAbstract,
 };
 use bluejay_core::executable::{
@@ -338,10 +338,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> FieldSelectionMer
         });
     }
 
-    fn same_output_type_shape(
-        type_a: &S::OutputTypeReference,
-        type_b: &S::OutputTypeReference,
-    ) -> bool {
+    fn same_output_type_shape(type_a: &S::OutputType, type_b: &S::OutputType) -> bool {
         match (type_a.as_ref(), type_b.as_ref()) {
             (
                 OutputTypeReference::Base(type_a_base, type_a_required),

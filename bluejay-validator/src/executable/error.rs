@@ -1,7 +1,6 @@
 use crate::value::input_coercion::Error as InputCoercionError;
 use bluejay_core::definition::{
-    AbstractOutputTypeReference, FieldDefinition, InputType, SchemaDefinition,
-    TypeDefinitionReferenceFromAbstract,
+    FieldDefinition, InputType, OutputType, SchemaDefinition, TypeDefinitionReferenceFromAbstract,
 };
 use bluejay_core::executable::{ExecutableDocument, OperationDefinition, VariableType};
 use bluejay_core::{OperationType, Value};
@@ -39,11 +38,11 @@ pub enum Error<'a, E: ExecutableDocument, S: SchemaDefinition> {
     },
     LeafFieldSelectionNotEmpty {
         selection_set: &'a E::SelectionSet,
-        r#type: &'a S::OutputTypeReference,
+        r#type: &'a S::OutputType,
     },
     NonLeafFieldSelectionEmpty {
         field: &'a E::Field,
-        r#type: &'a S::OutputTypeReference,
+        r#type: &'a S::OutputType,
     },
     NonUniqueFragmentDefinitionNames {
         name: &'a str,

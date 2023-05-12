@@ -1,7 +1,5 @@
 use crate::executable::{Cache, Error, Path, Rule, Visitor};
-use bluejay_core::definition::{
-    AbstractOutputTypeReference, BaseOutputType, FieldDefinition, SchemaDefinition,
-};
+use bluejay_core::definition::{BaseOutputType, FieldDefinition, OutputType, SchemaDefinition};
 use bluejay_core::executable::{ExecutableDocument, Field};
 
 pub struct LeafFieldSelections<'a, E: ExecutableDocument, S: SchemaDefinition> {

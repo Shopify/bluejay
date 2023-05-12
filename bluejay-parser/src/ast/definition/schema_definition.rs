@@ -3,7 +3,7 @@ use crate::ast::definition::{
     DefaultContext, DirectiveDefinition, EnumTypeDefinition, EnumValueDefinition,
     EnumValueDefinitions, FieldDefinition, FieldsDefinition, InputFieldsDefinition,
     InputObjectTypeDefinition, InputType, InputValueDefinition, InterfaceImplementation,
-    InterfaceImplementations, InterfaceTypeDefinition, ObjectTypeDefinition, OutputTypeReference,
+    InterfaceImplementations, InterfaceTypeDefinition, ObjectTypeDefinition, OutputType,
     TypeDefinitionReference, UnionMemberType, UnionMemberTypes, UnionTypeDefinition,
 };
 use crate::ast::ConstDirectives;
@@ -93,7 +93,7 @@ impl<'a, C: Context> CoreSchemaDefinition for SchemaDefinition<'a, C> {
     type BaseInputType = BaseInputType<'a, C>;
     type InputType = InputType<'a, C>;
     type BaseOutputType = BaseOutputType<'a, C>;
-    type OutputTypeReference = OutputTypeReference<'a, C>;
+    type OutputType = OutputType<'a, C>;
     type CustomScalarTypeDefinition = CustomScalarTypeDefinition<'a, C>;
     type ObjectTypeDefinition = ObjectTypeDefinition<'a, C>;
     type InterfaceTypeDefinition = InterfaceTypeDefinition<'a, C>;

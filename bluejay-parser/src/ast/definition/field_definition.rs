@@ -1,4 +1,4 @@
-use crate::ast::definition::{ArgumentsDefinition, Context, OutputTypeReference};
+use crate::ast::definition::{ArgumentsDefinition, Context, OutputType};
 use crate::ast::{ConstDirectives, FromTokens, ParseError, Tokens, TryFromTokens};
 use crate::lexical_token::{Name, PunctuatorType, StringValue};
 use crate::Span;
@@ -9,7 +9,7 @@ pub struct FieldDefinition<'a, C: Context> {
     description: Option<StringValue<'a>>,
     name: Name<'a>,
     arguments_definition: Option<ArgumentsDefinition<'a, C>>,
-    r#type: OutputTypeReference<'a, C>,
+    r#type: OutputType<'a, C>,
     directives: Option<ConstDirectives<'a>>,
     is_builtin: bool,
 }
@@ -20,7 +20,7 @@ impl<'a, C: Context> FieldDefinition<'a, C> {
             description: None,
             name: Name::new("__typename", Span::empty()),
             arguments_definition: None,
-            r#type: OutputTypeReference::non_null_string(),
+            r#type: OutputType::non_null_string(),
             directives: None,
             is_builtin: true,
         }
@@ -29,7 +29,7 @@ impl<'a, C: Context> FieldDefinition<'a, C> {
 
 impl<'a, C: Context> CoreFieldDefinition for FieldDefinition<'a, C> {
     type ArgumentsDefinition = ArgumentsDefinition<'a, C>;
-    type OutputTypeReference = OutputTypeReference<'a, C>;
+    type OutputType = OutputType<'a, C>;
     type Directives = ConstDirectives<'a>;
 
     fn description(&self) -> Option<&str> {
@@ -44,7 +44,7 @@ impl<'a, C: Context> CoreFieldDefinition for FieldDefinition<'a, C> {
         self.arguments_definition.as_ref()
     }
 
-    fn r#type(&self) -> &Self::OutputTypeReference {
+    fn r#type(&self) -> &Self::OutputType {
         &self.r#type
     }
 
@@ -63,7 +63,7 @@ impl<'a, C: Context> FromTokens<'a> for FieldDefinition<'a, C> {
         let name = tokens.expect_name()?;
         let arguments_definition = ArgumentsDefinition::try_from_tokens(tokens).transpose()?;
         tokens.expect_punctuator(PunctuatorType::Colon)?;
-        let r#type = OutputTypeReference::from_tokens(tokens)?;
+        let r#type = OutputType::from_tokens(tokens)?;
         let directives = ConstDirectives::try_from_tokens(tokens).transpose()?;
         Ok(Self {
             description,

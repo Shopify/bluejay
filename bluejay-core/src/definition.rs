@@ -13,7 +13,7 @@ mod interface_implementation;
 mod interface_implementations;
 mod interface_type_definition;
 mod object_type_definition;
-mod output_type_reference;
+mod output_type;
 mod scalar_type_definition;
 mod schema_definition;
 mod type_definition_reference;
@@ -36,10 +36,7 @@ pub use interface_implementation::InterfaceImplementation;
 pub use interface_implementations::InterfaceImplementations;
 pub use interface_type_definition::InterfaceTypeDefinition;
 pub use object_type_definition::ObjectTypeDefinition;
-pub use output_type_reference::{
-    AbstractOutputTypeReference, BaseOutputType, BaseOutputTypeReference, OutputTypeReference,
-    OutputTypeReferenceFromAbstract,
-};
+pub use output_type::{BaseOutputType, BaseOutputTypeReference, OutputType, OutputTypeReference};
 pub use scalar_type_definition::ScalarTypeDefinition;
 pub use schema_definition::SchemaDefinition;
 pub use type_definition_reference::{
