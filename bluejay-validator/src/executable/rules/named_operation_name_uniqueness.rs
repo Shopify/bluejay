@@ -1,8 +1,8 @@
 use crate::executable::{Cache, Error, Rule, Visitor};
 use bluejay_core::definition::SchemaDefinition;
 use bluejay_core::executable::{
-    AbstractOperationDefinition, ExecutableDocument, ExplicitOperationDefinition,
-    OperationDefinition,
+    ExecutableDocument, ExplicitOperationDefinition, OperationDefinition,
+    OperationDefinitionReference,
 };
 use std::collections::HashMap;
 use std::marker::PhantomData;
@@ -16,7 +16,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition> Visitor<'a, E, S>
     for NamedOperationNameUniqueness<'a, E, S>
 {
     fn visit_operation_definition(&mut self, operation_definition: &'a E::OperationDefinition) {
-        if let OperationDefinition::Explicit(eod) = operation_definition.as_ref() {
+        if let OperationDefinitionReference::Explicit(eod) = operation_definition.as_ref() {
             if let Some(name) = eod.name() {
                 self.operations.entry(name).or_default().push(eod);
             }

@@ -15,8 +15,8 @@ pub use fragment_definition::FragmentDefinition;
 pub use fragment_spread::FragmentSpread;
 pub use inline_fragment::InlineFragment;
 pub use operation_definition::{
-    AbstractOperationDefinition, ExplicitOperationDefinition, ImplicitOperationDefinition,
-    OperationDefinition, OperationDefinitionFromAbstract,
+    ExplicitOperationDefinition, ImplicitOperationDefinition, OperationDefinition,
+    OperationDefinitionReference,
 };
 pub use selection::{AbstractSelection, Selection, SelectionFromAbstract};
 pub use selection_set::SelectionSet;

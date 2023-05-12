@@ -4,21 +4,12 @@ use std::cmp::{Eq, Ord};
 use std::hash::Hash;
 
 #[derive(Debug)]
-pub enum OperationDefinition<
-    'a,
-    E: ExplicitOperationDefinition,
-    I: ImplicitOperationDefinition<SelectionSet = E::SelectionSet>,
-> {
-    Explicit(&'a E),
-    Implicit(&'a I),
+pub enum OperationDefinitionReference<'a, O: OperationDefinition> {
+    Explicit(&'a O::ExplicitOperationDefinition),
+    Implicit(&'a O::ImplicitOperationDefinition),
 }
 
-impl<
-        'a,
-        E: ExplicitOperationDefinition,
-        I: ImplicitOperationDefinition<SelectionSet = E::SelectionSet>,
-    > OperationDefinition<'a, E, I>
-{
+impl<'a, O: OperationDefinition> OperationDefinitionReference<'a, O> {
     pub fn operation_type(&self) -> OperationType {
         match self {
             Self::Explicit(eod) => eod.operation_type(),
@@ -33,21 +24,21 @@ impl<
         }
     }
 
-    pub fn variable_definitions(&self) -> Option<&'a E::VariableDefinitions> {
+    pub fn variable_definitions(&self) -> Option<&'a <<O as OperationDefinition>::ExplicitOperationDefinition as ExplicitOperationDefinition>::VariableDefinitions>{
         match self {
             Self::Explicit(eod) => eod.variable_definitions(),
             Self::Implicit(_) => None,
         }
     }
 
-    pub fn selection_set(&self) -> &'a E::SelectionSet {
+    pub fn selection_set(&self) -> &'a <<O as OperationDefinition>::ExplicitOperationDefinition as ExplicitOperationDefinition>::SelectionSet{
         match self {
             Self::Explicit(eod) => eod.selection_set(),
             Self::Implicit(iod) => iod.selection_set(),
         }
     }
 
-    pub fn directives(&self) -> Option<&'a E::Directives> {
+    pub fn directives(&self) -> Option<&'a <<O as OperationDefinition>::ExplicitOperationDefinition as ExplicitOperationDefinition>::Directives>{
         match self {
             Self::Explicit(eod) => Some(eod.directives()),
             Self::Implicit(_) => None,
@@ -55,18 +46,12 @@ impl<
     }
 }
 
-pub trait AbstractOperationDefinition: Eq + Hash + Ord {
+pub trait OperationDefinition: Eq + Hash + Ord + Sized {
     type ExplicitOperationDefinition: ExplicitOperationDefinition;
     type ImplicitOperationDefinition: ImplicitOperationDefinition<SelectionSet=<Self::ExplicitOperationDefinition as ExplicitOperationDefinition>::SelectionSet>;
 
-    fn as_ref(&self) -> OperationDefinitionFromAbstract<'_, Self>;
+    fn as_ref(&self) -> OperationDefinitionReference<'_, Self>;
 }
-
-pub type OperationDefinitionFromAbstract<'a, O> = OperationDefinition<
-    'a,
-    <O as AbstractOperationDefinition>::ExplicitOperationDefinition,
-    <O as AbstractOperationDefinition>::ImplicitOperationDefinition,
->;
 
 pub trait ExplicitOperationDefinition {
     type VariableDefinitions: VariableDefinitions;

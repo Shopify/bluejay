@@ -6,8 +6,8 @@ use bluejay_core::definition::{
     TypeDefinitionReferenceFromAbstract,
 };
 use bluejay_core::executable::{
-    AbstractOperationDefinition, ExecutableDocument, FragmentSpread, VariableDefinition,
-    VariableType, VariableTypeReference,
+    ExecutableDocument, FragmentSpread, OperationDefinition, VariableDefinition, VariableType,
+    VariableTypeReference,
 };
 use bluejay_core::{Argument, AsIter, ObjectValue, Value, ValueReference, Variable};
 use itertools::Either;

@@ -3,7 +3,7 @@ use bluejay_core::definition::{
     AbstractInputTypeReference, AbstractOutputTypeReference, FieldDefinition, SchemaDefinition,
     TypeDefinitionReferenceFromAbstract,
 };
-use bluejay_core::executable::{AbstractOperationDefinition, ExecutableDocument, VariableType};
+use bluejay_core::executable::{ExecutableDocument, OperationDefinition, VariableType};
 use bluejay_core::{OperationType, Value};
 #[cfg(feature = "parser-integration")]
 use bluejay_parser::{

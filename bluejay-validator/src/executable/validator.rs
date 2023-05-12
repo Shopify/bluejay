@@ -6,8 +6,8 @@ use bluejay_core::definition::{
     TypeDefinitionReferenceFromAbstract,
 };
 use bluejay_core::executable::{
-    AbstractOperationDefinition, AbstractSelection, ExecutableDocument, Field, FragmentDefinition,
-    FragmentSpread, InlineFragment, Selection, VariableDefinition,
+    AbstractSelection, ExecutableDocument, Field, FragmentDefinition, FragmentSpread,
+    InlineFragment, OperationDefinition, Selection, VariableDefinition,
 };
 use bluejay_core::{Argument, AsIter, Directive, OperationType};
 

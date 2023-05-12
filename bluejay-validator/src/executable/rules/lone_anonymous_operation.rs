@@ -1,6 +1,6 @@
 use crate::executable::{Cache, Error, Rule, Visitor};
 use bluejay_core::definition::SchemaDefinition;
-use bluejay_core::executable::{AbstractOperationDefinition, ExecutableDocument};
+use bluejay_core::executable::{ExecutableDocument, OperationDefinition};
 use std::marker::PhantomData;
 
 pub struct LoneAnonymousOperation<'a, E: ExecutableDocument, S: SchemaDefinition> {

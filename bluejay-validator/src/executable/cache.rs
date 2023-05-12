@@ -1,7 +1,7 @@
 use crate::executable::VariableDefinitionInputTypeReference;
 use bluejay_core::definition::SchemaDefinition;
 use bluejay_core::executable::{
-    AbstractOperationDefinition, ExecutableDocument, FragmentDefinition, VariableDefinition,
+    ExecutableDocument, FragmentDefinition, OperationDefinition, VariableDefinition,
 };
 use bluejay_core::AsIter;
 use std::collections::HashMap;

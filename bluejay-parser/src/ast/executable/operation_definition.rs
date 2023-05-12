@@ -5,8 +5,7 @@ use crate::ast::{
 use crate::lexical_token::Name;
 use crate::{HasSpan, Span};
 use bluejay_core::executable::{
-    AbstractOperationDefinition, OperationDefinition as CoreOperationDefinition,
-    OperationDefinitionFromAbstract,
+    OperationDefinition as CoreOperationDefinition, OperationDefinitionReference,
 };
 use std::cmp::{Eq, Ord, Ordering, PartialEq, PartialOrd};
 use std::hash::{Hash, Hasher};
@@ -17,14 +16,14 @@ pub enum OperationDefinition<'a> {
     Implicit(ImplicitOperationDefinition<'a>),
 }
 
-impl<'a> AbstractOperationDefinition for OperationDefinition<'a> {
+impl<'a> CoreOperationDefinition for OperationDefinition<'a> {
     type ExplicitOperationDefinition = ExplicitOperationDefinition<'a>;
     type ImplicitOperationDefinition = ImplicitOperationDefinition<'a>;
 
-    fn as_ref(&self) -> OperationDefinitionFromAbstract<'_, Self> {
+    fn as_ref(&self) -> OperationDefinitionReference<'_, Self> {
         match self {
-            Self::Explicit(e) => CoreOperationDefinition::Explicit(e),
-            Self::Implicit(i) => CoreOperationDefinition::Implicit(i),
+            Self::Explicit(e) => OperationDefinitionReference::Explicit(e),
+            Self::Implicit(i) => OperationDefinitionReference::Implicit(i),
         }
     }
 }

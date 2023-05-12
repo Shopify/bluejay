@@ -1,7 +1,7 @@
 use crate::executable::{Cache, Error, Path, PathRoot, Rule, Visitor};
 use bluejay_core::definition::{SchemaDefinition, TypeDefinitionReferenceFromAbstract};
 use bluejay_core::executable::{
-    AbstractOperationDefinition, ExecutableDocument, FragmentSpread, VariableDefinition,
+    ExecutableDocument, FragmentSpread, OperationDefinition, VariableDefinition,
 };
 use bluejay_core::{Argument, AsIter, ObjectValue, Value, ValueReference, Variable};
 use itertools::Either;
