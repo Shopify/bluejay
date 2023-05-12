@@ -1,7 +1,7 @@
 use crate::executable::{Cache, Error, Path, Rule, Visitor};
 use bluejay_core::definition::{
-    ObjectTypeDefinition, SchemaDefinition, TypeDefinitionReference,
-    TypeDefinitionReferenceFromAbstract, UnionMemberType, UnionTypeDefinition,
+    ObjectTypeDefinition, SchemaDefinition, TypeDefinitionReference, UnionMemberType,
+    UnionTypeDefinition,
 };
 use bluejay_core::executable::{
     ExecutableDocument, FragmentDefinition, FragmentSpread, InlineFragment,
@@ -21,7 +21,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> Visitor<'a, E, S>
     fn visit_fragment_spread(
         &mut self,
         fragment_spread: &'a <E as ExecutableDocument>::FragmentSpread,
-        parent_type: TypeDefinitionReferenceFromAbstract<'a, S::TypeDefinitionReference>,
+        parent_type: TypeDefinitionReference<'a, S::TypeDefinition>,
         _path: &Path<'a, E>,
     ) {
         if let Some(fragment_definition) = self.cache.fragment_definition(fragment_spread.name()) {
@@ -42,7 +42,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> Visitor<'a, E, S>
     fn visit_inline_fragment(
         &mut self,
         inline_fragment: &'a <E as ExecutableDocument>::InlineFragment,
-        parent_type: TypeDefinitionReferenceFromAbstract<'a, S::TypeDefinitionReference>,
+        parent_type: TypeDefinitionReference<'a, S::TypeDefinition>,
     ) {
         if let Some(type_condition) = inline_fragment.type_condition() {
             if let Some(fragment_type) = self.schema_definition.get_type_definition(type_condition)
@@ -61,7 +61,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> Visitor<'a, E, S>
 impl<'a, E: ExecutableDocument, S: SchemaDefinition> FragmentSpreadIsPossible<'a, E, S> {
     fn get_possible_types(
         &self,
-        t: TypeDefinitionReferenceFromAbstract<'a, S::TypeDefinitionReference>,
+        t: TypeDefinitionReference<'a, S::TypeDefinition>,
     ) -> Option<HashSet<&'a str>> {
         match t {
             TypeDefinitionReference::ObjectType(_) => Some(HashSet::from([t.name()])),
@@ -84,8 +84,8 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> FragmentSpreadIsPossible<'a
 
     fn spread_is_not_possible(
         &self,
-        parent_type: TypeDefinitionReferenceFromAbstract<'a, S::TypeDefinitionReference>,
-        fragment_type: TypeDefinitionReferenceFromAbstract<'a, S::TypeDefinitionReference>,
+        parent_type: TypeDefinitionReference<'a, S::TypeDefinition>,
+        fragment_type: TypeDefinitionReference<'a, S::TypeDefinition>,
     ) -> bool {
         let parent_type_possible_types = self.get_possible_types(parent_type);
         let fragment_possible_types = self.get_possible_types(fragment_type);

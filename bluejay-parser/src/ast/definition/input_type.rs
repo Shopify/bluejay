@@ -1,6 +1,6 @@
 use crate::ast::definition::{
     Context, CustomScalarTypeDefinition, DefaultContext, EnumTypeDefinition,
-    InputObjectTypeDefinition, TypeDefinitionReference,
+    InputObjectTypeDefinition, TypeDefinition,
 };
 use crate::ast::{FromTokens, ParseError, Tokens};
 use crate::lexical_token::{Name, PunctuatorType};
@@ -34,30 +34,24 @@ impl<'a, C: Context + 'a> BaseInputType<'a, C> {
         &self.name
     }
 
-    pub(crate) fn set_type_reference(
+    pub(crate) fn set_type(
         &self,
         type_reference: BaseInputTypeReference<'a, Self>,
     ) -> Result<(), BaseInputTypeReference<'a, Self>> {
         self.r#type.set(type_reference)
     }
 
-    pub(crate) fn core_type_from_type_definition_reference(
-        type_definition_reference: &'a TypeDefinitionReference<'a, C>,
+    pub(crate) fn core_type_from_type_definition(
+        type_definition: &'a TypeDefinition<'a, C>,
     ) -> Result<BaseInputTypeReference<'a, Self>, ()> {
-        match type_definition_reference {
-            TypeDefinitionReference::BuiltinScalar(bstd) => {
-                Ok(BaseInputTypeReference::BuiltinScalar(*bstd))
+        match type_definition {
+            TypeDefinition::BuiltinScalar(bstd) => Ok(BaseInputTypeReference::BuiltinScalar(*bstd)),
+            TypeDefinition::CustomScalar(cstd) => Ok(BaseInputTypeReference::CustomScalar(cstd)),
+            TypeDefinition::Enum(etd) => Ok(BaseInputTypeReference::Enum(etd)),
+            TypeDefinition::InputObject(iotd) => Ok(BaseInputTypeReference::InputObject(iotd)),
+            TypeDefinition::Interface(_) | TypeDefinition::Object(_) | TypeDefinition::Union(_) => {
+                Err(())
             }
-            TypeDefinitionReference::CustomScalar(cstd) => {
-                Ok(BaseInputTypeReference::CustomScalar(cstd))
-            }
-            TypeDefinitionReference::Enum(etd) => Ok(BaseInputTypeReference::Enum(etd)),
-            TypeDefinitionReference::InputObject(iotd) => {
-                Ok(BaseInputTypeReference::InputObject(iotd))
-            }
-            TypeDefinitionReference::Interface(_)
-            | TypeDefinitionReference::Object(_)
-            | TypeDefinitionReference::Union(_) => Err(()),
         }
     }
 }

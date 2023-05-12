@@ -23,11 +23,11 @@ impl<'a, C: Context> UnionMemberType<'a, C> {
         &self.name
     }
 
-    pub(crate) fn set_type_reference(
+    pub(crate) fn set_type(
         &self,
-        type_reference: &'a ObjectTypeDefinition<'a, C>,
+        type_definition: &'a ObjectTypeDefinition<'a, C>,
     ) -> Result<(), &'a ObjectTypeDefinition<'a, C>> {
-        self.r#type.set(type_reference)
+        self.r#type.set(type_definition)
     }
 }
 

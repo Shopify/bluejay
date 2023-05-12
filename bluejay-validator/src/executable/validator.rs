@@ -2,7 +2,7 @@ use crate::executable::{Cache, Error, Path, PathRoot, Rule, Rules};
 use bluejay_core::definition::{
     ArgumentsDefinition, BaseOutputType, DirectiveDefinition, DirectiveLocation, FieldDefinition,
     FieldsDefinition, InterfaceTypeDefinition, ObjectTypeDefinition, OutputType, SchemaDefinition,
-    TypeDefinitionReference, TypeDefinitionReferenceFromAbstract,
+    TypeDefinitionReference,
 };
 use bluejay_core::executable::{
     ExecutableDocument, Field, FragmentDefinition, FragmentSpread, InlineFragment,
@@ -111,7 +111,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, R: Rule<'a, E, S>> Validato
     fn visit_selection_set(
         &mut self,
         selection_set: &'a E::SelectionSet,
-        scoped_type: TypeDefinitionReferenceFromAbstract<'a, S::TypeDefinitionReference>,
+        scoped_type: TypeDefinitionReference<'a, S::TypeDefinition>,
         path: &Path<'a, E>,
     ) {
         self.rule.visit_selection_set(selection_set, scoped_type);
@@ -224,7 +224,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, R: Rule<'a, E, S>> Validato
     fn visit_inline_fragment(
         &mut self,
         inline_fragment: &'a E::InlineFragment,
-        scoped_type: TypeDefinitionReferenceFromAbstract<'a, S::TypeDefinitionReference>,
+        scoped_type: TypeDefinitionReference<'a, S::TypeDefinition>,
         path: &Path<'a, E>,
     ) {
         self.visit_variable_directives(
@@ -250,7 +250,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, R: Rule<'a, E, S>> Validato
     fn visit_fragment_spread(
         &mut self,
         fragment_spread: &'a E::FragmentSpread,
-        scoped_type: TypeDefinitionReferenceFromAbstract<'a, S::TypeDefinitionReference>,
+        scoped_type: TypeDefinitionReference<'a, S::TypeDefinition>,
         path: &Path<'a, E>,
     ) {
         self.visit_variable_directives(
@@ -329,7 +329,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, R: Rule<'a, E, S>> Validato
     }
 
     fn fields_definition(
-        t: TypeDefinitionReferenceFromAbstract<'a, S::TypeDefinitionReference>,
+        t: TypeDefinitionReference<'a, S::TypeDefinition>,
     ) -> Option<&'a S::FieldsDefinition> {
         match t {
             TypeDefinitionReference::BuiltinScalarType(_)

@@ -78,7 +78,7 @@ impl DisplaySchemaDefinition {
             if had_directives_to_output
                 || schema_definition
                     .type_definitions()
-                    .any(|tdr| !tdr.is_builtin())
+                    .any(|td| !td.is_builtin())
             {
                 writeln!(f)?;
             }

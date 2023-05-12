@@ -53,9 +53,7 @@ pub use variable_uniqueness::VariableUniqueness;
 pub use variables_are_input_types::VariablesAreInputTypes;
 
 use crate::executable::{Cache, Error, Path, Rule, Visitor};
-use bluejay_core::definition::{
-    DirectiveLocation, SchemaDefinition, TypeDefinitionReferenceFromAbstract,
-};
+use bluejay_core::definition::{DirectiveLocation, SchemaDefinition, TypeDefinitionReference};
 use bluejay_core::executable::ExecutableDocument;
 use paste::paste;
 use std::iter::Chain;
@@ -92,7 +90,7 @@ macro_rules! define_rules {
                 fn visit_selection_set(
                     &mut self,
                     selection_set: &'a E::SelectionSet,
-                    r#type: TypeDefinitionReferenceFromAbstract<'a, S::TypeDefinitionReference>,
+                    r#type: TypeDefinitionReference<'a, S::TypeDefinition>,
                 ) {
                     $(self.[<$rule:snake>].visit_selection_set(selection_set, r#type);)*
                 }
@@ -132,7 +130,7 @@ macro_rules! define_rules {
                 fn visit_inline_fragment(
                     &mut self,
                     inline_fragment: &'a E::InlineFragment,
-                    scoped_type: TypeDefinitionReferenceFromAbstract<'a, S::TypeDefinitionReference>,
+                    scoped_type: TypeDefinitionReference<'a, S::TypeDefinition>,
                 ) {
                     $(self.[<$rule:snake>].visit_inline_fragment(inline_fragment, scoped_type);)*
                 }
@@ -140,7 +138,7 @@ macro_rules! define_rules {
                 fn visit_fragment_spread(
                     &mut self,
                     fragment_spread: &'a E::FragmentSpread,
-                    scoped_type: TypeDefinitionReferenceFromAbstract<'a, S::TypeDefinitionReference>,
+                    scoped_type: TypeDefinitionReference<'a, S::TypeDefinition>,
                     path: &Path<'a, E>,
                 ) {
                     $(self.[<$rule:snake>].visit_fragment_spread(fragment_spread, scoped_type, path);)*

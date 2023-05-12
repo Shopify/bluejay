@@ -19,7 +19,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Visitor<'a, E, S>
         if let Some(default_value) = variable_definition.default_value() {
             if let Some(input_value_definition) = self
                 .cache
-                .variable_definition_input_type_reference(variable_definition.r#type())
+                .variable_definition_input_type(variable_definition.r#type())
             {
                 if let Err(coercion_errors) =
                     input_value_definition.coerce_value(default_value, &[])

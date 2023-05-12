@@ -1,6 +1,6 @@
 use crate::ast::definition::{
     Context, CustomScalarTypeDefinition, EnumTypeDefinition, InterfaceTypeDefinition,
-    ObjectTypeDefinition, TypeDefinitionReference, UnionTypeDefinition,
+    ObjectTypeDefinition, TypeDefinition, UnionTypeDefinition,
 };
 use crate::ast::{FromTokens, ParseError, Tokens};
 use crate::lexical_token::{Name, PunctuatorType};
@@ -40,7 +40,7 @@ impl<'a, C: Context + 'a> BaseOutputType<'a, C> {
         }
     }
 
-    pub(crate) fn set_type_reference(
+    pub(crate) fn set_type(
         &self,
         type_reference: BaseOutputTypeReference<'a, Self>,
     ) -> Result<(), BaseOutputTypeReference<'a, Self>> {
@@ -51,21 +51,19 @@ impl<'a, C: Context + 'a> BaseOutputType<'a, C> {
         &self.name
     }
 
-    pub(crate) fn core_type_from_type_definition_reference(
-        type_definition_reference: &'a TypeDefinitionReference<'a, C>,
+    pub(crate) fn core_type_from_type_definition(
+        type_definition: &'a TypeDefinition<'a, C>,
     ) -> Result<BaseOutputTypeReference<'a, Self>, ()> {
-        match type_definition_reference {
-            TypeDefinitionReference::BuiltinScalar(bstd) => {
+        match type_definition {
+            TypeDefinition::BuiltinScalar(bstd) => {
                 Ok(BaseOutputTypeReference::BuiltinScalar(*bstd))
             }
-            TypeDefinitionReference::CustomScalar(cstd) => {
-                Ok(BaseOutputTypeReference::CustomScalar(cstd))
-            }
-            TypeDefinitionReference::Enum(etd) => Ok(BaseOutputTypeReference::Enum(etd)),
-            TypeDefinitionReference::InputObject(_) => Err(()),
-            TypeDefinitionReference::Interface(itd) => Ok(BaseOutputTypeReference::Interface(itd)),
-            TypeDefinitionReference::Object(otd) => Ok(BaseOutputTypeReference::Object(otd)),
-            TypeDefinitionReference::Union(utd) => Ok(BaseOutputTypeReference::Union(utd)),
+            TypeDefinition::CustomScalar(cstd) => Ok(BaseOutputTypeReference::CustomScalar(cstd)),
+            TypeDefinition::Enum(etd) => Ok(BaseOutputTypeReference::Enum(etd)),
+            TypeDefinition::InputObject(_) => Err(()),
+            TypeDefinition::Interface(itd) => Ok(BaseOutputTypeReference::Interface(itd)),
+            TypeDefinition::Object(otd) => Ok(BaseOutputTypeReference::Object(otd)),
+            TypeDefinition::Union(utd) => Ok(BaseOutputTypeReference::Union(utd)),
         }
     }
 }

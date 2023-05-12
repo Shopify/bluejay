@@ -6,25 +6,17 @@ use crate::BuiltinScalarDefinition;
 use enum_as_inner::EnumAsInner;
 
 #[derive(Debug, EnumAsInner)]
-pub enum TypeDefinitionReference<
-    'a,
-    CS: ScalarTypeDefinition,
-    O: ObjectTypeDefinition,
-    IO: InputObjectTypeDefinition,
-    E: EnumTypeDefinition,
-    U: UnionTypeDefinition,
-    I: InterfaceTypeDefinition,
-> {
+pub enum TypeDefinitionReference<'a, T: TypeDefinition> {
     BuiltinScalarType(BuiltinScalarDefinition),
-    CustomScalarType(&'a CS),
-    ObjectType(&'a O),
-    InputObjectType(&'a IO),
-    EnumType(&'a E),
-    UnionType(&'a U),
-    InterfaceType(&'a I),
+    CustomScalarType(&'a T::CustomScalarTypeDefinition),
+    ObjectType(&'a T::ObjectTypeDefinition),
+    InputObjectType(&'a T::InputObjectTypeDefinition),
+    EnumType(&'a T::EnumTypeDefinition),
+    UnionType(&'a T::UnionTypeDefinition),
+    InterfaceType(&'a T::InterfaceTypeDefinition),
 }
 
-pub trait AbstractTypeDefinitionReference {
+pub trait TypeDefinition: Sized {
     type CustomScalarTypeDefinition: ScalarTypeDefinition;
     type ObjectTypeDefinition: ObjectTypeDefinition;
     type InputObjectTypeDefinition: InputObjectTypeDefinition;
@@ -32,29 +24,10 @@ pub trait AbstractTypeDefinitionReference {
     type UnionTypeDefinition: UnionTypeDefinition;
     type InterfaceTypeDefinition: InterfaceTypeDefinition;
 
-    fn as_ref(&self) -> TypeDefinitionReferenceFromAbstract<'_, Self>;
+    fn as_ref(&self) -> TypeDefinitionReference<'_, Self>;
 }
 
-pub type TypeDefinitionReferenceFromAbstract<'a, T> = TypeDefinitionReference<
-    'a,
-    <T as AbstractTypeDefinitionReference>::CustomScalarTypeDefinition,
-    <T as AbstractTypeDefinitionReference>::ObjectTypeDefinition,
-    <T as AbstractTypeDefinitionReference>::InputObjectTypeDefinition,
-    <T as AbstractTypeDefinitionReference>::EnumTypeDefinition,
-    <T as AbstractTypeDefinitionReference>::UnionTypeDefinition,
-    <T as AbstractTypeDefinitionReference>::InterfaceTypeDefinition,
->;
-
-impl<
-        'a,
-        CS: ScalarTypeDefinition,
-        O: ObjectTypeDefinition,
-        IO: InputObjectTypeDefinition,
-        E: EnumTypeDefinition,
-        U: UnionTypeDefinition,
-        I: InterfaceTypeDefinition,
-    > Clone for TypeDefinitionReference<'a, CS, O, IO, E, U, I>
-{
+impl<'a, T: TypeDefinition> Clone for TypeDefinitionReference<'a, T> {
     fn clone(&self) -> Self {
         match self {
             Self::BuiltinScalarType(bstd) => Self::BuiltinScalarType(*bstd),
@@ -68,28 +41,9 @@ impl<
     }
 }
 
-impl<
-        'a,
-        CS: ScalarTypeDefinition,
-        O: ObjectTypeDefinition,
-        IO: InputObjectTypeDefinition,
-        E: EnumTypeDefinition,
-        U: UnionTypeDefinition,
-        I: InterfaceTypeDefinition,
-    > Copy for TypeDefinitionReference<'a, CS, O, IO, E, U, I>
-{
-}
+impl<'a, T: TypeDefinition> Copy for TypeDefinitionReference<'a, T> {}
 
-impl<
-        'a,
-        CS: ScalarTypeDefinition,
-        O: ObjectTypeDefinition,
-        IO: InputObjectTypeDefinition,
-        E: EnumTypeDefinition,
-        U: UnionTypeDefinition,
-        I: InterfaceTypeDefinition,
-    > TypeDefinitionReference<'a, CS, O, IO, E, U, I>
-{
+impl<'a, T: TypeDefinition> TypeDefinitionReference<'a, T> {
     pub fn name(&self) -> &'a str {
         match self {
             Self::BuiltinScalarType(bsd) => bsd.name(),

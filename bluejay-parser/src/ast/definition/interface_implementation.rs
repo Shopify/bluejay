@@ -19,7 +19,7 @@ impl<'a, C: Context> CoreInterfaceImplementation for InterfaceImplementation<'a,
 }
 
 impl<'a, C: Context> InterfaceImplementation<'a, C> {
-    pub(crate) fn set_type_reference(
+    pub(crate) fn set_type(
         &self,
         type_reference: &'a InterfaceTypeDefinition<'a, C>,
     ) -> Result<(), &'a InterfaceTypeDefinition<'a, C>> {

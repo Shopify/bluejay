@@ -16,7 +16,7 @@ mod object_type_definition;
 mod output_type;
 mod scalar_type_definition;
 mod schema_definition;
-mod type_definition_reference;
+mod type_definition;
 mod union_member_type;
 mod union_member_types;
 mod union_type_definition;
@@ -39,9 +39,7 @@ pub use object_type_definition::ObjectTypeDefinition;
 pub use output_type::{BaseOutputType, BaseOutputTypeReference, OutputType, OutputTypeReference};
 pub use scalar_type_definition::ScalarTypeDefinition;
 pub use schema_definition::SchemaDefinition;
-pub use type_definition_reference::{
-    AbstractTypeDefinitionReference, TypeDefinitionReference, TypeDefinitionReferenceFromAbstract,
-};
+pub use type_definition::{TypeDefinition, TypeDefinitionReference};
 pub use union_member_type::UnionMemberType;
 pub use union_member_types::UnionMemberTypes;
 pub use union_type_definition::UnionTypeDefinition;

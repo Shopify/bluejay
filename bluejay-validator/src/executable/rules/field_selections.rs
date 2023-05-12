@@ -1,7 +1,7 @@
 use crate::executable::{Cache, Error, Rule, Visitor};
 use bluejay_core::definition::{
     FieldsDefinition, InterfaceTypeDefinition, ObjectTypeDefinition, SchemaDefinition,
-    TypeDefinitionReference, TypeDefinitionReferenceFromAbstract,
+    TypeDefinitionReference,
 };
 use bluejay_core::executable::{ExecutableDocument, Field, Selection, SelectionReference};
 use bluejay_core::AsIter;
@@ -17,7 +17,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Visitor<'a, E, S>
     fn visit_selection_set(
         &mut self,
         selection_set: &'a E::SelectionSet,
-        r#type: TypeDefinitionReferenceFromAbstract<'a, S::TypeDefinitionReference>,
+        r#type: TypeDefinitionReference<'a, S::TypeDefinition>,
     ) {
         let fields_definition = match &r#type {
             TypeDefinitionReference::BuiltinScalarType(_)

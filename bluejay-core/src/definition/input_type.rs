@@ -1,6 +1,6 @@
 use crate::definition::{
-    EnumTypeDefinition, InputObjectTypeDefinition, InterfaceTypeDefinition, ObjectTypeDefinition,
-    ScalarTypeDefinition, TypeDefinitionReference, UnionTypeDefinition,
+    EnumTypeDefinition, InputObjectTypeDefinition, ScalarTypeDefinition, TypeDefinition,
+    TypeDefinitionReference,
 };
 use crate::BuiltinScalarDefinition;
 
@@ -122,24 +122,17 @@ pub trait InputType: Sized {
 
 impl<
         'a,
-        CS: ScalarTypeDefinition,
-        O: ObjectTypeDefinition,
-        IO: InputObjectTypeDefinition,
-        E: EnumTypeDefinition,
-        U: UnionTypeDefinition,
-        I: InterfaceTypeDefinition,
+        T: TypeDefinition,
         B: BaseInputType<
-            CustomScalarTypeDefinition = CS,
-            InputObjectTypeDefinition = IO,
-            EnumTypeDefinition = E,
+            CustomScalarTypeDefinition = T::CustomScalarTypeDefinition,
+            InputObjectTypeDefinition = T::InputObjectTypeDefinition,
+            EnumTypeDefinition = T::EnumTypeDefinition,
         >,
-    > TryFrom<TypeDefinitionReference<'a, CS, O, IO, E, U, I>> for BaseInputTypeReference<'a, B>
+    > TryFrom<TypeDefinitionReference<'a, T>> for BaseInputTypeReference<'a, B>
 {
     type Error = ();
 
-    fn try_from(
-        value: TypeDefinitionReference<'a, CS, O, IO, E, U, I>,
-    ) -> Result<Self, Self::Error> {
+    fn try_from(value: TypeDefinitionReference<'a, T>) -> Result<Self, Self::Error> {
         match value {
             TypeDefinitionReference::BuiltinScalarType(bstd) => Ok(Self::BuiltinScalar(bstd)),
             TypeDefinitionReference::CustomScalarType(cstd) => Ok(Self::CustomScalar(cstd)),

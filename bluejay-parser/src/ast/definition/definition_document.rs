@@ -2,20 +2,19 @@ use crate::ast::definition::{
     BaseInputType, BaseOutputType, Context, CustomScalarTypeDefinition, DefaultContext,
     DirectiveDefinition, EnumTypeDefinition, ExplicitSchemaDefinition, FieldsDefinition,
     InputObjectTypeDefinition, InputValueDefinition, InterfaceImplementations,
-    InterfaceTypeDefinition, ObjectTypeDefinition, SchemaDefinition, TypeDefinitionReference,
+    InterfaceTypeDefinition, ObjectTypeDefinition, SchemaDefinition, TypeDefinition,
     UnionTypeDefinition,
 };
 use crate::ast::{FromTokens, ParseError, ScannerTokens, Tokens};
 use crate::scanner::LogosScanner;
 use crate::Error;
 use bluejay_core::definition::{
-    AbstractTypeDefinitionReference, DirectiveDefinition as CoreDirectiveDefinition,
-    FieldDefinition as CoreFieldDefinition,
+    DirectiveDefinition as CoreDirectiveDefinition, FieldDefinition as CoreFieldDefinition,
     InputObjectTypeDefinition as CoreInputObjectTypeDefinition, InputType,
     InputValueDefinition as CoreInputValueDefinition,
     InterfaceTypeDefinition as CoreInterfaceTypeDefinition,
     ObjectTypeDefinition as CoreObjectTypeDefinition, OutputType,
-    UnionTypeDefinition as CoreUnionTypeDefinition,
+    TypeDefinition as CoreTypeDefinition, UnionTypeDefinition as CoreUnionTypeDefinition,
 };
 use bluejay_core::{AsIter, BuiltinScalarDefinition, IntoEnumIterator, OperationType};
 use std::collections::btree_map::Entry;
@@ -28,7 +27,7 @@ use definition_document_error::DefinitionDocumentError;
 pub struct DefinitionDocument<'a, C: Context = DefaultContext> {
     schema_definitions: Vec<ExplicitSchemaDefinition<'a>>,
     directive_definitions: Vec<DirectiveDefinition<'a, C>>,
-    type_definition_references: Vec<TypeDefinitionReference<'a, C>>,
+    type_definitions: Vec<TypeDefinition<'a, C>>,
 }
 
 #[derive(Debug)]
@@ -53,7 +52,7 @@ impl<'a, C: Context> DefinitionDocument<'a, C> {
                 DirectiveDefinition::skip(),
                 DirectiveDefinition::include(),
             ],
-            type_definition_references: Vec::new(),
+            type_definitions: Vec::new(),
         }
     }
 
@@ -89,7 +88,7 @@ impl<'a, C: Context> DefinitionDocument<'a, C> {
             match Self::next_definition_identifier(&mut tokens) {
                 Some(CustomScalarTypeDefinition::<C>::SCALAR_IDENTIFIER) => {
                     Self::parse_definition::<_, CustomScalarTypeDefinition<C>>(
-                        &mut instance.type_definition_references,
+                        &mut instance.type_definitions,
                         &mut tokens,
                         &mut errors,
                         &mut last_pass_had_error,
@@ -97,7 +96,7 @@ impl<'a, C: Context> DefinitionDocument<'a, C> {
                 }
                 Some(ObjectTypeDefinition::<C>::TYPE_IDENTIFIER) => {
                     Self::parse_definition::<_, ObjectTypeDefinition<C>>(
-                        &mut instance.type_definition_references,
+                        &mut instance.type_definitions,
                         &mut tokens,
                         &mut errors,
                         &mut last_pass_had_error,
@@ -105,7 +104,7 @@ impl<'a, C: Context> DefinitionDocument<'a, C> {
                 }
                 Some(InputObjectTypeDefinition::<C>::INPUT_IDENTIFIER) => {
                     Self::parse_definition::<_, InputObjectTypeDefinition<C>>(
-                        &mut instance.type_definition_references,
+                        &mut instance.type_definitions,
                         &mut tokens,
                         &mut errors,
                         &mut last_pass_had_error,
@@ -113,7 +112,7 @@ impl<'a, C: Context> DefinitionDocument<'a, C> {
                 }
                 Some(EnumTypeDefinition::ENUM_IDENTIFIER) => {
                     Self::parse_definition::<_, EnumTypeDefinition>(
-                        &mut instance.type_definition_references,
+                        &mut instance.type_definitions,
                         &mut tokens,
                         &mut errors,
                         &mut last_pass_had_error,
@@ -121,7 +120,7 @@ impl<'a, C: Context> DefinitionDocument<'a, C> {
                 }
                 Some(UnionTypeDefinition::<C>::UNION_IDENTIFIER) => {
                     Self::parse_definition::<_, UnionTypeDefinition<C>>(
-                        &mut instance.type_definition_references,
+                        &mut instance.type_definitions,
                         &mut tokens,
                         &mut errors,
                         &mut last_pass_had_error,
@@ -129,7 +128,7 @@ impl<'a, C: Context> DefinitionDocument<'a, C> {
                 }
                 Some(InterfaceTypeDefinition::<C>::INTERFACE_IDENTIFIER) => {
                     Self::parse_definition::<_, InterfaceTypeDefinition<C>>(
-                        &mut instance.type_definition_references,
+                        &mut instance.type_definitions,
                         &mut tokens,
                         &mut errors,
                         &mut last_pass_had_error,
@@ -188,14 +187,14 @@ impl<'a, C: Context> DefinitionDocument<'a, C> {
         let mut builtin_scalars_by_name: HashMap<&str, BuiltinScalarDefinition> =
             HashMap::from_iter(BuiltinScalarDefinition::iter().map(|bstd| (bstd.name(), bstd)));
 
-        self.type_definition_references.iter().for_each(|tdr| {
-            builtin_scalars_by_name.remove(tdr.name());
+        self.type_definitions.iter().for_each(|td| {
+            builtin_scalars_by_name.remove(td.name());
         });
 
-        self.type_definition_references.extend(
+        self.type_definitions.extend(
             builtin_scalars_by_name
                 .into_values()
-                .map(TypeDefinitionReference::BuiltinScalar),
+                .map(TypeDefinition::BuiltinScalar),
         );
     }
 
@@ -215,9 +214,9 @@ impl<'a, C: Context> DefinitionDocument<'a, C> {
             .count()
             + self.schema_definitions.len()
             + self
-                .type_definition_references
+                .type_definitions
                 .iter()
-                .filter(|tdr| !tdr.as_ref().is_builtin())
+                .filter(|td| !td.as_ref().is_builtin())
                 .count()
     }
 
@@ -258,21 +257,21 @@ impl<'a, C: Context> DefinitionDocument<'a, C> {
     fn index_type_definitions(
         &'a self,
         errors: &mut Vec<DefinitionDocumentError<'a, C>>,
-    ) -> BTreeMap<&str, &TypeDefinitionReference<'a, C>> {
-        let mut indexed: BTreeMap<&str, &TypeDefinitionReference<'a, C>> = BTreeMap::new();
-        let mut duplicates: BTreeMap<&str, Vec<&TypeDefinitionReference<'a, C>>> = BTreeMap::new();
+    ) -> BTreeMap<&str, &TypeDefinition<'a, C>> {
+        let mut indexed: BTreeMap<&str, &TypeDefinition<'a, C>> = BTreeMap::new();
+        let mut duplicates: BTreeMap<&str, Vec<&TypeDefinition<'a, C>>> = BTreeMap::new();
 
-        self.type_definition_references
+        self.type_definitions
             .iter()
-            .for_each(|tdr| match indexed.entry(tdr.name()) {
+            .for_each(|td| match indexed.entry(td.name()) {
                 Entry::Vacant(entry) => {
-                    entry.insert(tdr);
+                    entry.insert(td);
                 }
                 Entry::Occupied(entry) => {
                     duplicates
-                        .entry(tdr.name())
+                        .entry(td.name())
                         .or_insert_with(|| vec![entry.get()])
-                        .push(tdr);
+                        .push(td);
                 }
             });
 
@@ -284,7 +283,7 @@ impl<'a, C: Context> DefinitionDocument<'a, C> {
     }
 
     fn implicit_schema_definition(
-        indexed_type_definitions: &BTreeMap<&str, &'a TypeDefinitionReference<'a, C>>,
+        indexed_type_definitions: &BTreeMap<&str, &'a TypeDefinition<'a, C>>,
     ) -> Result<Option<ImplicitSchemaDefinition<'a, C>>, Vec<DefinitionDocumentError<'a, C>>> {
         let mut errors = Vec::new();
         let query =
@@ -318,11 +317,11 @@ impl<'a, C: Context> DefinitionDocument<'a, C> {
 
     fn implicit_root_operation_type(
         name: &str,
-        indexed_type_definitions: &BTreeMap<&str, &'a TypeDefinitionReference<'a, C>>,
+        indexed_type_definitions: &BTreeMap<&str, &'a TypeDefinition<'a, C>>,
         errors: &mut Vec<DefinitionDocumentError<'a, C>>,
     ) -> Option<&'a ObjectTypeDefinition<'a, C>> {
         match indexed_type_definitions.get(name) {
-            Some(TypeDefinitionReference::Object(o)) => Some(o),
+            Some(TypeDefinition::Object(o)) => Some(o),
             Some(definition) => {
                 errors.push(
                     DefinitionDocumentError::ImplicitRootOperationTypeNotAnObject { definition },
@@ -335,7 +334,7 @@ impl<'a, C: Context> DefinitionDocument<'a, C> {
 
     fn explicit_schema_definition(
         &'a self,
-        indexed_type_definitions: &BTreeMap<&str, &'a TypeDefinitionReference<'a, C>>,
+        indexed_type_definitions: &BTreeMap<&str, &'a TypeDefinition<'a, C>>,
         errors: &mut Vec<DefinitionDocumentError<'a, C>>,
     ) -> Option<ExplicitSchemaDefinitionWithRootTypes<'a, C>> {
         if let Some(first) = self.schema_definitions.first() {
@@ -387,7 +386,7 @@ impl<'a, C: Context> DefinitionDocument<'a, C> {
     fn explicit_operation_type_definition(
         operation_type: OperationType,
         explicit_schema_definition: &'a ExplicitSchemaDefinition<'a>,
-        indexed_type_definitions: &BTreeMap<&str, &'a TypeDefinitionReference<'a, C>>,
+        indexed_type_definitions: &BTreeMap<&str, &'a TypeDefinition<'a, C>>,
         errors: &mut Vec<DefinitionDocumentError<'a, C>>,
     ) -> Option<&'a ObjectTypeDefinition<'a, C>> {
         let root_operation_type_definitions: Vec<_> = explicit_schema_definition
@@ -399,7 +398,7 @@ impl<'a, C: Context> DefinitionDocument<'a, C> {
         if let Some(first) = root_operation_type_definitions.first() {
             if root_operation_type_definitions.len() == 1 {
                 match indexed_type_definitions.get(first.name().as_ref()) {
-                    Some(TypeDefinitionReference::Object(o)) => Some(o),
+                    Some(TypeDefinition::Object(o)) => Some(o),
                     Some(_) => {
                         errors.push(
                             DefinitionDocumentError::ExplicitRootOperationTypeNotAnObject {
@@ -431,47 +430,47 @@ impl<'a, C: Context> DefinitionDocument<'a, C> {
         }
     }
 
-    fn resolve_type_definition_references(
-        indexed_type_definitions: &BTreeMap<&str, &'a TypeDefinitionReference<'a, C>>,
+    fn resolve_type_definitions(
+        indexed_type_definitions: &BTreeMap<&str, &'a TypeDefinition<'a, C>>,
         indexed_directive_definitions: &BTreeMap<&str, &'a DirectiveDefinition<'a, C>>,
         errors: &mut Vec<DefinitionDocumentError<'a, C>>,
     ) {
         indexed_type_definitions
             .values()
             .for_each(|type_definition| match type_definition {
-                TypeDefinitionReference::Object(otd) => {
-                    Self::resolve_fields_definition_type_references(
+                TypeDefinition::Object(otd) => {
+                    Self::resolve_fields_definition_types(
                         indexed_type_definitions,
                         otd.fields_definition(),
                         errors,
                     );
                     if let Some(interface_implementations) = otd.interface_implementations() {
-                        Self::resolve_interface_implementation_references(
+                        Self::resolve_interface_implementations(
                             indexed_type_definitions,
                             interface_implementations,
                             errors,
                         );
                     }
                 }
-                TypeDefinitionReference::Interface(itd) => {
-                    Self::resolve_fields_definition_type_references(
+                TypeDefinition::Interface(itd) => {
+                    Self::resolve_fields_definition_types(
                         indexed_type_definitions,
                         itd.fields_definition(),
                         errors,
                     );
                     if let Some(interface_implementations) = itd.interface_implementations() {
-                        Self::resolve_interface_implementation_references(
+                        Self::resolve_interface_implementations(
                             indexed_type_definitions,
                             interface_implementations,
                             errors,
                         );
                     }
                 }
-                TypeDefinitionReference::Union(utd) => {
+                TypeDefinition::Union(utd) => {
                     utd.union_member_types().iter().for_each(|member_type| {
                         match indexed_type_definitions.get(member_type.name().as_ref()) {
-                            Some(TypeDefinitionReference::Object(otd)) => {
-                                member_type.set_type_reference(otd).unwrap();
+                            Some(TypeDefinition::Object(otd)) => {
+                                member_type.set_type(otd).unwrap();
                             }
                             Some(_) => errors.push(
                                 DefinitionDocumentError::ReferencedUnionMemberTypeIsNotAnObject {
@@ -486,21 +485,21 @@ impl<'a, C: Context> DefinitionDocument<'a, C> {
                         }
                     });
                 }
-                TypeDefinitionReference::InputObject(iotd) => Self::resolve_input_type_references(
+                TypeDefinition::InputObject(iotd) => Self::resolve_input_types(
                     indexed_type_definitions,
                     iotd.input_field_definitions().iter(),
                     errors,
                 ),
-                TypeDefinitionReference::BuiltinScalar(_)
-                | TypeDefinitionReference::CustomScalar(_)
-                | TypeDefinitionReference::Enum(_) => {}
+                TypeDefinition::BuiltinScalar(_)
+                | TypeDefinition::CustomScalar(_)
+                | TypeDefinition::Enum(_) => {}
             });
 
         indexed_directive_definitions
             .values()
             .for_each(|directive_definition| {
                 if let Some(arguments_definition) = directive_definition.arguments_definition() {
-                    Self::resolve_input_type_references(
+                    Self::resolve_input_types(
                         indexed_type_definitions,
                         arguments_definition.iter(),
                         errors,
@@ -509,16 +508,16 @@ impl<'a, C: Context> DefinitionDocument<'a, C> {
             })
     }
 
-    fn resolve_fields_definition_type_references(
-        indexed_type_definitions: &BTreeMap<&str, &'a TypeDefinitionReference<'a, C>>,
+    fn resolve_fields_definition_types(
+        indexed_type_definitions: &BTreeMap<&str, &'a TypeDefinition<'a, C>>,
         fields_definition: &'a FieldsDefinition<'a, C>,
         errors: &mut Vec<DefinitionDocumentError<'a, C>>,
     ) {
         fields_definition.iter().for_each(|field_definition| {
             let t = field_definition.r#type().as_ref().base();
             match indexed_type_definitions.get(t.name().as_ref()) {
-                Some(&tdr) => match BaseOutputType::core_type_from_type_definition_reference(tdr) {
-                    Ok(core_t) => t.set_type_reference(core_t).unwrap(),
+                Some(&td) => match BaseOutputType::core_type_from_type_definition(td) {
+                    Ok(core_t) => t.set_type(core_t).unwrap(),
                     Err(_) => {
                         errors.push(DefinitionDocumentError::ReferencedTypeIsNotAnOutputType {
                             name: t.name(),
@@ -530,7 +529,7 @@ impl<'a, C: Context> DefinitionDocument<'a, C> {
             }
 
             if let Some(arguments_definition) = field_definition.arguments_definition() {
-                Self::resolve_input_type_references(
+                Self::resolve_input_types(
                     indexed_type_definitions,
                     arguments_definition.iter(),
                     errors,
@@ -539,8 +538,8 @@ impl<'a, C: Context> DefinitionDocument<'a, C> {
         })
     }
 
-    fn resolve_interface_implementation_references(
-        indexed_type_definitions: &BTreeMap<&str, &'a TypeDefinitionReference<'a, C>>,
+    fn resolve_interface_implementations(
+        indexed_type_definitions: &BTreeMap<&str, &'a TypeDefinition<'a, C>>,
         interface_impelementations: &'a InterfaceImplementations<'a, C>,
         errors: &mut Vec<DefinitionDocumentError<'a, C>>,
     ) {
@@ -549,8 +548,8 @@ impl<'a, C: Context> DefinitionDocument<'a, C> {
             .for_each(|interface_implementation| {
                 let name = interface_implementation.interface_name();
                 match indexed_type_definitions.get(name.as_ref()) {
-                    Some(TypeDefinitionReference::Interface(itd)) => {
-                        interface_implementation.set_type_reference(itd).unwrap();
+                    Some(TypeDefinition::Interface(itd)) => {
+                        interface_implementation.set_type(itd).unwrap();
                     }
                     Some(_) => errors
                         .push(DefinitionDocumentError::ReferencedTypeIsNotAnInterface { name }),
@@ -561,16 +560,16 @@ impl<'a, C: Context> DefinitionDocument<'a, C> {
             })
     }
 
-    fn resolve_input_type_references(
-        indexed_type_definitions: &BTreeMap<&str, &'a TypeDefinitionReference<'a, C>>,
+    fn resolve_input_types(
+        indexed_type_definitions: &BTreeMap<&str, &'a TypeDefinition<'a, C>>,
         input_value_definitions: impl Iterator<Item = &'a InputValueDefinition<'a, C>>,
         errors: &mut Vec<DefinitionDocumentError<'a, C>>,
     ) {
         input_value_definitions.for_each(|input_value_definition| {
             let t = input_value_definition.r#type().as_ref().base();
             match indexed_type_definitions.get(t.name().as_ref()) {
-                Some(&tdr) => match BaseInputType::core_type_from_type_definition_reference(tdr) {
-                    Ok(core_t) => t.set_type_reference(core_t).unwrap(),
+                Some(&td) => match BaseInputType::core_type_from_type_definition(td) {
+                    Ok(core_t) => t.set_type(core_t).unwrap(),
                     Err(_) => {
                         errors.push(DefinitionDocumentError::ReferencedTypeIsNotAnInputType {
                             name: t.name(),
@@ -595,7 +594,7 @@ impl<'a, C: Context> TryFrom<&'a DefinitionDocument<'a, C>> for SchemaDefinition
         let indexed_directive_definitions =
             definition_document.index_directive_definitions(&mut errors);
 
-        DefinitionDocument::resolve_type_definition_references(
+        DefinitionDocument::resolve_type_definitions(
             &indexed_type_definitions,
             &indexed_directive_definitions,
             &mut errors,

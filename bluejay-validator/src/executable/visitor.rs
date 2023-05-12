@@ -1,7 +1,5 @@
 use crate::executable::Path;
-use bluejay_core::definition::{
-    DirectiveLocation, SchemaDefinition, TypeDefinitionReferenceFromAbstract,
-};
+use bluejay_core::definition::{DirectiveLocation, SchemaDefinition, TypeDefinitionReference};
 use bluejay_core::executable::ExecutableDocument;
 
 pub trait Visitor<'a, E: ExecutableDocument, S: SchemaDefinition> {
@@ -10,7 +8,7 @@ pub trait Visitor<'a, E: ExecutableDocument, S: SchemaDefinition> {
     fn visit_selection_set(
         &mut self,
         _selection_set: &'a E::SelectionSet,
-        _type: TypeDefinitionReferenceFromAbstract<'a, S::TypeDefinitionReference>,
+        _type: TypeDefinitionReference<'a, S::TypeDefinition>,
     ) {
     }
 
@@ -55,14 +53,14 @@ pub trait Visitor<'a, E: ExecutableDocument, S: SchemaDefinition> {
     fn visit_inline_fragment(
         &mut self,
         _inline_fragment: &'a E::InlineFragment,
-        _scoped_type: TypeDefinitionReferenceFromAbstract<'a, S::TypeDefinitionReference>,
+        _scoped_type: TypeDefinitionReference<'a, S::TypeDefinition>,
     ) {
     }
 
     fn visit_fragment_spread(
         &mut self,
         _fragment_spread: &'a E::FragmentSpread,
-        _scoped_type: TypeDefinitionReferenceFromAbstract<'a, S::TypeDefinitionReference>,
+        _scoped_type: TypeDefinitionReference<'a, S::TypeDefinition>,
         _path: &Path<'a, E>,
     ) {
     }

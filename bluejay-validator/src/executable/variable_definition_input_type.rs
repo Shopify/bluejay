@@ -25,12 +25,12 @@ impl<'a, S: SchemaDefinition, T: VariableType> TryFrom<(&'a S, &T)>
 {
     type Error = ();
 
-    fn try_from((schema_definition, type_reference): (&'a S, &T)) -> Result<Self, Self::Error> {
-        let type_name = type_reference.as_ref().name();
+    fn try_from((schema_definition, variable_type): (&'a S, &T)) -> Result<Self, Self::Error> {
+        let type_name = variable_type.as_ref().name();
         let type_definition_reference =
             schema_definition.get_type_definition(type_name).ok_or(())?;
         let base = BaseInputTypeReference::try_from(type_definition_reference)?;
-        Self::try_from((base, type_reference))
+        Self::try_from((base, variable_type))
     }
 }
 
@@ -40,9 +40,9 @@ impl<'a, B: BaseInputType, T: VariableType> TryFrom<(BaseInputTypeReference<'a, 
     type Error = ();
 
     fn try_from(
-        (base, type_reference): (BaseInputTypeReference<'a, B>, &T),
+        (base, variable_type): (BaseInputTypeReference<'a, B>, &T),
     ) -> Result<Self, Self::Error> {
-        match type_reference.as_ref() {
+        match variable_type.as_ref() {
             VariableTypeReference::Named(_, required) => {
                 Ok(VariableDefinitionInputType::Base(base, required))
             }

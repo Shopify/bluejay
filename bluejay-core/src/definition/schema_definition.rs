@@ -1,10 +1,10 @@
 use crate::definition::{
-    AbstractTypeDefinitionReference, ArgumentsDefinition, BaseInputType, BaseOutputType,
-    DirectiveDefinition, EnumTypeDefinition, EnumValueDefinition, EnumValueDefinitions,
-    FieldDefinition, FieldsDefinition, InputFieldsDefinition, InputObjectTypeDefinition, InputType,
-    InputValueDefinition, InterfaceImplementation, InterfaceImplementations,
-    InterfaceTypeDefinition, ObjectTypeDefinition, OutputType, ScalarTypeDefinition,
-    TypeDefinitionReferenceFromAbstract, UnionMemberType, UnionMemberTypes, UnionTypeDefinition,
+    ArgumentsDefinition, BaseInputType, BaseOutputType, DirectiveDefinition, EnumTypeDefinition,
+    EnumValueDefinition, EnumValueDefinitions, FieldDefinition, FieldsDefinition,
+    InputFieldsDefinition, InputObjectTypeDefinition, InputType, InputValueDefinition,
+    InterfaceImplementation, InterfaceImplementations, InterfaceTypeDefinition,
+    ObjectTypeDefinition, OutputType, ScalarTypeDefinition, TypeDefinition,
+    TypeDefinitionReference, UnionMemberType, UnionMemberTypes, UnionTypeDefinition,
 };
 use crate::ConstDirectives;
 
@@ -71,7 +71,7 @@ pub trait SchemaDefinition {
         Directives = Self::Directives,
         EnumValueDefinitions = Self::EnumValueDefinitions,
     >;
-    type TypeDefinitionReference: AbstractTypeDefinitionReference<
+    type TypeDefinition: TypeDefinition<
         CustomScalarTypeDefinition = Self::CustomScalarTypeDefinition,
         ObjectTypeDefinition = Self::ObjectTypeDefinition,
         InputObjectTypeDefinition = Self::InputObjectTypeDefinition,
@@ -80,9 +80,7 @@ pub trait SchemaDefinition {
         InterfaceTypeDefinition = Self::InterfaceTypeDefinition,
     >;
     type DirectiveDefinition: DirectiveDefinition<ArgumentsDefinition = Self::ArgumentsDefinition>;
-    type TypeDefinitionReferences<'a>: Iterator<
-        Item = TypeDefinitionReferenceFromAbstract<'a, Self::TypeDefinitionReference>,
-    >
+    type TypeDefinitions<'a>: Iterator<Item = TypeDefinitionReference<'a, Self::TypeDefinition>>
     where
         Self: 'a;
     type DirectiveDefinitions<'a>: Iterator<Item = &'a Self::DirectiveDefinition>
@@ -100,8 +98,8 @@ pub trait SchemaDefinition {
     fn get_type_definition(
         &self,
         name: &str,
-    ) -> Option<TypeDefinitionReferenceFromAbstract<Self::TypeDefinitionReference>>;
-    fn type_definitions(&self) -> Self::TypeDefinitionReferences<'_>;
+    ) -> Option<TypeDefinitionReference<Self::TypeDefinition>>;
+    fn type_definitions(&self) -> Self::TypeDefinitions<'_>;
     fn get_directive_definition(&self, name: &str) -> Option<&Self::DirectiveDefinition>;
     fn directive_definitions(&self) -> Self::DirectiveDefinitions<'_>;
     fn get_interface_implementors(

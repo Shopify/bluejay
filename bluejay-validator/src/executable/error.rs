@@ -1,6 +1,6 @@
 use crate::value::input_coercion::Error as InputCoercionError;
 use bluejay_core::definition::{
-    FieldDefinition, InputType, OutputType, SchemaDefinition, TypeDefinitionReferenceFromAbstract,
+    FieldDefinition, InputType, OutputType, SchemaDefinition, TypeDefinitionReference,
 };
 use bluejay_core::executable::{ExecutableDocument, OperationDefinition, VariableType};
 use bluejay_core::{OperationType, Value};
@@ -31,7 +31,7 @@ pub enum Error<'a, E: ExecutableDocument, S: SchemaDefinition> {
     },
     FieldDoesNotExistOnType {
         field: &'a E::Field,
-        r#type: TypeDefinitionReferenceFromAbstract<'a, S::TypeDefinitionReference>,
+        r#type: TypeDefinitionReference<'a, S::TypeDefinition>,
     },
     OperationTypeNotDefined {
         operation: &'a E::ExplicitOperationDefinition,
@@ -89,11 +89,11 @@ pub enum Error<'a, E: ExecutableDocument, S: SchemaDefinition> {
     },
     FragmentSpreadIsNotPossible {
         fragment_spread: &'a E::FragmentSpread,
-        parent_type: TypeDefinitionReferenceFromAbstract<'a, S::TypeDefinitionReference>,
+        parent_type: TypeDefinitionReference<'a, S::TypeDefinition>,
     },
     InlineFragmentSpreadIsNotPossible {
         inline_fragment: &'a E::InlineFragment,
-        parent_type: TypeDefinitionReferenceFromAbstract<'a, S::TypeDefinitionReference>,
+        parent_type: TypeDefinitionReference<'a, S::TypeDefinition>,
     },
     InvalidConstValue(InputCoercionError<'a, true, E::Value<true>>),
     InvalidVariableValue(InputCoercionError<'a, false, E::Value<false>>),

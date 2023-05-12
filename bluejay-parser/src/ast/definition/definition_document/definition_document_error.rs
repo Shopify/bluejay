@@ -1,11 +1,11 @@
 use crate::ast::definition::{
     definition_document::ImplicitSchemaDefinition, Context, DirectiveDefinition,
-    ExplicitSchemaDefinition, RootOperationTypeDefinition, TypeDefinitionReference,
+    ExplicitSchemaDefinition, RootOperationTypeDefinition, TypeDefinition,
 };
 use crate::error::{Annotation, Error};
 use crate::lexical_token::Name;
 use crate::HasSpan;
-use bluejay_core::definition::AbstractTypeDefinitionReference;
+use bluejay_core::definition::TypeDefinition as CoreTypeDefinition;
 use bluejay_core::OperationType;
 
 #[derive(Debug)]
@@ -16,10 +16,10 @@ pub enum DefinitionDocumentError<'a, C: Context> {
     },
     DuplicateTypeDefinitions {
         name: &'a str,
-        definitions: Vec<&'a TypeDefinitionReference<'a, C>>,
+        definitions: Vec<&'a TypeDefinition<'a, C>>,
     },
     ImplicitRootOperationTypeNotAnObject {
-        definition: &'a TypeDefinitionReference<'a, C>,
+        definition: &'a TypeDefinition<'a, C>,
     },
     ExplicitRootOperationTypeNotAnObject {
         name: &'a Name<'a>,

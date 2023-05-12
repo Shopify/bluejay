@@ -1,8 +1,7 @@
 use crate::executable::{Cache, Error, Path, PathRoot, Rule, Visitor};
 use bluejay_core::definition::{
     BaseInputType, BaseInputTypeReference, InputFieldsDefinition, InputObjectTypeDefinition,
-    InputType, InputTypeReference, InputValueDefinition, SchemaDefinition,
-    TypeDefinitionReferenceFromAbstract,
+    InputType, InputTypeReference, InputValueDefinition, SchemaDefinition, TypeDefinitionReference,
 };
 use bluejay_core::executable::{
     ExecutableDocument, FragmentSpread, OperationDefinition, VariableDefinition, VariableType,
@@ -39,7 +38,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Visitor<'a, E, S>
     fn visit_fragment_spread(
         &mut self,
         fragment_spread: &'a E::FragmentSpread,
-        _: TypeDefinitionReferenceFromAbstract<'a, S::TypeDefinitionReference>,
+        _: TypeDefinitionReference<'a, S::TypeDefinition>,
         path: &Path<'a, E>,
     ) {
         if let Some(fragment_definition) = self.cache.fragment_definition(fragment_spread.name()) {

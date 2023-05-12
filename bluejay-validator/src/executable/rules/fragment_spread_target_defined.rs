@@ -1,5 +1,5 @@
 use crate::executable::{Cache, Error, Path, Rule, Visitor};
-use bluejay_core::definition::{SchemaDefinition, TypeDefinitionReferenceFromAbstract};
+use bluejay_core::definition::{SchemaDefinition, TypeDefinitionReference};
 use bluejay_core::executable::{ExecutableDocument, FragmentDefinition, FragmentSpread};
 use std::collections::HashSet;
 
@@ -14,7 +14,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> Visitor<'a, E, S>
     fn visit_fragment_spread(
         &mut self,
         fragment_spread: &'a <E as ExecutableDocument>::FragmentSpread,
-        _scoped_type: TypeDefinitionReferenceFromAbstract<'a, S::TypeDefinitionReference>,
+        _scoped_type: TypeDefinitionReference<'a, S::TypeDefinition>,
         _path: &Path<'a, E>,
     ) {
         if !self

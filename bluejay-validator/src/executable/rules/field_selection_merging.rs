@@ -2,7 +2,7 @@ use crate::executable::{Cache, Error, Rule, Visitor};
 use bluejay_core::definition::{
     BaseOutputType, FieldDefinition, FieldsDefinition, InterfaceTypeDefinition,
     ObjectTypeDefinition, OutputType, OutputTypeReference, SchemaDefinition,
-    TypeDefinitionReference, TypeDefinitionReferenceFromAbstract,
+    TypeDefinitionReference,
 };
 use bluejay_core::executable::{
     ExecutableDocument, Field, FragmentDefinition, FragmentSpread, InlineFragment, Selection,
@@ -24,7 +24,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition> Visitor<'a, E, S>
     fn visit_selection_set(
         &mut self,
         selection_set: &'a E::SelectionSet,
-        r#type: TypeDefinitionReferenceFromAbstract<'a, S::TypeDefinitionReference>,
+        r#type: TypeDefinitionReference<'a, S::TypeDefinition>,
     ) {
         self.selection_set_valid(selection_set, r#type);
     }
@@ -34,7 +34,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> FieldSelectionMer
     fn selection_set_valid(
         &mut self,
         selection_set: &'a E::SelectionSet,
-        parent_type: TypeDefinitionReferenceFromAbstract<'a, S::TypeDefinitionReference>,
+        parent_type: TypeDefinitionReference<'a, S::TypeDefinition>,
     ) -> bool {
         if let Some(errors) = self.cached_errors.get(selection_set) {
             errors.is_empty()
@@ -214,7 +214,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> FieldSelectionMer
     fn selection_set_contained_fields(
         &mut self,
         selection_set: &'a E::SelectionSet,
-        parent_type: TypeDefinitionReferenceFromAbstract<'a, S::TypeDefinitionReference>,
+        parent_type: TypeDefinitionReference<'a, S::TypeDefinition>,
     ) -> HashMap<&'a str, Vec<FieldContext<'a, E, S>>> {
         let mut fields = HashMap::new();
         self.visit_selections_for_fields(
@@ -263,7 +263,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> FieldSelectionMer
         &mut self,
         selections: impl Iterator<Item = &'a E::Selection>,
         fields: &mut HashMap<&'a str, Vec<FieldContext<'a, E, S>>>,
-        parent_type: TypeDefinitionReferenceFromAbstract<'a, S::TypeDefinitionReference>,
+        parent_type: TypeDefinitionReference<'a, S::TypeDefinition>,
         parent_fragments: &HashSet<&'a str>,
     ) {
         selections.for_each(|selection| match selection.as_ref() {
@@ -411,6 +411,6 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Rule<'a, E, S>
 struct FieldContext<'a, E: ExecutableDocument, S: SchemaDefinition> {
     field: &'a E::Field,
     field_definition: &'a S::FieldDefinition,
-    parent_type: TypeDefinitionReferenceFromAbstract<'a, S::TypeDefinitionReference>,
+    parent_type: TypeDefinitionReference<'a, S::TypeDefinition>,
     parent_fragments: HashSet<&'a str>,
 }
