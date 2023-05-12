@@ -7,11 +7,9 @@ use bluejay_core::definition::{
 };
 use bluejay_core::executable::{
     AbstractOperationDefinition, ExecutableDocument, FragmentSpread, VariableDefinition,
+    VariableType, VariableTypeReference,
 };
-use bluejay_core::{
-    AbstractTypeReference, AbstractValue, Argument, AsIter, ObjectValue, TypeReference, Value,
-    Variable,
-};
+use bluejay_core::{AbstractValue, Argument, AsIter, ObjectValue, Value, Variable};
 use itertools::Either;
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::ops::Not;
@@ -152,18 +150,18 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> AllVariableUsagesAllowed<'a
     #[allow(clippy::only_used_in_recursion)] // making it a class method requires some additional lifetime constraints
     fn are_types_compatible(
         &self,
-        variable_type: TypeReference<'a, E::TypeReference>,
+        variable_type: VariableTypeReference<'a, E::VariableType>,
         location_type: InputTypeReferenceFromAbstract<'a, S::InputTypeReference>,
     ) -> bool {
         match (variable_type, location_type) {
             (
-                TypeReference::ListType(item_variable_type, variable_required),
+                VariableTypeReference::List(item_variable_type, variable_required),
                 InputTypeReference::List(item_location_type, location_required),
             ) if variable_required || !location_required => {
                 self.are_types_compatible(item_variable_type.as_ref(), item_location_type.as_ref())
             }
             (
-                TypeReference::NamedType(base_variable_type, variable_required),
+                VariableTypeReference::Named(base_variable_type, variable_required),
                 InputTypeReference::Base(base_location_type, location_required),
             ) if variable_required || !location_required => {
                 base_location_type.as_ref().name() == base_variable_type

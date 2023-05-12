@@ -8,7 +8,7 @@ use std::collections::HashMap;
 
 pub struct Cache<'a, E: ExecutableDocument, S: SchemaDefinition> {
     variable_definition_input_type_references: HashMap<
-        &'a E::TypeReference,
+        &'a E::VariableType,
         VariableDefinitionInputTypeReference<'a, S::BaseInputTypeReference>,
     >,
     indexed_fragment_definitions: HashMap<&'a str, &'a E::FragmentDefinition>,
@@ -55,10 +55,10 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> Cache<'a, E, S> {
 
     pub fn variable_definition_input_type_reference(
         &self,
-        type_reference: &E::TypeReference,
+        variable_type: &E::VariableType,
     ) -> Option<&VariableDefinitionInputTypeReference<'a, S::BaseInputTypeReference>> {
         self.variable_definition_input_type_references
-            .get(type_reference)
+            .get(variable_type)
     }
 
     pub fn fragment_definition(&self, name: &str) -> Option<&'a E::FragmentDefinition> {

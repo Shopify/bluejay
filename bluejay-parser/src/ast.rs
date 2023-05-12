@@ -11,7 +11,6 @@ mod parse;
 mod parse_error;
 mod tokens;
 mod try_from_tokens;
-mod type_reference;
 mod value;
 mod variable;
 
@@ -26,6 +25,5 @@ pub use parse::Parse;
 use parse_error::ParseError;
 use tokens::{ScannerTokens, Tokens};
 use try_from_tokens::TryFromTokens;
-pub use type_reference::TypeReference;
 pub use value::{ConstValue, Value, VariableValue};
 use variable::Variable;

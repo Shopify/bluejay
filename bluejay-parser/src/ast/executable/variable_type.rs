@@ -1,47 +1,47 @@
 use crate::ast::{FromTokens, ParseError, Tokens};
 use crate::lexical_token::{Name, PunctuatorType};
 use crate::{HasSpan, Span};
-use bluejay_core::{AbstractTypeReference, TypeReference as CoreTypeReference};
+use bluejay_core::executable::{VariableType as CoreVariableType, VariableTypeReference};
 use std::cmp::{Eq, Ord, Ordering, PartialEq, PartialOrd};
 use std::hash::{Hash, Hasher};
 
 #[derive(Debug)]
-pub enum TypeReference<'a> {
-    NamedType {
+pub enum VariableType<'a> {
+    Named {
         name: Name<'a>,
         is_required: bool,
         span: Span,
     },
-    ListType {
+    List {
         inner: Box<Self>,
         is_required: bool,
         span: Span,
     },
 }
 
-impl<'a> AbstractTypeReference for TypeReference<'a> {
-    fn as_ref(&self) -> CoreTypeReference<'_, Self> {
+impl<'a> CoreVariableType for VariableType<'a> {
+    fn as_ref(&self) -> VariableTypeReference<'_, Self> {
         match self {
-            Self::NamedType {
+            Self::Named {
                 name, is_required, ..
-            } => CoreTypeReference::NamedType(name.as_ref(), *is_required),
-            Self::ListType {
+            } => VariableTypeReference::Named(name.as_ref(), *is_required),
+            Self::List {
                 inner, is_required, ..
-            } => CoreTypeReference::ListType(inner.as_ref(), *is_required),
+            } => VariableTypeReference::List(inner.as_ref(), *is_required),
         }
     }
 }
 
-impl<'a> FromTokens<'a> for TypeReference<'a> {
+impl<'a> FromTokens<'a> for VariableType<'a> {
     fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
         if let Some(open_span) = tokens.next_if_punctuator(PunctuatorType::OpenSquareBracket) {
-            let inner = Box::new(TypeReference::from_tokens(tokens)?);
+            let inner = Box::new(VariableType::from_tokens(tokens)?);
             let close_span = tokens.expect_punctuator(PunctuatorType::CloseSquareBracket)?;
             let bang_span = tokens.next_if_punctuator(PunctuatorType::Bang);
             let is_required = bang_span.is_some();
             let close_span = bang_span.unwrap_or(close_span);
             let span = open_span.merge(&close_span);
-            Ok(Self::ListType {
+            Ok(Self::List {
                 inner,
                 is_required,
                 span,
@@ -52,7 +52,7 @@ impl<'a> FromTokens<'a> for TypeReference<'a> {
             let span = bang_span
                 .map(|bang_span| name.span().merge(&bang_span))
                 .unwrap_or(name.span().clone());
-            Ok(Self::NamedType {
+            Ok(Self::Named {
                 name,
                 is_required,
                 span,
@@ -63,36 +63,36 @@ impl<'a> FromTokens<'a> for TypeReference<'a> {
     }
 }
 
-impl<'a> HasSpan for TypeReference<'a> {
+impl<'a> HasSpan for VariableType<'a> {
     fn span(&self) -> &Span {
         match self {
-            Self::NamedType { span, .. } => span,
-            Self::ListType { span, .. } => span,
+            Self::Named { span, .. } => span,
+            Self::List { span, .. } => span,
         }
     }
 }
 
-impl<'a> Hash for TypeReference<'a> {
+impl<'a> Hash for VariableType<'a> {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.span().hash(state);
     }
 }
 
-impl<'a> PartialEq for TypeReference<'a> {
+impl<'a> PartialEq for VariableType<'a> {
     fn eq(&self, other: &Self) -> bool {
         self.span() == other.span()
     }
 }
 
-impl<'a> Eq for TypeReference<'a> {}
+impl<'a> Eq for VariableType<'a> {}
 
-impl<'a> Ord for TypeReference<'a> {
+impl<'a> Ord for VariableType<'a> {
     fn cmp(&self, other: &Self) -> Ordering {
         self.span().cmp(other.span())
     }
 }
 
-impl<'a> PartialOrd for TypeReference<'a> {
+impl<'a> PartialOrd for VariableType<'a> {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
     }

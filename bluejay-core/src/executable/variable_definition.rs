@@ -1,12 +1,13 @@
-use crate::{AbstractConstValue, AbstractTypeReference, AsIter, ConstDirectives};
+use crate::executable::VariableType;
+use crate::{AbstractConstValue, AsIter, ConstDirectives};
 
 pub trait VariableDefinition {
-    type TypeReference: AbstractTypeReference;
+    type VariableType: VariableType;
     type Directives: ConstDirectives;
     type Value: AbstractConstValue;
 
     fn variable(&self) -> &str;
-    fn r#type(&self) -> &Self::TypeReference;
+    fn r#type(&self) -> &Self::VariableType;
     fn directives(&self) -> &Self::Directives;
     fn default_value(&self) -> Option<&Self::Value>;
 }

@@ -1,7 +1,7 @@
 use crate::ast::executable::{
     ExecutableDefinition, ExplicitOperationDefinition, Field, FragmentDefinition, FragmentSpread,
     ImplicitOperationDefinition, InlineFragment, OperationDefinition, Selection, SelectionSet,
-    VariableDefinition, VariableDefinitions,
+    VariableDefinition, VariableDefinitions, VariableType,
 };
 use crate::ast::{
     Argument, Arguments, Directive, Directives, ParseError, ScannerTokens, TryFromTokens, Value,
@@ -95,7 +95,7 @@ impl<'a> ExecutableDocument<'a> {
 
 impl<'a> bluejay_core::executable::ExecutableDocument for ExecutableDocument<'a> {
     type Value<const CONST: bool> = Value<'a, CONST>;
-    type TypeReference = crate::ast::TypeReference<'a>;
+    type VariableType = VariableType<'a>;
     type Argument<const CONST: bool> = Argument<'a, CONST>;
     type Arguments<const CONST: bool> = Arguments<'a, CONST>;
     type Directive<const CONST: bool> = Directive<'a, CONST>;

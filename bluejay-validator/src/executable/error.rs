@@ -3,8 +3,8 @@ use bluejay_core::definition::{
     AbstractInputTypeReference, AbstractOutputTypeReference, FieldDefinition, SchemaDefinition,
     TypeDefinitionReferenceFromAbstract,
 };
-use bluejay_core::executable::{AbstractOperationDefinition, ExecutableDocument};
-use bluejay_core::{AbstractTypeReference, AbstractValue, OperationType};
+use bluejay_core::executable::{AbstractOperationDefinition, ExecutableDocument, VariableType};
+use bluejay_core::{AbstractValue, OperationType};
 #[cfg(feature = "parser-integration")]
 use bluejay_parser::{
     ast::executable::ExecutableDocument as ParserExecutableDocument,
@@ -118,7 +118,7 @@ pub enum Error<'a, E: ExecutableDocument, S: SchemaDefinition> {
     },
     InvalidVariableUsage {
         variable: &'a <E::Value<false> as AbstractValue<false>>::Variable,
-        variable_type: &'a E::TypeReference,
+        variable_type: &'a E::VariableType,
         location_type: &'a S::InputTypeReference,
     },
 }

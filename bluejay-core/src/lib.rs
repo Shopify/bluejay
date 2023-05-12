@@ -5,7 +5,6 @@ pub mod definition;
 mod directive;
 pub mod executable;
 mod operation_type;
-mod type_reference;
 mod value;
 
 pub use argument::{
@@ -18,7 +17,6 @@ pub use directive::{
 };
 pub use operation_type::OperationType;
 pub use strum::IntoEnumIterator;
-pub use type_reference::{AbstractTypeReference, TypeReference};
 pub use value::{
     AbstractConstValue, AbstractValue, AbstractVariableValue, ListValue, ObjectValue, Value,
     ValueFromAbstract, Variable,

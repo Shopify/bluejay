@@ -10,6 +10,7 @@ mod selection_set;
 mod type_condition;
 mod variable_definition;
 mod variable_definitions;
+mod variable_type;
 
 pub use executable_definition::ExecutableDefinition;
 pub use executable_document::ExecutableDocument;
@@ -25,3 +26,4 @@ pub use selection_set::SelectionSet;
 pub use type_condition::TypeCondition;
 pub use variable_definition::VariableDefinition;
 pub use variable_definitions::VariableDefinitions;
+pub use variable_type::VariableType;

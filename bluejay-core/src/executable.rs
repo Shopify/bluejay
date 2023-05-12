@@ -7,6 +7,7 @@ mod operation_definition;
 mod selection;
 mod selection_set;
 mod variable_definition;
+mod variable_type;
 
 pub use executable_document::ExecutableDocument;
 pub use field::Field;
@@ -20,3 +21,4 @@ pub use operation_definition::{
 pub use selection::{AbstractSelection, Selection, SelectionFromAbstract};
 pub use selection_set::SelectionSet;
 pub use variable_definition::{VariableDefinition, VariableDefinitions};
+pub use variable_type::{VariableType, VariableTypeReference};

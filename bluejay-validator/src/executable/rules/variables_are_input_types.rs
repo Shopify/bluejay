@@ -1,7 +1,6 @@
 use crate::executable::{Cache, Error, Rule, Visitor};
 use bluejay_core::definition::SchemaDefinition;
-use bluejay_core::executable::{ExecutableDocument, VariableDefinition};
-use bluejay_core::AbstractTypeReference;
+use bluejay_core::executable::{ExecutableDocument, VariableDefinition, VariableType};
 
 pub struct VariablesAreInputTypes<'a, E: ExecutableDocument, S: SchemaDefinition> {
     errors: Vec<Error<'a, E, S>>,

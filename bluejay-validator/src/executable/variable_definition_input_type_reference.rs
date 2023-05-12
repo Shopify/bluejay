@@ -3,7 +3,7 @@ use bluejay_core::definition::{
     BaseInputTypeReference as CoreBaseInputTypeReference, BaseInputTypeReferenceFromAbstract,
     InputTypeReference as CoreInputTypeReference, InputTypeReferenceFromAbstract, SchemaDefinition,
 };
-use bluejay_core::{AbstractTypeReference, TypeReference as CoreTypeReference};
+use bluejay_core::executable::{VariableType, VariableTypeReference as CoreTypeReference};
 
 #[derive(Clone)]
 pub enum VariableDefinitionInputTypeReference<'a, B: AbstractBaseInputTypeReference> {
@@ -24,7 +24,7 @@ impl<'a, B: AbstractBaseInputTypeReference> AbstractInputTypeReference
     }
 }
 
-impl<'a, S: SchemaDefinition, T: AbstractTypeReference> TryFrom<(&'a S, &T)>
+impl<'a, S: SchemaDefinition, T: VariableType> TryFrom<(&'a S, &T)>
     for VariableDefinitionInputTypeReference<'a, S::BaseInputTypeReference>
 {
     type Error = ();
@@ -38,7 +38,7 @@ impl<'a, S: SchemaDefinition, T: AbstractTypeReference> TryFrom<(&'a S, &T)>
     }
 }
 
-impl<'a, B: AbstractBaseInputTypeReference, T: AbstractTypeReference>
+impl<'a, B: AbstractBaseInputTypeReference, T: VariableType>
     TryFrom<(BaseInputTypeReferenceFromAbstract<'a, B>, &T)>
     for VariableDefinitionInputTypeReference<'a, B>
 {
@@ -48,10 +48,10 @@ impl<'a, B: AbstractBaseInputTypeReference, T: AbstractTypeReference>
         (base, type_reference): (BaseInputTypeReferenceFromAbstract<'a, B>, &T),
     ) -> Result<Self, Self::Error> {
         match type_reference.as_ref() {
-            CoreTypeReference::NamedType(_, required) => {
+            CoreTypeReference::Named(_, required) => {
                 Ok(VariableDefinitionInputTypeReference::Base(base, required))
             }
-            CoreTypeReference::ListType(inner, required) => Self::try_from((base, inner))
+            CoreTypeReference::List(inner, required) => Self::try_from((base, inner))
                 .map(|inner| VariableDefinitionInputTypeReference::List(Box::new(inner), required)),
         }
     }
