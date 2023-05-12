@@ -4,7 +4,7 @@ use crate::ast::{
 use crate::lexical_token::{Name, StringValue};
 use crate::Span;
 use bluejay_core::definition::ScalarTypeDefinition as CoreScalarTypeDefinition;
-use bluejay_core::AbstractValue;
+use bluejay_core::Value;
 use std::borrow::Cow;
 use std::marker::PhantomData;
 
@@ -40,7 +40,7 @@ impl<'a, C: Context> CoreScalarTypeDefinition for CustomScalarTypeDefinition<'a,
 
     fn coerce_input<const CONST: bool>(
         &self,
-        value: &impl AbstractValue<CONST>,
+        value: &impl Value<CONST>,
     ) -> Result<(), Cow<'static, str>> {
         C::coerce_custom_scalar_input(self, value)
     }

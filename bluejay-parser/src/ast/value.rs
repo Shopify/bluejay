@@ -2,8 +2,8 @@ use crate::ast::{FromTokens, ParseError, Tokens, TryFromTokens, Variable};
 use crate::lexical_token::{FloatValue, IntValue, Name, PunctuatorType, StringValue};
 use crate::{HasSpan, Span};
 use bluejay_core::{
-    AbstractValue, AsIter, ListValue as CoreListValue, ObjectValue as CoreObjectValue,
-    Value as CoreValue, ValueFromAbstract,
+    AsIter, ListValue as CoreListValue, ObjectValue as CoreObjectValue, Value as CoreValue,
+    ValueReference,
 };
 
 #[derive(Debug, strum::Display)]
@@ -20,22 +20,22 @@ pub enum Value<'a, const CONST: bool> {
     Object(ObjectValue<'a, CONST>),
 }
 
-impl<'a, const CONST: bool> AbstractValue<CONST> for Value<'a, CONST> {
+impl<'a, const CONST: bool> CoreValue<CONST> for Value<'a, CONST> {
     type List = ListValue<'a, CONST>;
     type Object = ObjectValue<'a, CONST>;
     type Variable = Variable<'a>;
 
-    fn as_ref(&self) -> ValueFromAbstract<'_, CONST, Self> {
+    fn as_ref(&self) -> ValueReference<'_, CONST, Self> {
         match self {
-            Self::Variable(v) => CoreValue::Variable(v),
-            Self::Integer(i) => CoreValue::Integer(i.value()),
-            Self::Float(f) => CoreValue::Float(f.value()),
-            Self::String(s) => CoreValue::String(s.as_ref()),
-            Self::Boolean(b) => CoreValue::Boolean(b.value()),
-            Self::Null(_) => CoreValue::Null,
-            Self::Enum(e) => CoreValue::Enum(e.as_ref()),
-            Self::List(l) => CoreValue::List(l),
-            Self::Object(o) => CoreValue::Object(o),
+            Self::Variable(v) => ValueReference::Variable(v),
+            Self::Integer(i) => ValueReference::Integer(i.value()),
+            Self::Float(f) => ValueReference::Float(f.value()),
+            Self::String(s) => ValueReference::String(s.as_ref()),
+            Self::Boolean(b) => ValueReference::Boolean(b.value()),
+            Self::Null(_) => ValueReference::Null,
+            Self::Enum(e) => ValueReference::Enum(e.as_ref()),
+            Self::List(l) => ValueReference::List(l),
+            Self::Object(o) => ValueReference::Object(o),
         }
     }
 }

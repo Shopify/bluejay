@@ -6,7 +6,7 @@ mod serde_json;
 
 pub trait ObjectValue<const CONST: bool> {
     type Key: AsRef<str> + PartialEq + std::fmt::Debug;
-    type Value: AbstractValue<CONST, Object = Self>;
+    type Value: Value<CONST, Object = Self>;
     type Iterator<'a>: Iterator<Item = (&'a Self::Key, &'a Self::Value)>
     where
         Self: 'a;
@@ -15,48 +15,46 @@ pub trait ObjectValue<const CONST: bool> {
 }
 
 pub trait ListValue<const CONST: bool>: AsIter<Item = Self::Value> {
-    type Value: AbstractValue<CONST, List = Self>;
+    type Value: Value<CONST, List = Self>;
 }
 
 pub trait Variable {
     fn name(&self) -> &str;
 }
 
-pub trait AbstractValue<const CONST: bool> {
+pub trait Value<const CONST: bool>: Sized {
     type List: ListValue<CONST, Value = Self>;
     type Object: ObjectValue<CONST, Value = Self>;
     type Variable: Variable;
 
-    fn as_ref(&self) -> ValueFromAbstract<'_, CONST, Self>;
+    fn as_ref(&self) -> ValueReference<'_, CONST, Self>;
 
     fn can_coerce_string_value_to_enum() -> bool {
         false
     }
 }
 
-pub trait AbstractConstValue: AbstractValue<true> {}
-pub trait AbstractVariableValue: AbstractValue<false> {}
+pub trait ConstValue: Value<true> {}
+pub trait VariableValue: Value<false> {}
 
-impl<T: AbstractValue<true>> AbstractConstValue for T {}
-impl<T: AbstractValue<false>> AbstractVariableValue for T {}
+impl<T: Value<true>> ConstValue for T {}
+impl<T: Value<false>> VariableValue for T {}
 
 #[derive(Debug, strum::Display)]
 #[strum(serialize_all = "lowercase")]
-pub enum Value<'a, const CONST: bool, L: ListValue<CONST>, O: ObjectValue<CONST>, V: Variable> {
-    Variable(&'a V),
+pub enum ValueReference<'a, const CONST: bool, V: Value<CONST>> {
+    Variable(&'a V::Variable),
     Integer(i32),
     Float(f64),
     String(&'a str),
     Boolean(bool),
     Null,
     Enum(&'a str),
-    List(&'a L),
-    Object(&'a O),
+    List(&'a V::List),
+    Object(&'a V::Object),
 }
 
-impl<'a, const CONST: bool, L: ListValue<CONST>, O: ObjectValue<CONST>, V: Variable> Clone
-    for Value<'a, CONST, L, O, V>
-{
+impl<'a, const CONST: bool, V: Value<CONST>> Clone for ValueReference<'a, CONST, V> {
     fn clone(&self) -> Self {
         match self {
             Self::Variable(v) => Self::Variable(v),
@@ -72,27 +70,9 @@ impl<'a, const CONST: bool, L: ListValue<CONST>, O: ObjectValue<CONST>, V: Varia
     }
 }
 
-impl<'a, const CONST: bool, L: ListValue<CONST>, O: ObjectValue<CONST>, V: Variable> Copy
-    for Value<'a, CONST, L, O, V>
-{
-}
+impl<'a, const CONST: bool, V: Value<CONST>> Copy for ValueReference<'a, CONST, V> {}
 
-pub type ValueFromAbstract<'a, const CONST: bool, T> = Value<
-    'a,
-    CONST,
-    <T as AbstractValue<CONST>>::List,
-    <T as AbstractValue<CONST>>::Object,
-    <T as AbstractValue<CONST>>::Variable,
->;
-
-impl<
-        'a,
-        const CONST: bool,
-        L: ListValue<CONST>,
-        O: ObjectValue<CONST, Value = L::Value>,
-        V: Variable,
-    > std::cmp::PartialEq for Value<'a, CONST, L, O, V>
-{
+impl<'a, const CONST: bool, V: Value<CONST>> std::cmp::PartialEq for ValueReference<'a, CONST, V> {
     fn eq(&self, other: &Self) -> bool {
         match self {
             Self::Variable(v) => {
@@ -113,7 +93,7 @@ impl<
             Self::Null => matches!(other, Self::Null),
             Self::Enum(e) => matches!(other, Self::Enum(other_e) if e == other_e),
             Self::List(l) => {
-                matches!(other, Self::List(other_l) if Vec::from_iter(l.iter().map(AbstractValue::as_ref)) == Vec::from_iter(other_l.iter().map(AbstractValue::as_ref)))
+                matches!(other, Self::List(other_l) if Vec::from_iter(l.iter().map(Value::as_ref)) == Vec::from_iter(other_l.iter().map(Value::as_ref)))
             }
             Self::Object(o) => matches!(other, Self::Object(other_o) if {
                 let lhs: HashMap<&str, _> = HashMap::from_iter(o.iter().map(|(k, v)| (k.as_ref(), v.as_ref())));
@@ -124,9 +104,7 @@ impl<
     }
 }
 
-impl<'a, const CONST: bool, L: ListValue<CONST>, O: ObjectValue<CONST>, V: Variable>
-    Value<'a, CONST, L, O, V>
-{
+impl<'a, const CONST: bool, V: Value<CONST>> ValueReference<'a, CONST, V> {
     pub fn is_null(&self) -> bool {
         matches!(self, Self::Null)
     }

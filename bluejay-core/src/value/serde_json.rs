@@ -1,4 +1,4 @@
-use crate::{AbstractValue, ListValue, ObjectValue, Value, ValueFromAbstract, Variable};
+use crate::{ListValue, ObjectValue, Value, ValueReference, Variable};
 use serde_json::{map, Map, Value as JsonValue};
 
 pub enum Never {}
@@ -23,25 +23,25 @@ impl<const CONST: bool> ListValue<CONST> for Vec<JsonValue> {
     type Value = JsonValue;
 }
 
-impl<const CONST: bool> AbstractValue<CONST> for JsonValue {
+impl<const CONST: bool> Value<CONST> for JsonValue {
     type List = Vec<JsonValue>;
     type Object = Map<String, JsonValue>;
     type Variable = Never;
 
-    fn as_ref(&self) -> ValueFromAbstract<'_, CONST, Self> {
+    fn as_ref(&self) -> ValueReference<'_, CONST, Self> {
         match self {
-            Self::Null => Value::Null,
-            Self::Bool(b) => Value::Boolean(*b),
+            Self::Null => ValueReference::Null,
+            Self::Bool(b) => ValueReference::Boolean(*b),
             Self::Number(n) => {
                 if let Some(i) = n.as_i64().and_then(|i| i32::try_from(i).ok()) {
-                    Value::Integer(i)
+                    ValueReference::Integer(i)
                 } else {
-                    Value::Float(n.as_f64().expect("Json numeric values must be finite"))
+                    ValueReference::Float(n.as_f64().expect("Json numeric values must be finite"))
                 }
             }
-            Self::String(s) => Value::String(s),
-            Self::Array(a) => Value::List(a),
-            Self::Object(o) => Value::Object(o),
+            Self::String(s) => ValueReference::String(s),
+            Self::Array(a) => ValueReference::List(a),
+            Self::Object(o) => ValueReference::Object(o),
         }
     }
 

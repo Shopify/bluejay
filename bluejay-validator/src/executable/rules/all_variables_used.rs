@@ -3,7 +3,7 @@ use bluejay_core::definition::{SchemaDefinition, TypeDefinitionReferenceFromAbst
 use bluejay_core::executable::{
     AbstractOperationDefinition, ExecutableDocument, FragmentSpread, VariableDefinition,
 };
-use bluejay_core::{AbstractValue, Argument, AsIter, ObjectValue, Value, Variable};
+use bluejay_core::{Argument, AsIter, ObjectValue, Value, ValueReference, Variable};
 use std::collections::{HashMap, HashSet};
 use std::ops::Not;
 
@@ -48,14 +48,14 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> AllVariablesUsed<'a, E, S> 
         root: PathRoot<'a, E>,
     ) {
         match value.as_ref() {
-            Value::Variable(v) => {
+            ValueReference::Variable(v) => {
                 self.variable_usages
                     .entry(root)
                     .or_default()
                     .insert(v.name());
             }
-            Value::List(l) => l.iter().for_each(|value| self.visit_value(value, root)),
-            Value::Object(o) => o
+            ValueReference::List(l) => l.iter().for_each(|value| self.visit_value(value, root)),
+            ValueReference::Object(o) => o
                 .iter()
                 .for_each(|(_, value)| self.visit_value(value, root)),
             _ => {}

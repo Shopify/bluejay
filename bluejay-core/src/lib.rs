@@ -18,6 +18,5 @@ pub use directive::{
 pub use operation_type::OperationType;
 pub use strum::IntoEnumIterator;
 pub use value::{
-    AbstractConstValue, AbstractValue, AbstractVariableValue, ListValue, ObjectValue, Value,
-    ValueFromAbstract, Variable,
+    ConstValue, ListValue, ObjectValue, Value, ValueReference, Variable, VariableValue,
 };

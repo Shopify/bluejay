@@ -1,5 +1,5 @@
 use crate::value::input_coercion::PathMember;
-use bluejay_core::{AbstractValue, ObjectValue};
+use bluejay_core::{ObjectValue, Value};
 #[cfg(feature = "parser-integration")]
 use bluejay_parser::{
     ast::Value as ParserValue,
@@ -11,7 +11,7 @@ use itertools::Itertools;
 use std::borrow::Cow;
 
 #[derive(PartialEq, Debug)]
-pub enum Error<'a, const CONST: bool, V: AbstractValue<CONST>> {
+pub enum Error<'a, const CONST: bool, V: Value<CONST>> {
     NullValueForRequiredType {
         value: &'a V,
         input_type_name: String,

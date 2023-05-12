@@ -9,7 +9,7 @@ use bluejay_core::executable::{
     AbstractOperationDefinition, ExecutableDocument, FragmentSpread, VariableDefinition,
     VariableType, VariableTypeReference,
 };
-use bluejay_core::{AbstractValue, Argument, AsIter, ObjectValue, Value, Variable};
+use bluejay_core::{Argument, AsIter, ObjectValue, Value, ValueReference, Variable};
 use itertools::Either;
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::ops::Not;
@@ -60,18 +60,18 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> AllVariableUsagesAllowed<'a
         location: VariableUsageLocation<'a, S>,
     ) {
         match value.as_ref() {
-            Value::Variable(variable) => {
+            ValueReference::Variable(variable) => {
                 self.variable_usages
                     .entry(root)
                     .or_default()
                     .push(VariableUsage { variable, location });
             }
-            Value::List(l) => l.iter().for_each(|value| {
+            ValueReference::List(l) => l.iter().for_each(|value| {
                 if let InputTypeReference::List(inner, _) = location.r#type().as_ref() {
                     self.visit_value(value, root, VariableUsageLocation::ListValue(inner));
                 }
             }),
-            Value::Object(o) => o.iter().for_each(|(key, value)| {
+            ValueReference::Object(o) => o.iter().for_each(|(key, value)| {
                 if let Some(ivd) = location.input_value_definition() {
                     if let BaseInputTypeReference::InputObjectType(iotd) =
                         ivd.r#type().as_ref().base().as_ref()
@@ -264,6 +264,6 @@ impl<'a, S: SchemaDefinition> VariableUsageLocation<'a, S> {
 }
 
 struct VariableUsage<'a, E: ExecutableDocument, S: SchemaDefinition> {
-    variable: &'a <E::Value<false> as AbstractValue<false>>::Variable,
+    variable: &'a <E::Value<false> as Value<false>>::Variable,
     location: VariableUsageLocation<'a, S>,
 }

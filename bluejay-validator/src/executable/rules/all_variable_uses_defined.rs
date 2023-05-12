@@ -3,14 +3,14 @@ use bluejay_core::definition::{SchemaDefinition, TypeDefinitionReferenceFromAbst
 use bluejay_core::executable::{
     AbstractOperationDefinition, ExecutableDocument, FragmentSpread, VariableDefinition,
 };
-use bluejay_core::{AbstractValue, Argument, AsIter, ObjectValue, Value, Variable};
+use bluejay_core::{Argument, AsIter, ObjectValue, Value, ValueReference, Variable};
 use itertools::Either;
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 
 pub struct AllVariableUsesDefined<'a, E: ExecutableDocument, S: SchemaDefinition> {
     fragment_references: HashMap<&'a E::FragmentDefinition, BTreeSet<PathRoot<'a, E>>>,
     variable_usages:
-        BTreeMap<PathRoot<'a, E>, Vec<&'a <E::Value<false> as AbstractValue<false>>::Variable>>,
+        BTreeMap<PathRoot<'a, E>, Vec<&'a <E::Value<false> as Value<false>>::Variable>>,
     cache: &'a Cache<'a, E, S>,
 }
 
@@ -48,11 +48,11 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> AllVariableUsesDefined<'a, 
         root: PathRoot<'a, E>,
     ) {
         match value.as_ref() {
-            Value::Variable(v) => {
+            ValueReference::Variable(v) => {
                 self.variable_usages.entry(root).or_default().push(v);
             }
-            Value::List(l) => l.iter().for_each(|value| self.visit_value(value, root)),
-            Value::Object(o) => o
+            ValueReference::List(l) => l.iter().for_each(|value| self.visit_value(value, root)),
+            ValueReference::Object(o) => o
                 .iter()
                 .for_each(|(_, value)| self.visit_value(value, root)),
             _ => {}

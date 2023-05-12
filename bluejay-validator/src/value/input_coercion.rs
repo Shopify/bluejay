@@ -3,7 +3,9 @@ use bluejay_core::definition::{
     EnumTypeDefinition, EnumValueDefinition, InputFieldsDefinition, InputObjectTypeDefinition,
     InputTypeReference, InputValueDefinition, ScalarTypeDefinition,
 };
-use bluejay_core::{AbstractValue, AsIter, BuiltinScalarDefinition, Directive, ObjectValue, Value};
+use bluejay_core::{
+    AsIter, BuiltinScalarDefinition, Directive, ObjectValue, Value, ValueReference,
+};
 use std::collections::BTreeMap;
 
 mod error;
@@ -17,13 +19,13 @@ pub enum PathMember<'a> {
 }
 
 pub trait CoerceInput: AbstractInputTypeReference {
-    fn coerce_value<'a, const CONST: bool, V: AbstractValue<CONST>>(
+    fn coerce_value<'a, const CONST: bool, V: Value<CONST>>(
         &'a self,
         value: &'a V,
         path: &[PathMember<'a>],
     ) -> Result<(), Vec<Error<'a, CONST, V>>>;
 
-    fn coerce_const_value<'a, V: AbstractValue<true>>(
+    fn coerce_const_value<'a, V: Value<true>>(
         &'a self,
         value: &'a V,
         path: &[PathMember<'a>],
@@ -33,7 +35,7 @@ pub trait CoerceInput: AbstractInputTypeReference {
 }
 
 impl<T: AbstractInputTypeReference> CoerceInput for T {
-    fn coerce_value<'a, const CONST: bool, V: AbstractValue<CONST>>(
+    fn coerce_value<'a, const CONST: bool, V: Value<CONST>>(
         &'a self,
         value: &'a V,
         path: &[PathMember<'a>],
@@ -45,7 +47,7 @@ impl<T: AbstractInputTypeReference> CoerceInput for T {
 fn coerce_value_for_input_type_reference<
     'a,
     const CONST: bool,
-    V: AbstractValue<CONST>,
+    V: Value<CONST>,
     T: AbstractInputTypeReference,
 >(
     input_type_reference: &'a T,
@@ -56,18 +58,18 @@ fn coerce_value_for_input_type_reference<
     let core_type = input_type_reference.as_ref();
     let is_required = core_type.is_required();
     match value.as_ref() {
-        Value::Null if is_required => Err(vec![Error::NullValueForRequiredType {
+        ValueReference::Null if is_required => Err(vec![Error::NullValueForRequiredType {
             value,
             input_type_name: input_type_reference.as_ref().display_name(),
             path: path.to_owned(),
         }]),
-        Value::Null | Value::Variable(_) => Ok(()),
+        ValueReference::Null | ValueReference::Variable(_) => Ok(()),
         core_value => match core_type {
             InputTypeReference::Base(_, _) => {
                 coerce_value_for_base_input_type_reference(input_type_reference, value, path)
             }
             InputTypeReference::List(inner, _) => {
-                if let Value::List(values) = core_value {
+                if let ValueReference::List(values) = core_value {
                     let errors: Vec<Error<'a, CONST, V>> = values
                         .iter()
                         .enumerate()
@@ -102,7 +104,7 @@ fn coerce_value_for_input_type_reference<
 fn coerce_value_for_base_input_type_reference<
     'a,
     const CONST: bool,
-    V: AbstractValue<CONST>,
+    V: Value<CONST>,
     T: AbstractInputTypeReference,
 >(
     input_type_reference: &'a T,
@@ -129,7 +131,7 @@ fn coerce_value_for_base_input_type_reference<
 fn coerce_builtin_scalar_value<
     'a,
     const CONST: bool,
-    V: AbstractValue<CONST>,
+    V: Value<CONST>,
     T: AbstractInputTypeReference,
 >(
     input_type_reference: &'a T,
@@ -138,12 +140,15 @@ fn coerce_builtin_scalar_value<
     path: &[PathMember<'a>],
 ) -> Result<(), Vec<Error<'a, CONST, V>>> {
     match (bstd, value.as_ref()) {
-        (BuiltinScalarDefinition::Boolean, Value::Boolean(_)) => Ok(()),
-        (BuiltinScalarDefinition::Float, Value::Float(_)) => Ok(()),
-        (BuiltinScalarDefinition::Float, Value::Integer(_)) => Ok(()),
-        (BuiltinScalarDefinition::ID, Value::Integer(_)) => Ok(()),
-        (BuiltinScalarDefinition::ID | BuiltinScalarDefinition::String, Value::String(_)) => Ok(()),
-        (BuiltinScalarDefinition::Int, Value::Integer(_)) => Ok(()),
+        (BuiltinScalarDefinition::Boolean, ValueReference::Boolean(_)) => Ok(()),
+        (BuiltinScalarDefinition::Float, ValueReference::Float(_)) => Ok(()),
+        (BuiltinScalarDefinition::Float, ValueReference::Integer(_)) => Ok(()),
+        (BuiltinScalarDefinition::ID, ValueReference::Integer(_)) => Ok(()),
+        (
+            BuiltinScalarDefinition::ID | BuiltinScalarDefinition::String,
+            ValueReference::String(_),
+        ) => Ok(()),
+        (BuiltinScalarDefinition::Int, ValueReference::Integer(_)) => Ok(()),
         _ => Err(vec![Error::NoImplicitConversion {
             value,
             input_type_name: input_type_reference.as_ref().display_name(),
@@ -152,7 +157,7 @@ fn coerce_builtin_scalar_value<
     }
 }
 
-fn coerce_custom_scalar_value<'a, const CONST: bool, V: AbstractValue<CONST>>(
+fn coerce_custom_scalar_value<'a, const CONST: bool, V: Value<CONST>>(
     cstd: &'a impl ScalarTypeDefinition,
     value: &'a V,
     path: &[PathMember<'a>],
@@ -167,20 +172,17 @@ fn coerce_custom_scalar_value<'a, const CONST: bool, V: AbstractValue<CONST>>(
     })
 }
 
-fn coerce_enum_value<
-    'a,
-    const CONST: bool,
-    V: AbstractValue<CONST>,
-    T: AbstractInputTypeReference,
->(
+fn coerce_enum_value<'a, const CONST: bool, V: Value<CONST>, T: AbstractInputTypeReference>(
     input_type_reference: &'a T,
     enum_type_definition: &'a <T::BaseInputTypeReference as AbstractBaseInputTypeReference>::EnumTypeDefinition,
     value: &'a V,
     path: &[PathMember<'a>],
 ) -> Result<(), Vec<Error<'a, CONST, V>>> {
     match value.as_ref() {
-        Value::Enum(name) => coerce_enum_value_from_name(enum_type_definition, value, name, path),
-        Value::String(name) if V::can_coerce_string_value_to_enum() => {
+        ValueReference::Enum(name) => {
+            coerce_enum_value_from_name(enum_type_definition, value, name, path)
+        }
+        ValueReference::String(name) if V::can_coerce_string_value_to_enum() => {
             coerce_enum_value_from_name(enum_type_definition, value, name, path)
         }
         _ => Err(vec![Error::NoImplicitConversion {
@@ -191,7 +193,7 @@ fn coerce_enum_value<
     }
 }
 
-fn coerce_enum_value_from_name<'a, const CONST: bool, V: AbstractValue<CONST>>(
+fn coerce_enum_value_from_name<'a, const CONST: bool, V: Value<CONST>>(
     enum_type_definition: &'a impl EnumTypeDefinition,
     value: &'a V,
     name: &'a str,
@@ -216,7 +218,7 @@ fn coerce_enum_value_from_name<'a, const CONST: bool, V: AbstractValue<CONST>>(
 fn coerce_input_object_value<
     'a,
     const CONST: bool,
-    V: AbstractValue<CONST>,
+    V: Value<CONST>,
     T: AbstractInputTypeReference,
 >(
     input_type_reference: &'a T,
@@ -224,12 +226,12 @@ fn coerce_input_object_value<
     value: &'a V,
     path: &[PathMember<'a>],
 ) -> Result<(), Vec<Error<'a, CONST, V>>> {
-    if let Value::Object(object) = value.as_ref() {
+    if let ValueReference::Object(object) = value.as_ref() {
         let mut errors = Vec::new();
         let mut missing_required_values = Vec::new();
 
         type Entry<'a, const CONST: bool, V> = (
-            &'a <<V as AbstractValue<CONST>>::Object as ObjectValue<CONST>>::Key,
+            &'a <<V as Value<CONST>>::Object as ObjectValue<CONST>>::Key,
             &'a V,
         );
         let indexed_object: BTreeMap<&'a str, Vec<Entry<'a, CONST, V>>> =
@@ -323,7 +325,7 @@ fn coerce_input_object_value<
 }
 
 #[cfg(feature = "one-of-input-objects")]
-fn validate_one_of_input_object_value<'a, const CONST: bool, V: AbstractValue<CONST>>(
+fn validate_one_of_input_object_value<'a, const CONST: bool, V: Value<CONST>>(
     input_object_type_definition: &'a impl InputObjectTypeDefinition,
     value: &'a V,
     object: &'a V::Object,
@@ -340,7 +342,7 @@ fn validate_one_of_input_object_value<'a, const CONST: bool, V: AbstractValue<CO
     {
         let (null_entries, non_null_entries): (Vec<_>, Vec<_>) = object
             .iter()
-            .partition(|(_, value)| matches!(value.as_ref(), Value::Null));
+            .partition(|(_, value)| matches!(value.as_ref(), ValueReference::Null));
 
         let mut errors = Vec::new();
 
@@ -379,7 +381,7 @@ mod tests {
         AbstractInputTypeReference, ArgumentsDefinition, FieldDefinition, FieldsDefinition,
         InputValueDefinition, ObjectTypeDefinition, ScalarTypeDefinition, SchemaDefinition,
     };
-    use bluejay_core::{AbstractValue, Value};
+    use bluejay_core::{Value, ValueReference};
     use bluejay_parser::ast::definition::{
         Context, CustomScalarTypeDefinition, DefinitionDocument,
         InputTypeReference as ParserInputTypeReference, SchemaDefinition as ParserSchemaDefinition,
@@ -394,12 +396,12 @@ mod tests {
     impl Context for CustomContext {
         fn coerce_custom_scalar_input<const CONST: bool>(
             cstd: &CustomScalarTypeDefinition<Self>,
-            value: &impl AbstractValue<CONST>,
+            value: &impl Value<CONST>,
         ) -> Result<(), Cow<'static, str>> {
             let value = value.as_ref();
             match cstd.name() {
                 "Decimal" => {
-                    if let Value::String(s) = value {
+                    if let ValueReference::String(s) = value {
                         s.parse::<f64>()
                             .map_err(|_| Cow::Owned(format!("Unable to parse `{s}` to Decimal")))
                             .and_then(|f| {

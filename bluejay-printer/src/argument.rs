@@ -1,5 +1,5 @@
 use crate::value::DisplayValue;
-use bluejay_core::{AbstractValue, Argument, Arguments};
+use bluejay_core::{Argument, Arguments, Value};
 use std::fmt::{Error, Write};
 
 pub(crate) struct DisplayArgument;

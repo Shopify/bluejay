@@ -1,4 +1,4 @@
-use crate::{AbstractValue, ConstDirectives};
+use crate::{ConstDirectives, Value};
 use std::borrow::Cow;
 
 pub trait ScalarTypeDefinition {
@@ -10,7 +10,7 @@ pub trait ScalarTypeDefinition {
 
     fn coerce_input<const CONST: bool>(
         &self,
-        _value: &impl AbstractValue<CONST>,
+        _value: &impl Value<CONST>,
     ) -> Result<(), Cow<'static, str>> {
         Ok(())
     }

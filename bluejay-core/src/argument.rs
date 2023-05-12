@@ -1,7 +1,7 @@
-use crate::{AbstractValue, AsIter};
+use crate::{AsIter, Value};
 
 pub trait Argument<const CONST: bool> {
-    type Value: AbstractValue<CONST>;
+    type Value: Value<CONST>;
 
     fn name(&self) -> &str;
     fn value(&self) -> &Self::Value;

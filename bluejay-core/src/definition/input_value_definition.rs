@@ -1,9 +1,9 @@
 use crate::definition::AbstractInputTypeReference;
-use crate::{AbstractConstValue, ConstDirectives};
+use crate::{ConstDirectives, ConstValue};
 
 pub trait InputValueDefinition {
     type InputTypeReference: AbstractInputTypeReference;
-    type Value: AbstractConstValue;
+    type Value: ConstValue;
     type Directives: ConstDirectives;
 
     fn description(&self) -> Option<&str>;

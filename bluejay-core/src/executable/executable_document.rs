@@ -3,10 +3,10 @@ use crate::executable::{
     FragmentDefinition, FragmentSpread, ImplicitOperationDefinition, InlineFragment, SelectionSet,
     VariableDefinition, VariableDefinitions, VariableType,
 };
-use crate::{AbstractValue, Argument, Arguments, Directive, Directives};
+use crate::{Argument, Arguments, Directive, Directives, Value};
 
 pub trait ExecutableDocument {
-    type Value<const CONST: bool>: AbstractValue<CONST>;
+    type Value<const CONST: bool>: Value<CONST>;
     type VariableType: VariableType;
     type Argument<const CONST: bool>: Argument<CONST, Value = Self::Value<CONST>>;
     type Arguments<const CONST: bool>: Arguments<CONST, Argument = Self::Argument<CONST>>;

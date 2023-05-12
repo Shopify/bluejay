@@ -1,10 +1,10 @@
 use crate::executable::VariableType;
-use crate::{AbstractConstValue, AsIter, ConstDirectives};
+use crate::{AsIter, ConstDirectives, ConstValue};
 
 pub trait VariableDefinition {
     type VariableType: VariableType;
     type Directives: ConstDirectives;
-    type Value: AbstractConstValue;
+    type Value: ConstValue;
 
     fn variable(&self) -> &str;
     fn r#type(&self) -> &Self::VariableType;
