@@ -69,10 +69,8 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> AllVariableUsagesAllowed<'a
                     .push(VariableUsage { variable, location });
             }
             Value::List(l) => l.iter().for_each(|value| {
-                if let Some(ivd) = location.input_value_definition() {
-                    if let InputTypeReference::List(inner, _) = ivd.r#type().as_ref() {
-                        self.visit_value(value, root, VariableUsageLocation::ListValue(inner));
-                    }
+                if let InputTypeReference::List(inner, _) = location.r#type().as_ref() {
+                    self.visit_value(value, root, VariableUsageLocation::ListValue(inner));
                 }
             }),
             Value::Object(o) => o.iter().for_each(|(key, value)| {
