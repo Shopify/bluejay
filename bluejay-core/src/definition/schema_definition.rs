@@ -1,8 +1,8 @@
 use crate::definition::{
-    AbstractBaseOutputTypeReference, AbstractInputTypeReference, AbstractOutputTypeReference,
-    AbstractTypeDefinitionReference, ArgumentsDefinition, BaseInputType, DirectiveDefinition,
-    EnumTypeDefinition, EnumValueDefinition, EnumValueDefinitions, FieldDefinition,
-    FieldsDefinition, InputFieldsDefinition, InputObjectTypeDefinition, InputValueDefinition,
+    AbstractBaseOutputTypeReference, AbstractOutputTypeReference, AbstractTypeDefinitionReference,
+    ArgumentsDefinition, BaseInputType, DirectiveDefinition, EnumTypeDefinition,
+    EnumValueDefinition, EnumValueDefinitions, FieldDefinition, FieldsDefinition,
+    InputFieldsDefinition, InputObjectTypeDefinition, InputType, InputValueDefinition,
     InterfaceImplementation, InterfaceImplementations, InterfaceTypeDefinition,
     ObjectTypeDefinition, ScalarTypeDefinition, TypeDefinitionReferenceFromAbstract,
     UnionMemberType, UnionMemberTypes, UnionTypeDefinition,
@@ -12,7 +12,7 @@ use crate::ConstDirectives;
 pub trait SchemaDefinition {
     type Directives: ConstDirectives;
     type InputValueDefinition: InputValueDefinition<
-        InputTypeReference = Self::InputTypeReference,
+        InputType = Self::InputType,
         Directives = Self::Directives,
     >;
     type InputFieldsDefinition: InputFieldsDefinition<
@@ -40,7 +40,7 @@ pub trait SchemaDefinition {
         InputObjectTypeDefinition = Self::InputObjectTypeDefinition,
         EnumTypeDefinition = Self::EnumTypeDefinition,
     >;
-    type InputTypeReference: AbstractInputTypeReference<BaseInputType = Self::BaseInputType>;
+    type InputType: InputType<BaseInputType = Self::BaseInputType>;
     type BaseOutputTypeReference: AbstractBaseOutputTypeReference<
         CustomScalarTypeDefinition = Self::CustomScalarTypeDefinition,
         EnumTypeDefinition = Self::EnumTypeDefinition,

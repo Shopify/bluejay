@@ -6,8 +6,8 @@ use crate::ast::{FromTokens, ParseError, Tokens};
 use crate::lexical_token::{Name, PunctuatorType};
 use crate::{HasSpan, Span};
 use bluejay_core::definition::{
-    AbstractInputTypeReference, BaseInputType as CoreBaseInputType, BaseInputTypeReference,
-    InputTypeReference as CoreInputTypeReference, InputTypeReferenceFromAbstract,
+    BaseInputType as CoreBaseInputType, BaseInputTypeReference, InputType as CoreInputType,
+    InputTypeReference,
 };
 use once_cell::sync::OnceCell;
 use std::marker::PhantomData;
@@ -63,32 +63,30 @@ impl<'a, C: Context + 'a> BaseInputType<'a, C> {
 }
 
 #[derive(Debug)]
-pub enum InputTypeReference<'a, C: Context = DefaultContext> {
+pub enum InputType<'a, C: Context = DefaultContext> {
     Base(BaseInputType<'a, C>, bool, Span),
     List(Box<Self>, bool, Span),
 }
 
-impl<'a, C: Context + 'a> AbstractInputTypeReference for InputTypeReference<'a, C> {
+impl<'a, C: Context + 'a> CoreInputType for InputType<'a, C> {
     type BaseInputType = BaseInputType<'a, C>;
 
-    fn as_ref(&self) -> InputTypeReferenceFromAbstract<'_, Self> {
+    fn as_ref(&self) -> InputTypeReference<'_, Self> {
         match self {
-            Self::Base(base, required, _) => CoreInputTypeReference::Base(base, *required),
-            Self::List(inner, required, _) => {
-                CoreInputTypeReference::List(inner.as_ref(), *required)
-            }
+            Self::Base(base, required, _) => InputTypeReference::Base(base, *required),
+            Self::List(inner, required, _) => InputTypeReference::List(inner.as_ref(), *required),
         }
     }
 }
 
-impl<'a, C: Context + 'a> FromTokens<'a> for InputTypeReference<'a, C> {
+impl<'a, C: Context + 'a> FromTokens<'a> for InputType<'a, C> {
     fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
         if let Some(open_span) = tokens.next_if_punctuator(PunctuatorType::OpenSquareBracket) {
             let inner = Self::from_tokens(tokens).map(Box::new)?;
             let close_span = tokens.expect_punctuator(PunctuatorType::CloseSquareBracket)?;
             let bang_span = tokens.next_if_punctuator(PunctuatorType::Bang);
             let span = open_span.merge(&close_span);
-            Ok(InputTypeReference::List(inner, bang_span.is_some(), span))
+            Ok(InputType::List(inner, bang_span.is_some(), span))
         } else if let Some(base_name) = tokens.next_if_name() {
             let bang_span = tokens.next_if_punctuator(PunctuatorType::Bang);
             let span = if let Some(bang_span) = &bang_span {
@@ -101,7 +99,7 @@ impl<'a, C: Context + 'a> FromTokens<'a> for InputTypeReference<'a, C> {
                 r#type: OnceCell::new(),
                 context: Default::default(),
             };
-            Ok(InputTypeReference::Base(base, bang_span.is_some(), span))
+            Ok(InputType::Base(base, bang_span.is_some(), span))
         } else {
             Err(tokens.unexpected_token())
         }

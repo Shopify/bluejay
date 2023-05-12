@@ -1,8 +1,8 @@
 use crate::executable::{Cache, Error, Path, PathRoot, Rule, Visitor};
 use bluejay_core::definition::{
-    AbstractInputTypeReference, BaseInputType, BaseInputTypeReference, InputFieldsDefinition,
-    InputObjectTypeDefinition, InputTypeReference, InputTypeReferenceFromAbstract,
-    InputValueDefinition, SchemaDefinition, TypeDefinitionReferenceFromAbstract,
+    BaseInputType, BaseInputTypeReference, InputFieldsDefinition, InputObjectTypeDefinition,
+    InputType, InputTypeReference, InputValueDefinition, SchemaDefinition,
+    TypeDefinitionReferenceFromAbstract,
 };
 use bluejay_core::executable::{
     ExecutableDocument, FragmentSpread, OperationDefinition, VariableDefinition, VariableType,
@@ -150,7 +150,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> AllVariableUsagesAllowed<'a
     fn are_types_compatible(
         &self,
         variable_type: VariableTypeReference<'a, E::VariableType>,
-        location_type: InputTypeReferenceFromAbstract<'a, S::InputTypeReference>,
+        location_type: InputTypeReference<'a, S::InputType>,
     ) -> bool {
         match (variable_type, location_type) {
             (
@@ -241,7 +241,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Rule<'a, E, S>
 enum VariableUsageLocation<'a, S: SchemaDefinition> {
     Argument(&'a S::InputValueDefinition),
     ObjectField(&'a S::InputValueDefinition),
-    ListValue(&'a S::InputTypeReference),
+    ListValue(&'a S::InputType),
 }
 
 impl<'a, S: SchemaDefinition> VariableUsageLocation<'a, S> {
@@ -253,7 +253,7 @@ impl<'a, S: SchemaDefinition> VariableUsageLocation<'a, S> {
         }
     }
 
-    fn r#type(&self) -> &'a S::InputTypeReference {
+    fn r#type(&self) -> &'a S::InputType {
         match self {
             Self::Argument(ivd) => ivd.r#type(),
             Self::ObjectField(ivd) => ivd.r#type(),

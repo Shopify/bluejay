@@ -1,7 +1,6 @@
 use crate::executable::{ArgumentError, Cache, Error, Path, Rule, Visitor};
 use bluejay_core::definition::{
-    AbstractInputTypeReference, DirectiveDefinition, FieldDefinition, InputValueDefinition,
-    SchemaDefinition,
+    DirectiveDefinition, FieldDefinition, InputType, InputValueDefinition, SchemaDefinition,
 };
 use bluejay_core::executable::{ExecutableDocument, Field};
 use bluejay_core::{Argument, AsIter, Directive};

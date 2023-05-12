@@ -7,7 +7,7 @@ mod field_definition;
 mod fields_definition;
 mod input_fields_definition;
 mod input_object_type_definition;
-mod input_type_reference;
+mod input_type;
 mod input_value_definition;
 mod interface_implementation;
 mod interface_implementations;
@@ -30,10 +30,7 @@ pub use field_definition::FieldDefinition;
 pub use fields_definition::FieldsDefinition;
 pub use input_fields_definition::InputFieldsDefinition;
 pub use input_object_type_definition::InputObjectTypeDefinition;
-pub use input_type_reference::{
-    AbstractInputTypeReference, BaseInputType, BaseInputTypeReference, InputTypeReference,
-    InputTypeReferenceFromAbstract,
-};
+pub use input_type::{BaseInputType, BaseInputTypeReference, InputType, InputTypeReference};
 pub use input_value_definition::InputValueDefinition;
 pub use interface_implementation::InterfaceImplementation;
 pub use interface_implementations::InterfaceImplementations;

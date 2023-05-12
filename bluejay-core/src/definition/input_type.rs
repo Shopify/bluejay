@@ -60,15 +60,12 @@ impl<'a, B: BaseInputType> BaseInputType for BaseInputTypeReference<'a, B> {
 }
 
 #[derive(Debug)]
-pub enum InputTypeReference<'a, B: BaseInputType, I: AbstractInputTypeReference<BaseInputType = B>>
-{
-    Base(&'a B, bool),
+pub enum InputTypeReference<'a, I: InputType> {
+    Base(&'a I::BaseInputType, bool),
     List(&'a I, bool),
 }
 
-impl<'a, B: BaseInputType, I: AbstractInputTypeReference<BaseInputType = B>> Clone
-    for InputTypeReference<'a, B, I>
-{
+impl<'a, I: InputType> Clone for InputTypeReference<'a, I> {
     fn clone(&self) -> Self {
         match self {
             Self::Base(base, required) => Self::Base(*base, *required),
@@ -77,14 +74,9 @@ impl<'a, B: BaseInputType, I: AbstractInputTypeReference<BaseInputType = B>> Clo
     }
 }
 
-impl<'a, B: BaseInputType, I: AbstractInputTypeReference<BaseInputType = B>> Copy
-    for InputTypeReference<'a, B, I>
-{
-}
+impl<'a, I: InputType> Copy for InputTypeReference<'a, I> {}
 
-impl<'a, B: BaseInputType, I: AbstractInputTypeReference<BaseInputType = B>>
-    InputTypeReference<'a, B, I>
-{
+impl<'a, I: InputType> InputTypeReference<'a, I> {
     pub fn is_required(&self) -> bool {
         match self {
             Self::Base(_, r) => *r,
@@ -92,7 +84,7 @@ impl<'a, B: BaseInputType, I: AbstractInputTypeReference<BaseInputType = B>>
         }
     }
 
-    pub fn base(&self) -> &'a B {
+    pub fn base(&self) -> &'a I::BaseInputType {
         match self {
             Self::Base(b, _) => b,
             Self::List(l, _) => l.as_ref().base(),
@@ -122,14 +114,11 @@ impl<'a, B: BaseInputType, I: AbstractInputTypeReference<BaseInputType = B>>
     }
 }
 
-pub trait AbstractInputTypeReference: Sized {
+pub trait InputType: Sized {
     type BaseInputType: BaseInputType;
 
-    fn as_ref(&self) -> InputTypeReferenceFromAbstract<'_, Self>;
+    fn as_ref(&self) -> InputTypeReference<'_, Self>;
 }
-
-pub type InputTypeReferenceFromAbstract<'a, T> =
-    InputTypeReference<'a, <T as AbstractInputTypeReference>::BaseInputType, T>;
 
 impl<
         'a,

@@ -1,4 +1,4 @@
-use crate::ast::definition::{Context, InputTypeReference};
+use crate::ast::definition::{Context, InputType};
 use crate::ast::{ConstDirectives, ConstValue, FromTokens, ParseError, Tokens};
 use crate::lexical_token::{Name, PunctuatorType, StringValue};
 use bluejay_core::definition::InputValueDefinition as CoreInputValueDefinition;
@@ -7,13 +7,13 @@ use bluejay_core::definition::InputValueDefinition as CoreInputValueDefinition;
 pub struct InputValueDefinition<'a, C: Context> {
     description: Option<StringValue<'a>>,
     name: Name<'a>,
-    r#type: InputTypeReference<'a, C>,
+    r#type: InputType<'a, C>,
     default_value: Option<ConstValue<'a>>,
     directives: Option<ConstDirectives<'a>>,
 }
 
 impl<'a, C: Context> CoreInputValueDefinition for InputValueDefinition<'a, C> {
-    type InputTypeReference = InputTypeReference<'a, C>;
+    type InputType = InputType<'a, C>;
     type Value = ConstValue<'a>;
     type Directives = ConstDirectives<'a>;
 
@@ -25,7 +25,7 @@ impl<'a, C: Context> CoreInputValueDefinition for InputValueDefinition<'a, C> {
         self.name.as_ref()
     }
 
-    fn r#type(&self) -> &Self::InputTypeReference {
+    fn r#type(&self) -> &Self::InputType {
         &self.r#type
     }
 
@@ -43,7 +43,7 @@ impl<'a, C: Context> FromTokens<'a> for InputValueDefinition<'a, C> {
         let description = tokens.next_if_string_value();
         let name = tokens.expect_name()?;
         tokens.expect_punctuator(PunctuatorType::Colon)?;
-        let r#type = InputTypeReference::from_tokens(tokens)?;
+        let r#type = InputType::from_tokens(tokens)?;
         let default_value: Option<ConstValue> =
             if tokens.next_if_punctuator(PunctuatorType::Equals).is_some() {
                 Some(ConstValue::from_tokens(tokens)?)

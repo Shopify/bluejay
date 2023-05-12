@@ -1,4 +1,4 @@
-use crate::executable::VariableDefinitionInputTypeReference;
+use crate::executable::VariableDefinitionInputType;
 use bluejay_core::definition::SchemaDefinition;
 use bluejay_core::executable::{
     ExecutableDocument, FragmentDefinition, OperationDefinition, VariableDefinition,
@@ -8,7 +8,7 @@ use std::collections::HashMap;
 
 pub struct Cache<'a, E: ExecutableDocument, S: SchemaDefinition> {
     variable_definition_input_type_references:
-        HashMap<&'a E::VariableType, VariableDefinitionInputTypeReference<'a, S::BaseInputType>>,
+        HashMap<&'a E::VariableType, VariableDefinitionInputType<'a, S::BaseInputType>>,
     indexed_fragment_definitions: HashMap<&'a str, &'a E::FragmentDefinition>,
 }
 
@@ -29,7 +29,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> Cache<'a, E, S> {
                         .flatten()
                         .filter_map(|variable_definition| {
                             let type_reference = variable_definition.r#type();
-                            VariableDefinitionInputTypeReference::try_from((
+                            VariableDefinitionInputType::try_from((
                                 schema_definition,
                                 type_reference,
                             ))
@@ -54,7 +54,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> Cache<'a, E, S> {
     pub fn variable_definition_input_type_reference(
         &self,
         variable_type: &E::VariableType,
-    ) -> Option<&VariableDefinitionInputTypeReference<'a, S::BaseInputType>> {
+    ) -> Option<&VariableDefinitionInputType<'a, S::BaseInputType>> {
         self.variable_definition_input_type_references
             .get(variable_type)
     }

@@ -1,6 +1,6 @@
 use crate::value::input_coercion::Error as InputCoercionError;
 use bluejay_core::definition::{
-    AbstractInputTypeReference, AbstractOutputTypeReference, FieldDefinition, SchemaDefinition,
+    AbstractOutputTypeReference, FieldDefinition, InputType, SchemaDefinition,
     TypeDefinitionReferenceFromAbstract,
 };
 use bluejay_core::executable::{ExecutableDocument, OperationDefinition, VariableType};
@@ -119,7 +119,7 @@ pub enum Error<'a, E: ExecutableDocument, S: SchemaDefinition> {
     InvalidVariableUsage {
         variable: &'a <E::Value<false> as Value<false>>::Variable,
         variable_type: &'a E::VariableType,
-        location_type: &'a S::InputTypeReference,
+        location_type: &'a S::InputType,
     },
 }
 

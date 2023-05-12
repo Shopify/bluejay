@@ -3,7 +3,7 @@ use crate::{
     write_indent,
 };
 use bluejay_core::{
-    definition::{AbstractInputTypeReference, InputValueDefinition},
+    definition::{InputType, InputValueDefinition},
     AsIter, Value,
 };
 use std::fmt::{Error, Write};

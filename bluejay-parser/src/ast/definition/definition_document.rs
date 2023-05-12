@@ -9,9 +9,9 @@ use crate::ast::{FromTokens, ParseError, ScannerTokens, Tokens};
 use crate::scanner::LogosScanner;
 use crate::Error;
 use bluejay_core::definition::{
-    AbstractInputTypeReference, AbstractOutputTypeReference, AbstractTypeDefinitionReference,
+    AbstractOutputTypeReference, AbstractTypeDefinitionReference,
     DirectiveDefinition as CoreDirectiveDefinition, FieldDefinition as CoreFieldDefinition,
-    InputObjectTypeDefinition as CoreInputObjectTypeDefinition,
+    InputObjectTypeDefinition as CoreInputObjectTypeDefinition, InputType,
     InputValueDefinition as CoreInputValueDefinition,
     InterfaceTypeDefinition as CoreInterfaceTypeDefinition,
     ObjectTypeDefinition as CoreObjectTypeDefinition,
