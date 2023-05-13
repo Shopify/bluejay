@@ -50,25 +50,21 @@ impl DisplaySchemaDefinition {
                     writeln!(f)?;
                 }
                 match tdr {
-                    TypeDefinitionReference::BuiltinScalarType(_) => Ok(()),
-                    TypeDefinitionReference::CustomScalarType(cstd) => {
+                    TypeDefinitionReference::BuiltinScalar(_) => Ok(()),
+                    TypeDefinitionReference::CustomScalar(cstd) => {
                         DisplayScalarTypeDefinition::fmt(cstd, f)
                     }
-                    TypeDefinitionReference::EnumType(etd) => {
-                        DisplayEnumTypeDefinition::fmt(etd, f)
-                    }
-                    TypeDefinitionReference::InputObjectType(iotd) => {
+                    TypeDefinitionReference::Enum(etd) => DisplayEnumTypeDefinition::fmt(etd, f),
+                    TypeDefinitionReference::InputObject(iotd) => {
                         DisplayInputObjectTypeDefinition::fmt(iotd, f)
                     }
-                    TypeDefinitionReference::InterfaceType(itd) => {
+                    TypeDefinitionReference::Interface(itd) => {
                         DisplayInterfaceTypeDefinition::fmt(itd, f)
                     }
-                    TypeDefinitionReference::ObjectType(otd) => {
+                    TypeDefinitionReference::Object(otd) => {
                         DisplayObjectTypeDefinition::fmt(otd, f)
                     }
-                    TypeDefinitionReference::UnionType(utd) => {
-                        DisplayUnionTypeDefinition::fmt(utd, f)
-                    }
+                    TypeDefinitionReference::Union(utd) => DisplayUnionTypeDefinition::fmt(utd, f),
                 }
             })?;
 

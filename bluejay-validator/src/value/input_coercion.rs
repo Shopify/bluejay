@@ -448,7 +448,7 @@ mod tests {
         SCHEMA_DEFINITION
             .get_type_definition(type_name)
             .unwrap()
-            .into_object_type()
+            .into_object()
             .unwrap()
             .fields_definition()
             .get(field_name)

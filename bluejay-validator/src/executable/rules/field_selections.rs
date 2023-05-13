@@ -20,15 +20,15 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Visitor<'a, E, S>
         r#type: TypeDefinitionReference<'a, S::TypeDefinition>,
     ) {
         let fields_definition = match &r#type {
-            TypeDefinitionReference::BuiltinScalarType(_)
-            | TypeDefinitionReference::CustomScalarType(_)
-            | TypeDefinitionReference::EnumType(_)
-            | TypeDefinitionReference::UnionType(_)
-            | TypeDefinitionReference::InputObjectType(_) => {
+            TypeDefinitionReference::BuiltinScalar(_)
+            | TypeDefinitionReference::CustomScalar(_)
+            | TypeDefinitionReference::Enum(_)
+            | TypeDefinitionReference::Union(_)
+            | TypeDefinitionReference::InputObject(_) => {
                 return;
             }
-            TypeDefinitionReference::InterfaceType(itd) => itd.fields_definition(),
-            TypeDefinitionReference::ObjectType(otd) => otd.fields_definition(),
+            TypeDefinitionReference::Interface(itd) => itd.fields_definition(),
+            TypeDefinitionReference::Object(otd) => otd.fields_definition(),
         };
 
         self.errors

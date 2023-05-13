@@ -332,13 +332,13 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, R: Rule<'a, E, S>> Validato
         t: TypeDefinitionReference<'a, S::TypeDefinition>,
     ) -> Option<&'a S::FieldsDefinition> {
         match t {
-            TypeDefinitionReference::BuiltinScalarType(_)
-            | TypeDefinitionReference::CustomScalarType(_)
-            | TypeDefinitionReference::EnumType(_)
-            | TypeDefinitionReference::UnionType(_)
-            | TypeDefinitionReference::InputObjectType(_) => None,
-            TypeDefinitionReference::InterfaceType(itd) => Some(itd.fields_definition()),
-            TypeDefinitionReference::ObjectType(otd) => Some(otd.fields_definition()),
+            TypeDefinitionReference::BuiltinScalar(_)
+            | TypeDefinitionReference::CustomScalar(_)
+            | TypeDefinitionReference::Enum(_)
+            | TypeDefinitionReference::Union(_)
+            | TypeDefinitionReference::InputObject(_) => None,
+            TypeDefinitionReference::Interface(itd) => Some(itd.fields_definition()),
+            TypeDefinitionReference::Object(otd) => Some(otd.fields_definition()),
         }
     }
 }

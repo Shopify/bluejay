@@ -53,13 +53,13 @@ impl<'a, C: Context> CoreTypeDefinition for TypeDefinition<'a, C> {
 
     fn as_ref(&self) -> TypeDefinitionReference<'_, Self> {
         match self {
-            Self::BuiltinScalar(bstd) => TypeDefinitionReference::BuiltinScalarType(*bstd),
-            Self::CustomScalar(cstd) => TypeDefinitionReference::CustomScalarType(cstd),
-            Self::Object(otd) => TypeDefinitionReference::ObjectType(otd),
-            Self::InputObject(xiotd) => TypeDefinitionReference::InputObjectType(xiotd),
-            Self::Enum(etd) => TypeDefinitionReference::EnumType(etd),
-            Self::Union(utd) => TypeDefinitionReference::UnionType(utd),
-            Self::Interface(itd) => TypeDefinitionReference::InterfaceType(itd),
+            Self::BuiltinScalar(bstd) => TypeDefinitionReference::BuiltinScalar(*bstd),
+            Self::CustomScalar(cstd) => TypeDefinitionReference::CustomScalar(cstd),
+            Self::Object(otd) => TypeDefinitionReference::Object(otd),
+            Self::InputObject(iotd) => TypeDefinitionReference::InputObject(iotd),
+            Self::Enum(etd) => TypeDefinitionReference::Enum(etd),
+            Self::Union(utd) => TypeDefinitionReference::Union(utd),
+            Self::Interface(itd) => TypeDefinitionReference::Interface(itd),
         }
     }
 }

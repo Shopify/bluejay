@@ -134,13 +134,13 @@ impl<
 
     fn try_from(value: TypeDefinitionReference<'a, T>) -> Result<Self, Self::Error> {
         match value {
-            TypeDefinitionReference::BuiltinScalarType(bstd) => Ok(Self::BuiltinScalar(bstd)),
-            TypeDefinitionReference::CustomScalarType(cstd) => Ok(Self::CustomScalar(cstd)),
-            TypeDefinitionReference::EnumType(etd) => Ok(Self::Enum(etd)),
-            TypeDefinitionReference::InputObjectType(iotd) => Ok(Self::InputObject(iotd)),
-            TypeDefinitionReference::InterfaceType(_)
-            | TypeDefinitionReference::ObjectType(_)
-            | TypeDefinitionReference::UnionType(_) => Err(()),
+            TypeDefinitionReference::BuiltinScalar(bstd) => Ok(Self::BuiltinScalar(bstd)),
+            TypeDefinitionReference::CustomScalar(cstd) => Ok(Self::CustomScalar(cstd)),
+            TypeDefinitionReference::Enum(etd) => Ok(Self::Enum(etd)),
+            TypeDefinitionReference::InputObject(iotd) => Ok(Self::InputObject(iotd)),
+            TypeDefinitionReference::Interface(_)
+            | TypeDefinitionReference::Object(_)
+            | TypeDefinitionReference::Union(_) => Err(()),
         }
     }
 }

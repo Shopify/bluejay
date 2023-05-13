@@ -64,21 +64,21 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> FragmentSpreadIsPossible<'a
         t: TypeDefinitionReference<'a, S::TypeDefinition>,
     ) -> Option<HashSet<&'a str>> {
         match t {
-            TypeDefinitionReference::ObjectType(_) => Some(HashSet::from([t.name()])),
-            TypeDefinitionReference::InterfaceType(itd) => Some(HashSet::from_iter(
+            TypeDefinitionReference::Object(_) => Some(HashSet::from([t.name()])),
+            TypeDefinitionReference::Interface(itd) => Some(HashSet::from_iter(
                 self.schema_definition
                     .get_interface_implementors(itd)
                     .map(ObjectTypeDefinition::name),
             )),
-            TypeDefinitionReference::UnionType(utd) => Some(HashSet::from_iter(
+            TypeDefinitionReference::Union(utd) => Some(HashSet::from_iter(
                 utd.union_member_types()
                     .iter()
                     .map(|union_member| union_member.member_type().name()),
             )),
-            TypeDefinitionReference::BuiltinScalarType(_)
-            | TypeDefinitionReference::CustomScalarType(_)
-            | TypeDefinitionReference::EnumType(_)
-            | TypeDefinitionReference::InputObjectType(_) => None,
+            TypeDefinitionReference::BuiltinScalar(_)
+            | TypeDefinitionReference::CustomScalar(_)
+            | TypeDefinitionReference::Enum(_)
+            | TypeDefinitionReference::InputObject(_) => None,
         }
     }
 

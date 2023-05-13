@@ -135,13 +135,11 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> FieldSelectionMer
                 (Vec::new(), HashMap::new()),
                 |(mut abstract_group, mut concrete_groups), field_context| {
                     match field_context.parent_type {
-                        TypeDefinitionReference::ObjectType(otd) => concrete_groups
+                        TypeDefinitionReference::Object(otd) => concrete_groups
                             .entry(otd.name())
                             .or_default()
                             .push(field_context),
-                        TypeDefinitionReference::InterfaceType(_) => {
-                            abstract_group.push(field_context)
-                        }
+                        TypeDefinitionReference::Interface(_) => abstract_group.push(field_context),
                         _ => {}
                     }
                     (abstract_group, concrete_groups)
@@ -269,13 +267,13 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> FieldSelectionMer
         selections.for_each(|selection| match selection.as_ref() {
             SelectionReference::Field(field) => {
                 let fields_definition = match parent_type {
-                    TypeDefinitionReference::ObjectType(otd) => Some(otd.fields_definition()),
-                    TypeDefinitionReference::InterfaceType(itd) => Some(itd.fields_definition()),
-                    TypeDefinitionReference::BuiltinScalarType(_)
-                    | TypeDefinitionReference::CustomScalarType(_)
-                    | TypeDefinitionReference::EnumType(_)
-                    | TypeDefinitionReference::InputObjectType(_)
-                    | TypeDefinitionReference::UnionType(_) => None,
+                    TypeDefinitionReference::Object(otd) => Some(otd.fields_definition()),
+                    TypeDefinitionReference::Interface(itd) => Some(itd.fields_definition()),
+                    TypeDefinitionReference::BuiltinScalar(_)
+                    | TypeDefinitionReference::CustomScalar(_)
+                    | TypeDefinitionReference::Enum(_)
+                    | TypeDefinitionReference::InputObject(_)
+                    | TypeDefinitionReference::Union(_) => None,
                 };
                 if let Some(field_definition) = fields_definition
                     .and_then(|fields_definition| fields_definition.get(field.name()))
