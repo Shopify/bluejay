@@ -11,4 +11,5 @@ pub trait ObjectTypeDefinition {
     fn interface_implementations(&self) -> Option<&Self::InterfaceImplementations>;
     fn directives(&self) -> Option<&Self::Directives>;
     fn fields_definition(&self) -> &Self::FieldsDefinition;
+    fn is_builtin(&self) -> bool;
 }

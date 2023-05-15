@@ -27,7 +27,8 @@ impl<'a, C: Context> CoreFieldsDefinition for FieldsDefinition<'a, C> {
 impl<'a, C: Context> FromTokens<'a> for FieldsDefinition<'a, C> {
     fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
         let open_span = tokens.expect_punctuator(PunctuatorType::OpenBrace)?;
-        let mut field_definitions: Vec<FieldDefinition<'a, C>> = vec![FieldDefinition::typename()];
+        let mut field_definitions: Vec<FieldDefinition<'a, C>> =
+            vec![FieldDefinition::__typename()];
         let close_span = loop {
             field_definitions.push(FieldDefinition::from_tokens(tokens)?);
             if let Some(close_span) = tokens.next_if_punctuator(PunctuatorType::CloseBrace) {
@@ -39,5 +40,12 @@ impl<'a, C: Context> FromTokens<'a> for FieldsDefinition<'a, C> {
             field_definitions,
             _span: span,
         })
+    }
+}
+
+impl<'a, C: Context> FieldsDefinition<'a, C> {
+    pub(crate) fn add_query_root_fields(&mut self) {
+        self.field_definitions.push(FieldDefinition::__schema());
+        self.field_definitions.push(FieldDefinition::__type());
     }
 }

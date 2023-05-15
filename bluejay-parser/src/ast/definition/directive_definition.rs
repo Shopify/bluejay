@@ -70,7 +70,7 @@ impl<'a, C: Context> DirectiveDefinition<'a, C> {
         Self::builtin(Self::INCLUDE_DEFINITION)
     }
 
-    pub(crate) fn name(&self) -> &Name<'a> {
+    pub(crate) fn name_token(&self) -> &Name<'a> {
         &self.name
     }
 }

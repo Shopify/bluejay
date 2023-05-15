@@ -1,7 +1,6 @@
 use crate::ast::definition::{ArgumentsDefinition, Context, OutputType};
-use crate::ast::{ConstDirectives, FromTokens, ParseError, Tokens, TryFromTokens};
+use crate::ast::{ConstDirectives, FromTokens, Parse, ParseError, Tokens, TryFromTokens};
 use crate::lexical_token::{Name, PunctuatorType, StringValue};
-use crate::Span;
 use bluejay_core::definition::FieldDefinition as CoreFieldDefinition;
 
 #[derive(Debug)]
@@ -15,15 +14,26 @@ pub struct FieldDefinition<'a, C: Context> {
 }
 
 impl<'a, C: Context> FieldDefinition<'a, C> {
-    pub(crate) fn typename() -> Self {
-        FieldDefinition {
-            description: None,
-            name: Name::new("__typename", Span::empty()),
-            arguments_definition: None,
-            r#type: OutputType::non_null_string(),
-            directives: None,
-            is_builtin: true,
-        }
+    const __TYPENAME_DEFINITION: &'static str = "__typename: String!";
+    const __SCHEMA_DEFINITION: &'static str = "__schema: __Schema!";
+    const __TYPE_DEFINITION: &'static str = "__type(name: String!): __Type";
+
+    fn builtin(s: &'static str) -> Self {
+        let mut definition = Self::parse(s).unwrap();
+        definition.is_builtin = true;
+        definition
+    }
+
+    pub(crate) fn __typename() -> Self {
+        Self::builtin(Self::__TYPENAME_DEFINITION)
+    }
+
+    pub(crate) fn __schema() -> Self {
+        Self::builtin(Self::__SCHEMA_DEFINITION)
+    }
+
+    pub(crate) fn __type() -> Self {
+        Self::builtin(Self::__TYPE_DEFINITION)
     }
 }
 

@@ -85,16 +85,6 @@ impl<'a, C: Context + 'a> CoreOutputType for OutputType<'a, C> {
     }
 }
 
-impl<'a, C: Context + 'a> OutputType<'a, C> {
-    pub(crate) fn non_null_string() -> Self {
-        Self::Base(
-            BaseOutputType::new(Name::new("String", Span::empty())),
-            true,
-            Span::empty(),
-        )
-    }
-}
-
 impl<'a, C: Context + 'a> FromTokens<'a> for OutputType<'a, C> {
     fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
         if let Some(open_span) = tokens.next_if_punctuator(PunctuatorType::OpenSquareBracket) {

@@ -32,7 +32,7 @@ impl<'a> ExplicitSchemaDefinition<'a> {
     pub(crate) fn uses_implicit_names(&self) -> bool {
         self.root_operation_type_definitions
             .iter()
-            .all(|rotd| Self::IMPLICIT_OPERATION_TYPE_NAMES.contains(&rotd.name().as_ref()))
+            .all(|rotd| Self::IMPLICIT_OPERATION_TYPE_NAMES.contains(&rotd.name()))
     }
 
     pub(crate) fn schema_identifier_span(&self) -> &Span {
@@ -86,8 +86,12 @@ impl<'a> RootOperationTypeDefinition<'a> {
         self.operation_type
     }
 
-    pub(crate) fn name(&self) -> &Name<'a> {
+    pub(crate) fn name_token(&self) -> &Name<'a> {
         &self.name
+    }
+
+    pub(crate) fn name(&self) -> &str {
+        self.name.as_ref()
     }
 }
 

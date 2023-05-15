@@ -1,0 +1,7 @@
+type __Schema {
+    description: String
+}
+
+type Query @foo {
+  intField: Int!
+}

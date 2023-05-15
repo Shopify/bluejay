@@ -57,7 +57,14 @@ impl<'a, T: TypeDefinition> TypeDefinitionReference<'a, T> {
     }
 
     pub fn is_builtin(&self) -> bool {
-        matches!(self, Self::BuiltinScalar(_))
+        match self {
+            Self::BuiltinScalar(_) => true,
+            Self::Object(otd) => otd.is_builtin(),
+            Self::Enum(etd) => etd.is_builtin(),
+            Self::CustomScalar(_) | Self::InputObject(_) | Self::Interface(_) | Self::Union(_) => {
+                false
+            }
+        }
     }
 
     pub fn is_composite(&self) -> bool {

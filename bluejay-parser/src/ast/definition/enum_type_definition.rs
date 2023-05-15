@@ -1,5 +1,5 @@
 use crate::ast::definition::EnumValueDefinitions;
-use crate::ast::{ConstDirectives, FromTokens, ParseError, Tokens, TryFromTokens};
+use crate::ast::{ConstDirectives, FromTokens, Parse, ParseError, Tokens, TryFromTokens};
 use crate::lexical_token::{Name, StringValue};
 use bluejay_core::definition::EnumTypeDefinition as CoreEnumTypeDefinition;
 
@@ -9,6 +9,7 @@ pub struct EnumTypeDefinition<'a> {
     name: Name<'a>,
     directives: Option<ConstDirectives<'a>>,
     enum_value_definitions: EnumValueDefinitions<'a>,
+    is_builtin: bool,
 }
 
 impl<'a> CoreEnumTypeDefinition for EnumTypeDefinition<'a> {
@@ -30,13 +31,62 @@ impl<'a> CoreEnumTypeDefinition for EnumTypeDefinition<'a> {
     fn enum_value_definitions(&self) -> &Self::EnumValueDefinitions {
         &self.enum_value_definitions
     }
+
+    fn is_builtin(&self) -> bool {
+        self.is_builtin
+    }
 }
 
 impl<'a> EnumTypeDefinition<'a> {
     pub(crate) const ENUM_IDENTIFIER: &'static str = "enum";
+    const __TYPE_KIND_DEFINITION: &'static str = "enum __TypeKind {
+        SCALAR
+        OBJECT
+        INTERFACE
+        UNION
+        ENUM
+        INPUT_OBJECT
+        LIST
+        NON_NULL
+    }";
+    const __DIRECTIVE_LOCATION_DEFINITION: &'static str = "enum __DirectiveLocation {
+        QUERY
+        MUTATION
+        SUBSCRIPTION
+        FIELD
+        FRAGMENT_DEFINITION
+        FRAGMENT_SPREAD
+        INLINE_FRAGMENT
+        VARIABLE_DEFINITION
+        SCHEMA
+        SCALAR
+        OBJECT
+        FIELD_DEFINITION
+        ARGUMENT_DEFINITION
+        INTERFACE
+        UNION
+        ENUM
+        ENUM_VALUE
+        INPUT_OBJECT
+        INPUT_FIELD_DEFINITION
+    }";
 
     pub(crate) fn name(&self) -> &Name<'a> {
         &self.name
+    }
+
+    fn builtin(s: &'static str) -> Self {
+        let mut definition = Self::parse(s).unwrap();
+        definition.is_builtin = true;
+        definition
+    }
+
+    pub(crate) fn __type_kind() -> Self {
+        Self::builtin(Self::__TYPE_KIND_DEFINITION)
+    }
+
+    pub(crate) fn __directive_location() -> Self {
+        Self::builtin(Self::__DIRECTIVE_LOCATION_DEFINITION)
     }
 }
 
@@ -52,6 +102,7 @@ impl<'a> FromTokens<'a> for EnumTypeDefinition<'a> {
             name,
             directives,
             enum_value_definitions,
+            is_builtin: false,
         })
     }
 }

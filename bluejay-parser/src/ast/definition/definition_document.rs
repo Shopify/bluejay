@@ -18,7 +18,7 @@ use bluejay_core::definition::{
 };
 use bluejay_core::{AsIter, BuiltinScalarDefinition, IntoEnumIterator, OperationType};
 use std::collections::btree_map::Entry;
-use std::collections::{BTreeMap, HashMap};
+use std::collections::{BTreeMap, HashMap, HashSet};
 
 mod definition_document_error;
 use definition_document_error::DefinitionDocumentError;
@@ -52,7 +52,16 @@ impl<'a, C: Context> DefinitionDocument<'a, C> {
                 DirectiveDefinition::skip(),
                 DirectiveDefinition::include(),
             ],
-            type_definitions: Vec::new(),
+            type_definitions: vec![
+                ObjectTypeDefinition::__schema().into(),
+                ObjectTypeDefinition::__type().into(),
+                ObjectTypeDefinition::__field().into(),
+                ObjectTypeDefinition::__input_value().into(),
+                ObjectTypeDefinition::__enum_value().into(),
+                ObjectTypeDefinition::__directive().into(),
+                EnumTypeDefinition::__type_kind().into(),
+                EnumTypeDefinition::__directive_location().into(),
+            ],
         }
     }
 
@@ -175,6 +184,7 @@ impl<'a, C: Context> DefinitionDocument<'a, C> {
 
         if errors.is_empty() {
             instance.insert_builtin_scalar_definitions();
+            instance.add_query_root_fields();
             Ok(instance)
         } else {
             Err(errors)
@@ -196,6 +206,32 @@ impl<'a, C: Context> DefinitionDocument<'a, C> {
                 .into_values()
                 .map(TypeDefinition::BuiltinScalar),
         );
+    }
+
+    fn add_query_root_fields(&mut self) {
+        let explicit_query_roots: HashSet<&str> = HashSet::from_iter(
+            self.schema_definitions
+                .iter()
+                .flat_map(|schema_definition| {
+                    schema_definition
+                        .root_operation_type_definitions()
+                        .iter()
+                        .filter_map(|rotd| {
+                            (rotd.operation_type() == OperationType::Query).then(|| rotd.name())
+                        })
+                }),
+        );
+
+        self.type_definitions
+            .iter_mut()
+            .for_each(|type_definition| {
+                if let TypeDefinition::Object(otd) = type_definition {
+                    let name = otd.name().as_ref();
+                    if name == "Query" || explicit_query_roots.contains(name) {
+                        otd.add_query_root_fields();
+                    }
+                }
+            })
     }
 
     fn is_empty(&self) -> bool {
@@ -397,12 +433,12 @@ impl<'a, C: Context> DefinitionDocument<'a, C> {
 
         if let Some(first) = root_operation_type_definitions.first() {
             if root_operation_type_definitions.len() == 1 {
-                match indexed_type_definitions.get(first.name().as_ref()) {
+                match indexed_type_definitions.get(first.name()) {
                     Some(TypeDefinition::Object(o)) => Some(o),
                     Some(_) => {
                         errors.push(
                             DefinitionDocumentError::ExplicitRootOperationTypeNotAnObject {
-                                name: first.name(),
+                                name: first.name_token(),
                             },
                         );
                         None
@@ -658,7 +694,18 @@ impl<'a, C: Context> TryFrom<&'a DefinitionDocument<'a, C>> for SchemaDefinition
 
 #[cfg(test)]
 mod tests {
-    use super::DefinitionDocument;
+    use std::collections::HashSet;
+
+    use bluejay_core::{
+        definition::{
+            DirectiveDefinition, FieldDefinition as CoreFieldDefinition,
+            ObjectTypeDefinition as CoreObjectTypeDefinition,
+            SchemaDefinition as CoreSchemaDefinition,
+        },
+        AsIter,
+    };
+
+    use super::{DefinitionDocument, SchemaDefinition};
 
     #[test]
     fn smoke_test() {
@@ -674,5 +721,79 @@ mod tests {
         let document: DefinitionDocument = DefinitionDocument::parse(s).unwrap();
 
         assert_eq!(1, document.definition_count());
+    }
+
+    #[test]
+    fn builtin_fields_and_types_test() {
+        let s = r#"
+        type Query {
+            foo: String!
+        }
+
+        type Mutation {
+            foo: String!
+        }
+        "#;
+
+        let document: DefinitionDocument =
+            DefinitionDocument::parse(s).expect("Document had parse errors");
+
+        let schema_definition = SchemaDefinition::try_from(&document)
+            .expect("Could not convert document to schema definition");
+
+        let query_root_builtin_fields: HashSet<&str> = schema_definition
+            .query()
+            .fields_definition()
+            .iter()
+            .filter_map(|fd| fd.is_builtin().then_some(fd.name()))
+            .collect();
+
+        assert_eq!(
+            HashSet::from(["__typename", "__schema", "__type"]),
+            query_root_builtin_fields,
+        );
+
+        let mutation_root = schema_definition
+            .mutation()
+            .expect("Schema definition did not have a mutation root");
+
+        let mutation_root_builtin_fields: HashSet<&str> = mutation_root
+            .fields_definition()
+            .iter()
+            .filter_map(|fd| fd.is_builtin().then_some(fd.name()))
+            .collect();
+
+        assert_eq!(HashSet::from(["__typename"]), mutation_root_builtin_fields);
+
+        let builtin_directives: HashSet<&str> = schema_definition
+            .directive_definitions()
+            .filter_map(|dd| dd.is_builtin().then_some(dd.name()))
+            .collect();
+
+        assert_eq!(HashSet::from(["include", "skip"]), builtin_directives);
+
+        let builtin_types: HashSet<&str> = schema_definition
+            .type_definitions()
+            .filter_map(|td| td.is_builtin().then_some(td.name()))
+            .collect();
+
+        assert_eq!(
+            HashSet::from([
+                "__TypeKind",
+                "__DirectiveLocation",
+                "__Schema",
+                "__Type",
+                "__Field",
+                "__InputValue",
+                "__EnumValue",
+                "__Directive",
+                "String",
+                "ID",
+                "Boolean",
+                "Int",
+                "Float",
+            ]),
+            builtin_types,
+        );
     }
 }

@@ -1,0 +1,13 @@
+---
+source: bluejay-parser/tests/schema_definition_integration_test.rs
+expression: formatted_errors
+input_file: bluejay-parser/tests/test_data/schema_definition/error/redefine_builtin_type_definition.graphql
+---
+Error: Cannot redefine builtin type __Schema
+   ╭─[<unknown>:1:1]
+   │
+ 1 │ type __Schema {
+   │      ────┬───  
+   │          ╰───── Type definition with name `__Schema`
+───╯
+

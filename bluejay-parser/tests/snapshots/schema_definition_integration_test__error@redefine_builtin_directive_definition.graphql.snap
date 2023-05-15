@@ -1,0 +1,13 @@
+---
+source: bluejay-parser/tests/schema_definition_integration_test.rs
+expression: formatted_errors
+input_file: bluejay-parser/tests/test_data/schema_definition/error/redefine_builtin_directive_definition.graphql
+---
+Error: Cannot redefine builtin directive @include
+   ╭─[<unknown>:1:1]
+   │
+ 1 │ directive @include on FIELD
+   │            ───┬───  
+   │               ╰───── Directive definition with name `@include`
+───╯
+

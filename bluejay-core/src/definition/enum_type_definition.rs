@@ -9,4 +9,5 @@ pub trait EnumTypeDefinition {
     fn name(&self) -> &str;
     fn directives(&self) -> Option<&Self::Directives>;
     fn enum_value_definitions(&self) -> &Self::EnumValueDefinitions;
+    fn is_builtin(&self) -> bool;
 }
