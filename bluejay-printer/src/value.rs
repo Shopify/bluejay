@@ -2,7 +2,7 @@ use crate::string_value::DisplayStringValue;
 use bluejay_core::{AsIter, ObjectValue, Value, ValueReference, Variable};
 use std::fmt::{Error, Write};
 
-pub(crate) trait DisplayValue {
+pub trait DisplayValue {
     fn fmt<W: Write>(&self, f: &mut W) -> Result<(), Error>;
 
     fn to_string(&self) -> String {
