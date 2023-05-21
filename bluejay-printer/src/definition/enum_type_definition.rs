@@ -46,8 +46,10 @@ impl DisplayEnumTypeDefinition {
                 write!(f, "{}", evd.name())?;
 
                 if let Some(directives) = evd.directives() {
-                    write!(f, " ")?;
-                    DisplayDirectives::fmt(directives, f)?;
+                    if !directives.is_empty() {
+                        write!(f, " ")?;
+                        DisplayDirectives::fmt(directives, f)?;
+                    }
                 }
 
                 writeln!(f)
