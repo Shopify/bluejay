@@ -120,7 +120,7 @@ mod tests {
     #[test]
     fn test_string() {
         assert_prints!(r#""""#);
-        assert_prints!(r#""\"\\\/\b\n\f\r\t""#);
+        assert_prints!(r#""\"\\/\b\n\f\r\t""#, r#""\"\\\/\b\n\f\r\t""#);
         assert_prints!(r#""🔥""#);
     }
 

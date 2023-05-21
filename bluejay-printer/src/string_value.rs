@@ -7,7 +7,7 @@ impl DisplayStringValue {
     pub(crate) fn fmt<W: Write>(s: &str, f: &mut W) -> Result<(), Error> {
         write!(f, "\"")?;
         s.chars().try_for_each(|c| match c {
-            '\"' | '\\' | '/' => write!(f, "\\{c}"),
+            '\"' | '\\' => write!(f, "\\{c}"),
             '\u{0008}' => write!(f, "\\b"),
             '\u{000C}' => write!(f, "\\f"),
             '\n' => write!(f, "\\n"),
