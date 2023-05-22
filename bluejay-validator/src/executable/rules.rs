@@ -68,7 +68,7 @@ use std::iter::Chain;
 ///    The `Error` type of each rule must be convertable to the error type of the new rule via `Into::into`.
 #[macro_export]
 macro_rules! combine_rules {
-    ( $name:ty, $err:ty, [$( $rule:ty ),* $(,)?] ) => {
+    ( $name:ty, $err:ty, [$( $rule:ty ),* $(,)?] $(,)? ) => {
         paste! {
             pub struct $name<'a, E: ExecutableDocument, S: SchemaDefinition> {
                 $([<$rule:snake>]: $rule<'a, E, S>,)*
@@ -230,5 +230,5 @@ combine_rules!(
         AllVariableUsesDefined,
         AllVariablesUsed,
         AllVariableUsagesAllowed,
-    ]
+    ],
 );
