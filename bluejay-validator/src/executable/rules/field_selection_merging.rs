@@ -1,8 +1,7 @@
 use crate::executable::{Cache, Error, Rule, Visitor};
 use bluejay_core::definition::{
-    BaseOutputType, FieldDefinition, FieldsDefinition, InterfaceTypeDefinition,
-    ObjectTypeDefinition, OutputType, OutputTypeReference, SchemaDefinition,
-    TypeDefinitionReference,
+    BaseOutputType, FieldDefinition, FieldsDefinition, ObjectTypeDefinition, OutputType,
+    OutputTypeReference, SchemaDefinition, TypeDefinitionReference,
 };
 use bluejay_core::executable::{
     ExecutableDocument, Field, FragmentDefinition, FragmentSpread, InlineFragment, Selection,
@@ -266,15 +265,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> FieldSelectionMer
     ) {
         selections.for_each(|selection| match selection.as_ref() {
             SelectionReference::Field(field) => {
-                let fields_definition = match parent_type {
-                    TypeDefinitionReference::Object(otd) => Some(otd.fields_definition()),
-                    TypeDefinitionReference::Interface(itd) => Some(itd.fields_definition()),
-                    TypeDefinitionReference::BuiltinScalar(_)
-                    | TypeDefinitionReference::CustomScalar(_)
-                    | TypeDefinitionReference::Enum(_)
-                    | TypeDefinitionReference::InputObject(_)
-                    | TypeDefinitionReference::Union(_) => None,
-                };
+                let fields_definition = parent_type.fields_definition();
                 if let Some(field_definition) = fields_definition
                     .and_then(|fields_definition| fields_definition.get(field.name()))
                 {

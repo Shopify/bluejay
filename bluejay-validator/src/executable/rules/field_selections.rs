@@ -1,8 +1,5 @@
 use crate::executable::{Cache, Error, Rule, Visitor};
-use bluejay_core::definition::{
-    FieldsDefinition, InterfaceTypeDefinition, ObjectTypeDefinition, SchemaDefinition,
-    TypeDefinitionReference,
-};
+use bluejay_core::definition::{FieldsDefinition, SchemaDefinition, TypeDefinitionReference};
 use bluejay_core::executable::{ExecutableDocument, Field, Selection, SelectionReference};
 use bluejay_core::AsIter;
 use std::ops::Not;
@@ -19,30 +16,20 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Visitor<'a, E, S>
         selection_set: &'a E::SelectionSet,
         r#type: TypeDefinitionReference<'a, S::TypeDefinition>,
     ) {
-        let fields_definition = match &r#type {
-            TypeDefinitionReference::BuiltinScalar(_)
-            | TypeDefinitionReference::CustomScalar(_)
-            | TypeDefinitionReference::Enum(_)
-            | TypeDefinitionReference::Union(_)
-            | TypeDefinitionReference::InputObject(_) => {
-                return;
-            }
-            TypeDefinitionReference::Interface(itd) => itd.fields_definition(),
-            TypeDefinitionReference::Object(otd) => otd.fields_definition(),
-        };
-
-        self.errors
-            .extend(selection_set.iter().filter_map(|selection| {
-                if let SelectionReference::Field(field) = selection.as_ref() {
-                    let name = field.name();
-                    fields_definition
-                        .contains_field(name)
-                        .not()
-                        .then_some(Error::FieldDoesNotExistOnType { field, r#type })
-                } else {
-                    None
-                }
-            }))
+        if let Some(fields_definition) = r#type.fields_definition() {
+            self.errors
+                .extend(selection_set.iter().filter_map(|selection| {
+                    if let SelectionReference::Field(field) = selection.as_ref() {
+                        let name = field.name();
+                        fields_definition
+                            .contains_field(name)
+                            .not()
+                            .then_some(Error::FieldDoesNotExistOnType { field, r#type })
+                    } else {
+                        None
+                    }
+                }));
+        }
     }
 }
 

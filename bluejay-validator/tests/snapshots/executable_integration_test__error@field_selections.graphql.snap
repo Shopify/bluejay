@@ -1,0 +1,21 @@
+---
+source: bluejay-validator/tests/executable_integration_test.rs
+expression: formatted_errors
+input_file: bluejay-validator/tests/test_data/executable/error/field_selections.graphql
+---
+Error: Field `name` does not exist on type `CatOrDog`
+   ╭─[<unknown>:3:5]
+   │
+ 3 │     name
+   │     ──┬─  
+   │       ╰─── Field does not exist on type `CatOrDog`
+───╯
+
+Error: Field `barkVolume` does not exist on type `Pet`
+   ╭─[<unknown>:9:5]
+   │
+ 9 │     barkVolume
+   │     ─────┬────  
+   │          ╰────── Field does not exist on type `Pet`
+───╯
+

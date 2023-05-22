@@ -1,0 +1,11 @@
+query fieldOnUnionFromVariants {
+  catOrDog {
+    name
+  }
+}
+
+query fieldOnInterfaceFromSingleImplementor {
+  pet {
+    barkVolume
+  }
+}

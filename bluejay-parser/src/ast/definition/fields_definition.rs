@@ -48,4 +48,11 @@ impl<'a, C: Context> FieldsDefinition<'a, C> {
         self.field_definitions.push(FieldDefinition::__schema());
         self.field_definitions.push(FieldDefinition::__type());
     }
+
+    pub(crate) fn __typename() -> Self {
+        Self {
+            field_definitions: vec![FieldDefinition::__typename()],
+            _span: Span::new(0..0),
+        }
+    }
 }

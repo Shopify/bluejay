@@ -1,0 +1,12 @@
+query typeIntrospectionOnUnion {
+  catOrDog {
+    __typename
+  }
+}
+
+query fieldsOnInterface {
+  pet {
+    __typename
+    name
+  }
+}

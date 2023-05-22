@@ -21,8 +21,12 @@ pub trait TypeDefinition: Sized {
     type ObjectTypeDefinition: ObjectTypeDefinition;
     type InputObjectTypeDefinition: InputObjectTypeDefinition;
     type EnumTypeDefinition: EnumTypeDefinition;
-    type UnionTypeDefinition: UnionTypeDefinition;
-    type InterfaceTypeDefinition: InterfaceTypeDefinition;
+    type UnionTypeDefinition: UnionTypeDefinition<
+        FieldsDefinition = <Self::ObjectTypeDefinition as ObjectTypeDefinition>::FieldsDefinition,
+    >;
+    type InterfaceTypeDefinition: InterfaceTypeDefinition<
+        FieldsDefinition = <Self::ObjectTypeDefinition as ObjectTypeDefinition>::FieldsDefinition,
+    >;
 
     fn as_ref(&self) -> TypeDefinitionReference<'_, Self>;
 }
@@ -76,5 +80,19 @@ impl<'a, T: TypeDefinition> TypeDefinitionReference<'a, T> {
             self,
             Self::BuiltinScalar(_) | Self::CustomScalar(_) | Self::InputObject(_) | Self::Enum(_),
         )
+    }
+
+    pub fn fields_definition(
+        &self,
+    ) -> Option<&'a <T::ObjectTypeDefinition as ObjectTypeDefinition>::FieldsDefinition> {
+        match self {
+            Self::Object(otd) => Some(otd.fields_definition()),
+            Self::Interface(itd) => Some(itd.fields_definition()),
+            Self::Union(utd) => Some(utd.fields_definition()),
+            Self::BuiltinScalar(_)
+            | Self::CustomScalar(_)
+            | Self::Enum(_)
+            | Self::InputObject(_) => None,
+        }
     }
 }

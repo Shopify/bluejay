@@ -1,8 +1,7 @@
 use crate::executable::{Cache, Error, Path, PathRoot, Rule, Rules};
 use bluejay_core::definition::{
     ArgumentsDefinition, BaseOutputType, DirectiveDefinition, DirectiveLocation, FieldDefinition,
-    FieldsDefinition, InterfaceTypeDefinition, ObjectTypeDefinition, OutputType, SchemaDefinition,
-    TypeDefinitionReference,
+    FieldsDefinition, ObjectTypeDefinition, OutputType, SchemaDefinition, TypeDefinitionReference,
 };
 use bluejay_core::executable::{
     ExecutableDocument, Field, FragmentDefinition, FragmentSpread, InlineFragment,
@@ -120,7 +119,8 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, R: Rule<'a, E, S>> Validato
             let nested_path = path.with_selection(selection);
             match selection.as_ref() {
                 SelectionReference::Field(f) => {
-                    let field_definition = Self::fields_definition(scoped_type)
+                    let field_definition = scoped_type
+                        .fields_definition()
                         .and_then(|fields_definition| fields_definition.get(f.name()));
 
                     if let Some(field_definition) = field_definition {
@@ -326,20 +326,6 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, R: Rule<'a, E, S>> Validato
         let mut instance = Self::new(executable_document, schema_definition, cache);
         instance.visit();
         instance.into_iter()
-    }
-
-    fn fields_definition(
-        t: TypeDefinitionReference<'a, S::TypeDefinition>,
-    ) -> Option<&'a S::FieldsDefinition> {
-        match t {
-            TypeDefinitionReference::BuiltinScalar(_)
-            | TypeDefinitionReference::CustomScalar(_)
-            | TypeDefinitionReference::Enum(_)
-            | TypeDefinitionReference::Union(_)
-            | TypeDefinitionReference::InputObject(_) => None,
-            TypeDefinitionReference::Interface(itd) => Some(itd.fields_definition()),
-            TypeDefinitionReference::Object(otd) => Some(otd.fields_definition()),
-        }
     }
 }
 

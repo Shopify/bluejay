@@ -503,6 +503,11 @@ impl<'a, C: Context> DefinitionDocument<'a, C> {
                     }
                 }
                 TypeDefinition::Union(utd) => {
+                    Self::resolve_fields_definition_types(
+                        indexed_type_definitions,
+                        utd.fields_definition(),
+                        errors,
+                    );
                     utd.union_member_types().iter().for_each(|member_type| {
                         match indexed_type_definitions.get(member_type.name().as_ref()) {
                             Some(TypeDefinition::Object(otd)) => {

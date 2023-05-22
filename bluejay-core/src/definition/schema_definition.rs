@@ -62,6 +62,7 @@ pub trait SchemaDefinition {
     type UnionTypeDefinition: UnionTypeDefinition<
         UnionMemberTypes = Self::UnionMemberTypes,
         Directives = Self::Directives,
+        FieldsDefinition = Self::FieldsDefinition,
     >;
     type InputObjectTypeDefinition: InputObjectTypeDefinition<
         InputFieldsDefinition = Self::InputFieldsDefinition,
