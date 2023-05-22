@@ -47,6 +47,8 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> IntoIterator
 impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Rule<'a, E, S>
     for FieldSelections<'a, E, S>
 {
+    type Error = Error<'a, E, S>;
+
     fn new(_: &'a E, _: &'a S, _: &'a Cache<'a, E, S>) -> Self {
         Self { errors: Vec::new() }
     }

@@ -3,7 +3,7 @@ use bluejay_parser::{
     ast::executable::ExecutableDocument,
     Error,
 };
-use bluejay_validator::executable::{Cache, RulesValidator};
+use bluejay_validator::executable::{BuiltinRulesValidator, Cache};
 
 #[test]
 fn test_error() {
@@ -13,7 +13,8 @@ fn test_error() {
             let executable_document =
                 ExecutableDocument::parse(input.as_str()).expect("Document had parse errors");
             let cache = Cache::new(&executable_document, &schema_definition);
-            let errors = RulesValidator::validate(&executable_document, &schema_definition, &cache);
+            let errors =
+                BuiltinRulesValidator::validate(&executable_document, &schema_definition, &cache);
             let formatted_errors = Error::format_errors(input.as_str(), errors);
             insta::assert_snapshot!(formatted_errors);
         });
@@ -29,7 +30,7 @@ fn test_valid() {
                 .expect(format!("Document `{}` had parse errors", path.display()).as_str());
             let cache = Cache::new(&executable_document, &schema_definition);
             let errors: Vec<_> =
-                RulesValidator::validate(&executable_document, &schema_definition, &cache)
+                BuiltinRulesValidator::validate(&executable_document, &schema_definition, &cache)
                     .into_iter()
                     .collect();
             assert!(

@@ -64,6 +64,8 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> IntoIterator
 impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Rule<'a, E, S>
     for DirectivesAreDefined<'a, E, S>
 {
+    type Error = Error<'a, E, S>;
+
     fn new(_: &'a E, schema_definition: &'a S, _: &'a Cache<'a, E, S>) -> Self {
         Self {
             schema_definition,

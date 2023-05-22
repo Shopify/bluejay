@@ -58,14 +58,25 @@ use bluejay_core::executable::ExecutableDocument;
 use paste::paste;
 use std::iter::Chain;
 
-macro_rules! define_rules {
-    ( $( $rule:ty ),* $(,)? ) => {
+/// Combines multiple rules into a single rule.
+/// Args:
+/// 1. Name of the resulting struct
+/// 2. Name of the error type returned by the rule.
+///    Must accept generic lifetime, executable document, and schema definition. e.g. pass Error for `Error<'a, E, S>`.
+/// 3. Rules, a comma-separated list of types accepting generic lifetime, executable document, and schema definition.
+///    Must implement Rule<'a, E, S>. Must be wrapped in square brackets. e.g. `[FirstRule, SecondRule]`.
+///    The `Error` type of each rule must be convertable to the error type of the new rule via `Into::into`.
+#[macro_export]
+macro_rules! combine_rules {
+    ( $name:ty, $err:ty, [$( $rule:ty ),* $(,)?] ) => {
         paste! {
-            pub struct Rules<'a, E: ExecutableDocument, S: SchemaDefinition> {
+            pub struct $name<'a, E: ExecutableDocument, S: SchemaDefinition> {
                 $([<$rule:snake>]: $rule<'a, E, S>,)*
             }
 
-            impl<'a, E: ExecutableDocument, S: SchemaDefinition> Rule<'a, E, S> for Rules<'a, E, S> {
+            impl<'a, E: ExecutableDocument, S: SchemaDefinition> Rule<'a, E, S> for $name<'a, E, S> {
+                type Error = $err<'a, E, S>;
+
                 fn new(executable_document: &'a E, schema_definition: &'a S, cache: &'a Cache<'a, E, S>) -> Self {
                     Self {
                         $([<$rule:snake>]: $rule::new(executable_document, schema_definition, cache),)*
@@ -73,16 +84,16 @@ macro_rules! define_rules {
                 }
             }
 
-            impl<'a, E: ExecutableDocument, S: SchemaDefinition> IntoIterator for Rules<'a, E, S> {
-                type Item = Error<'a, E, S>;
-                type IntoIter = chain_types!($(<$rule<'a, E, S> as IntoIterator>::IntoIter),*);
+            impl<'a, E: ExecutableDocument, S: SchemaDefinition> IntoIterator for $name<'a, E, S> {
+                type Item = $err<'a, E, S>;
+                type IntoIter = chain_types!($(std::iter::Map<<$rule<'a, E, S> as IntoIterator>::IntoIter, fn(<$rule<'a, E, S> as Rule<'a, E, S>>::Error) -> $err<'a, E, S>>),*);
 
                 fn into_iter(self) -> Self::IntoIter {
-                    chain_iters!($(self.[<$rule:snake>].into_iter()),*)
+                    chain_iters!($(self.[<$rule:snake>].into_iter().map(Into::into as fn(<$rule<'a, E, S> as Rule<'a, E, S>>::Error) -> $err<'a, E, S>)),*)
                 }
             }
 
-            impl<'a, E: ExecutableDocument, S: SchemaDefinition> Visitor<'a, E, S> for Rules<'a, E, S> {
+            impl<'a, E: ExecutableDocument, S: SchemaDefinition> Visitor<'a, E, S> for $name<'a, E, S> {
                 fn visit_operation_definition(&mut self, operation_definition: &'a E::OperationDefinition) {
                     $(self.[<$rule:snake>].visit_operation_definition(operation_definition);)*
                 }
@@ -173,6 +184,8 @@ macro_rules! define_rules {
     };
 }
 
+pub use combine_rules;
+
 macro_rules! chain_types {
     ( $first:ty, $( $rest:ty ),+ $(,)? ) => {
         Chain<chain_types!($($rest),+), $first>
@@ -187,31 +200,35 @@ macro_rules! chain_iters {
     ( $iter:expr ) => { $iter };
 }
 
-define_rules!(
-    NamedOperationNameUniqueness,
-    LoneAnonymousOperation,
-    SubscriptionOperationSingleRootField,
-    FieldSelections,
-    FieldSelectionMerging,
-    OperationTypeIsDefined,
-    LeafFieldSelections,
-    ArgumentNames,
-    ArgumentUniqueness,
-    RequiredArguments,
-    FragmentNameUniqueness,
-    FragmentSpreadTypeExists,
-    FragmentsOnCompositeTypes,
-    FragmentsMustBeUsed,
-    FragmentSpreadTargetDefined,
-    FragmentSpreadsMustNotFormCycles,
-    FragmentSpreadIsPossible,
-    ValueIsValid,
-    DirectivesAreDefined,
-    DirectivesAreInValidLocations,
-    DirectivesAreUniquePerLocation,
-    VariableUniqueness,
-    VariablesAreInputTypes,
-    AllVariableUsesDefined,
-    AllVariablesUsed,
-    AllVariableUsagesAllowed,
+combine_rules!(
+    BuiltinRules,
+    Error,
+    [
+        NamedOperationNameUniqueness,
+        LoneAnonymousOperation,
+        SubscriptionOperationSingleRootField,
+        FieldSelections,
+        FieldSelectionMerging,
+        OperationTypeIsDefined,
+        LeafFieldSelections,
+        ArgumentNames,
+        ArgumentUniqueness,
+        RequiredArguments,
+        FragmentNameUniqueness,
+        FragmentSpreadTypeExists,
+        FragmentsOnCompositeTypes,
+        FragmentsMustBeUsed,
+        FragmentSpreadTargetDefined,
+        FragmentSpreadsMustNotFormCycles,
+        FragmentSpreadIsPossible,
+        ValueIsValid,
+        DirectivesAreDefined,
+        DirectivesAreInValidLocations,
+        DirectivesAreUniquePerLocation,
+        VariableUniqueness,
+        VariablesAreInputTypes,
+        AllVariableUsesDefined,
+        AllVariablesUsed,
+        AllVariableUsagesAllowed,
+    ]
 );

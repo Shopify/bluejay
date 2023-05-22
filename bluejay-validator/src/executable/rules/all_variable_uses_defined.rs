@@ -135,6 +135,8 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> IntoIterator
 impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Rule<'a, E, S>
     for AllVariableUsesDefined<'a, E, S>
 {
+    type Error = Error<'a, E, S>;
+
     fn new(_: &'a E, _: &'a S, cache: &'a Cache<'a, E, S>) -> Self {
         Self {
             fragment_references: HashMap::new(),

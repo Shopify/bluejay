@@ -388,6 +388,8 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> IntoIterator
 impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Rule<'a, E, S>
     for FieldSelectionMerging<'a, E, S>
 {
+    type Error = Error<'a, E, S>;
+
     fn new(_: &'a E, schema_definition: &'a S, cache: &'a Cache<'a, E, S>) -> Self {
         Self {
             cache,

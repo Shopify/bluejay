@@ -67,6 +67,8 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> IntoIterator
 impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Rule<'a, E, S>
     for FragmentSpreadsMustNotFormCycles<'a, E, S>
 {
+    type Error = Error<'a, E, S>;
+
     fn new(executable_document: &'a E, _: &'a S, _: &'a Cache<'a, E, S>) -> Self {
         let spreads_by_fragment_definition: BTreeMap<
             &'a str,

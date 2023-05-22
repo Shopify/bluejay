@@ -1,4 +1,4 @@
-use crate::executable::{Cache, Error, Path, PathRoot, Rule, Rules};
+use crate::executable::{BuiltinRules, Cache, Path, PathRoot, Rule};
 use bluejay_core::definition::{
     ArgumentsDefinition, BaseOutputType, DirectiveDefinition, DirectiveLocation, FieldDefinition,
     FieldsDefinition, ObjectTypeDefinition, OutputType, SchemaDefinition, TypeDefinitionReference,
@@ -15,7 +15,7 @@ pub struct Validator<'a, E: ExecutableDocument, S: SchemaDefinition, R: Rule<'a,
     rule: R,
 }
 
-pub type RulesValidator<'a, E, S> = Validator<'a, E, S, Rules<'a, E, S>>;
+pub type BuiltinRulesValidator<'a, E, S> = Validator<'a, E, S, BuiltinRules<'a, E, S>>;
 
 impl<'a, E: ExecutableDocument, S: SchemaDefinition, R: Rule<'a, E, S>> Validator<'a, E, S, R> {
     fn new(
@@ -332,7 +332,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, R: Rule<'a, E, S>> Validato
 impl<'a, E: ExecutableDocument, S: SchemaDefinition, R: Rule<'a, E, S>> IntoIterator
     for Validator<'a, E, S, R>
 {
-    type Item = Error<'a, E, S>;
+    type Item = R::Error;
     type IntoIter = <R as IntoIterator>::IntoIter;
 
     fn into_iter(self) -> Self::IntoIter {
