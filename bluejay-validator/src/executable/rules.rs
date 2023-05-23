@@ -52,12 +52,6 @@ pub use value_is_valid::ValueIsValid;
 pub use variable_uniqueness::VariableUniqueness;
 pub use variables_are_input_types::VariablesAreInputTypes;
 
-use crate::executable::{Cache, Error, Path, Rule, Visitor};
-use bluejay_core::definition::{DirectiveLocation, SchemaDefinition, TypeDefinitionReference};
-use bluejay_core::executable::ExecutableDocument;
-use paste::paste;
-use std::iter::Chain;
-
 /// Combines multiple rules into a single rule.
 /// Args:
 /// 1. Name of the resulting struct
@@ -67,33 +61,33 @@ use std::iter::Chain;
 ///    Must implement Rule<'a, E, S>. Must be wrapped in square brackets. e.g. `[FirstRule, SecondRule]`.
 ///    The `Error` type of each rule must be convertable to the error type of the new rule via `Into::into`.
 #[macro_export]
-macro_rules! combine_rules {
+macro_rules! combine_executable_rules {
     ( $name:ty, $err:ty, [$( $rule:ty ),* $(,)?] $(,)? ) => {
-        paste! {
-            pub struct $name<'a, E: ExecutableDocument, S: SchemaDefinition> {
+        paste::paste! {
+            pub struct $name<'a, E: bluejay_core::executable::ExecutableDocument, S: bluejay_core::definition::SchemaDefinition> {
                 $([<$rule:snake>]: $rule<'a, E, S>,)*
             }
 
-            impl<'a, E: ExecutableDocument, S: SchemaDefinition> Rule<'a, E, S> for $name<'a, E, S> {
+            impl<'a, E: bluejay_core::executable::ExecutableDocument + 'a, S: bluejay_core::definition::SchemaDefinition + 'a> $crate::executable::Rule<'a, E, S> for $name<'a, E, S> {
                 type Error = $err<'a, E, S>;
 
-                fn new(executable_document: &'a E, schema_definition: &'a S, cache: &'a Cache<'a, E, S>) -> Self {
+                fn new(executable_document: &'a E, schema_definition: &'a S, cache: &'a $crate::executable::Cache<'a, E, S>) -> Self {
                     Self {
                         $([<$rule:snake>]: $rule::new(executable_document, schema_definition, cache),)*
                     }
                 }
             }
 
-            impl<'a, E: ExecutableDocument, S: SchemaDefinition> IntoIterator for $name<'a, E, S> {
+            impl<'a, E: bluejay_core::executable::ExecutableDocument + 'a, S: bluejay_core::definition::SchemaDefinition + 'a> IntoIterator for $name<'a, E, S> {
                 type Item = $err<'a, E, S>;
-                type IntoIter = chain_types!($(std::iter::Map<<$rule<'a, E, S> as IntoIterator>::IntoIter, fn(<$rule<'a, E, S> as Rule<'a, E, S>>::Error) -> $err<'a, E, S>>),*);
+                type IntoIter = $crate::chain_types!($(std::iter::Map<<$rule<'a, E, S> as IntoIterator>::IntoIter, fn(<$rule<'a, E, S> as $crate::executable::Rule<'a, E, S>>::Error) -> $err<'a, E, S>>),*);
 
                 fn into_iter(self) -> Self::IntoIter {
-                    chain_iters!($(self.[<$rule:snake>].into_iter().map(Into::into as fn(<$rule<'a, E, S> as Rule<'a, E, S>>::Error) -> $err<'a, E, S>)),*)
+                    $crate::chain_iters!($(self.[<$rule:snake>].into_iter().map(Into::into as fn(<$rule<'a, E, S> as $crate::executable::Rule<'a, E, S>>::Error) -> $err<'a, E, S>)),*)
                 }
             }
 
-            impl<'a, E: ExecutableDocument, S: SchemaDefinition> Visitor<'a, E, S> for $name<'a, E, S> {
+            impl<'a, E: bluejay_core::executable::ExecutableDocument, S: bluejay_core::definition::SchemaDefinition> $crate::executable::Visitor<'a, E, S> for $name<'a, E, S> {
                 fn visit_operation_definition(&mut self, operation_definition: &'a E::OperationDefinition) {
                     $(self.[<$rule:snake>].visit_operation_definition(operation_definition);)*
                 }
@@ -101,27 +95,27 @@ macro_rules! combine_rules {
                 fn visit_selection_set(
                     &mut self,
                     selection_set: &'a E::SelectionSet,
-                    r#type: TypeDefinitionReference<'a, S::TypeDefinition>,
+                    r#type: bluejay_core::definition::TypeDefinitionReference<'a, S::TypeDefinition>,
                 ) {
                     $(self.[<$rule:snake>].visit_selection_set(selection_set, r#type);)*
                 }
 
-                fn visit_field(&mut self, field: &'a E::Field, field_definition: &'a S::FieldDefinition, path: &Path<'a, E>) {
+                fn visit_field(&mut self, field: &'a E::Field, field_definition: &'a S::FieldDefinition, path: &$crate::executable::Path<'a, E>) {
                     $(self.[<$rule:snake>].visit_field(field, field_definition, path);)*
                 }
 
-                fn visit_const_directive(&mut self, directive: &'a E::Directive<true>, location: DirectiveLocation) {
+                fn visit_const_directive(&mut self, directive: &'a E::Directive<true>, location: bluejay_core::definition::DirectiveLocation) {
                     $(self.[<$rule:snake>].visit_const_directive(directive, location);)*
                 }
 
-                fn visit_variable_directive(&mut self, directive: &'a E::Directive<false>, location: DirectiveLocation) {
+                fn visit_variable_directive(&mut self, directive: &'a E::Directive<false>, location: bluejay_core::definition::DirectiveLocation) {
                     $(self.[<$rule:snake>].visit_variable_directive(directive, location);)*
                 }
 
                 fn visit_const_directives(
                     &mut self,
                     directives: &'a E::Directives<true>,
-                    location: DirectiveLocation,
+                    location: bluejay_core::definition::DirectiveLocation,
                 ) {
                     $(self.[<$rule:snake>].visit_const_directives(directives, location);)*
                 }
@@ -129,7 +123,7 @@ macro_rules! combine_rules {
                 fn visit_variable_directives(
                     &mut self,
                     directives: &'a E::Directives<false>,
-                    location: DirectiveLocation,
+                    location: bluejay_core::definition::DirectiveLocation,
                 ) {
                     $(self.[<$rule:snake>].visit_variable_directives(directives, location);)*
                 }
@@ -141,7 +135,7 @@ macro_rules! combine_rules {
                 fn visit_inline_fragment(
                     &mut self,
                     inline_fragment: &'a E::InlineFragment,
-                    scoped_type: TypeDefinitionReference<'a, S::TypeDefinition>,
+                    scoped_type: bluejay_core::definition::TypeDefinitionReference<'a, S::TypeDefinition>,
                 ) {
                     $(self.[<$rule:snake>].visit_inline_fragment(inline_fragment, scoped_type);)*
                 }
@@ -149,8 +143,8 @@ macro_rules! combine_rules {
                 fn visit_fragment_spread(
                     &mut self,
                     fragment_spread: &'a E::FragmentSpread,
-                    scoped_type: TypeDefinitionReference<'a, S::TypeDefinition>,
-                    path: &Path<'a, E>,
+                    scoped_type: bluejay_core::definition::TypeDefinitionReference<'a, S::TypeDefinition>,
+                    path: &$crate::executable::Path<'a, E>,
                 ) {
                     $(self.[<$rule:snake>].visit_fragment_spread(fragment_spread, scoped_type, path);)*
                 }
@@ -167,7 +161,7 @@ macro_rules! combine_rules {
                     &mut self,
                     argument: &'a E::Argument<false>,
                     input_value_definition: &'a S::InputValueDefinition,
-                    path: &Path<'a, E>,
+                    path: &$crate::executable::Path<'a, E>,
                 ) {
                     $(self.[<$rule:snake>].visit_variable_argument(argument, input_value_definition, path);)*
                 }
@@ -184,25 +178,25 @@ macro_rules! combine_rules {
     };
 }
 
-pub use combine_rules;
-
+#[macro_export]
 macro_rules! chain_types {
     ( $first:ty, $( $rest:ty ),+ $(,)? ) => {
-        Chain<chain_types!($($rest),+), $first>
+        std::iter::Chain<$crate::chain_types!($($rest),+), $first>
     };
     ( $t:ty ) => { $t };
 }
 
+#[macro_export]
 macro_rules! chain_iters {
     ( $first:expr, $( $rest:expr ),+ $(,)? ) => {
-        chain_iters!($($rest),+).chain($first)
+        $crate::chain_iters!($($rest),+).chain($first)
     };
     ( $iter:expr ) => { $iter };
 }
 
-combine_rules!(
+combine_executable_rules!(
     BuiltinRules,
-    Error,
+    crate::executable::Error,
     [
         NamedOperationNameUniqueness,
         LoneAnonymousOperation,
