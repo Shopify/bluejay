@@ -1,0 +1,8 @@
+input MyInput {
+  arg1: String
+  arg2: Int
+}
+
+type Query {
+  myField(arg: MyInput): Int
+}

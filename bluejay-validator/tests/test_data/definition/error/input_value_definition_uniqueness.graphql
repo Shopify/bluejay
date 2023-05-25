@@ -1,0 +1,9 @@
+input MyInput {
+  arg1: String
+  arg2: Int
+  arg1: Boolean
+}
+
+type Query {
+  myField(arg: MyInput): Int
+}

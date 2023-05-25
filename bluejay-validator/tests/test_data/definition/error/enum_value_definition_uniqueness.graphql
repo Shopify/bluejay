@@ -1,0 +1,9 @@
+enum MyEnum {
+  VARIANT_1
+  VARIANT_2
+  VARIANT_1
+}
+
+type Query {
+  myField(arg: MyEnum): Int
+}

@@ -1,0 +1,17 @@
+---
+source: bluejay-validator/tests/definition_integration_test.rs
+expression: formatted_errors
+input_file: bluejay-validator/tests/test_data/definition/error/input_value_definition_uniqueness.graphql
+---
+Error: Multiple input value definitions named `arg1`
+   ╭─[<unknown>:1:1]
+   │
+ 2 │   arg1: String
+   │   ──┬─  
+   │     ╰─── Input value definition with name `arg1`
+   │ 
+ 4 │   arg1: Boolean
+   │   ──┬─  
+   │     ╰─── Input value definition with name `arg1`
+───╯
+

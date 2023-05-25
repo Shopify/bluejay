@@ -9,6 +9,12 @@ pub struct EnumValueDefinition<'a> {
     directives: Option<ConstDirectives<'a>>,
 }
 
+impl<'a> EnumValueDefinition<'a> {
+    pub fn name_token(&self) -> &Name<'a> {
+        &self.name
+    }
+}
+
 impl<'a> CoreEnumValueDefinition for EnumValueDefinition<'a> {
     type Directives = ConstDirectives<'a>;
 

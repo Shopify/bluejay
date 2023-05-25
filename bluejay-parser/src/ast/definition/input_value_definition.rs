@@ -12,6 +12,12 @@ pub struct InputValueDefinition<'a, C: Context> {
     directives: Option<ConstDirectives<'a>>,
 }
 
+impl<'a, C: Context> InputValueDefinition<'a, C> {
+    pub fn name_token(&self) -> &Name<'a> {
+        &self.name
+    }
+}
+
 impl<'a, C: Context> CoreInputValueDefinition for InputValueDefinition<'a, C> {
     type InputType = InputType<'a, C>;
     type Value = ConstValue<'a>;
