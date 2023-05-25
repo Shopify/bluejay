@@ -27,11 +27,10 @@ fn test_valid() {
         insta::glob!("test_data/executable/valid/*.graphql", |path| {
             let input = std::fs::read_to_string(path).unwrap();
             let executable_document = ExecutableDocument::parse(input.as_str())
-                .expect(format!("Document `{}` had parse errors", path.display()).as_str());
+                .unwrap_or_else(|_| panic!("Document `{}` had parse errors", path.display()));
             let cache = Cache::new(&executable_document, &schema_definition);
             let errors: Vec<_> =
                 BuiltinRulesValidator::validate(&executable_document, &schema_definition, &cache)
-                    .into_iter()
                     .collect();
             assert!(
                 errors.is_empty(),

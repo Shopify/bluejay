@@ -32,9 +32,7 @@ fn test_combine_executable_rules() {
         ExecutableDocument::parse(executable_document_str).expect("Document had parse errors");
     let cache = Cache::new(&executable_document, &schema_definition);
     let errors: Vec<_> =
-        CustomRulesValidator::validate(&executable_document, &schema_definition, &cache)
-            .into_iter()
-            .collect();
+        CustomRulesValidator::validate(&executable_document, &schema_definition, &cache).collect();
     assert!(
         errors.is_empty(),
         "Document had validation errors:\n{}",

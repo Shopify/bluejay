@@ -13,9 +13,7 @@ fn test_error() {
         let schema_definition = SchemaDefinition::try_from(&definition_document)
             .unwrap_or_else(|_| panic!("Schema `{}` had coercion errors", path.display()));
 
-        let errors: Vec<_> = BuiltinRulesValidator::validate(&schema_definition)
-            .into_iter()
-            .collect();
+        let errors: Vec<_> = BuiltinRulesValidator::validate(&schema_definition).collect();
 
         let formatted_errors = Error::format_errors(&input, errors);
         insta::assert_snapshot!(formatted_errors);
@@ -31,9 +29,7 @@ fn test_valid() {
         let schema_definition = SchemaDefinition::try_from(&definition_document)
             .unwrap_or_else(|_| panic!("Schema `{}` had coercion errors", path.display()));
 
-        let errors: Vec<_> = BuiltinRulesValidator::validate(&schema_definition)
-            .into_iter()
-            .collect();
+        let errors: Vec<_> = BuiltinRulesValidator::validate(&schema_definition).collect();
 
         assert!(
             errors.is_empty(),

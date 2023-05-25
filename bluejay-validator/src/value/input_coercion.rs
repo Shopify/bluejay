@@ -396,7 +396,7 @@ mod tests {
         }
     }
 
-    const SCHEMA: &'static str = r#"
+    const SCHEMA: &str = r#"
     type Query {
       field(
         stringArg: String!
