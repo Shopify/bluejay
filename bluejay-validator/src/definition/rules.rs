@@ -1,8 +1,10 @@
 mod enum_value_definition_uniqueness;
 mod input_field_definition_uniqueness;
+mod input_object_circular_references;
 
 pub use enum_value_definition_uniqueness::EnumValueDefinitionUniqueness;
 pub use input_field_definition_uniqueness::InputFieldDefinitionUniqueness;
+pub use input_object_circular_references::InputObjectCircularReferences;
 
 #[macro_export]
 macro_rules! combine_definition_rules {
@@ -50,5 +52,6 @@ combine_definition_rules!(
     [
         EnumValueDefinitionUniqueness,
         InputFieldDefinitionUniqueness,
+        InputObjectCircularReferences,
     ],
 );

@@ -1,4 +1,4 @@
-use bluejay_core::definition::SchemaDefinition;
+use bluejay_core::definition::{InputObjectTypeDefinition, SchemaDefinition};
 
 #[cfg(feature = "parser-integration")]
 use bluejay_parser::{
@@ -15,6 +15,10 @@ pub enum Error<'a, S: SchemaDefinition> {
     NonUniqueEnumValueDefinitionNames {
         name: &'a str,
         enum_value_definitions: Vec<&'a S::EnumValueDefinition>,
+    },
+    InputObjectTypeDefinitionCircularReferences {
+        input_object_type_definition: &'a S::InputObjectTypeDefinition,
+        circular_references: Vec<&'a S::InputType>,
     },
 }
 
@@ -54,6 +58,30 @@ impl<'a> From<Error<'a, ParserSchemaDefinition<'a>>> for ParserError {
                     })
                     .collect(),
             ),
+            Error::InputObjectTypeDefinitionCircularReferences {
+                input_object_type_definition,
+                circular_references,
+            } => {
+                Self::new(
+                format!(
+                    "Input object type definition `{}` contains disallowed circular reference(s)",
+                    input_object_type_definition.name()
+                ),
+                Some(Annotation::new(
+                    "Input object type definition contains circular reference(s) through an unbroken chain of non-null singular fields, which is disallowed",
+                    input_object_type_definition.name_token().span().clone(),
+                )),
+                circular_references
+                    .into_iter()
+                    .map(|circular_reference| {
+                        Annotation::new(
+                            "Occurence of circular reference",
+                            circular_reference.span().clone(),
+                        )
+                    })
+                    .collect(),
+            )
+            }
         }
     }
 }

@@ -1,0 +1,12 @@
+input MyInput {
+  circularReference: MyInput
+  nestedCircularReference: NestedInput!
+}
+
+input NestedInput {
+  circularReference: [MyInput!]!
+}
+
+type Query {
+  myField(myArg: MyInput!): String
+}

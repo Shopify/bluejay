@@ -99,3 +99,12 @@ impl<'a, C: Context + 'a> FromTokens<'a> for InputType<'a, C> {
         }
     }
 }
+
+impl<'a, C: Context> HasSpan for InputType<'a, C> {
+    fn span(&self) -> &Span {
+        match self {
+            Self::Base(_, _, span) => span,
+            Self::List(_, _, span) => span,
+        }
+    }
+}
