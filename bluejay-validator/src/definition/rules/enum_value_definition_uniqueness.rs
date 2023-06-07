@@ -1,7 +1,7 @@
 use crate::definition::{Error, Rule, Visitor};
+use crate::utils::duplicates;
 use bluejay_core::definition::{EnumTypeDefinition, EnumValueDefinition, SchemaDefinition};
 use bluejay_core::AsIter;
-use std::collections::BTreeMap;
 
 pub struct EnumValueDefinitionUniqueness<'a, S: SchemaDefinition + 'a> {
     errors: Vec<Error<'a, S>>,
@@ -12,26 +12,17 @@ impl<'a, S: SchemaDefinition> Visitor<'a, S> for EnumValueDefinitionUniqueness<'
         &mut self,
         enum_type_definition: &'a <S as SchemaDefinition>::EnumTypeDefinition,
     ) {
-        let indexed = enum_type_definition.enum_value_definitions().iter().fold(
-            BTreeMap::new(),
-            |mut indexed: BTreeMap<&'a str, Vec<&'a S::EnumValueDefinition>>,
-             evd: &'a S::EnumValueDefinition| {
-                indexed.entry(evd.name()).or_default().push(evd);
-                indexed
-            },
-        );
-
         self.errors.extend(
-            indexed
-                .into_iter()
-                .filter_map(|(name, enum_value_definitions)| {
-                    (enum_value_definitions.len() > 1).then_some(
-                        Error::NonUniqueEnumValueDefinitionNames {
-                            name,
-                            enum_value_definitions,
-                        },
-                    )
-                }),
+            duplicates(
+                enum_type_definition.enum_value_definitions().iter(),
+                EnumValueDefinition::name,
+            )
+            .map(|(name, enum_value_definitions)| {
+                Error::NonUniqueEnumValueDefinitionNames {
+                    name,
+                    enum_value_definitions,
+                }
+            }),
         );
     }
 }

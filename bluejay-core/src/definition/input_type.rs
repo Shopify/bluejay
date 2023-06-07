@@ -26,7 +26,7 @@ impl<'a, B: BaseInputType> Clone for BaseInputTypeReference<'a, B> {
 impl<'a, B: BaseInputType> Copy for BaseInputTypeReference<'a, B> {}
 
 impl<'a, B: BaseInputType> BaseInputTypeReference<'a, B> {
-    pub fn name(&self) -> &str {
+    pub fn name(&self) -> &'a str {
         match self {
             Self::BuiltinScalar(bstd) => bstd.name(),
             Self::CustomScalar(cstd) => cstd.name(),

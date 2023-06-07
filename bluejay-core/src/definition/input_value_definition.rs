@@ -11,4 +11,8 @@ pub trait InputValueDefinition {
     fn r#type(&self) -> &Self::InputType;
     fn default_value(&self) -> Option<&Self::Value>;
     fn directives(&self) -> Option<&Self::Directives>;
+
+    fn is_required(&self) -> bool {
+        self.default_value().is_none() && self.r#type().as_ref().is_required()
+    }
 }

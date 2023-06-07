@@ -1,8 +1,10 @@
 [workspace]
 members = [
-    "bluejay-parser",
     "bluejay-core",
+    "bluejay-parser",
     "bluejay-printer",
+    "bluejay-typegen",
+    "bluejay-typegen-macro",
     "bluejay-validator",
 ]
 resolver = "2"

@@ -1,7 +1,7 @@
 use crate::definition::{Error, Rule, Visitor};
+use crate::utils::duplicates;
 use bluejay_core::definition::{InputObjectTypeDefinition, InputValueDefinition, SchemaDefinition};
 use bluejay_core::AsIter;
-use std::collections::BTreeMap;
 
 pub struct InputFieldDefinitionUniqueness<'a, S: SchemaDefinition + 'a> {
     errors: Vec<Error<'a, S>>,
@@ -12,29 +12,19 @@ impl<'a, S: SchemaDefinition> Visitor<'a, S> for InputFieldDefinitionUniqueness<
         &mut self,
         input_object_type_definition: &'a <S as SchemaDefinition>::InputObjectTypeDefinition,
     ) {
-        let indexed = input_object_type_definition
-            .input_field_definitions()
-            .iter()
-            .fold(
-                BTreeMap::new(),
-                |mut indexed: BTreeMap<&'a str, Vec<&'a S::InputValueDefinition>>,
-                 ivd: &'a S::InputValueDefinition| {
-                    indexed.entry(ivd.name()).or_default().push(ivd);
-                    indexed
-                },
-            );
-
         self.errors.extend(
-            indexed
-                .into_iter()
-                .filter_map(|(name, input_value_definitions)| {
-                    (input_value_definitions.len() > 1).then_some(
-                        Error::NonUniqueInputValueDefinitionNames {
-                            name,
-                            input_value_definitions,
-                        },
-                    )
-                }),
+            duplicates(
+                input_object_type_definition
+                    .input_field_definitions()
+                    .iter(),
+                InputValueDefinition::name,
+            )
+            .map(|(name, input_value_definitions)| {
+                Error::NonUniqueInputValueDefinitionNames {
+                    name,
+                    input_value_definitions,
+                }
+            }),
         );
     }
 }

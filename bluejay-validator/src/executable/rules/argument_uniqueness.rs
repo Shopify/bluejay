@@ -1,8 +1,8 @@
 use crate::executable::{ArgumentError, Cache, Error, Path, Rule, Visitor};
+use crate::utils::duplicates;
 use bluejay_core::definition::SchemaDefinition;
 use bluejay_core::executable::{ExecutableDocument, Field};
 use bluejay_core::{Argument, AsIter, Directive};
-use std::collections::BTreeMap;
 
 pub struct ArgumentUniqueness<'a, E: ExecutableDocument, S: SchemaDefinition> {
     errors: Vec<Error<'a, E, S>>,
@@ -18,20 +18,12 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> ArgumentUniquenes
         build_error: F,
     ) {
         if let Some(arguments) = arguments {
-            let indexed = arguments.iter().fold(
-                BTreeMap::new(),
-                |mut indexed: BTreeMap<&'a str, Vec<&'a E::Argument<CONST>>>, argument| {
-                    indexed.entry(argument.name()).or_default().push(argument);
-                    indexed
-                },
-            );
-
             self.errors
-                .extend(indexed.into_iter().filter_map(|(name, arguments)| {
-                    (arguments.len() > 1).then(|| {
+                .extend(
+                    duplicates(arguments.iter(), Argument::name).map(|(name, arguments)| {
                         build_error(ArgumentError::NonUniqueArgumentNames { name, arguments })
-                    })
-                }))
+                    }),
+                );
         }
     }
 }

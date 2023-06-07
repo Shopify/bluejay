@@ -1,5 +1,6 @@
 use super::HasSpan;
 use crate::Span;
+use std::cmp::PartialEq;
 
 #[derive(PartialEq, Debug, Clone)]
 pub struct Name<'a> {
@@ -32,5 +33,11 @@ impl<'a> From<Name<'a>> for Span {
 impl<'a> AsRef<str> for Name<'a> {
     fn as_ref(&self) -> &str {
         self.value
+    }
+}
+
+impl<'a> PartialEq<str> for Name<'a> {
+    fn eq(&self, other: &str) -> bool {
+        self.as_ref() == other
     }
 }

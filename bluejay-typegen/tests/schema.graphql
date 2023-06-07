@@ -1,0 +1,45 @@
+"""
+This is a doc string!
+"""
+enum MyEnum {
+  VARIANT_1
+  """
+  This is a variant
+  """
+  VARIANT_2
+}
+
+input MyInput {
+  myField: String!
+  myCircularField: MyInput
+}
+
+input MyOneOfInput @oneOf {
+  # myString: String
+  myInt: Int
+}
+
+type Query {
+  myField(arg: MyEnum, arg1: MyInput): String
+  myNestedField: MyType
+  myRequiredField: String!
+  stat: Stat!
+  myEnum: MyEnum!
+  myDecimals: [Decimal!]!
+}
+
+type MyType {
+  myField: String
+}
+
+type PlayerStat {
+  goals: Int!
+}
+
+type GoalieStat {
+  wins: Int!
+}
+
+union Stat = PlayerStat | GoalieStat
+
+scalar Decimal

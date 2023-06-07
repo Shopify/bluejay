@@ -1,0 +1,23 @@
+query MyQuery {
+  myField
+  myAliasedField: myField
+  myNestedField { myField }
+  myRequiredField
+  myNestedFieldWithFragment: myNestedField { ...MyType }
+  stat {
+    __typename
+    ...on PlayerStat {
+      goals
+    }
+    ...on GoalieStat {
+      wins
+    }
+  }
+  type: myField
+  myEnum
+  myDecimals
+}
+
+fragment MyType on MyType {
+  myField
+}

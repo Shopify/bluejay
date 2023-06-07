@@ -1,8 +1,9 @@
 use crate::executable::{Cache, DirectiveError, Error, Rule, Visitor};
+use crate::utils::duplicates;
 use bluejay_core::definition::{DirectiveDefinition, DirectiveLocation, SchemaDefinition};
 use bluejay_core::executable::ExecutableDocument;
 use bluejay_core::{AsIter, Directive};
-use std::collections::BTreeMap;
+use std::ops::Not;
 
 pub struct DirectivesAreUniquePerLocation<'a, E: ExecutableDocument, S: SchemaDefinition> {
     schema_definition: &'a S,
@@ -20,36 +21,21 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a>
         directives: &'a <E as ExecutableDocument>::Directives<CONST>,
         build_error: F,
     ) {
-        let indexed_directives: BTreeMap<&str, Vec<&'a E::Directive<CONST>>> = directives
-            .iter()
-            .fold(BTreeMap::new(), |mut indexed_directives, directive| {
-                indexed_directives
-                    .entry(directive.name())
-                    .or_default()
-                    .push(directive);
-                indexed_directives
-            });
-
         self.errors
-            .extend(
-                indexed_directives
-                    .into_iter()
-                    .filter_map(|(directive_name, directives)| {
-                        self.schema_definition
-                            .get_directive_definition(directive_name)
-                            .and_then(|directive_definition| {
-                                (!directive_definition.is_repeatable() && directives.len() > 1)
-                                    .then(|| {
-                                        build_error(
-                                            DirectiveError::DirectivesNotUniquePerLocation {
-                                                directives,
-                                                directive_definition,
-                                            },
-                                        )
-                                    })
+            .extend(duplicates(directives.iter(), Directive::name).filter_map(
+                |(directive_name, directives)| {
+                    self.schema_definition
+                        .get_directive_definition(directive_name)
+                        .and_then(|directive_definition| {
+                            directive_definition.is_repeatable().not().then(|| {
+                                build_error(DirectiveError::DirectivesNotUniquePerLocation {
+                                    directives,
+                                    directive_definition,
+                                })
                             })
-                    }),
-            );
+                        })
+                },
+            ));
     }
 }
 

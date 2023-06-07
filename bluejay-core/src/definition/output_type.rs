@@ -15,7 +15,7 @@ pub enum BaseOutputTypeReference<'a, B: BaseOutputType> {
 }
 
 impl<'a, B: BaseOutputType> BaseOutputTypeReference<'a, B> {
-    pub fn name(&self) -> &str {
+    pub fn name(&self) -> &'a str {
         match self {
             Self::BuiltinScalar(bstd) => bstd.name(),
             Self::CustomScalar(cstd) => cstd.name(),

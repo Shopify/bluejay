@@ -1,8 +1,8 @@
 use crate::executable::{Cache, Error, Rule, Visitor};
+use crate::utils::duplicates;
 use bluejay_core::definition::SchemaDefinition;
 use bluejay_core::executable::{ExecutableDocument, VariableDefinition};
 use bluejay_core::AsIter;
-use std::collections::BTreeMap;
 
 pub struct VariableUniqueness<'a, E: ExecutableDocument, S: SchemaDefinition> {
     errors: Vec<Error<'a, E, S>>,
@@ -15,27 +15,13 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Visitor<'a, E, S>
         &mut self,
         variable_definitions: &'a <E as ExecutableDocument>::VariableDefinitions,
     ) {
-        let indexed: BTreeMap<&'a str, Vec<&'a E::VariableDefinition>> = variable_definitions
-            .iter()
-            .fold(BTreeMap::new(), |mut indexed, variable_definition| {
-                indexed
-                    .entry(variable_definition.variable())
-                    .or_default()
-                    .push(variable_definition);
-                indexed
-            });
-
         self.errors.extend(
-            indexed
-                .into_iter()
-                .filter_map(|(name, variable_definitions)| {
-                    (variable_definitions.len() > 1).then_some(
-                        Error::NonUniqueVariableDefinitionNames {
-                            name,
-                            variable_definitions,
-                        },
-                    )
-                }),
+            duplicates(variable_definitions.iter(), VariableDefinition::variable).map(
+                |(name, variable_definitions)| Error::NonUniqueVariableDefinitionNames {
+                    name,
+                    variable_definitions,
+                },
+            ),
         );
     }
 }

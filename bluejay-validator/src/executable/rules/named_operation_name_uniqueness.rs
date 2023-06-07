@@ -4,11 +4,11 @@ use bluejay_core::executable::{
     ExecutableDocument, ExplicitOperationDefinition, OperationDefinition,
     OperationDefinitionReference,
 };
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use std::marker::PhantomData;
 
 pub struct NamedOperationNameUniqueness<'a, E: ExecutableDocument, S: SchemaDefinition> {
-    operations: HashMap<&'a str, Vec<&'a E::ExplicitOperationDefinition>>,
+    operations: BTreeMap<&'a str, Vec<&'a E::ExplicitOperationDefinition>>,
     schema_definition: PhantomData<S>,
 }
 
@@ -29,7 +29,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> IntoIterator
 {
     type Item = Error<'a, E, S>;
     type IntoIter = std::iter::FilterMap<
-        std::collections::hash_map::IntoIter<&'a str, Vec<&'a E::ExplicitOperationDefinition>>,
+        std::collections::btree_map::IntoIter<&'a str, Vec<&'a E::ExplicitOperationDefinition>>,
         fn((&'a str, Vec<&'a E::ExplicitOperationDefinition>)) -> Option<Error<'a, E, S>>,
     >;
 
@@ -50,7 +50,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Rule<'a, E, S>
 
     fn new(_: &'a E, _: &'a S, _: &'a Cache<'a, E, S>) -> Self {
         Self {
-            operations: HashMap::new(),
+            operations: BTreeMap::new(),
             schema_definition: Default::default(),
         }
     }
