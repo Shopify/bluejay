@@ -8,10 +8,12 @@ query MyQuery {
     __typename
     ...on Skater {
       name
+      age
       stats { goals }
     }
     ...on Goalie {
       name
+      age
       stats { wins }
     }
   }

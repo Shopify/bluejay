@@ -83,6 +83,7 @@ impl<'a, 'b> Context<'a, 'b> {
             config,
             executable_document,
             depth,
+            enum_variant,
             ..
         } = self;
         Self {
@@ -90,7 +91,7 @@ impl<'a, 'b> Context<'a, 'b> {
             enum_variant: None,
             config,
             executable_document,
-            depth: depth + 1,
+            depth: depth + 1 + usize::from(enum_variant.is_some()),
         }
     }
 
@@ -107,7 +108,7 @@ impl<'a, 'b> Context<'a, 'b> {
             enum_variant: Some(enum_variant),
             config,
             executable_document,
-            depth: depth + 1,
+            depth: *depth,
         }
     }
 

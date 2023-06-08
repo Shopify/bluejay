@@ -62,6 +62,7 @@ fn test_object_query_deserialization() {
         "player": {
             "__typename": "Skater",
             "name": "Auston Matthews",
+            "age": 25,
             "stats": [
                 {
                     "goals": 60,
@@ -87,6 +88,7 @@ fn test_object_query_deserialization() {
             }),
             player: my_schema::query::my_query::Player::Skater {
                 name: "Auston Matthews".into(),
+                age: 25,
                 stats: vec![my_schema::query::my_query::player::skater::Stats { goals: 60 }]
             },
             r#type: Some("hello".into()),
