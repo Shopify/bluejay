@@ -9,6 +9,12 @@ enum MyEnum {
   VARIANT_2
 }
 
+enum Position {
+  WING
+  CENTRE
+  DEFENCE
+}
+
 input MyInput {
   myField: String!
   myCircularField: MyInput
@@ -34,6 +40,7 @@ type MyType {
 
 type Skater {
   name: String!
+  position: Position!
   age: UnsignedInt!
   stats: [SkaterStat!]!
 }

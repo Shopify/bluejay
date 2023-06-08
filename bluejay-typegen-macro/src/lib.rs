@@ -269,12 +269,148 @@ fn map_parser_errors<E: Into<ParserError>>(
     )
 }
 
+/// Generates Rust types from GraphQL schema definitions and queries.
+///
+/// ### Arguments
+///
+/// **Positional:**
+///
+/// 1. String literal with path to the file containing the schema definition. If relative, should be with respect to
+/// the project root (wherever `Cargo.toml` is located).
+///
+/// **Optional keyword:**
+///
+/// _borrow_: Boolean literal indicating whether the generated types should borrow where possible. Defaults to `false`.
+/// When `true`, deserializing must be done from a string as a opposed to `serde_json::Value` or a reader.
+///
+/// ### Trait implementations
+///
+/// By default, will implement `PartialEq`, `Eq`, `Clone`, and `Debug` for all types. Will implement `Copy` for enums.
+/// For types corresponding to values returned from queries, `serde::Deserialize` is implemented. For types that would
+/// be arguments to a query, `serde::Serialize` is implemented.
+///
+/// ### Usage
+///
+/// Must be used with a module. Inside the module, type aliases must be defined for any custom scalars in the schema.
+/// To use a query, define a module within the aforementioned module, and annotate it with
+/// `#[query("path/to/query.graphql")]`, where the string literal argument is a path to the query document.
+///
+/// ### Naming
+///
+/// To generate idiomatic Rust code, some renaming of types, enum variants, and fields is performed. Types are
+/// renamed with `PascalCase`, as are enum variants. Fields are renamed with `snake_case`.
+///
+/// ### Query restrictions
+///
+/// In order to keep the type generation code relatively simple, there are some restrictions on the queries that are
+/// permitted. This may be relaxed in future versions.
+/// * Selection sets on object and interface types must contain either a single fragment spread, or entirely field
+/// selections.
+/// * Selection sets on union types must contain either a single fragment spread, or both an unaliased `__typename`
+/// selection and inline fragments for all or a subset of the objects contained in the union.
+///
+/// ### Example
+/// `schema.graphql`:
+/// ```graphql
+/// scalar UnsignedInt
+///
+/// enum Position {
+///   WING
+///   CENTRE
+///   DEFENCE
+/// }
+///
+/// type Skater {
+///   name: String!
+///   position: Position!
+///   age: UnsignedInt!
+///   stats: [SkaterStat!]!
+/// }
+///
+/// type SkaterStat {
+///   goals: UnsignedInt!
+/// }
+///
+/// type Goalie {
+///   name: String!
+///   age: UnsignedInt!
+///   stats: [GoalieStat!]!
+/// }
+///
+/// type GoalieStat {
+///   wins: UnsignedInt!
+/// }
+///
+/// union Player = Skater | Goalie
+///
+/// type Query {
+///   player: Player!
+/// }
+/// ```
+///
+/// `query.graphql`:
+/// ```graphql
+/// query Player {
+///   player {
+///     __typename
+///     ...on Skater {
+///       name
+///       age
+///       position
+///       stats { goals }
+///     }
+///     ...on Goalie {
+///       name
+///       age
+///       stats { wins }
+///     }
+///   }
+/// }
+/// ```
+///
+/// Rust code:
+/// ```ignore
+/// #[bluejay_typegen::typegen("schema.graphql", borrow = true)]
+/// mod schema {
+///     type UnsignedInt = u32;
+///
+///     #[query("query.graphql")]
+///     pub mod query {}
+/// }
+///
+/// let value = serde_json::json!({
+///     "player": {
+///         "__typename": "Skater",
+///         "name": "Auston Matthews",
+///         "age": 25,
+///         "position": "CENTRE",
+///         "stats": [
+///             {
+///                 "goals": 60
+///             },
+///         ],
+///     },
+/// }).to_string();
+///
+/// let result: schema::query::Player = serde_json::from_str(&value).expect("Error parsing value");
+///
+/// assert_eq!(
+///     schema::query::Player {
+///         player: schema::query::player::Player::Skater {
+///             name: "Auston Matthews".into(),
+///             age: 25,
+///             position: schema::Position::Centre,
+///             stats: vec![schema::query::player::player::skater::Stats { goals: 60 }],
+///         },
+///     },
+///     result,
+/// );
+/// ```
 #[proc_macro_attribute]
 pub fn typegen(
     attr: proc_macro::TokenStream,
     item: proc_macro::TokenStream,
 ) -> proc_macro::TokenStream {
-    // "fn answer() -> u32 { 42 }".parse().unwrap()
     let input = parse_macro_input!(attr as Input);
     let mut module = parse_macro_input!(item as syn::ItemMod);
 
