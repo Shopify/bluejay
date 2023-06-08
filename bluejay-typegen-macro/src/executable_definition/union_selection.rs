@@ -47,7 +47,11 @@ pub(crate) fn generate_union_type_definition(
             let ident = enum_variant_ident(otd.name());
             let rename = syn::LitStr::new(otd.name(), Span::call_site());
 
-            let fields = named_fields(fields_and_definitions, &context, false);
+            let fields = named_fields(
+                fields_and_definitions,
+                &context.with_variant(otd.name()),
+                false,
+            );
 
             parse_quote! {
                 #description
@@ -67,7 +71,7 @@ pub(crate) fn generate_union_type_definition(
         .iter()
         .zip(&fields_and_definitions)
         .filter_map(|((_, otd), fields_and_definitions)| {
-            nested_module(fields_and_definitions, &context.dive(otd.name()))
+            nested_module(fields_and_definitions, &context.with_variant(otd.name()))
         })
         .collect::<Vec<syn::Item>>();
 

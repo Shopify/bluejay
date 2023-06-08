@@ -23,7 +23,7 @@ type Query {
   myField(arg: MyEnum, arg1: MyInput): String
   myNestedField: MyType
   myRequiredField: String!
-  stat: Stat!
+  player: Player!
   myEnum: MyEnum!
   myDecimals: [Decimal!]!
 }
@@ -32,14 +32,28 @@ type MyType {
   myField: String
 }
 
-type PlayerStat {
-  goals: Int!
+type Skater {
+  name: String!
+  stats: [SkaterStat!]!
+}
+
+type SkaterStat {
+  goals: UnsignedInt!
+}
+
+type Goalie {
+  name: String!
+  stats: [GoalieStat!]!
 }
 
 type GoalieStat {
-  wins: Int!
+  wins: UnsignedInt!
 }
 
-union Stat = PlayerStat | GoalieStat
+union Player = Skater | Goalie
+
+union Stat = SkaterStat | GoalieStat
 
 scalar Decimal
+
+scalar UnsignedInt

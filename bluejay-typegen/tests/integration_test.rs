@@ -3,6 +3,7 @@ use bluejay_typegen::typegen;
 #[typegen("tests/schema.graphql", borrow = true)]
 mod my_schema {
     type Decimal<'a> = std::borrow::Cow<'a, str>;
+    type UnsignedInt = u32;
 
     #[query("tests/query.graphql")]
     pub mod query {}
@@ -58,9 +59,14 @@ fn test_object_query_deserialization() {
         "myNestedFieldWithFragment": {
             "myField": "hello"
         },
-        "stat": {
-            "__typename": "PlayerStat",
-            "goals": 50
+        "player": {
+            "__typename": "Skater",
+            "name": "Auston Matthews",
+            "stats": [
+                {
+                    "goals": 60,
+                },
+            ],
         },
         "type": "hello",
         "myEnum": "VARIANT_1",
@@ -79,7 +85,10 @@ fn test_object_query_deserialization() {
             my_nested_field_with_fragment: Some(my_schema::query::MyType {
                 my_field: Some("hello".into())
             }),
-            stat: my_schema::query::my_query::Stat::PlayerStat { goals: 50 },
+            player: my_schema::query::my_query::Player::Skater {
+                name: "Auston Matthews".into(),
+                stats: vec![my_schema::query::my_query::player::skater::Stats { goals: 60 }]
+            },
             r#type: Some("hello".into()),
             my_enum: my_schema::MyEnum::Variant1,
             my_decimals: vec!["1.2".into(), "3.4".into()],

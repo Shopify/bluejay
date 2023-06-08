@@ -45,6 +45,7 @@ impl Parse for Input {
 #[derive(Clone)]
 pub(crate) struct Context<'a, 'b> {
     name: &'a str,
+    enum_variant: Option<&'a str>,
     config: &'a Config<'b>,
     executable_document: &'a ExecutableDocument<'a>,
     depth: usize,
@@ -58,6 +59,7 @@ impl<'a, 'b> Context<'a, 'b> {
     ) -> Self {
         Self {
             name,
+            enum_variant: None,
             config,
             executable_document,
             depth: 0,
@@ -72,6 +74,10 @@ impl<'a, 'b> Context<'a, 'b> {
         self.name
     }
 
+    pub(crate) fn enum_variant(&self) -> Option<&'a str> {
+        self.enum_variant
+    }
+
     pub(crate) fn dive(&self, new_name: &'a str) -> Self {
         let Self {
             config,
@@ -81,10 +87,32 @@ impl<'a, 'b> Context<'a, 'b> {
         } = self;
         Self {
             name: new_name,
+            enum_variant: None,
             config,
             executable_document,
             depth: depth + 1,
         }
+    }
+
+    pub(crate) fn with_variant(&self, enum_variant: &'a str) -> Self {
+        let Self {
+            name,
+            config,
+            executable_document,
+            depth,
+            ..
+        } = self;
+        Self {
+            name,
+            enum_variant: Some(enum_variant),
+            config,
+            executable_document,
+            depth: depth + 1,
+        }
+    }
+
+    pub(crate) fn prefix_for_contained_type(&self) -> impl Iterator<Item = syn::Ident> {
+        std::iter::once(module_ident(self.name)).chain(self.enum_variant.map(module_ident))
     }
 
     fn prefix_for_root(&self) -> impl Iterator<Item = syn::Token![super]> {
@@ -153,7 +181,7 @@ impl<'a, 'b> Context<'a, 'b> {
                 let selection_set = field.selection_set().unwrap();
 
                 self.fragment_type(selection_set).unwrap_or_else(|| {
-                    let module_ident = module_ident(self.name);
+                    let prefix = self.prefix_for_contained_type();
                     let type_ident = type_ident(field.response_name());
                     let inline_fragments_and_definitions =
                         inline_fragments_and_definitions(selection_set, utd);
@@ -164,7 +192,7 @@ impl<'a, 'b> Context<'a, 'b> {
                         )
                         .then(|| parse_quote! { <'a> });
 
-                    parse_quote! { #module_ident::#type_ident #lifetime }
+                    parse_quote! { #(#prefix::)*#type_ident #lifetime }
                 })
             }
         }
@@ -187,12 +215,12 @@ impl<'a, 'b> Context<'a, 'b> {
         let selection_set = field.selection_set().unwrap();
 
         self.fragment_type(selection_set).unwrap_or_else(|| {
-            let module_ident = module_ident(self.name);
+            let prefix = self.prefix_for_contained_type();
             let type_ident = type_ident(field.response_name());
             let fields_and_definitions = fields_and_definitions(selection_set, fields_definition);
             let lifetime = self.lifetime(&fields_and_definitions);
 
-            parse_quote! { #module_ident::#type_ident #lifetime }
+            parse_quote! { #(#prefix::)*#type_ident #lifetime }
         })
     }
 

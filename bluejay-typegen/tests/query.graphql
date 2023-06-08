@@ -4,13 +4,15 @@ query MyQuery {
   myNestedField { myField }
   myRequiredField
   myNestedFieldWithFragment: myNestedField { ...MyType }
-  stat {
+  player {
     __typename
-    ...on PlayerStat {
-      goals
+    ...on Skater {
+      name
+      stats { goals }
     }
-    ...on GoalieStat {
-      wins
+    ...on Goalie {
+      name
+      stats { wins }
     }
   }
   type: myField

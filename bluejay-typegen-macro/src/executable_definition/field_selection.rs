@@ -161,7 +161,7 @@ pub(crate) fn nested_module(
         .collect::<Vec<syn::Item>>();
 
     nested.is_empty().not().then(|| {
-        let module_ident = module_ident(context.name());
+        let module_ident = module_ident(context.enum_variant().unwrap_or(context.name()));
         parse_quote! {
             pub mod #module_ident {
                 #(#nested)*
