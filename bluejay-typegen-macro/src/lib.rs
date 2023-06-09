@@ -8,7 +8,7 @@ use bluejay_parser::{
 use bluejay_validator::definition::BuiltinRulesValidator;
 use quote::ToTokens;
 use std::collections::HashMap;
-use syn::{parse_macro_input, spanned::Spanned, LitStr};
+use syn::{parse_macro_input, spanned::Spanned};
 
 mod attributes;
 mod builtin_scalar;
@@ -23,7 +23,7 @@ mod validation;
 use attributes::doc_string;
 use enum_type_definition::generate_enum_type_definition;
 use executable_definition::generate_executable_definition;
-use input::Input;
+use input::{DocumentInput, Input};
 use input_object_type_definition::generate_input_object_type_definition;
 
 pub(crate) struct Config<'a> {
@@ -49,29 +49,18 @@ impl<'a> Config<'a> {
     }
 }
 
-fn read_file(filename: &LitStr) -> syn::Result<String> {
-    let cargo_manifest_dir =
-        std::env::var("CARGO_MANIFEST_DIR").map_err(|_| syn::Error::new(filename.span(), "Environment variable CARGO_MANIFEST_DIR was not set but is needed to resolve relative paths"))?;
-    let base_path = std::path::PathBuf::from(cargo_manifest_dir);
-
-    let file_path = base_path.join(filename.value());
-
-    std::fs::read_to_string(file_path)
-        .map_err(|err| syn::Error::new(filename.span(), format!("{}", err)))
-}
-
 fn generate_schema(input: Input, module: &mut syn::ItemMod) -> syn::Result<()> {
-    let Input { schema, borrow } = input;
+    let Input { ref schema, borrow } = input;
 
-    let schema_contents = read_file(&schema)?;
+    let schema_contents = schema.read_to_string()?;
 
     let definition_document: DefinitionDocument = DefinitionDocument::parse(&schema_contents)
-        .map_err(|errors| map_parser_errors(&schema, &schema_contents, errors))?;
+        .map_err(|errors| map_parser_errors(schema, &schema_contents, errors))?;
     let schema_definition = SchemaDefinition::try_from(&definition_document)
-        .map_err(|errors| map_parser_errors(&schema, &schema_contents, errors))?;
+        .map_err(|errors| map_parser_errors(schema, &schema_contents, errors))?;
     let schema_errors: Vec<_> = BuiltinRulesValidator::validate(&schema_definition).collect();
     if !schema_errors.is_empty() {
-        return Err(map_parser_errors(&schema, &schema_contents, schema_errors));
+        return Err(map_parser_errors(schema, &schema_contents, schema_errors));
     }
 
     let custom_scalar_borrows = custom_scalar_borrows(module, &schema_definition, borrow)?;
@@ -259,12 +248,12 @@ fn process_module_item(config: &Config, item: syn::Item) -> syn::Result<syn::Ite
 }
 
 fn map_parser_errors<E: Into<ParserError>>(
-    token: &LitStr,
+    span: &impl syn::spanned::Spanned,
     schema_contents: &str,
     errors: impl IntoIterator<Item = E>,
 ) -> syn::Error {
     syn::Error::new(
-        token.span(),
+        span.span(),
         ParserError::format_errors(schema_contents, errors),
     )
 }
@@ -276,7 +265,8 @@ fn map_parser_errors<E: Into<ParserError>>(
 /// **Positional:**
 ///
 /// 1. String literal with path to the file containing the schema definition. If relative, should be with respect to
-/// the project root (wherever `Cargo.toml` is located).
+/// the project root (wherever `Cargo.toml` is located). Alternatively, include the schema contents enclosed in square
+/// brackets.
 ///
 /// **Optional keyword:**
 ///
@@ -293,7 +283,8 @@ fn map_parser_errors<E: Into<ParserError>>(
 ///
 /// Must be used with a module. Inside the module, type aliases must be defined for any custom scalars in the schema.
 /// To use a query, define a module within the aforementioned module, and annotate it with
-/// `#[query("path/to/query.graphql")]`, where the string literal argument is a path to the query document.
+/// `#[query("path/to/query.graphql")]`, where the argument is a string literal path to the query document, or the
+/// query contents enclosed in square brackets.
 ///
 /// ### Naming
 ///
@@ -310,102 +301,7 @@ fn map_parser_errors<E: Into<ParserError>>(
 /// selection and inline fragments for all or a subset of the objects contained in the union.
 ///
 /// ### Example
-/// `schema.graphql`:
-/// ```graphql
-/// scalar UnsignedInt
-///
-/// enum Position {
-///   WING
-///   CENTRE
-///   DEFENCE
-/// }
-///
-/// type Skater {
-///   name: String!
-///   position: Position!
-///   age: UnsignedInt!
-///   stats: [SkaterStat!]!
-/// }
-///
-/// type SkaterStat {
-///   goals: UnsignedInt!
-/// }
-///
-/// type Goalie {
-///   name: String!
-///   age: UnsignedInt!
-///   stats: [GoalieStat!]!
-/// }
-///
-/// type GoalieStat {
-///   wins: UnsignedInt!
-/// }
-///
-/// union Player = Skater | Goalie
-///
-/// type Query {
-///   player: Player!
-/// }
-/// ```
-///
-/// `query.graphql`:
-/// ```graphql
-/// query Player {
-///   player {
-///     __typename
-///     ...on Skater {
-///       name
-///       age
-///       position
-///       stats { goals }
-///     }
-///     ...on Goalie {
-///       name
-///       age
-///       stats { wins }
-///     }
-///   }
-/// }
-/// ```
-///
-/// Rust code:
-/// ```ignore
-/// #[bluejay_typegen::typegen("schema.graphql", borrow = true)]
-/// mod schema {
-///     type UnsignedInt = u32;
-///
-///     #[query("query.graphql")]
-///     pub mod query {}
-/// }
-///
-/// let value = serde_json::json!({
-///     "player": {
-///         "__typename": "Skater",
-///         "name": "Auston Matthews",
-///         "age": 25,
-///         "position": "CENTRE",
-///         "stats": [
-///             {
-///                 "goals": 60
-///             },
-///         ],
-///     },
-/// }).to_string();
-///
-/// let result: schema::query::Player = serde_json::from_str(&value).expect("Error parsing value");
-///
-/// assert_eq!(
-///     schema::query::Player {
-///         player: schema::query::player::Player::Skater {
-///             name: "Auston Matthews".into(),
-///             age: 25,
-///             position: schema::Position::Centre,
-///             stats: vec![schema::query::player::player::skater::Stats { goals: 60 }],
-///         },
-///     },
-///     result,
-/// );
-/// ```
+/// See top-level documentation of `bluejay-typegen` for an example.
 #[proc_macro_attribute]
 pub fn typegen(
     attr: proc_macro::TokenStream,

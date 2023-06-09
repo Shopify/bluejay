@@ -3,7 +3,7 @@ use crate::{
     builtin_scalar::{builtin_scalar_type, scalar_is_reference},
     map_parser_errors,
     names::{module_ident, type_ident},
-    read_file, Config,
+    Config, DocumentInput,
 };
 use bluejay_core::{
     definition::{
@@ -20,7 +20,7 @@ use bluejay_core::{
 use bluejay_parser::ast::executable::ExecutableDocument;
 use bluejay_validator::executable::{BuiltinRulesValidator, Cache, Validator};
 use std::collections::HashSet;
-use syn::{parse::Parse, parse2, parse_quote, LitStr};
+use syn::{parse::Parse, parse2, parse_quote};
 
 mod field_selection;
 mod union_selection;
@@ -32,12 +32,12 @@ use field_selection::{
 use union_selection::{generate_union_type_definition, inline_fragments_and_definitions};
 
 struct Input {
-    query: LitStr,
+    query: DocumentInput,
 }
 
 impl Parse for Input {
     fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
-        let query: LitStr = input.parse()?;
+        let query = input.parse()?;
         Ok(Self { query })
     }
 }
@@ -332,7 +332,7 @@ pub(crate) fn generate_executable_definition(
 ) -> syn::Result<Vec<syn::Item>> {
     let Input { query } = parse2(configuration)?;
 
-    let contents = read_file(&query)?;
+    let contents = query.read_to_string()?;
 
     let executable_document = ExecutableDocument::parse(&contents)
         .map_err(|errors| map_parser_errors(&query, &contents, errors))?;
