@@ -3,6 +3,9 @@ use crate::ast::{
     FromTokens, IsMatch, ParseError, Tokens, TryFromTokens, VariableArguments, VariableDirectives,
 };
 use crate::lexical_token::{Name, PunctuatorType};
+use crate::{HasSpan, Span};
+use std::cmp::{Eq, PartialEq};
+use std::hash::{Hash, Hasher};
 
 #[derive(Debug)]
 pub struct Field<'a> {
@@ -11,6 +14,7 @@ pub struct Field<'a> {
     arguments: Option<VariableArguments<'a>>,
     directives: VariableDirectives<'a>,
     selection_set: Option<SelectionSet<'a>>,
+    span: Span,
 }
 
 impl<'a> FromTokens<'a> for Field<'a> {
@@ -27,12 +31,24 @@ impl<'a> FromTokens<'a> for Field<'a> {
         let arguments = VariableArguments::try_from_tokens(tokens).transpose()?;
         let directives = VariableDirectives::from_tokens(tokens)?;
         let selection_set = SelectionSet::try_from_tokens(tokens).transpose()?;
+        let start_span = alias.as_ref().unwrap_or(&name).span();
+        let end_span = if let Some(selection_set) = &selection_set {
+            selection_set.span()
+        } else if let Some(directive_span) = directives.span() {
+            directive_span
+        } else if let Some(arguments) = &arguments {
+            arguments.span()
+        } else {
+            name.span()
+        };
+        let span = start_span.merge(end_span);
         Ok(Self {
             alias,
             name,
             arguments,
             directives,
             selection_set,
+            span,
         })
     }
 }
@@ -90,3 +106,23 @@ impl<'a> bluejay_core::executable::Field for Field<'a> {
         self.selection_set.as_ref()
     }
 }
+
+impl<'a> HasSpan for Field<'a> {
+    fn span(&self) -> &Span {
+        &self.span
+    }
+}
+
+impl<'a> Hash for Field<'a> {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.span().hash(state);
+    }
+}
+
+impl<'a> PartialEq for Field<'a> {
+    fn eq(&self, other: &Self) -> bool {
+        self.span() == other.span()
+    }
+}
+
+impl<'a> Eq for Field<'a> {}

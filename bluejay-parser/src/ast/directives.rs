@@ -1,8 +1,14 @@
-use crate::ast::{Directive, FromTokens, IsMatch, ParseError, Tokens, TryFromTokens};
+use crate::{
+    ast::{Directive, FromTokens, IsMatch, ParseError, Tokens, TryFromTokens},
+    HasSpan, Span,
+};
 use bluejay_core::AsIter;
 
 #[derive(Debug)]
-pub struct Directives<'a, const CONST: bool>(Vec<Directive<'a, CONST>>);
+pub struct Directives<'a, const CONST: bool> {
+    directives: Vec<Directive<'a, CONST>>,
+    span: Option<Span>,
+}
 
 pub type ConstDirectives<'a> = Directives<'a, true>;
 pub type VariableDirectives<'a> = Directives<'a, false>;
@@ -13,7 +19,12 @@ impl<'a, const CONST: bool> FromTokens<'a> for Directives<'a, CONST> {
         while let Some(directive) = Directive::try_from_tokens(tokens) {
             directives.push(directive?);
         }
-        Ok(Self(directives))
+        let span = match directives.as_slice() {
+            [] => None,
+            [first] => Some(first.span().clone()),
+            [first, .., last] => Some(first.span().merge(last.span())),
+        };
+        Ok(Self { directives, span })
     }
 }
 
@@ -32,6 +43,12 @@ impl<'a, const CONST: bool> AsIter for Directives<'a, CONST> {
     type Iterator<'b> = std::slice::Iter<'b, Self::Item> where 'a: 'b;
 
     fn iter(&self) -> Self::Iterator<'_> {
-        self.0.iter()
+        self.directives.iter()
+    }
+}
+
+impl<'a, const CONST: bool> Directives<'a, CONST> {
+    pub(crate) fn span(&self) -> Option<&Span> {
+        self.span.as_ref()
     }
 }

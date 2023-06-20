@@ -16,6 +16,15 @@ pub enum OperationDefinition<'a> {
     Implicit(ImplicitOperationDefinition<'a>),
 }
 
+impl<'a> OperationDefinition<'a> {
+    pub fn selection_set(&self) -> &SelectionSet<'a> {
+        match self {
+            Self::Explicit(e) => &e.selection_set,
+            Self::Implicit(i) => &i.selection_set,
+        }
+    }
+}
+
 impl<'a> CoreOperationDefinition for OperationDefinition<'a> {
     type ExplicitOperationDefinition = ExplicitOperationDefinition<'a>;
     type ImplicitOperationDefinition = ImplicitOperationDefinition<'a>;
