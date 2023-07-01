@@ -87,7 +87,7 @@ pub trait SchemaDefinition {
     type DirectiveDefinitions<'a>: Iterator<Item = &'a Self::DirectiveDefinition>
     where
         Self: 'a;
-    type IterfaceImplementors<'a>: Iterator<Item = &'a Self::ObjectTypeDefinition>
+    type InterfaceImplementors<'a>: Iterator<Item = &'a Self::ObjectTypeDefinition>
     where
         Self: 'a;
 
@@ -106,5 +106,5 @@ pub trait SchemaDefinition {
     fn get_interface_implementors(
         &self,
         itd: &Self::InterfaceTypeDefinition,
-    ) -> Self::IterfaceImplementors<'_>;
+    ) -> Self::InterfaceImplementors<'_>;
 }

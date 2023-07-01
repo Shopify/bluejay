@@ -1,0 +1,24 @@
+directive @visible on FIELD_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION | ARGUMENT_DEFINITION
+
+enum MyEnum {
+  VISIBLE @visible
+  NOT_VISIBLE
+}
+
+input MyInput {
+  visible: Int @visible
+  notVisible: Int
+}
+
+type MyObject {
+  visible(
+    visible: Int @visible
+    notVisible: Int
+  ): Int @visible
+  notVisible: Int
+}
+
+type Query {
+  myEnum: MyEnum @visible
+  myObject: MyObject @visible
+}

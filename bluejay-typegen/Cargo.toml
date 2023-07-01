@@ -1,6 +1,6 @@
 [package]
 name = "bluejay-typegen"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.5"
 edition = "2021"
 license = "MIT"
 repository = "https://github.com/adampetro/bluejay"
@@ -10,7 +10,7 @@ exclude = [".gitignore", "tests/**/*"]
 description = "A GraphQL type generator"
 
 [dependencies]
-bluejay-typegen-macro = { version = "0.1.0-alpha.4", path = "../bluejay-typegen-macro" }
+bluejay-typegen-macro = { version = "0.1.0-alpha.5", path = "../bluejay-typegen-macro" }
 serde = { version = "1.0", features = ["derive"] }
 
 [dev-dependencies]

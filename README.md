@@ -16,3 +16,4 @@
 - [`bluejay-typegen`](/bluejay-typegen/README.md)
 - [`bluejay-typegen-macro`](/bluejay-typegen-macro/README.md)
 - [`bluejay-validator`](/bluejay-validator/README.md)
+- [`bluejay-visibility`](/bluejay-visibility/README.md)

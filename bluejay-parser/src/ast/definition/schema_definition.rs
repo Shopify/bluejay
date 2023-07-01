@@ -108,7 +108,7 @@ impl<'a, C: Context> CoreSchemaDefinition for SchemaDefinition<'a, C> {
     > where 'a: 'b;
     type DirectiveDefinitions<'b> =
         std::iter::Copied<Values<'b, &'b str, &'b DirectiveDefinition<'a, C>>> where 'a: 'b;
-    type IterfaceImplementors<'b> = std::iter::Flatten<std::option::IntoIter<std::iter::Copied<std::slice::Iter<'b, &'b ObjectTypeDefinition<'a, C>>>>> where 'a: 'b;
+    type InterfaceImplementors<'b> = std::iter::Flatten<std::option::IntoIter<std::iter::Copied<std::slice::Iter<'b, &'b ObjectTypeDefinition<'a, C>>>>> where 'a: 'b;
 
     fn description(&self) -> Option<&str> {
         self.description.as_ref().map(AsRef::as_ref)
@@ -156,7 +156,7 @@ impl<'a, C: Context> CoreSchemaDefinition for SchemaDefinition<'a, C> {
     fn get_interface_implementors(
         &self,
         itd: &Self::InterfaceTypeDefinition,
-    ) -> Self::IterfaceImplementors<'_> {
+    ) -> Self::InterfaceImplementors<'_> {
         self.interface_implementors
             .get(itd.name().as_ref())
             .map(|implementors| implementors.iter().copied())

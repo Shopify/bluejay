@@ -1,0 +1,26 @@
+---
+source: bluejay-visibility/tests/integration_test.rs
+expression: printed_schema_definition
+---
+directive @visible on FIELD_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION | ARGUMENT_DEFINITION
+
+enum MyEnum {
+  VISIBLE @visible
+}
+
+input MyInput {
+  visible: Int @visible
+}
+
+type MyObject {
+  visible(
+    visible: Int @visible
+  ): Int @visible
+}
+
+type Query {
+  myEnum: MyEnum @visible
+
+  myObject: MyObject @visible
+}
+
