@@ -22,7 +22,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Visitor<'a, E, S>
                 .variable_definition_input_type(variable_definition.r#type())
             {
                 if let Err(coercion_errors) =
-                    input_value_definition.coerce_value(default_value, &[])
+                    input_value_definition.coerce_value(default_value, Default::default())
                 {
                     self.errors
                         .extend(coercion_errors.into_iter().map(Error::InvalidConstValue));
@@ -38,7 +38,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Visitor<'a, E, S>
     ) {
         if let Err(coercion_errors) = input_value_definition
             .r#type()
-            .coerce_value(argument.value(), &[])
+            .coerce_value(argument.value(), Default::default())
         {
             self.errors
                 .extend(coercion_errors.into_iter().map(Error::InvalidConstValue));
@@ -53,7 +53,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Visitor<'a, E, S>
     ) {
         if let Err(coercion_errors) = input_value_definition
             .r#type()
-            .coerce_value(argument.value(), &[])
+            .coerce_value(argument.value(), Default::default())
         {
             self.errors
                 .extend(coercion_errors.into_iter().map(Error::InvalidVariableValue));

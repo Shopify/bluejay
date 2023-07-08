@@ -69,7 +69,7 @@ pub enum Token<'a> {
     #[regex(r#""(?:[^\\"\n\r]|(?&fixedunicode)|\\u\{(?&hexdigit)+\}|\\["\\/bfnrt])*""#r, parse_string)]
     StringValue(Result<Cow<'a, str>, Vec<Span>>),
 
-    #[regex("\"\"\"", parse_block_string)]
+    #[token("\"\"\"", parse_block_string)]
     BlockStringValue(Cow<'a, str>),
 }
 

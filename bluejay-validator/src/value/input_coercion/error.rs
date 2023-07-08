@@ -1,4 +1,4 @@
-use crate::value::input_coercion::PathMember;
+use crate::Path;
 use bluejay_core::{ObjectValue, Value};
 #[cfg(feature = "parser-integration")]
 use bluejay_parser::{
@@ -15,55 +15,55 @@ pub enum Error<'a, const CONST: bool, V: Value<CONST>> {
     NullValueForRequiredType {
         value: &'a V,
         input_type_name: String,
-        path: Vec<PathMember<'a>>,
+        path: Path<'a>,
     },
     NoImplicitConversion {
         value: &'a V,
         input_type_name: String,
-        path: Vec<PathMember<'a>>,
+        path: Path<'a>,
     },
     NoEnumMemberWithName {
         name: &'a str,
         value: &'a V,
         enum_type_name: &'a str,
-        path: Vec<PathMember<'a>>,
+        path: Path<'a>,
     },
     NoValueForRequiredFields {
         value: &'a V,
         field_names: Vec<&'a str>,
         input_object_type_name: &'a str,
-        path: Vec<PathMember<'a>>,
+        path: Path<'a>,
     },
     NonUniqueFieldNames {
         value: &'a V,
         field_name: &'a str,
         keys: Vec<&'a <V::Object as ObjectValue<CONST>>::Key>,
-        path: Vec<PathMember<'a>>,
+        path: Path<'a>,
     },
     NoInputFieldWithName {
         field: &'a <V::Object as ObjectValue<CONST>>::Key,
         input_object_type_name: &'a str,
-        path: Vec<PathMember<'a>>,
+        path: Path<'a>,
     },
     CustomScalarInvalidValue {
         value: &'a V,
         custom_scalar_type_name: &'a str,
         message: Cow<'static, str>,
-        path: Vec<PathMember<'a>>,
+        path: Path<'a>,
     },
     #[cfg(feature = "one-of-input-objects")]
     OneOfInputNullValues {
         value: &'a V,
         input_object_type_name: &'a str,
         null_entries: Vec<(&'a <V::Object as ObjectValue<CONST>>::Key, &'a V)>,
-        path: Vec<PathMember<'a>>,
+        path: Path<'a>,
     },
     #[cfg(feature = "one-of-input-objects")]
     OneOfInputNotSingleNonNullValue {
         value: &'a V,
         input_object_type_name: &'a str,
         non_null_entries: Vec<(&'a <V::Object as ObjectValue<CONST>>::Key, &'a V)>,
-        path: Vec<PathMember<'a>>,
+        path: Path<'a>,
     },
 }
 

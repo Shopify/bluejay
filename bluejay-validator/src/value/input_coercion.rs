@@ -1,3 +1,4 @@
+use crate::Path;
 use bluejay_core::definition::{
     BaseInputType, BaseInputTypeReference, EnumTypeDefinition, EnumValueDefinition,
     InputFieldsDefinition, InputObjectTypeDefinition, InputType, InputTypeReference,
@@ -12,23 +13,17 @@ mod error;
 
 pub use error::Error;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum PathMember<'a> {
-    Key(&'a str),
-    Index(usize),
-}
-
 pub trait CoerceInput: InputType {
     fn coerce_value<'a, const CONST: bool, V: Value<CONST>>(
         &'a self,
         value: &'a V,
-        path: &[PathMember<'a>],
+        path: Path<'a>,
     ) -> Result<(), Vec<Error<'a, CONST, V>>>;
 
     fn coerce_const_value<'a, V: Value<true>>(
         &'a self,
         value: &'a V,
-        path: &[PathMember<'a>],
+        path: Path<'a>,
     ) -> Result<(), Vec<Error<'a, true, V>>> {
         self.coerce_value(value, path)
     }
@@ -38,7 +33,7 @@ impl<T: InputType> CoerceInput for T {
     fn coerce_value<'a, const CONST: bool, V: Value<CONST>>(
         &'a self,
         value: &'a V,
-        path: &[PathMember<'a>],
+        path: Path<'a>,
     ) -> Result<(), Vec<Error<'a, CONST, V>>> {
         coerce_value_for_input_type(self, value, path, true)
     }
@@ -47,7 +42,7 @@ impl<T: InputType> CoerceInput for T {
 fn coerce_value_for_input_type<'a, const CONST: bool, V: Value<CONST>, T: InputType>(
     input_type: &'a T,
     value: &'a V,
-    path: &[PathMember<'a>],
+    path: Path<'a>,
     allow_implicit_list: bool,
 ) -> Result<(), Vec<Error<'a, CONST, V>>> {
     let core_type = input_type.as_ref();
@@ -56,7 +51,7 @@ fn coerce_value_for_input_type<'a, const CONST: bool, V: Value<CONST>, T: InputT
         ValueReference::Null if is_required => Err(vec![Error::NullValueForRequiredType {
             value,
             input_type_name: input_type.as_ref().display_name(),
-            path: path.to_owned(),
+            path,
         }]),
         ValueReference::Null | ValueReference::Variable(_) => Ok(()),
         core_value => match core_type {
@@ -69,9 +64,7 @@ fn coerce_value_for_input_type<'a, const CONST: bool, V: Value<CONST>, T: InputT
                         .iter()
                         .enumerate()
                         .flat_map(|(idx, value)| {
-                            let mut path = path.to_owned();
-                            path.push(PathMember::Index(idx));
-                            coerce_value_for_input_type(inner, value, &path, false)
+                            coerce_value_for_input_type(inner, value, path.push(idx), false)
                                 .err()
                                 .unwrap_or_default()
                         })
@@ -88,7 +81,7 @@ fn coerce_value_for_input_type<'a, const CONST: bool, V: Value<CONST>, T: InputT
                     Err(vec![Error::NoImplicitConversion {
                         value,
                         input_type_name: input_type.as_ref().display_name(),
-                        path: path.to_owned(),
+                        path,
                     }])
                 }
             }
@@ -99,7 +92,7 @@ fn coerce_value_for_input_type<'a, const CONST: bool, V: Value<CONST>, T: InputT
 fn coerce_value_for_base_input_type<'a, const CONST: bool, V: Value<CONST>, T: InputType>(
     input_type: &'a T,
     value: &'a V,
-    path: &[PathMember<'a>],
+    path: Path<'a>,
 ) -> Result<(), Vec<Error<'a, CONST, V>>> {
     let base = input_type.as_ref().base().as_ref();
     match base {
@@ -118,7 +111,7 @@ fn coerce_builtin_scalar_value<'a, const CONST: bool, V: Value<CONST>, T: InputT
     input_type: &'a T,
     bstd: BuiltinScalarDefinition,
     value: &'a V,
-    path: &[PathMember<'a>],
+    path: Path<'a>,
 ) -> Result<(), Vec<Error<'a, CONST, V>>> {
     match (bstd, value.as_ref()) {
         (BuiltinScalarDefinition::Boolean, ValueReference::Boolean(_)) => Ok(()),
@@ -133,7 +126,7 @@ fn coerce_builtin_scalar_value<'a, const CONST: bool, V: Value<CONST>, T: InputT
         _ => Err(vec![Error::NoImplicitConversion {
             value,
             input_type_name: input_type.as_ref().display_name(),
-            path: path.to_owned(),
+            path,
         }]),
     }
 }
@@ -141,14 +134,14 @@ fn coerce_builtin_scalar_value<'a, const CONST: bool, V: Value<CONST>, T: InputT
 fn coerce_custom_scalar_value<'a, const CONST: bool, V: Value<CONST>>(
     cstd: &'a impl ScalarTypeDefinition,
     value: &'a V,
-    path: &[PathMember<'a>],
+    path: Path<'a>,
 ) -> Result<(), Vec<Error<'a, CONST, V>>> {
     cstd.coerce_input(value).map_err(|message| {
         vec![Error::CustomScalarInvalidValue {
             value,
             custom_scalar_type_name: cstd.name(),
             message,
-            path: path.to_owned(),
+            path,
         }]
     })
 }
@@ -157,7 +150,7 @@ fn coerce_enum_value<'a, const CONST: bool, V: Value<CONST>, T: InputType>(
     input_type: &'a T,
     enum_type_definition: &'a <T::BaseInputType as BaseInputType>::EnumTypeDefinition,
     value: &'a V,
-    path: &[PathMember<'a>],
+    path: Path<'a>,
 ) -> Result<(), Vec<Error<'a, CONST, V>>> {
     match value.as_ref() {
         ValueReference::Enum(name) => {
@@ -169,7 +162,7 @@ fn coerce_enum_value<'a, const CONST: bool, V: Value<CONST>, T: InputType>(
         _ => Err(vec![Error::NoImplicitConversion {
             value,
             input_type_name: input_type.as_ref().display_name(),
-            path: path.to_owned(),
+            path,
         }]),
     }
 }
@@ -178,7 +171,7 @@ fn coerce_enum_value_from_name<'a, const CONST: bool, V: Value<CONST>>(
     enum_type_definition: &'a impl EnumTypeDefinition,
     value: &'a V,
     name: &'a str,
-    path: &[PathMember<'a>],
+    path: Path<'a>,
 ) -> Result<(), Vec<Error<'a, CONST, V>>> {
     if enum_type_definition
         .enum_value_definitions()
@@ -191,7 +184,7 @@ fn coerce_enum_value_from_name<'a, const CONST: bool, V: Value<CONST>>(
             name,
             value,
             enum_type_name: enum_type_definition.name(),
-            path: path.to_owned(),
+            path,
         }])
     }
 }
@@ -200,7 +193,7 @@ fn coerce_input_object_value<'a, const CONST: bool, V: Value<CONST>, T: InputTyp
     input_type: &'a T,
     input_object_type_definition: &'a <T::BaseInputType as BaseInputType>::InputObjectTypeDefinition,
     value: &'a V,
-    path: &[PathMember<'a>],
+    path: Path<'a>,
 ) -> Result<(), Vec<Error<'a, CONST, V>>> {
     if let ValueReference::Object(object) = value.as_ref() {
         let mut errors = Vec::new();
@@ -223,7 +216,7 @@ fn coerce_input_object_value<'a, const CONST: bool, V: Value<CONST>, T: InputTyp
                 value,
                 field_name,
                 keys: Vec::from_iter(entries.iter().map(|&(key, _)| key)),
-                path: path.to_owned(),
+                path: path.clone(),
             })
         }));
 
@@ -235,11 +228,7 @@ fn coerce_input_object_value<'a, const CONST: bool, V: Value<CONST>, T: InputTyp
                 .then(|| Error::NoInputFieldWithName {
                     field,
                     input_object_type_name: input_object_type_definition.name(),
-                    path: {
-                        let mut nested_path = path.to_owned();
-                        nested_path.push(PathMember::Key(field.as_ref()));
-                        nested_path
-                    },
+                    path: path.push(field.as_ref()),
                 })
         }));
 
@@ -260,9 +249,7 @@ fn coerce_input_object_value<'a, const CONST: bool, V: Value<CONST>, T: InputTyp
                     }
                     (None, Some(_)) => {}
                     (Some(value), _) => {
-                        let mut inner_path = path.to_owned();
-                        inner_path.push(PathMember::Key(ivd.name()));
-                        match ivd.r#type().coerce_value(value, &inner_path) {
+                        match ivd.r#type().coerce_value(value, path.push(ivd.name())) {
                             Ok(_) => {}
                             Err(errs) => errors.extend(errs),
                         }
@@ -271,9 +258,12 @@ fn coerce_input_object_value<'a, const CONST: bool, V: Value<CONST>, T: InputTyp
             });
 
         #[cfg(feature = "one-of-input-objects")]
-        if let Err(one_of_errors) =
-            validate_one_of_input_object_value(input_object_type_definition, value, object, path)
-        {
+        if let Err(one_of_errors) = validate_one_of_input_object_value(
+            input_object_type_definition,
+            value,
+            object,
+            path.clone(),
+        ) {
             errors.extend(one_of_errors);
         }
 
@@ -282,7 +272,7 @@ fn coerce_input_object_value<'a, const CONST: bool, V: Value<CONST>, T: InputTyp
                 value,
                 field_names: missing_required_values,
                 input_object_type_name: input_object_type_definition.name(),
-                path: path.to_owned(),
+                path,
             });
         }
 
@@ -295,7 +285,7 @@ fn coerce_input_object_value<'a, const CONST: bool, V: Value<CONST>, T: InputTyp
         Err(vec![Error::NoImplicitConversion {
             value,
             input_type_name: input_type.as_ref().display_name(),
-            path: path.to_owned(),
+            path,
         }])
     }
 }
@@ -305,7 +295,7 @@ fn validate_one_of_input_object_value<'a, const CONST: bool, V: Value<CONST>>(
     input_object_type_definition: &'a impl InputObjectTypeDefinition,
     value: &'a V,
     object: &'a V::Object,
-    path: &[PathMember<'a>],
+    path: Path<'a>,
 ) -> Result<(), Vec<Error<'a, CONST, V>>> {
     if input_object_type_definition
         .directives()
@@ -327,7 +317,7 @@ fn validate_one_of_input_object_value<'a, const CONST: bool, V: Value<CONST>>(
                 value,
                 input_object_type_name: input_object_type_definition.name(),
                 null_entries,
-                path: path.to_owned(),
+                path: path.clone(),
             });
         }
 
@@ -336,7 +326,7 @@ fn validate_one_of_input_object_value<'a, const CONST: bool, V: Value<CONST>>(
                 value,
                 input_object_type_name: input_object_type_definition.name(),
                 non_null_entries,
-                path: path.to_owned(),
+                path,
             });
         }
 
@@ -352,7 +342,8 @@ fn validate_one_of_input_object_value<'a, const CONST: bool, V: Value<CONST>>(
 
 #[cfg(test)]
 mod tests {
-    use super::{CoerceInput, Error, PathMember};
+    use super::{CoerceInput, Error};
+    use crate::Path;
     use bluejay_core::definition::{
         ArgumentsDefinition, FieldDefinition, FieldsDefinition, InputType, InputValueDefinition,
         ObjectTypeDefinition, ScalarTypeDefinition, SchemaDefinition,
@@ -466,15 +457,15 @@ mod tests {
 
         assert_eq!(
             Ok(()),
-            it.coerce_const_value(&json!("This is a string"), &[])
+            it.coerce_const_value(&json!("This is a string"), Default::default())
         );
         assert_eq!(
             Err(vec![Error::NoImplicitConversion {
                 value: &json!(123),
                 input_type_name: it.as_ref().display_name(),
-                path: vec![]
+                path: Default::default(),
             }]),
-            it.coerce_const_value(&json!(123), &[]),
+            it.coerce_const_value(&json!(123), Default::default()),
         );
     }
 
@@ -482,14 +473,17 @@ mod tests {
     fn test_int() {
         let it = input_type("Query", "field", "intArg");
 
-        assert_eq!(Ok(()), it.coerce_const_value(&json!(123), &[]));
+        assert_eq!(
+            Ok(()),
+            it.coerce_const_value(&json!(123), Default::default())
+        );
         assert_eq!(
             Err(vec![Error::NoImplicitConversion {
                 value: &json!(123.4),
                 input_type_name: it.as_ref().display_name(),
-                path: vec![]
+                path: Default::default(),
             }]),
-            it.coerce_const_value(&json!(123.4), &[]),
+            it.coerce_const_value(&json!(123.4), Default::default()),
         );
     }
 
@@ -497,15 +491,21 @@ mod tests {
     fn test_float() {
         let it = input_type("Query", "field", "floatArg");
 
-        assert_eq!(Ok(()), it.coerce_const_value(&json!(123.456), &[]));
-        assert_eq!(Ok(()), it.coerce_const_value(&json!(123), &[]));
+        assert_eq!(
+            Ok(()),
+            it.coerce_const_value(&json!(123.456), Default::default())
+        );
+        assert_eq!(
+            Ok(()),
+            it.coerce_const_value(&json!(123), Default::default())
+        );
         assert_eq!(
             Err(vec![Error::NoImplicitConversion {
                 value: &json!("123.4"),
                 input_type_name: it.as_ref().display_name(),
-                path: vec![]
+                path: Default::default(),
             }]),
-            it.coerce_const_value(&json!("123.4"), &[]),
+            it.coerce_const_value(&json!("123.4"), Default::default()),
         );
     }
 
@@ -513,15 +513,18 @@ mod tests {
     fn test_id() {
         let it = input_type("Query", "field", "idArg");
 
-        assert_eq!(Ok(()), it.coerce_const_value(&json!(1), &[]));
-        assert_eq!(Ok(()), it.coerce_const_value(&json!("a"), &[]));
+        assert_eq!(Ok(()), it.coerce_const_value(&json!(1), Default::default()));
+        assert_eq!(
+            Ok(()),
+            it.coerce_const_value(&json!("a"), Default::default())
+        );
         assert_eq!(
             Err(vec![Error::NoImplicitConversion {
                 value: &json!(123.4),
                 input_type_name: it.as_ref().display_name(),
-                path: vec![]
+                path: Default::default(),
             }]),
-            it.coerce_const_value(&json!(123.4), &[]),
+            it.coerce_const_value(&json!(123.4), Default::default()),
         );
     }
 
@@ -529,23 +532,29 @@ mod tests {
     fn test_boolean() {
         let it = input_type("Query", "field", "booleanArg");
 
-        assert_eq!(Ok(()), it.coerce_const_value(&json!(true), &[]));
-        assert_eq!(Ok(()), it.coerce_const_value(&json!(false), &[]));
+        assert_eq!(
+            Ok(()),
+            it.coerce_const_value(&json!(true), Default::default())
+        );
+        assert_eq!(
+            Ok(()),
+            it.coerce_const_value(&json!(false), Default::default())
+        );
         assert_eq!(
             Err(vec![Error::NoImplicitConversion {
                 value: &json!(1),
                 input_type_name: it.as_ref().display_name(),
-                path: vec![]
+                path: Default::default(),
             }]),
-            it.coerce_const_value(&json!(1), &[]),
+            it.coerce_const_value(&json!(1), Default::default()),
         );
         assert_eq!(
             Err(vec![Error::NoImplicitConversion {
                 value: &json!("true"),
                 input_type_name: it.as_ref().display_name(),
-                path: vec![]
+                path: Default::default(),
             }]),
-            it.coerce_const_value(&json!("true"), &[]),
+            it.coerce_const_value(&json!("true"), Default::default()),
         );
     }
 
@@ -553,15 +562,21 @@ mod tests {
     fn test_optional() {
         let it = input_type("Query", "field", "optionalArg");
 
-        assert_eq!(Ok(()), it.coerce_const_value(&json!(null), &[]));
-        assert_eq!(Ok(()), it.coerce_const_value(&json!(123), &[]));
+        assert_eq!(
+            Ok(()),
+            it.coerce_const_value(&json!(null), Default::default())
+        );
+        assert_eq!(
+            Ok(()),
+            it.coerce_const_value(&json!(123), Default::default())
+        );
         assert_eq!(
             Err(vec![Error::NoImplicitConversion {
                 value: &json!("123"),
                 input_type_name: it.as_ref().display_name(),
-                path: vec![]
+                path: Default::default(),
             }]),
-            it.coerce_const_value(&json!("123"), &[]),
+            it.coerce_const_value(&json!("123"), Default::default()),
         );
     }
 
@@ -569,24 +584,33 @@ mod tests {
     fn test_optional_list() {
         let it = input_type("Query", "field", "optionalListArg");
 
-        assert_eq!(Ok(()), it.coerce_const_value(&json!(null), &[]));
-        assert_eq!(Ok(()), it.coerce_const_value(&json!(1), &[]));
-        assert_eq!(Ok(()), it.coerce_const_value(&json!([1]), &[]));
-        assert_eq!(Ok(()), it.coerce_const_value(&json!([1, 2, 3]), &[]));
+        assert_eq!(
+            Ok(()),
+            it.coerce_const_value(&json!(null), Default::default())
+        );
+        assert_eq!(Ok(()), it.coerce_const_value(&json!(1), Default::default()));
+        assert_eq!(
+            Ok(()),
+            it.coerce_const_value(&json!([1]), Default::default())
+        );
+        assert_eq!(
+            Ok(()),
+            it.coerce_const_value(&json!([1, 2, 3]), Default::default())
+        );
         assert_eq!(
             Err(vec![
                 Error::NoImplicitConversion {
                     value: &json!("b"),
                     input_type_name: "Int".to_string(),
-                    path: vec![PathMember::Index(1)]
+                    path: Path::new(1),
                 },
                 Error::NoImplicitConversion {
                     value: &json!(true),
                     input_type_name: "Int".to_string(),
-                    path: vec![PathMember::Index(2)]
+                    path: Path::new(2),
                 },
             ]),
-            it.coerce_const_value(&json!([1, "b", true]), &[]),
+            it.coerce_const_value(&json!([1, "b", true]), Default::default()),
         );
     }
 
@@ -594,28 +618,34 @@ mod tests {
     fn test_optional_list_of_list() {
         let it = input_type("Query", "field", "optionalListOfListArg");
 
-        assert_eq!(Ok(()), it.coerce_const_value(&json!(null), &[]));
-        assert_eq!(Ok(()), it.coerce_const_value(&json!(1), &[]));
-        assert_eq!(Ok(()), it.coerce_const_value(&json!([[1], [2, 3]]), &[]));
+        assert_eq!(
+            Ok(()),
+            it.coerce_const_value(&json!(null), Default::default())
+        );
+        assert_eq!(Ok(()), it.coerce_const_value(&json!(1), Default::default()));
+        assert_eq!(
+            Ok(()),
+            it.coerce_const_value(&json!([[1], [2, 3]]), Default::default())
+        );
         assert_eq!(
             Err(vec![
                 Error::NoImplicitConversion {
                     value: &json!(1),
                     input_type_name: "[Int]".to_string(),
-                    path: vec![PathMember::Index(0)]
+                    path: Path::new(0),
                 },
                 Error::NoImplicitConversion {
                     value: &json!(2),
                     input_type_name: "[Int]".to_string(),
-                    path: vec![PathMember::Index(1)]
+                    path: Path::new(1),
                 },
                 Error::NoImplicitConversion {
                     value: &json!(3),
                     input_type_name: "[Int]".to_string(),
-                    path: vec![PathMember::Index(2)]
+                    path: Path::new(2),
                 },
             ]),
-            it.coerce_const_value(&json!([1, 2, 3]), &[]),
+            it.coerce_const_value(&json!([1, 2, 3]), Default::default()),
         );
     }
 
@@ -623,16 +653,22 @@ mod tests {
     fn test_enum() {
         let it = input_type("Query", "field", "enumArg");
 
-        assert_eq!(Ok(()), it.coerce_const_value(&json!("FIRST"), &[]));
-        assert_eq!(Ok(()), it.coerce_const_value(&json!("SECOND"), &[]));
+        assert_eq!(
+            Ok(()),
+            it.coerce_const_value(&json!("FIRST"), Default::default())
+        );
+        assert_eq!(
+            Ok(()),
+            it.coerce_const_value(&json!("SECOND"), Default::default())
+        );
         assert_eq!(
             Err(vec![Error::NoEnumMemberWithName {
                 name: "first",
                 value: &json!("first"),
                 enum_type_name: "Choices",
-                path: vec![],
+                path: Default::default(),
             }]),
-            it.coerce_const_value(&json!("first"), &[]),
+            it.coerce_const_value(&json!("first"), Default::default()),
         );
     }
 
@@ -642,49 +678,52 @@ mod tests {
 
         assert_eq!(
             Ok(()),
-            it.coerce_const_value(&json!({ "stringArg": "abc" }), &[]),
+            it.coerce_const_value(&json!({ "stringArg": "abc" }), Default::default()),
         );
         assert_eq!(
             Ok(()),
             it.coerce_const_value(
                 &json!({ "stringArg": "abc", "optionalStringArg": "def", "stringArgWithDefault": "ghi" }),
-                &[],
+                Default::default(),
             ),
         );
         assert_eq!(
             Err(vec![Error::NoImplicitConversion {
                 value: &json!(""),
                 input_type_name: it.as_ref().display_name(),
-                path: vec![],
+                path: Default::default(),
             }]),
-            it.coerce_const_value(&json!(""), &[]),
+            it.coerce_const_value(&json!(""), Default::default()),
         );
         assert_eq!(
             Err(vec![Error::NoValueForRequiredFields {
                 value: &json!({}),
                 field_names: vec!["stringArg"],
                 input_object_type_name: "CustomInput",
-                path: vec![],
+                path: Default::default(),
             }]),
-            it.coerce_const_value(&json!({}), &[]),
+            it.coerce_const_value(&json!({}), Default::default()),
         );
         assert_eq!(
             Err(vec![Error::NoInputFieldWithName {
                 field: &"notDefined".to_owned(),
                 input_object_type_name: "CustomInput",
-                path: vec![PathMember::Key("notDefined")],
+                path: Path::new("notDefined"),
             }]),
-            it.coerce_const_value(&json!({ "stringArg": "abc", "notDefined": "def" }), &[]),
+            it.coerce_const_value(
+                &json!({ "stringArg": "abc", "notDefined": "def" }),
+                Default::default()
+            ),
         );
         assert_eq!(
             Err(vec![Error::NullValueForRequiredType {
                 value: &json!(null),
                 input_type_name: "String!".to_owned(),
-                path: vec![PathMember::Key("stringArgWithDefault")],
+                path: Path::new("stringArgWithDefault"),
             }]),
             it.coerce_const_value(
                 &json!({ "stringArg": "abc", "stringArgWithDefault": null }),
-                &[]
+                Default::default()
             ),
         );
     }
@@ -693,15 +732,18 @@ mod tests {
     fn test_custom_scalar() {
         let it = input_type("Query", "field", "decimalArg");
 
-        assert_eq!(Ok(()), it.coerce_const_value(&json!("123.456"), &[]));
+        assert_eq!(
+            Ok(()),
+            it.coerce_const_value(&json!("123.456"), Default::default())
+        );
         assert_eq!(
             Err(vec![Error::CustomScalarInvalidValue {
                 value: &json!(123.456),
                 custom_scalar_type_name: "Decimal",
                 message: Cow::Owned("Cannot coerce float to Decimal".to_owned()),
-                path: vec![],
+                path: Default::default(),
             }]),
-            it.coerce_const_value(&json!(123.456), &[]),
+            it.coerce_const_value(&json!(123.456), Default::default()),
         );
     }
 
@@ -709,16 +751,22 @@ mod tests {
     fn test_one_of_input_object() {
         let it = input_type("Query", "field", "oneOfInputObjectArg");
 
-        assert_eq!(Ok(()), it.coerce_const_value(&json!({ "first": "s" }), &[]));
-        assert_eq!(Ok(()), it.coerce_const_value(&json!({ "second": 1 }), &[]));
+        assert_eq!(
+            Ok(()),
+            it.coerce_const_value(&json!({ "first": "s" }), Default::default())
+        );
+        assert_eq!(
+            Ok(()),
+            it.coerce_const_value(&json!({ "second": 1 }), Default::default())
+        );
         assert_eq!(
             Err(vec![Error::OneOfInputNullValues {
                 value: &json!({ "first": null, "second": 1 }),
                 input_object_type_name: "InputUnion",
                 null_entries: vec![(&"first".to_owned(), &json!(null))],
-                path: vec![],
+                path: Default::default(),
             }]),
-            it.coerce_const_value(&json!({ "first": null, "second": 1 }), &[]),
+            it.coerce_const_value(&json!({ "first": null, "second": 1 }), Default::default()),
         );
         assert_eq!(
             Err(vec![Error::OneOfInputNotSingleNonNullValue {
@@ -728,9 +776,9 @@ mod tests {
                     (&"first".to_owned(), &json!("s")),
                     (&"second".to_owned(), &json!(1))
                 ],
-                path: vec![],
+                path: Default::default(),
             }]),
-            it.coerce_const_value(&json!({ "first": "s", "second": 1 }), &[]),
+            it.coerce_const_value(&json!({ "first": "s", "second": 1 }), Default::default()),
         )
     }
 }
