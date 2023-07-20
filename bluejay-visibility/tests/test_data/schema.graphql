@@ -20,14 +20,18 @@ type MyObject @visible {
   notVisible: Int
 }
 
+union MyUnion @visible = MyObject | InvisibleObject
+
 scalar MyScalar @visible
 
 type Query @visible {
   myEnum: MyEnum @visible
   myObject: MyObject @visible
+  myUnion: MyUnion @visible
   myScalar: MyScalar @visible
   invisibleEnum: InvisibleEnum @visible
   invisibleObject: InvisibleObject @visible
+  invisibleUnion: InvisibleUnion @visible
   invisibleScalar: InvisibleScalar @visible
 }
 
@@ -42,5 +46,7 @@ input InvisibleInput {
 type InvisibleObject {
   visible: Int @visible
 }
+
+union InvisibleUnion = MyObject | InvisibleObject
 
 scalar InvisibleScalar

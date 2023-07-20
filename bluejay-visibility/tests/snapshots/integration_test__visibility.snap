@@ -20,10 +20,14 @@ type MyObject @visible {
 
 scalar MyScalar @visible
 
+union MyUnion@visible = MyObject
+
 type Query @visible {
   myEnum: MyEnum @visible
 
   myObject: MyObject @visible
+
+  myUnion: MyUnion @visible
 
   myScalar: MyScalar @visible
 }
