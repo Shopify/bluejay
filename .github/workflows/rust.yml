@@ -22,6 +22,8 @@ jobs:
         run: cargo clippy -- -D warnings
       - name: Run clippy (tests)
         run: cargo clippy --tests
+      - name: Run clippy (benches)
+        run: cargo clippy --benches
 
   test:
     runs-on: ubuntu-latest

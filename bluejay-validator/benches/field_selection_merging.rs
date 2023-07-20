@@ -7,7 +7,7 @@ use bluejay_validator::executable::{Cache, Validator};
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
 use once_cell::sync::Lazy;
 
-const SCHEMA: &'static str = r#"
+const SCHEMA: &str = r#"
 type Dog {
   name: String!
   nickname: String
@@ -39,7 +39,7 @@ fn build_query_string(repetitions: u64) -> String {
         s.push_str(format!("...f{i} ").as_str());
     });
 
-    s.push_str("}");
+    s.push('}');
 
     s
 }
@@ -49,7 +49,7 @@ static DEFINITION_DOCUMENT: Lazy<DefinitionDocument<'static>> =
 static SCHEMA_DEFINITION: Lazy<SchemaDefinition<'static>> =
     Lazy::new(|| SchemaDefinition::try_from(&*DEFINITION_DOCUMENT).expect("Schema had errors"));
 
-const REPETITIONS: &'static [u64] = &[1, 2, 4, 8, 16, 32, 64, 128];
+const REPETITIONS: &[u64] = &[1, 2, 4, 8, 16, 32, 64, 128];
 
 static QUERY_STRINGS: Lazy<Vec<(u64, String)>> = Lazy::new(|| {
     REPETITIONS
@@ -93,7 +93,6 @@ fn field_selection_merging(c: &mut Criterion) {
                         &*SCHEMA_DEFINITION,
                         &cache,
                     )
-                    .into_iter()
                     .collect::<Vec<_>>();
                 });
             },
