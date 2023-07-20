@@ -1,4 +1,4 @@
-use crate::{Cache, EnumValueDefinitions, Warden};
+use crate::{Cache, Directives, EnumValueDefinitions, Warden};
 use bluejay_core::definition::{self, SchemaDefinition};
 use once_cell::unsync::OnceCell;
 
@@ -6,6 +6,7 @@ pub struct EnumTypeDefinition<'a, S: SchemaDefinition, W: Warden<SchemaDefinitio
     inner: &'a S::EnumTypeDefinition,
     cache: &'a Cache<'a, S, W>,
     enum_value_definitions: OnceCell<EnumValueDefinitions<'a, S, W>>,
+    directives: Option<Directives<'a, S, W>>,
 }
 
 impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> EnumTypeDefinition<'a, S, W> {
@@ -14,6 +15,8 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> EnumTypeDefi
             inner,
             cache,
             enum_value_definitions: OnceCell::new(),
+            directives: definition::EnumTypeDefinition::directives(inner)
+                .map(|d| Directives::new(d, cache)),
         }
     }
 }
@@ -21,7 +24,7 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> EnumTypeDefi
 impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> definition::EnumTypeDefinition
     for EnumTypeDefinition<'a, S, W>
 {
-    type Directives = <S::EnumTypeDefinition as definition::EnumTypeDefinition>::Directives;
+    type Directives = Directives<'a, S, W>;
     type EnumValueDefinitions = EnumValueDefinitions<'a, S, W>;
 
     fn description(&self) -> Option<&str> {
@@ -33,7 +36,7 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> definition::
     }
 
     fn directives(&self) -> Option<&Self::Directives> {
-        self.inner.directives()
+        self.directives.as_ref()
     }
 
     fn enum_value_definitions(&self) -> &Self::EnumValueDefinitions {

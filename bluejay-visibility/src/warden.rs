@@ -28,6 +28,41 @@ pub trait Warden {
         &self,
         interface_implementation: &<Self::SchemaDefinition as SchemaDefinition>::InterfaceImplementation,
     ) -> bool;
+
+    fn is_directive_definition_visible(
+        &self,
+        directive_definition: &<Self::SchemaDefinition as SchemaDefinition>::DirectiveDefinition,
+    ) -> bool;
+
+    fn is_custom_scalar_type_definition_visible(
+        &self,
+        custom_scalar_type_definition: &<Self::SchemaDefinition as SchemaDefinition>::CustomScalarTypeDefinition,
+    ) -> bool;
+
+    fn is_enum_type_definition_visible(
+        &self,
+        enum_type_definition: &<Self::SchemaDefinition as SchemaDefinition>::EnumTypeDefinition,
+    ) -> bool;
+
+    fn is_input_object_type_definition_visible(
+        &self,
+        input_object_type_definition: &<Self::SchemaDefinition as SchemaDefinition>::InputObjectTypeDefinition,
+    ) -> bool;
+
+    fn is_interface_type_definition_visible(
+        &self,
+        interface_type_definition: &<Self::SchemaDefinition as SchemaDefinition>::InterfaceTypeDefinition,
+    ) -> bool;
+
+    fn is_object_type_definition_visible(
+        &self,
+        object_type_definition: &<Self::SchemaDefinition as SchemaDefinition>::ObjectTypeDefinition,
+    ) -> bool;
+
+    fn is_union_type_definition_visible(
+        &self,
+        union_type_definition: &<Self::SchemaDefinition as SchemaDefinition>::UnionTypeDefinition,
+    ) -> bool;
 }
 
 pub struct NullWarden<S: SchemaDefinition>(PhantomData<S>);
@@ -72,6 +107,55 @@ impl<S: SchemaDefinition> Warden for NullWarden<S> {
     fn is_interface_implementation_visible(
         &self,
         _: &<Self::SchemaDefinition as SchemaDefinition>::InterfaceImplementation,
+    ) -> bool {
+        true
+    }
+
+    fn is_directive_definition_visible(
+        &self,
+        _: &<Self::SchemaDefinition as SchemaDefinition>::DirectiveDefinition,
+    ) -> bool {
+        true
+    }
+
+    fn is_custom_scalar_type_definition_visible(
+        &self,
+        _: &<Self::SchemaDefinition as SchemaDefinition>::CustomScalarTypeDefinition,
+    ) -> bool {
+        true
+    }
+
+    fn is_enum_type_definition_visible(
+        &self,
+        _: &<Self::SchemaDefinition as SchemaDefinition>::EnumTypeDefinition,
+    ) -> bool {
+        true
+    }
+
+    fn is_input_object_type_definition_visible(
+        &self,
+        _: &<Self::SchemaDefinition as SchemaDefinition>::InputObjectTypeDefinition,
+    ) -> bool {
+        true
+    }
+
+    fn is_interface_type_definition_visible(
+        &self,
+        _: &<Self::SchemaDefinition as SchemaDefinition>::InterfaceTypeDefinition,
+    ) -> bool {
+        true
+    }
+
+    fn is_object_type_definition_visible(
+        &self,
+        _: &<Self::SchemaDefinition as SchemaDefinition>::ObjectTypeDefinition,
+    ) -> bool {
+        true
+    }
+
+    fn is_union_type_definition_visible(
+        &self,
+        _: &<Self::SchemaDefinition as SchemaDefinition>::UnionTypeDefinition,
     ) -> bool {
         true
     }

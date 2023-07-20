@@ -57,6 +57,55 @@ impl<'a> Warden for DirectiveWarden<'a> {
     ) -> bool {
         true
     }
+
+    fn is_directive_definition_visible(
+        &self,
+        _: &<Self::SchemaDefinition as bluejay_core::definition::SchemaDefinition>::DirectiveDefinition,
+    ) -> bool {
+        true
+    }
+
+    fn is_custom_scalar_type_definition_visible(
+        &self,
+        custom_scalar_type_definition: &<Self::SchemaDefinition as bluejay_core::definition::SchemaDefinition>::CustomScalarTypeDefinition,
+    ) -> bool {
+        Self::has_visible_directive(custom_scalar_type_definition.directives())
+    }
+
+    fn is_enum_type_definition_visible(
+        &self,
+        enum_type_definition: &<Self::SchemaDefinition as bluejay_core::definition::SchemaDefinition>::EnumTypeDefinition,
+    ) -> bool {
+        Self::has_visible_directive(enum_type_definition.directives())
+    }
+
+    fn is_input_object_type_definition_visible(
+        &self,
+        input_object_type_definition: &<Self::SchemaDefinition as bluejay_core::definition::SchemaDefinition>::InputObjectTypeDefinition,
+    ) -> bool {
+        Self::has_visible_directive(input_object_type_definition.directives())
+    }
+
+    fn is_interface_type_definition_visible(
+        &self,
+        interface_type_definition: &<Self::SchemaDefinition as bluejay_core::definition::SchemaDefinition>::InterfaceTypeDefinition,
+    ) -> bool {
+        Self::has_visible_directive(interface_type_definition.directives())
+    }
+
+    fn is_object_type_definition_visible(
+        &self,
+        object_type_definition: &<Self::SchemaDefinition as bluejay_core::definition::SchemaDefinition>::ObjectTypeDefinition,
+    ) -> bool {
+        Self::has_visible_directive(object_type_definition.directives())
+    }
+
+    fn is_union_type_definition_visible(
+        &self,
+        union_type_definition: &<Self::SchemaDefinition as bluejay_core::definition::SchemaDefinition>::UnionTypeDefinition,
+    ) -> bool {
+        Self::has_visible_directive(union_type_definition.directives())
+    }
 }
 
 #[test]

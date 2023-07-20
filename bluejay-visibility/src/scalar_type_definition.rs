@@ -1,17 +1,20 @@
-use crate::Warden;
+use crate::{Cache, Directives, Warden};
 use bluejay_core::definition::{self, SchemaDefinition};
-use std::marker::PhantomData;
 
 pub struct ScalarTypeDefinition<'a, S: SchemaDefinition, W: Warden<SchemaDefinition = S>> {
     inner: &'a S::CustomScalarTypeDefinition,
-    warden: PhantomData<W>,
+    directives: Option<Directives<'a, S, W>>,
 }
 
 impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> ScalarTypeDefinition<'a, S, W> {
-    pub(crate) fn new(inner: &'a S::CustomScalarTypeDefinition) -> Self {
+    pub(crate) fn new(
+        inner: &'a S::CustomScalarTypeDefinition,
+        cache: &'a Cache<'a, S, W>,
+    ) -> Self {
         Self {
             inner,
-            warden: Default::default(),
+            directives: definition::ScalarTypeDefinition::directives(inner)
+                .map(|d| Directives::new(d, cache)),
         }
     }
 
@@ -23,8 +26,7 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> ScalarTypeDe
 impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> definition::ScalarTypeDefinition
     for ScalarTypeDefinition<'a, S, W>
 {
-    type Directives =
-        <S::CustomScalarTypeDefinition as definition::ScalarTypeDefinition>::Directives;
+    type Directives = Directives<'a, S, W>;
 
     fn description(&self) -> Option<&str> {
         self.inner.description()
@@ -35,7 +37,7 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> definition::
     }
 
     fn directives(&self) -> Option<&Self::Directives> {
-        self.inner.directives()
+        self.directives.as_ref()
     }
 
     fn coerce_input<const CONST: bool>(

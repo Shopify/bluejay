@@ -23,16 +23,15 @@ impl<'a, S: SchemaDefinition, W: Warden<SchemaDefinition = S>> Cache<'a, S, W> {
 
     pub(crate) fn get_or_create_type_definition(
         &'a self,
-        type_definition: impl Into<TypeDefinitionReference<'a, S::TypeDefinition>>,
-    ) -> &'a TypeDefinition<'a, S, W> {
-        let type_definition = type_definition.into();
+        type_definition: TypeDefinitionReference<'a, S::TypeDefinition>,
+    ) -> Option<&'a TypeDefinition<'a, S, W>> {
         self.type_definitions
             .get(type_definition.name())
-            .unwrap_or_else(|| {
-                self.type_definitions.insert(
-                    type_definition.name(),
-                    Box::new(TypeDefinition::new(type_definition, self)),
-                )
+            .or_else(|| {
+                TypeDefinition::new(type_definition, self).map(|td| {
+                    self.type_definitions
+                        .insert(type_definition.name(), Box::new(td))
+                })
             })
     }
 

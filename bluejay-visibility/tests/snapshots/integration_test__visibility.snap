@@ -4,23 +4,27 @@ expression: printed_schema_definition
 ---
 directive @visible on FIELD_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION | ARGUMENT_DEFINITION
 
-enum MyEnum {
+enum MyEnum @visible {
   VISIBLE @visible
 }
 
-input MyInput {
+input MyInput @visible {
   visible: Int @visible
 }
 
-type MyObject {
+type MyObject @visible {
   visible(
     visible: Int @visible
   ): Int @visible
 }
 
-type Query {
+scalar MyScalar @visible
+
+type Query @visible {
   myEnum: MyEnum @visible
 
   myObject: MyObject @visible
+
+  myScalar: MyScalar @visible
 }
 

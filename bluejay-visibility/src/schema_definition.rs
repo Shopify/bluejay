@@ -1,5 +1,5 @@
 use crate::{
-    ArgumentsDefinition, BaseInputType, BaseOutputType, Cache, DirectiveDefinition,
+    ArgumentsDefinition, BaseInputType, BaseOutputType, Cache, DirectiveDefinition, Directives,
     EnumTypeDefinition, EnumValueDefinition, EnumValueDefinitions, FieldDefinition,
     FieldsDefinition, InputFieldsDefinition, InputObjectTypeDefinition, InputType,
     InputValueDefinition, InterfaceImplementation, InterfaceImplementations,
@@ -20,6 +20,7 @@ pub struct SchemaDefinition<'a, S: definition::SchemaDefinition, W: Warden<Schem
     interface_implementors: FrozenMap<&'a str, Vec<&'a ObjectTypeDefinition<'a, S, W>>>,
     type_definitions: OnceCell<Vec<&'a TypeDefinition<'a, S, W>>>,
     directive_definitions: OnceCell<Vec<&'a DirectiveDefinition<'a, S, W>>>,
+    schema_directives: Option<Directives<'a, S, W>>,
 }
 
 impl<'a, S: definition::SchemaDefinition, W: Warden<SchemaDefinition = S>>
@@ -39,6 +40,8 @@ impl<'a, S: definition::SchemaDefinition, W: Warden<SchemaDefinition = S>>
             interface_implementors: FrozenMap::new(),
             type_definitions: OnceCell::new(),
             directive_definitions: OnceCell::new(),
+            schema_directives: definition::SchemaDefinition::schema_directives(inner)
+                .map(|d| Directives::new(d, cache)),
         }
     }
 
@@ -50,7 +53,7 @@ impl<'a, S: definition::SchemaDefinition, W: Warden<SchemaDefinition = S>>
 impl<'a, S: definition::SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>>
     definition::SchemaDefinition for SchemaDefinition<'a, S, W>
 {
-    type Directives = S::Directives;
+    type Directives = Directives<'a, S, W>;
     type InputValueDefinition = InputValueDefinition<'a, S, W>;
     type InputFieldsDefinition = InputFieldsDefinition<'a, S, W>;
     type ArgumentsDefinition = ArgumentsDefinition<'a, S, W>;
@@ -95,7 +98,7 @@ impl<'a, S: definition::SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>>
     }
 
     fn schema_directives(&self) -> Option<&Self::Directives> {
-        self.inner.schema_directives()
+        self.schema_directives.as_ref()
     }
 
     fn type_definitions(&self) -> Self::TypeDefinitions<'_> {
@@ -103,7 +106,7 @@ impl<'a, S: definition::SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>>
             .get_or_init(|| {
                 self.inner
                     .type_definitions()
-                    .map(|tdr| self.cache.get_or_create_type_definition(tdr))
+                    .filter_map(|tdr| self.cache.get_or_create_type_definition(tdr))
                     .collect()
             })
             .iter()
@@ -119,7 +122,7 @@ impl<'a, S: definition::SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>>
             .or_else(|| {
                 self.inner
                     .get_type_definition(name)
-                    .map(|tdr| self.cache.get_or_create_type_definition(tdr))
+                    .and_then(|tdr| self.cache.get_or_create_type_definition(tdr))
             })
             .map(TypeDefinition::as_ref)
     }
@@ -140,7 +143,7 @@ impl<'a, S: definition::SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>>
                             .cache
                             .get_or_create_type_definition(
                                 definition::TypeDefinitionReference::Object(otd),
-                            )
+                            )?
                             .as_object()
                             .unwrap();
 

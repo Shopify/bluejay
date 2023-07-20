@@ -1,4 +1,4 @@
-use crate::{Cache, FieldsDefinition, UnionMemberTypes, Warden};
+use crate::{Cache, Directives, FieldsDefinition, UnionMemberTypes, Warden};
 use bluejay_core::definition::{self, SchemaDefinition};
 use once_cell::unsync::OnceCell;
 
@@ -7,6 +7,7 @@ pub struct UnionTypeDefinition<'a, S: SchemaDefinition, W: Warden<SchemaDefiniti
     cache: &'a Cache<'a, S, W>,
     union_member_types: OnceCell<UnionMemberTypes<'a, S, W>>,
     fields_definition: OnceCell<FieldsDefinition<'a, S, W>>,
+    directives: Option<Directives<'a, S, W>>,
 }
 
 impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> UnionTypeDefinition<'a, S, W> {
@@ -16,6 +17,8 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> UnionTypeDef
             cache,
             union_member_types: OnceCell::new(),
             fields_definition: OnceCell::new(),
+            directives: definition::UnionTypeDefinition::directives(inner)
+                .map(|d| Directives::new(d, cache)),
         }
     }
 
@@ -27,7 +30,7 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> UnionTypeDef
 impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> definition::UnionTypeDefinition
     for UnionTypeDefinition<'a, S, W>
 {
-    type Directives = <S::UnionTypeDefinition as definition::UnionTypeDefinition>::Directives;
+    type Directives = Directives<'a, S, W>;
     type UnionMemberTypes = UnionMemberTypes<'a, S, W>;
     type FieldsDefinition = FieldsDefinition<'a, S, W>;
 
@@ -40,7 +43,7 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> definition::
     }
 
     fn directives(&self) -> Option<&Self::Directives> {
-        self.inner.directives()
+        self.directives.as_ref()
     }
 
     fn union_member_types(&self) -> &Self::UnionMemberTypes {

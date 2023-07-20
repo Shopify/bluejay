@@ -1,4 +1,4 @@
-use crate::{Cache, InputFieldsDefinition, Warden};
+use crate::{Cache, Directives, InputFieldsDefinition, Warden};
 use bluejay_core::definition::{self, SchemaDefinition};
 use once_cell::unsync::OnceCell;
 
@@ -6,6 +6,7 @@ pub struct InputObjectTypeDefinition<'a, S: SchemaDefinition, W: Warden<SchemaDe
     inner: &'a S::InputObjectTypeDefinition,
     cache: &'a Cache<'a, S, W>,
     input_fields_definition: OnceCell<InputFieldsDefinition<'a, S, W>>,
+    directives: Option<Directives<'a, S, W>>,
 }
 
 impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>>
@@ -16,6 +17,8 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>>
             inner,
             cache,
             input_fields_definition: OnceCell::new(),
+            directives: definition::InputObjectTypeDefinition::directives(inner)
+                .map(|d| Directives::new(d, cache)),
         }
     }
 
@@ -27,8 +30,7 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>>
 impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>>
     definition::InputObjectTypeDefinition for InputObjectTypeDefinition<'a, S, W>
 {
-    type Directives =
-        <S::InputObjectTypeDefinition as definition::InputObjectTypeDefinition>::Directives;
+    type Directives = Directives<'a, S, W>;
     type InputFieldsDefinition = InputFieldsDefinition<'a, S, W>;
 
     fn description(&self) -> Option<&str> {
@@ -40,7 +42,7 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>>
     }
 
     fn directives(&self) -> Option<&Self::Directives> {
-        self.inner.directives()
+        self.directives.as_ref()
     }
 
     fn input_field_definitions(&self) -> &Self::InputFieldsDefinition {

@@ -1,11 +1,9 @@
 use crate::{Cache, ObjectTypeDefinition, Warden};
 use bluejay_core::definition::{self, SchemaDefinition, TypeDefinitionReference};
-use once_cell::unsync::OnceCell;
 
 pub struct UnionMemberType<'a, S: SchemaDefinition, W: Warden<SchemaDefinition = S>> {
     inner: &'a S::UnionMemberType,
-    cache: &'a Cache<'a, S, W>,
-    member_type: OnceCell<&'a ObjectTypeDefinition<'a, S, W>>,
+    member_type: &'a ObjectTypeDefinition<'a, S, W>,
 }
 
 impl<'a, S: SchemaDefinition, W: Warden<SchemaDefinition = S>> UnionMemberType<'a, S, W> {
@@ -13,11 +11,17 @@ impl<'a, S: SchemaDefinition, W: Warden<SchemaDefinition = S>> UnionMemberType<'
         cache
             .warden()
             .is_union_member_type_visible(inner)
-            .then_some(Self {
-                inner,
-                cache,
-                member_type: OnceCell::new(),
+            .then(|| {
+                cache
+                    .get_or_create_type_definition(TypeDefinitionReference::Object(
+                        definition::UnionMemberType::member_type(inner),
+                    ))
+                    .map(|td| Self {
+                        inner,
+                        member_type: td.as_object().unwrap(),
+                    })
             })
+            .flatten()
     }
 
     pub fn inner(&self) -> &'a S::UnionMemberType {
@@ -31,13 +35,6 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> definition::
     type ObjectTypeDefinition = ObjectTypeDefinition<'a, S, W>;
 
     fn member_type(&self) -> &Self::ObjectTypeDefinition {
-        self.member_type.get_or_init(|| {
-            self.cache
-                .get_or_create_type_definition(TypeDefinitionReference::Object(
-                    self.inner.member_type(),
-                ))
-                .as_object()
-                .unwrap()
-        })
+        self.member_type
     }
 }

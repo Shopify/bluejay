@@ -1,12 +1,13 @@
-use crate::{ArgumentsDefinition, Cache, OutputType, Warden};
+use crate::{ArgumentsDefinition, Cache, Directives, OutputType, Warden};
 use bluejay_core::definition::{self, SchemaDefinition};
 use once_cell::unsync::OnceCell;
 
 pub struct FieldDefinition<'a, S: SchemaDefinition, W: Warden<SchemaDefinition = S>> {
     inner: &'a S::FieldDefinition,
     cache: &'a Cache<'a, S, W>,
-    r#type: OnceCell<OutputType<'a, S, W>>,
+    r#type: OutputType<'a, S, W>,
     arguments_definition: OnceCell<Option<ArgumentsDefinition<'a, S, W>>>,
+    directives: Option<Directives<'a, S, W>>,
 }
 
 impl<'a, S: SchemaDefinition, W: Warden<SchemaDefinition = S>> FieldDefinition<'a, S, W> {
@@ -14,12 +15,19 @@ impl<'a, S: SchemaDefinition, W: Warden<SchemaDefinition = S>> FieldDefinition<'
         cache
             .warden()
             .is_field_definition_visible(inner)
-            .then_some(Self {
-                inner,
-                cache,
-                r#type: OnceCell::new(),
-                arguments_definition: OnceCell::new(),
+            .then(|| {
+                OutputType::new(definition::FieldDefinition::r#type(inner), cache).map(|r#type| {
+                    Self {
+                        inner,
+                        cache,
+                        r#type,
+                        arguments_definition: OnceCell::new(),
+                        directives: definition::FieldDefinition::directives(inner)
+                            .map(|d| Directives::new(d, cache)),
+                    }
+                })
             })
+            .flatten()
     }
 
     pub fn inner(&self) -> &'a S::FieldDefinition {
@@ -31,7 +39,7 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> definition::
     for FieldDefinition<'a, S, W>
 {
     type OutputType = OutputType<'a, S, W>;
-    type Directives = <S::FieldDefinition as definition::FieldDefinition>::Directives;
+    type Directives = Directives<'a, S, W>;
     type ArgumentsDefinition = ArgumentsDefinition<'a, S, W>;
 
     fn description(&self) -> Option<&str> {
@@ -47,12 +55,11 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> definition::
     }
 
     fn r#type(&self) -> &Self::OutputType {
-        self.r#type
-            .get_or_init(|| OutputType::new(self.inner.r#type(), self.cache))
+        &self.r#type
     }
 
     fn directives(&self) -> Option<&Self::Directives> {
-        self.inner.directives()
+        self.directives.as_ref()
     }
 
     fn arguments_definition(&self) -> Option<&Self::ArgumentsDefinition> {

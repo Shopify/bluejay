@@ -1,24 +1,46 @@
 directive @visible on FIELD_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION | ARGUMENT_DEFINITION
 
-enum MyEnum {
+enum MyEnum @visible {
   VISIBLE @visible
   NOT_VISIBLE
 }
 
-input MyInput {
+input MyInput @visible {
   visible: Int @visible
   notVisible: Int
+  notVisibleByType: InvisibleScalar @visible
 }
 
-type MyObject {
+type MyObject @visible {
   visible(
     visible: Int @visible
     notVisible: Int
+    notVisibleByType: InvisibleScalar @visible
   ): Int @visible
   notVisible: Int
 }
 
-type Query {
+scalar MyScalar @visible
+
+type Query @visible {
   myEnum: MyEnum @visible
   myObject: MyObject @visible
+  myScalar: MyScalar @visible
+  invisibleEnum: InvisibleEnum @visible
+  invisibleObject: InvisibleObject @visible
+  invisibleScalar: InvisibleScalar @visible
 }
+
+enum InvisibleEnum {
+  VISIBLE @visible
+}
+
+input InvisibleInput {
+  visible: Int @visible
+}
+
+type InvisibleObject {
+  visible: Int @visible
+}
+
+scalar InvisibleScalar

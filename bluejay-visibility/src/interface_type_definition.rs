@@ -1,4 +1,4 @@
-use crate::{Cache, FieldsDefinition, InterfaceImplementations, Warden};
+use crate::{Cache, Directives, FieldsDefinition, InterfaceImplementations, Warden};
 use bluejay_core::definition::{self, SchemaDefinition};
 use once_cell::unsync::OnceCell;
 
@@ -7,6 +7,7 @@ pub struct InterfaceTypeDefinition<'a, S: SchemaDefinition, W: Warden<SchemaDefi
     cache: &'a Cache<'a, S, W>,
     fields_definition: OnceCell<FieldsDefinition<'a, S, W>>,
     interface_implementations: OnceCell<Option<InterfaceImplementations<'a, S, W>>>,
+    directives: Option<Directives<'a, S, W>>,
 }
 
 impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>>
@@ -18,6 +19,8 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>>
             cache,
             fields_definition: OnceCell::new(),
             interface_implementations: OnceCell::new(),
+            directives: definition::InterfaceTypeDefinition::directives(inner)
+                .map(|d| Directives::new(d, cache)),
         }
     }
 
@@ -29,8 +32,7 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>>
 impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>>
     definition::InterfaceTypeDefinition for InterfaceTypeDefinition<'a, S, W>
 {
-    type Directives =
-        <S::InterfaceTypeDefinition as definition::InterfaceTypeDefinition>::Directives;
+    type Directives = Directives<'a, S, W>;
     type FieldsDefinition = FieldsDefinition<'a, S, W>;
     type InterfaceImplementations = InterfaceImplementations<'a, S, W>;
 
@@ -43,7 +45,7 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>>
     }
 
     fn directives(&self) -> Option<&Self::Directives> {
-        self.inner.directives()
+        self.directives.as_ref()
     }
 
     fn fields_definition(&self) -> &Self::FieldsDefinition {

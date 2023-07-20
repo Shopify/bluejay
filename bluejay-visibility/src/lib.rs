@@ -1,6 +1,7 @@
 mod arguments_definition;
 mod cache;
 mod directive_definition;
+mod directives;
 mod enum_type_definition;
 mod enum_value_definition;
 mod enum_value_definitions;
@@ -26,6 +27,7 @@ mod warden;
 pub use arguments_definition::ArgumentsDefinition;
 pub use cache::Cache;
 pub use directive_definition::DirectiveDefinition;
+pub use directives::Directives;
 pub use enum_type_definition::EnumTypeDefinition;
 pub use enum_value_definition::EnumValueDefinition;
 pub use enum_value_definitions::EnumValueDefinitions;

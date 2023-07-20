@@ -1,11 +1,9 @@
 use crate::{Cache, InterfaceTypeDefinition, Warden};
 use bluejay_core::definition::{self, SchemaDefinition, TypeDefinitionReference};
-use once_cell::unsync::OnceCell;
 
 pub struct InterfaceImplementation<'a, S: SchemaDefinition, W: Warden<SchemaDefinition = S>> {
     inner: &'a S::InterfaceImplementation,
-    cache: &'a Cache<'a, S, W>,
-    interface: OnceCell<&'a InterfaceTypeDefinition<'a, S, W>>,
+    interface: &'a InterfaceTypeDefinition<'a, S, W>,
 }
 
 impl<'a, S: SchemaDefinition, W: Warden<SchemaDefinition = S>> InterfaceImplementation<'a, S, W> {
@@ -16,11 +14,17 @@ impl<'a, S: SchemaDefinition, W: Warden<SchemaDefinition = S>> InterfaceImplemen
         cache
             .warden()
             .is_interface_implementation_visible(inner)
-            .then_some(Self {
-                inner,
-                cache,
-                interface: OnceCell::new(),
+            .then(|| {
+                cache
+                    .get_or_create_type_definition(TypeDefinitionReference::Interface(
+                        definition::InterfaceImplementation::interface(inner),
+                    ))
+                    .map(|td| Self {
+                        inner,
+                        interface: td.as_interface().unwrap(),
+                    })
             })
+            .flatten()
     }
 
     pub fn inner(&self) -> &'a S::InterfaceImplementation {
@@ -34,13 +38,6 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>>
     type InterfaceTypeDefinition = InterfaceTypeDefinition<'a, S, W>;
 
     fn interface(&self) -> &Self::InterfaceTypeDefinition {
-        self.interface.get_or_init(|| {
-            self.cache
-                .get_or_create_type_definition(TypeDefinitionReference::Interface(
-                    self.inner.interface(),
-                ))
-                .as_interface()
-                .unwrap()
-        })
+        self.interface
     }
 }

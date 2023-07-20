@@ -1,10 +1,11 @@
-use crate::{Cache, Warden};
+use crate::{Cache, Directives, Warden};
 use bluejay_core::definition::{self, SchemaDefinition};
 use std::marker::PhantomData;
 
 pub struct EnumValueDefinition<'a, S: SchemaDefinition, W: Warden<SchemaDefinition = S>> {
     inner: &'a S::EnumValueDefinition,
     warden: PhantomData<W>,
+    directives: Option<Directives<'a, S, W>>,
 }
 
 impl<'a, S: SchemaDefinition, W: Warden<SchemaDefinition = S>> EnumValueDefinition<'a, S, W> {
@@ -18,6 +19,8 @@ impl<'a, S: SchemaDefinition, W: Warden<SchemaDefinition = S>> EnumValueDefiniti
             .then_some(Self {
                 inner,
                 warden: Default::default(),
+                directives: definition::EnumValueDefinition::directives(inner)
+                    .map(|d| Directives::new(d, cache)),
             })
     }
 
@@ -29,7 +32,7 @@ impl<'a, S: SchemaDefinition, W: Warden<SchemaDefinition = S>> EnumValueDefiniti
 impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> definition::EnumValueDefinition
     for EnumValueDefinition<'a, S, W>
 {
-    type Directives = <S::EnumValueDefinition as definition::EnumValueDefinition>::Directives;
+    type Directives = Directives<'a, S, W>;
 
     fn description(&self) -> Option<&str> {
         self.inner.description()
@@ -40,6 +43,6 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> definition::
     }
 
     fn directives(&self) -> Option<&Self::Directives> {
-        self.inner.directives()
+        self.directives.as_ref()
     }
 }
