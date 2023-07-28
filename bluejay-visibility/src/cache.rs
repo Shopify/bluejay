@@ -17,7 +17,7 @@ impl<'a, S: SchemaDefinition, W: Warden<SchemaDefinition = S>> Cache<'a, S, W> {
         }
     }
 
-    pub(crate) fn warden(&self) -> &W {
+    pub fn warden(&self) -> &W {
         &self.warden
     }
 
