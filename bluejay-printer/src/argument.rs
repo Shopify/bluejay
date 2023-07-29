@@ -1,26 +1,38 @@
-use crate::value::DisplayValue;
-use bluejay_core::{Argument, Arguments, Value};
-use std::fmt::{Error, Write};
+use crate::value::ValuePrinter;
+use bluejay_core::{Argument, Arguments};
+use std::fmt::{Display, Formatter, Result};
 
-pub(crate) struct DisplayArgument;
+pub(crate) struct ArgumentPrinter<'a, const CONST: bool, T: Argument<CONST>>(&'a T);
 
-impl DisplayArgument {
-    pub(crate) fn fmt<const CONST: bool, T: Argument<CONST>, W: Write>(
-        argument: &T,
-        f: &mut W,
-    ) -> Result<(), Error> {
-        write!(f, "{}: ", argument.name())?;
-        DisplayValue::fmt(&argument.value().as_ref(), f)
+impl<'a, const CONST: bool, T: Argument<CONST>> ArgumentPrinter<'a, CONST, T> {
+    pub(crate) fn new(argument: &'a T) -> Self {
+        Self(argument)
     }
 }
 
-pub(crate) struct DisplayArguments;
+impl<'a, const CONST: bool, T: Argument<CONST>> Display for ArgumentPrinter<'a, CONST, T> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        let Self(argument) = *self;
+        write!(
+            f,
+            "{}: {}",
+            argument.name(),
+            ValuePrinter::new(argument.value())
+        )
+    }
+}
 
-impl DisplayArguments {
-    pub(crate) fn fmt<const CONST: bool, T: Arguments<CONST>, W: Write>(
-        arguments: &T,
-        f: &mut W,
-    ) -> Result<(), Error> {
+pub(crate) struct ArgumentsPrinter<'a, const CONST: bool, T: Arguments<CONST>>(&'a T);
+
+impl<'a, const CONST: bool, T: Arguments<CONST>> ArgumentsPrinter<'a, CONST, T> {
+    pub(crate) fn new(arguments: &'a T) -> Self {
+        Self(arguments)
+    }
+}
+
+impl<'a, const CONST: bool, T: Arguments<CONST>> Display for ArgumentsPrinter<'a, CONST, T> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        let Self(arguments) = *self;
         if arguments.is_empty() {
             return Ok(());
         }
@@ -32,28 +44,21 @@ impl DisplayArguments {
                 if idx != 0 {
                     write!(f, ", ")?;
                 }
-                DisplayArgument::fmt(argument, f)
+                write!(f, "{}", ArgumentPrinter::new(argument))
             })?;
         write!(f, ")")
-    }
-
-    #[cfg(test)]
-    fn to_string<const CONST: bool, T: Arguments<CONST>>(arguments: &T) -> String {
-        let mut s = String::new();
-        Self::fmt(arguments, &mut s).expect("fmt returned an error unexpectedly");
-        s
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::DisplayArguments;
+    use super::ArgumentsPrinter;
     use bluejay_parser::ast::{Arguments, Parse};
 
     #[test]
     fn test_arguments() {
         let s = "(a: 1, b: 2)";
         let parsed = Arguments::<false>::parse(s).unwrap();
-        assert_eq!(s, DisplayArguments::to_string(&parsed));
+        assert_eq!(s, ArgumentsPrinter::new(&parsed).to_string());
     }
 }

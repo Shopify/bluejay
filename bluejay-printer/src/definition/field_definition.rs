@@ -1,38 +1,57 @@
 use crate::{
-    definition::arguments_definition::DisplayArgumentsDefinition, directive::DisplayDirectives,
-    string_value::DisplayStringValue, write_indent, INDENTATION_SIZE,
+    definition::arguments_definition::ArgumentsDefinitionPrinter, directive::DirectivesPrinter,
+    string_value::BlockStringValuePrinter, write_indent, INDENTATION_SIZE,
 };
 use bluejay_core::{
     definition::{FieldDefinition, FieldsDefinition, OutputType},
     AsIter,
 };
-use std::fmt::{Error, Write};
+use std::fmt::{Display, Formatter, Result};
 
-pub(crate) struct DisplayFieldDefinition;
+pub(crate) struct FieldDefinitionPrinter<'a, F: FieldDefinition> {
+    field_definition: &'a F,
+    indentation: usize,
+}
 
-impl DisplayFieldDefinition {
-    pub(crate) fn fmt<T: FieldDefinition, W: Write>(
-        field_definition: &T,
-        f: &mut W,
-        indentation: usize,
-    ) -> Result<(), Error> {
+impl<'a, F: FieldDefinition> FieldDefinitionPrinter<'a, F> {
+    pub(crate) fn new(field_definition: &'a F, indentation: usize) -> Self {
+        Self {
+            field_definition,
+            indentation,
+        }
+    }
+}
+
+impl<'a, F: FieldDefinition> Display for FieldDefinitionPrinter<'a, F> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        let Self {
+            field_definition,
+            indentation,
+        } = *self;
         if let Some(description) = field_definition.description() {
-            DisplayStringValue::fmt_block(description, f, indentation)?;
+            write!(
+                f,
+                "{}",
+                BlockStringValuePrinter::new(description, indentation)
+            )?;
         }
 
         write_indent(f, indentation)?;
         write!(f, "{}", field_definition.name(),)?;
 
         if let Some(arguments_definition) = field_definition.arguments_definition() {
-            DisplayArgumentsDefinition::fmt(arguments_definition, f, indentation)?;
+            write!(
+                f,
+                "{}",
+                ArgumentsDefinitionPrinter::new(arguments_definition, indentation)
+            )?;
         }
 
         write!(f, ": {}", field_definition.r#type().as_ref().display_name())?;
 
         if let Some(directives) = field_definition.directives() {
             if !directives.is_empty() {
-                write!(f, " ")?;
-                DisplayDirectives::fmt(directives, f)?;
+                write!(f, " {}", DirectivesPrinter::new(directives))?;
             }
         }
 
@@ -40,14 +59,26 @@ impl DisplayFieldDefinition {
     }
 }
 
-pub(crate) struct DisplayFieldsDefinition;
+pub(crate) struct FieldsDefinitionPrinter<'a, F: FieldsDefinition> {
+    fields_definition: &'a F,
+    indentation: usize,
+}
 
-impl DisplayFieldsDefinition {
-    pub(crate) fn fmt<T: FieldsDefinition, W: Write>(
-        fields_definition: &T,
-        f: &mut W,
-        indentation: usize,
-    ) -> Result<(), Error> {
+impl<'a, F: FieldsDefinition> FieldsDefinitionPrinter<'a, F> {
+    pub(crate) fn new(fields_definition: &'a F, indentation: usize) -> Self {
+        Self {
+            fields_definition,
+            indentation,
+        }
+    }
+}
+
+impl<'a, F: FieldsDefinition> Display for FieldsDefinitionPrinter<'a, F> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        let Self {
+            fields_definition,
+            indentation,
+        } = *self;
         writeln!(f, "{{")?;
 
         fields_definition
@@ -58,7 +89,7 @@ impl DisplayFieldsDefinition {
                 if idx != 0 {
                     writeln!(f)?;
                 }
-                DisplayFieldDefinition::fmt(fd, f, indentation + INDENTATION_SIZE)
+                FieldDefinitionPrinter::new(fd, indentation + INDENTATION_SIZE).fmt(f)
             })?;
 
         write_indent(f, indentation)?;

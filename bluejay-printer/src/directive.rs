@@ -1,29 +1,37 @@
-use crate::argument::DisplayArguments;
+use crate::argument::ArgumentsPrinter;
 use bluejay_core::{Directive, Directives};
-use std::fmt::{Error, Write};
+use std::fmt::{Display, Formatter, Result};
 
-pub(crate) struct DisplayDirective;
+pub(crate) struct DirectivePrinter<'a, const CONST: bool, T: Directive<CONST>>(&'a T);
 
-impl DisplayDirective {
-    pub(crate) fn fmt<const CONST: bool, T: Directive<CONST>, W: Write>(
-        directive: &T,
-        f: &mut W,
-    ) -> Result<(), Error> {
+impl<'a, const CONST: bool, T: Directive<CONST>> DirectivePrinter<'a, CONST, T> {
+    pub(crate) fn new(directive: &'a T) -> Self {
+        Self(directive)
+    }
+}
+
+impl<'a, const CONST: bool, T: Directive<CONST>> Display for DirectivePrinter<'a, CONST, T> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        let Self(directive) = *self;
         write!(f, "@{}", directive.name())?;
         if let Some(arguments) = directive.arguments() {
-            DisplayArguments::fmt(arguments, f)?;
+            write!(f, "{}", ArgumentsPrinter::new(arguments))?;
         }
         Ok(())
     }
 }
 
-pub(crate) struct DisplayDirectives;
+pub(crate) struct DirectivesPrinter<'a, const CONST: bool, T: Directives<CONST>>(&'a T);
 
-impl DisplayDirectives {
-    pub(crate) fn fmt<const CONST: bool, T: Directives<CONST>, W: Write>(
-        directives: &T,
-        f: &mut W,
-    ) -> Result<(), Error> {
+impl<'a, const CONST: bool, T: Directives<CONST>> DirectivesPrinter<'a, CONST, T> {
+    pub(crate) fn new(directives: &'a T) -> Self {
+        Self(directives)
+    }
+}
+
+impl<'a, const CONST: bool, T: Directives<CONST>> Display for DirectivesPrinter<'a, CONST, T> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        let Self(directives) = *self;
         directives
             .iter()
             .enumerate()
@@ -31,27 +39,20 @@ impl DisplayDirectives {
                 if idx != 0 {
                     write!(f, " ")?;
                 }
-                DisplayDirective::fmt(directive, f)
+                write!(f, "{}", DirectivePrinter::new(directive))
             })
-    }
-
-    #[cfg(test)]
-    fn to_string<const CONST: bool, T: Directives<CONST>>(directives: &T) -> String {
-        let mut s = String::new();
-        Self::fmt(directives, &mut s).expect("fmt returned an error unexpectedly");
-        s
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::DisplayDirectives;
+    use super::DirectivesPrinter;
     use bluejay_parser::ast::{Directives, Parse};
 
     #[test]
     fn test_directives() {
         let s = "@foo(a: 1, b: 2) @bar";
         let parsed = Directives::<false>::parse(s).unwrap();
-        assert_eq!(s, DisplayDirectives::to_string(&parsed));
+        assert_eq!(s, DirectivesPrinter::new(&parsed).to_string());
     }
 }

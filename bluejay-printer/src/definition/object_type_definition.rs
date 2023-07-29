@@ -1,39 +1,50 @@
 use crate::{
     definition::{
-        field_definition::DisplayFieldsDefinition,
-        interface_implementations::DisplayInterfaceImplementations,
+        field_definition::FieldsDefinitionPrinter,
+        interface_implementations::InterfaceImplementationsPrinter,
     },
-    directive::DisplayDirectives,
-    string_value::DisplayStringValue,
+    directive::DirectivesPrinter,
+    string_value::BlockStringValuePrinter,
 };
 use bluejay_core::{definition::ObjectTypeDefinition, AsIter};
-use std::fmt::{Error, Write};
+use std::fmt::{Display, Formatter, Result};
 
-pub(crate) struct DisplayObjectTypeDefinition;
+pub(crate) struct ObjectTypeDefinitionPrinter<'a, O: ObjectTypeDefinition>(&'a O);
 
-impl DisplayObjectTypeDefinition {
-    pub(crate) fn fmt<T: ObjectTypeDefinition, W: Write>(
-        object_type_definition: &T,
-        f: &mut W,
-    ) -> Result<(), Error> {
+impl<'a, O: ObjectTypeDefinition> ObjectTypeDefinitionPrinter<'a, O> {
+    pub(crate) fn new(object_type_definition: &'a O) -> Self {
+        Self(object_type_definition)
+    }
+}
+
+impl<'a, O: ObjectTypeDefinition> Display for ObjectTypeDefinitionPrinter<'a, O> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        let Self(object_type_definition) = *self;
         if let Some(description) = object_type_definition.description() {
-            DisplayStringValue::fmt_block(description, f, 0)?;
+            write!(f, "{}", BlockStringValuePrinter::new(description, 0))?;
         }
 
         write!(f, "type {} ", object_type_definition.name())?;
 
         if let Some(interface_implementations) = object_type_definition.interface_implementations()
         {
-            DisplayInterfaceImplementations::fmt(interface_implementations, f)?;
+            write!(
+                f,
+                "{}",
+                InterfaceImplementationsPrinter::new(interface_implementations)
+            )?;
         }
 
         if let Some(directives) = object_type_definition.directives() {
             if !directives.is_empty() {
-                DisplayDirectives::fmt(directives, f)?;
-                write!(f, " ")?;
+                write!(f, "{} ", DirectivesPrinter::new(directives))?;
             }
         }
 
-        DisplayFieldsDefinition::fmt(object_type_definition.fields_definition(), f, 0)
+        write!(
+            f,
+            "{}",
+            FieldsDefinitionPrinter::new(object_type_definition.fields_definition(), 0)
+        )
     }
 }

@@ -1,15 +1,19 @@
 use bluejay_core::definition::{
     InterfaceImplementation, InterfaceImplementations, InterfaceTypeDefinition,
 };
-use std::fmt::{Error, Write};
+use std::fmt::{Display, Formatter, Result};
 
-pub(crate) struct DisplayInterfaceImplementations;
+pub(crate) struct InterfaceImplementationsPrinter<'a, I: InterfaceImplementations>(&'a I);
 
-impl DisplayInterfaceImplementations {
-    pub(crate) fn fmt<T: InterfaceImplementations, W: Write>(
-        interface_implementations: &T,
-        f: &mut W,
-    ) -> Result<(), Error> {
+impl<'a, I: InterfaceImplementations> InterfaceImplementationsPrinter<'a, I> {
+    pub(crate) fn new(interface_implementations: &'a I) -> Self {
+        Self(interface_implementations)
+    }
+}
+
+impl<'a, I: InterfaceImplementations> Display for InterfaceImplementationsPrinter<'a, I> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        let Self(interface_implementations) = *self;
         if !interface_implementations.is_empty() {
             write!(f, "implements ")?;
             interface_implementations

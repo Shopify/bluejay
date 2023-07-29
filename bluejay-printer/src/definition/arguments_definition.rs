@@ -1,17 +1,29 @@
 use crate::{
-    definition::input_value_definition::DisplayInputValueDefinition, write_indent, INDENTATION_SIZE,
+    definition::input_value_definition::InputValueDefinitionPrinter, write_indent, INDENTATION_SIZE,
 };
 use bluejay_core::definition::ArgumentsDefinition;
-use std::fmt::{Error, Write};
+use std::fmt::{Display, Formatter, Result};
 
-pub(crate) struct DisplayArgumentsDefinition;
+pub(crate) struct ArgumentsDefinitionPrinter<'a, T: ArgumentsDefinition> {
+    arguments_definition: &'a T,
+    indentation: usize,
+}
 
-impl DisplayArgumentsDefinition {
-    pub(crate) fn fmt<T: ArgumentsDefinition, W: Write>(
-        arguments_definition: &T,
-        f: &mut W,
-        indentation: usize,
-    ) -> Result<(), Error> {
+impl<'a, T: ArgumentsDefinition> ArgumentsDefinitionPrinter<'a, T> {
+    pub(crate) fn new(arguments_definition: &'a T, indentation: usize) -> Self {
+        Self {
+            arguments_definition,
+            indentation,
+        }
+    }
+}
+
+impl<'a, T: ArgumentsDefinition> Display for ArgumentsDefinitionPrinter<'a, T> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        let Self {
+            arguments_definition,
+            indentation,
+        } = *self;
         if arguments_definition.is_empty() {
             return Ok(());
         }
@@ -25,7 +37,11 @@ impl DisplayArgumentsDefinition {
                 if idx != 0 {
                     writeln!(f)?;
                 }
-                DisplayInputValueDefinition::fmt(ivd, f, indentation + INDENTATION_SIZE)
+                write!(
+                    f,
+                    "{}",
+                    InputValueDefinitionPrinter::new(ivd, indentation + INDENTATION_SIZE)
+                )
             })?;
 
         write_indent(f, indentation)?;

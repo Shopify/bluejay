@@ -1,12 +1,19 @@
 use crate::write_indent;
-use std::fmt::{Error, Write};
+use std::fmt::{Display, Formatter, Result};
 
-pub(crate) struct DisplayStringValue;
+pub(crate) struct StringValuePrinter<'a>(&'a str);
 
-impl DisplayStringValue {
-    pub(crate) fn fmt<W: Write>(s: &str, f: &mut W) -> Result<(), Error> {
+impl<'a> StringValuePrinter<'a> {
+    pub(crate) fn new(value: &'a str) -> Self {
+        Self(value)
+    }
+}
+
+impl<'a> Display for StringValuePrinter<'a> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        let Self(value) = *self;
         write!(f, "\"")?;
-        s.chars().try_for_each(|c| match c {
+        value.chars().try_for_each(|c| match c {
             '\"' | '\\' => write!(f, "\\{c}"),
             '\u{0008}' => write!(f, "\\b"),
             '\u{000C}' => write!(f, "\\f"),
@@ -17,12 +24,26 @@ impl DisplayStringValue {
         })?;
         write!(f, "\"")
     }
+}
 
-    pub(crate) fn fmt_block<W: Write>(s: &str, f: &mut W, indentation: usize) -> Result<(), Error> {
+pub(crate) struct BlockStringValuePrinter<'a> {
+    value: &'a str,
+    indentation: usize,
+}
+
+impl<'a> BlockStringValuePrinter<'a> {
+    pub(crate) fn new(value: &'a str, indentation: usize) -> Self {
+        Self { value, indentation }
+    }
+}
+
+impl<'a> Display for BlockStringValuePrinter<'a> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        let Self { value, indentation } = *self;
         write_indent(f, indentation)?;
         writeln!(f, "\"\"\"")?;
 
-        let escaped = s.replace("\"\"\"", "\\\"\"\"");
+        let escaped = value.replace("\"\"\"", "\\\"\"\"");
 
         escaped.lines().try_for_each(|line| {
             write_indent(f, indentation)?;
@@ -32,22 +53,14 @@ impl DisplayStringValue {
         write_indent(f, indentation)?;
         writeln!(f, "\"\"\"")
     }
-
-    #[cfg(test)]
-    fn to_block_string(s: &str, indentation: usize) -> String {
-        let mut formatted = String::new();
-        Self::fmt_block(s, &mut formatted, indentation)
-            .expect("fmt_block returned an error unexpectedly");
-        formatted
-    }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::DisplayStringValue;
+    use super::BlockStringValuePrinter;
 
     fn assert_prints_block(expected_output: &str, input: &str, indentation: usize) {
-        let output = DisplayStringValue::to_block_string(input, indentation);
+        let output = BlockStringValuePrinter::new(input, indentation).to_string();
         assert_eq!(expected_output, output);
     }
 

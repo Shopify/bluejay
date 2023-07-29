@@ -1,26 +1,30 @@
-use crate::{directive::DisplayDirectives, string_value::DisplayStringValue};
+use crate::{directive::DirectivesPrinter, string_value::BlockStringValuePrinter};
 use bluejay_core::{
     definition::{ObjectTypeDefinition, UnionMemberType, UnionTypeDefinition},
     AsIter,
 };
-use std::fmt::{Error, Write};
+use std::fmt::{Display, Formatter, Result};
 
-pub(crate) struct DisplayUnionTypeDefinition;
+pub(crate) struct UnionTypeDefinitionPrinter<'a, U: UnionTypeDefinition>(&'a U);
 
-impl DisplayUnionTypeDefinition {
-    pub(crate) fn fmt<T: UnionTypeDefinition, W: Write>(
-        union_type_definition: &T,
-        f: &mut W,
-    ) -> Result<(), Error> {
+impl<'a, U: UnionTypeDefinition> UnionTypeDefinitionPrinter<'a, U> {
+    pub(crate) fn new(union_type_definition: &'a U) -> Self {
+        Self(union_type_definition)
+    }
+}
+
+impl<'a, U: UnionTypeDefinition> Display for UnionTypeDefinitionPrinter<'a, U> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        let Self(union_type_definition) = *self;
         if let Some(description) = union_type_definition.description() {
-            DisplayStringValue::fmt_block(description, f, 0)?;
+            write!(f, "{}", BlockStringValuePrinter::new(description, 0))?;
         }
 
         write!(f, "union {}", union_type_definition.name())?;
 
         if let Some(directives) = union_type_definition.directives() {
             if !directives.is_empty() {
-                DisplayDirectives::fmt(directives, f)?;
+                write!(f, " {}", DirectivesPrinter::new(directives))?;
             }
         }
 

@@ -1,23 +1,39 @@
 use crate::{
-    directive::DisplayDirectives, string_value::DisplayStringValue, value::DisplayValue,
+    directive::DirectivesPrinter, string_value::BlockStringValuePrinter, value::ValuePrinter,
     write_indent,
 };
 use bluejay_core::{
     definition::{InputType, InputValueDefinition},
-    AsIter, Value,
+    AsIter,
 };
-use std::fmt::{Error, Write};
+use std::fmt::{Display, Formatter, Result};
 
-pub(crate) struct DisplayInputValueDefinition;
+pub(crate) struct InputValueDefinitionPrinter<'a, T: InputValueDefinition> {
+    input_value_definition: &'a T,
+    indentation: usize,
+}
 
-impl DisplayInputValueDefinition {
-    pub(crate) fn fmt<T: InputValueDefinition, W: Write>(
-        input_value_definition: &T,
-        f: &mut W,
-        indentation: usize,
-    ) -> Result<(), Error> {
+impl<'a, T: InputValueDefinition> InputValueDefinitionPrinter<'a, T> {
+    pub(crate) fn new(input_value_definition: &'a T, indentation: usize) -> Self {
+        Self {
+            input_value_definition,
+            indentation,
+        }
+    }
+}
+
+impl<'a, T: InputValueDefinition> Display for InputValueDefinitionPrinter<'a, T> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        let Self {
+            input_value_definition,
+            indentation,
+        } = *self;
         if let Some(description) = input_value_definition.description() {
-            DisplayStringValue::fmt_block(description, f, indentation)?;
+            write!(
+                f,
+                "{}",
+                BlockStringValuePrinter::new(description, indentation)
+            )?;
         }
 
         write_indent(f, indentation)?;
@@ -29,14 +45,12 @@ impl DisplayInputValueDefinition {
         )?;
 
         if let Some(default_value) = input_value_definition.default_value() {
-            write!(f, " = ")?;
-            DisplayValue::fmt(&default_value.as_ref(), f)?;
+            write!(f, " = {}", ValuePrinter::new(default_value))?;
         }
 
         if let Some(directives) = input_value_definition.directives() {
             if !directives.is_empty() {
-                write!(f, " ")?;
-                DisplayDirectives::fmt(directives, f)?;
+                write!(f, " {}", DirectivesPrinter::new(directives))?;
             }
         }
 

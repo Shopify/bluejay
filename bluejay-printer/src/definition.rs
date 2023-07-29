@@ -11,4 +11,4 @@ mod scalar_type_definition;
 mod schema_definition;
 mod union_type_definition;
 
-pub use schema_definition::DisplaySchemaDefinition;
+pub use schema_definition::SchemaDefinitionPrinter;

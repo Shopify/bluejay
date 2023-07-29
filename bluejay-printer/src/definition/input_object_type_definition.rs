@@ -1,27 +1,30 @@
 use crate::{
-    definition::input_value_definition::DisplayInputValueDefinition, directive::DisplayDirectives,
-    string_value::DisplayStringValue, INDENTATION_SIZE,
+    definition::input_value_definition::InputValueDefinitionPrinter, directive::DirectivesPrinter,
+    string_value::BlockStringValuePrinter, INDENTATION_SIZE,
 };
 use bluejay_core::{definition::InputObjectTypeDefinition, AsIter};
-use std::fmt::{Error, Write};
+use std::fmt::{Display, Formatter, Result};
 
-pub(crate) struct DisplayInputObjectTypeDefinition;
+pub(crate) struct InputObjectTypeDefinitionPrinter<'a, I: InputObjectTypeDefinition>(&'a I);
 
-impl DisplayInputObjectTypeDefinition {
-    pub(crate) fn fmt<T: InputObjectTypeDefinition, W: Write>(
-        input_object_type_definition: &T,
-        f: &mut W,
-    ) -> Result<(), Error> {
+impl<'a, I: InputObjectTypeDefinition> InputObjectTypeDefinitionPrinter<'a, I> {
+    pub(crate) fn new(input_object_type_definition: &'a I) -> Self {
+        Self(input_object_type_definition)
+    }
+}
+
+impl<'a, I: InputObjectTypeDefinition> Display for InputObjectTypeDefinitionPrinter<'a, I> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        let Self(input_object_type_definition) = *self;
         if let Some(description) = input_object_type_definition.description() {
-            DisplayStringValue::fmt_block(description, f, 0)?;
+            write!(f, "{}", BlockStringValuePrinter::new(description, 0))?;
         }
 
         write!(f, "input {}", input_object_type_definition.name())?;
 
         if let Some(directives) = input_object_type_definition.directives() {
             if !directives.is_empty() {
-                write!(f, " ")?;
-                DisplayDirectives::fmt(directives, f)?;
+                write!(f, " {}", DirectivesPrinter::new(directives))?;
             }
         }
 
@@ -35,7 +38,11 @@ impl DisplayInputObjectTypeDefinition {
                 if idx != 0 {
                     writeln!(f)?;
                 }
-                DisplayInputValueDefinition::fmt(ivd, f, INDENTATION_SIZE)
+                write!(
+                    f,
+                    "{}",
+                    InputValueDefinitionPrinter::new(ivd, INDENTATION_SIZE)
+                )
             })?;
 
         writeln!(f, "}}")
