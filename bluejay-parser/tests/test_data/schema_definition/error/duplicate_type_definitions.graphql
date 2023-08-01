@@ -1,3 +1,6 @@
+"""
+Some chars that take more than one byte: é
+"""
 type Query {
   intField: Int!
 }

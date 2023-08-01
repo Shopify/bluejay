@@ -6,11 +6,11 @@ input_file: bluejay-parser/tests/test_data/schema_definition/error/duplicate_typ
 Error: Multiple type definitions with name `Query`
    ╭─[<unknown>:1:1]
    │
- 1 │ type Query {
+ 4 │ type Query {
    │      ──┬──  
    │        ╰──── Type definition with name `Query`
    │ 
- 5 │ type Query {
+ 8 │ type Query {
    │      ──┬──  
    │        ╰──── Type definition with name `Query`
 ───╯

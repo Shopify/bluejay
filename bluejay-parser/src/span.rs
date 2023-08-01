@@ -18,10 +18,6 @@ impl Span {
     pub fn merge(&self, other: &Self) -> Self {
         Self(min(self.0.start, other.0.start)..max(self.0.end, other.0.end))
     }
-
-    pub(crate) fn to_range(&self) -> std::ops::Range<usize> {
-        self.0.clone()
-    }
 }
 
 impl From<logos::Span> for Span {
