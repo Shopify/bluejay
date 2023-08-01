@@ -1,6 +1,6 @@
 use crate::ast::definition::{
-    definition_document::ImplicitSchemaDefinition, Context, DirectiveDefinition,
-    ExplicitSchemaDefinition, RootOperationTypeDefinition, TypeDefinition,
+    Context, DirectiveDefinition, ExplicitSchemaDefinition, RootOperationTypeDefinition,
+    TypeDefinition,
 };
 use crate::error::{Annotation, Error};
 use crate::lexical_token::Name;
@@ -33,10 +33,6 @@ pub enum DefinitionDocumentError<'a, C: Context> {
     },
     DuplicateExplicitSchemaDefinitions {
         definitions: &'a [ExplicitSchemaDefinition<'a>],
-    },
-    ImplicitAndExplicitSchemaDefinitions {
-        implicit: ImplicitSchemaDefinition<'a, C>,
-        explicit: &'a ExplicitSchemaDefinition<'a>,
     },
     DuplicateExplicitRootOperationDefinitions {
         operation_type: OperationType,
@@ -173,38 +169,6 @@ impl<'a, C: Context> From<DefinitionDocumentError<'a, C>> for Error {
                     Vec::new(),
                 )
             }
-            DefinitionDocumentError::ImplicitAndExplicitSchemaDefinitions {
-                implicit,
-                explicit,
-            } => Error::new(
-                "Document uses implicit and explicit schema definitions",
-                Some(Annotation::new(
-                    "Explicit schema definition",
-                    explicit.schema_identifier_span().clone(),
-                )),
-                {
-                    let mut annotations = vec![Annotation::new(
-                        "Query of implicit schema definition",
-                        implicit.query.name().span().clone(),
-                    )];
-
-                    if let Some(mutation) = implicit.mutation {
-                        annotations.push(Annotation::new(
-                            "Mutation of implicit schema definition",
-                            mutation.name().span().clone(),
-                        ));
-                    }
-
-                    if let Some(subscription) = implicit.subscription {
-                        annotations.push(Annotation::new(
-                            "Subscription of implicit schema definition",
-                            subscription.name().span().clone(),
-                        ));
-                    }
-
-                    annotations
-                },
-            ),
             DefinitionDocumentError::ImplicitSchemaDefinitionMissingQuery => {
                 Error::new("Implicit schema definition missing query", None, Vec::new())
             }

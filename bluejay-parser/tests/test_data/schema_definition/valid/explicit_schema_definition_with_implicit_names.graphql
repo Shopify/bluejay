@@ -1,0 +1,25 @@
+type Query {
+  intField: Int!
+}
+
+type Subscription {
+  intField: Int!
+}
+
+type QueryRoot {
+  intField: Int!
+}
+
+type Mutation {
+  intField: Int!
+}
+
+type SubscriptionRoot {
+  intField: Int!
+}
+
+schema {
+  query: QueryRoot
+  mutation: Mutation
+  subscription: SubscriptionRoot
+}

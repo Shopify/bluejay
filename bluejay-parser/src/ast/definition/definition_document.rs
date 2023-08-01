@@ -645,8 +645,23 @@ impl<'a, C: Context> TryFrom<&'a DefinitionDocument<'a, C>> for SchemaDefinition
             return Err(errors);
         }
 
-        let explicit_schema_definition =
-            definition_document.explicit_schema_definition(&indexed_type_definitions, &mut errors);
+        if let Some((explicit, query, mutation, subscription)) =
+            definition_document.explicit_schema_definition(&indexed_type_definitions, &mut errors)
+        {
+            if errors.is_empty() {
+                return Ok(Self::new(
+                    indexed_type_definitions,
+                    indexed_directive_definitions,
+                    explicit.description(),
+                    query,
+                    mutation,
+                    subscription,
+                    explicit.directives(),
+                ));
+            } else {
+                return Err(errors);
+            }
+        }
 
         let implicit_schema_definition =
             match DefinitionDocument::implicit_schema_definition(&indexed_type_definitions) {
@@ -661,29 +676,8 @@ impl<'a, C: Context> TryFrom<&'a DefinitionDocument<'a, C>> for SchemaDefinition
             return Err(errors);
         }
 
-        match (explicit_schema_definition, implicit_schema_definition) {
-            (Some((explicit, _, mutation, subscription)), Some(implicit))
-                if !(explicit.uses_implicit_names()
-                    && mutation.is_some() == implicit.mutation.is_some()
-                    && subscription.is_some() == implicit.mutation.is_some()) =>
-            {
-                Err(vec![
-                    DefinitionDocumentError::ImplicitAndExplicitSchemaDefinitions {
-                        implicit,
-                        explicit,
-                    },
-                ])
-            }
-            (Some((explicit, query, mutation, subscription)), _) => Ok(Self::new(
-                indexed_type_definitions,
-                indexed_directive_definitions,
-                explicit.description(),
-                query,
-                mutation,
-                subscription,
-                explicit.directives(),
-            )),
-            (None, Some(implicit)) => Ok(Self::new(
+        match implicit_schema_definition {
+            Some(implicit) => Ok(Self::new(
                 indexed_type_definitions,
                 indexed_directive_definitions,
                 None,
@@ -692,7 +686,7 @@ impl<'a, C: Context> TryFrom<&'a DefinitionDocument<'a, C>> for SchemaDefinition
                 implicit.subscription,
                 None,
             )),
-            (None, None) => Err(vec![DefinitionDocumentError::NoSchemaDefinition]),
+            None => Err(vec![DefinitionDocumentError::NoSchemaDefinition]),
         }
     }
 }

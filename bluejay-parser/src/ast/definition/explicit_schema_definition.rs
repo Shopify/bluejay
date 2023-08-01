@@ -15,7 +15,6 @@ pub struct ExplicitSchemaDefinition<'a> {
 
 impl<'a> ExplicitSchemaDefinition<'a> {
     pub(crate) const SCHEMA_IDENTIFIER: &'static str = "schema";
-    const IMPLICIT_OPERATION_TYPE_NAMES: [&'static str; 3] = ["Query", "Mutation", "Subscription"];
 
     pub(crate) fn description(&self) -> Option<&StringValue> {
         self.description.as_ref()
@@ -27,12 +26,6 @@ impl<'a> ExplicitSchemaDefinition<'a> {
 
     pub(crate) fn directives(&self) -> Option<&ConstDirectives<'a>> {
         self.directives.as_ref()
-    }
-
-    pub(crate) fn uses_implicit_names(&self) -> bool {
-        self.root_operation_type_definitions
-            .iter()
-            .all(|rotd| Self::IMPLICIT_OPERATION_TYPE_NAMES.contains(&rotd.name()))
     }
 
     pub(crate) fn schema_identifier_span(&self) -> &Span {
