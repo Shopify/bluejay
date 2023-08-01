@@ -371,51 +371,67 @@ impl<'a, C: Context> DefinitionDocument<'a, C> {
     fn explicit_schema_definition(
         &'a self,
         indexed_type_definitions: &BTreeMap<&str, &'a TypeDefinition<'a, C>>,
-        errors: &mut Vec<DefinitionDocumentError<'a, C>>,
-    ) -> Option<ExplicitSchemaDefinitionWithRootTypes<'a, C>> {
+    ) -> Result<
+        Option<ExplicitSchemaDefinitionWithRootTypes<'a, C>>,
+        Vec<DefinitionDocumentError<'a, C>>,
+    > {
+        let mut errors = Vec::new();
         if let Some(first) = self.schema_definitions.first() {
             if self.schema_definitions.len() == 1 {
-                let query = Self::explicit_operation_type_definition(
+                let query = match Self::explicit_operation_type_definition(
                     OperationType::Query,
                     first,
                     indexed_type_definitions,
-                    errors,
-                );
-                let mutation = Self::explicit_operation_type_definition(
+                ) {
+                    Ok(query) => query,
+                    Err(err) => {
+                        errors.push(err);
+                        None
+                    }
+                };
+                let mutation = match Self::explicit_operation_type_definition(
                     OperationType::Mutation,
                     first,
                     indexed_type_definitions,
-                    errors,
-                );
-                let subscription = Self::explicit_operation_type_definition(
+                ) {
+                    Ok(mutation) => mutation,
+                    Err(err) => {
+                        errors.push(err);
+                        None
+                    }
+                };
+                let subscription = match Self::explicit_operation_type_definition(
                     OperationType::Subscription,
                     first,
                     indexed_type_definitions,
-                    errors,
-                );
+                ) {
+                    Ok(subscription) => subscription,
+                    Err(err) => {
+                        errors.push(err);
+                        None
+                    }
+                };
                 if !errors.is_empty() {
-                    return None;
+                    return Err(errors);
                 }
                 if let Some(query) = query {
-                    Some((first, query, mutation, subscription))
+                    Ok(Some((first, query, mutation, subscription)))
                 } else {
-                    errors.push(
+                    Err(vec![
                         DefinitionDocumentError::ExplicitSchemaDefinitionMissingQuery {
                             definition: first,
                         },
-                    );
-                    None
+                    ])
                 }
             } else {
-                errors.push(
+                Err(vec![
                     DefinitionDocumentError::DuplicateExplicitSchemaDefinitions {
                         definitions: &self.schema_definitions,
                     },
-                );
-                None
+                ])
             }
         } else {
-            None
+            Ok(None)
         }
     }
 
@@ -423,8 +439,7 @@ impl<'a, C: Context> DefinitionDocument<'a, C> {
         operation_type: OperationType,
         explicit_schema_definition: &'a ExplicitSchemaDefinition<'a>,
         indexed_type_definitions: &BTreeMap<&str, &'a TypeDefinition<'a, C>>,
-        errors: &mut Vec<DefinitionDocumentError<'a, C>>,
-    ) -> Option<&'a ObjectTypeDefinition<'a, C>> {
+    ) -> Result<Option<&'a ObjectTypeDefinition<'a, C>>, DefinitionDocumentError<'a, C>> {
         let root_operation_type_definitions: Vec<_> = explicit_schema_definition
             .root_operation_type_definitions()
             .iter()
@@ -434,35 +449,28 @@ impl<'a, C: Context> DefinitionDocument<'a, C> {
         if let Some(first) = root_operation_type_definitions.first() {
             if root_operation_type_definitions.len() == 1 {
                 match indexed_type_definitions.get(first.name()) {
-                    Some(TypeDefinition::Object(o)) => Some(o),
-                    Some(_) => {
-                        errors.push(
-                            DefinitionDocumentError::ExplicitRootOperationTypeNotAnObject {
-                                name: first.name_token(),
-                            },
-                        );
-                        None
-                    }
-                    None => {
-                        errors.push(
-                            DefinitionDocumentError::ExplicitRootOperationTypeDoesNotExist {
-                                root_operation_type_definition: first,
-                            },
-                        );
-                        None
-                    }
+                    Some(TypeDefinition::Object(o)) => Ok(Some(o)),
+                    Some(_) => Err(
+                        DefinitionDocumentError::ExplicitRootOperationTypeNotAnObject {
+                            name: first.name_token(),
+                        },
+                    ),
+                    None => Err(
+                        DefinitionDocumentError::ExplicitRootOperationTypeDoesNotExist {
+                            root_operation_type_definition: first,
+                        },
+                    ),
                 }
             } else {
-                errors.push(
+                Err(
                     DefinitionDocumentError::DuplicateExplicitRootOperationDefinitions {
                         operation_type,
                         root_operation_type_definitions,
                     },
-                );
-                None
+                )
             }
         } else {
-            None
+            Ok(None)
         }
     }
 
@@ -646,37 +654,20 @@ impl<'a, C: Context> TryFrom<&'a DefinitionDocument<'a, C>> for SchemaDefinition
         }
 
         if let Some((explicit, query, mutation, subscription)) =
-            definition_document.explicit_schema_definition(&indexed_type_definitions, &mut errors)
+            definition_document.explicit_schema_definition(&indexed_type_definitions)?
         {
-            if errors.is_empty() {
-                return Ok(Self::new(
-                    indexed_type_definitions,
-                    indexed_directive_definitions,
-                    explicit.description(),
-                    query,
-                    mutation,
-                    subscription,
-                    explicit.directives(),
-                ));
-            } else {
-                return Err(errors);
-            }
+            return Ok(Self::new(
+                indexed_type_definitions,
+                indexed_directive_definitions,
+                explicit.description(),
+                query,
+                mutation,
+                subscription,
+                explicit.directives(),
+            ));
         }
 
-        let implicit_schema_definition =
-            match DefinitionDocument::implicit_schema_definition(&indexed_type_definitions) {
-                Ok(isd) => isd,
-                Err(mut errs) => {
-                    errors.append(&mut errs);
-                    None
-                }
-            };
-
-        if !errors.is_empty() {
-            return Err(errors);
-        }
-
-        match implicit_schema_definition {
+        match DefinitionDocument::implicit_schema_definition(&indexed_type_definitions)? {
             Some(implicit) => Ok(Self::new(
                 indexed_type_definitions,
                 indexed_directive_definitions,
