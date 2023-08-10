@@ -22,7 +22,7 @@ impl<'a, S: SchemaDefinition, W: Warden<SchemaDefinition = S>> Directives<'a, S,
 impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> AsIter
     for Directives<'a, S, W>
 {
-    type Item = <S::Directives as CoreDirectives<true>>::Directive;
+    type Item = S::Directive;
     type Iterator<'b> = std::iter::Copied<std::slice::Iter<'b, &'b Self::Item>> where 'a: 'b;
 
     fn iter(&self) -> Self::Iterator<'_> {
@@ -45,5 +45,5 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> AsIter
 impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> CoreDirectives<true>
     for Directives<'a, S, W>
 {
-    type Directive = <S::Directives as CoreDirectives<true>>::Directive;
+    type Directive = S::Directive;
 }
