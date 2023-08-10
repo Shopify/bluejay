@@ -9,6 +9,9 @@ pub struct Directive<'a, const CONST: bool> {
     span: Span,
 }
 
+pub type ConstDirective<'a> = Directive<'a, true>;
+pub type VariableDirective<'a> = Directive<'a, false>;
+
 impl<'a, const CONST: bool> IsMatch<'a> for Directive<'a, CONST> {
     fn is_match(tokens: &mut impl Tokens<'a>) -> bool {
         tokens.peek_punctuator_matches(0, PunctuatorType::At)

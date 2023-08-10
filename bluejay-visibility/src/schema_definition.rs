@@ -53,6 +53,7 @@ impl<'a, S: definition::SchemaDefinition, W: Warden<SchemaDefinition = S>>
 impl<'a, S: definition::SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>>
     definition::SchemaDefinition for SchemaDefinition<'a, S, W>
 {
+    type Directive = S::Directive;
     type Directives = Directives<'a, S, W>;
     type InputValueDefinition = InputValueDefinition<'a, S, W>;
     type InputFieldsDefinition = InputFieldsDefinition<'a, S, W>;
