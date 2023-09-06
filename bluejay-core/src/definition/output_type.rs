@@ -36,14 +36,7 @@ impl<'a, B: BaseOutputType> BaseOutputTypeReference<'a, B> {
 
 impl<'a, B: BaseOutputType> Clone for BaseOutputTypeReference<'a, B> {
     fn clone(&self) -> Self {
-        match self {
-            Self::BuiltinScalar(bstd) => Self::BuiltinScalar(*bstd),
-            Self::CustomScalar(cstd) => Self::CustomScalar(*cstd),
-            Self::Enum(etd) => Self::Enum(*etd),
-            Self::Object(otd) => Self::Object(*otd),
-            Self::Interface(itd) => Self::Interface(*itd),
-            Self::Union(utd) => Self::Union(*utd),
-        }
+        *self
     }
 }
 
@@ -67,10 +60,7 @@ pub enum OutputTypeReference<'a, O: OutputType> {
 
 impl<'a, O: OutputType> Clone for OutputTypeReference<'a, O> {
     fn clone(&self) -> Self {
-        match self {
-            Self::Base(base, required) => Self::Base(*base, *required),
-            Self::List(inner, required) => Self::List(*inner, *required),
-        }
+        *self
     }
 }
 

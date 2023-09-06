@@ -33,15 +33,7 @@ pub trait TypeDefinition: Sized {
 
 impl<'a, T: TypeDefinition> Clone for TypeDefinitionReference<'a, T> {
     fn clone(&self) -> Self {
-        match self {
-            Self::BuiltinScalar(bstd) => Self::BuiltinScalar(*bstd),
-            Self::CustomScalar(cs) => Self::CustomScalar(*cs),
-            Self::Enum(et) => Self::Enum(*et),
-            Self::Object(ot) => Self::Object(*ot),
-            Self::Interface(it) => Self::Interface(*it),
-            Self::Union(ut) => Self::Union(*ut),
-            Self::InputObject(iot) => Self::InputObject(*iot),
-        }
+        *self
     }
 }
 

@@ -14,12 +14,7 @@ pub enum BaseInputTypeReference<'a, B: BaseInputType> {
 
 impl<'a, B: BaseInputType> Clone for BaseInputTypeReference<'a, B> {
     fn clone(&self) -> Self {
-        match self {
-            Self::BuiltinScalar(bstd) => Self::BuiltinScalar(*bstd),
-            Self::CustomScalar(cstd) => Self::CustomScalar(*cstd),
-            Self::InputObject(iotd) => Self::InputObject(*iotd),
-            Self::Enum(etd) => Self::Enum(*etd),
-        }
+        *self
     }
 }
 
@@ -67,10 +62,7 @@ pub enum InputTypeReference<'a, I: InputType> {
 
 impl<'a, I: InputType> Clone for InputTypeReference<'a, I> {
     fn clone(&self) -> Self {
-        match self {
-            Self::Base(base, required) => Self::Base(*base, *required),
-            Self::List(inner, required) => Self::List(*inner, *required),
-        }
+        *self
     }
 }
 

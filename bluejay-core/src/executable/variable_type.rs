@@ -13,10 +13,7 @@ pub enum VariableTypeReference<'a, T: VariableType> {
 
 impl<'a, T: VariableType> Clone for VariableTypeReference<'a, T> {
     fn clone(&self) -> Self {
-        match self {
-            Self::Named(name, required) => Self::Named(name, *required),
-            Self::List(inner, required) => Self::List(inner, *required),
-        }
+        *self
     }
 }
 
