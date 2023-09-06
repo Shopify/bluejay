@@ -1,3 +1,15 @@
 name: bluejay
 
 type: rust
+
+commands:
+  build:
+    run: cargo build
+  test:
+    run: cargo test
+  style:
+    run: cargo clippy
+  fmt:
+    run: cargo fmt
+  all:
+    run: cargo fmt && cargo clippy && cargo test
