@@ -42,10 +42,7 @@ pub enum PathRoot<'a, E: ExecutableDocument> {
 
 impl<'a, E: ExecutableDocument> Clone for PathRoot<'a, E> {
     fn clone(&self) -> Self {
-        match self {
-            Self::Operation(o) => Self::Operation(o),
-            Self::Fragment(f) => Self::Fragment(f),
-        }
+        *self
     }
 }
 

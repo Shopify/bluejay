@@ -56,17 +56,7 @@ pub enum ValueReference<'a, const CONST: bool, V: Value<CONST>> {
 
 impl<'a, const CONST: bool, V: Value<CONST>> Clone for ValueReference<'a, CONST, V> {
     fn clone(&self) -> Self {
-        match self {
-            Self::Variable(v) => Self::Variable(v),
-            Self::Integer(i) => Self::Integer(*i),
-            Self::Float(f) => Self::Float(*f),
-            Self::String(s) => Self::String(s),
-            Self::Boolean(b) => Self::Boolean(*b),
-            Self::Null => Self::Null,
-            Self::Enum(e) => Self::Enum(e),
-            Self::List(l) => Self::List(l),
-            Self::Object(o) => Self::Object(o),
-        }
+        *self
     }
 }
 
