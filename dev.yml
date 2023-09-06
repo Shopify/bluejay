@@ -2,6 +2,13 @@ name: bluejay
 
 type: rust
 
+up:
+  - rust
+  - custom:
+      name: Install Insta (snapshot testing) for Rust
+      meet: cargo install cargo-insta
+      met?: cargo install --list | grep cargo-insta
+
 commands:
   build:
     run: cargo build
@@ -11,5 +18,7 @@ commands:
     run: cargo clippy
   fmt:
     run: cargo fmt
+  insta:
+    run: cargo insta
   all:
     run: cargo fmt && cargo clippy && cargo test
