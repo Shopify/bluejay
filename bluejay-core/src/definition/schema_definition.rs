@@ -6,9 +6,10 @@ use crate::definition::{
     ObjectTypeDefinition, OutputType, ScalarTypeDefinition, TypeDefinition,
     TypeDefinitionReference, UnionMemberType, UnionMemberTypes, UnionTypeDefinition,
 };
-use crate::{ConstDirective, ConstDirectives};
+use crate::{ConstArgument, ConstDirective, ConstDirectives};
 
 pub trait SchemaDefinition {
+    type Argument: ConstArgument;
     type Directive: ConstDirective;
     type Directives: ConstDirectives<Directive = Self::Directive>;
     type InputValueDefinition: InputValueDefinition<
