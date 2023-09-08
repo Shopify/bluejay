@@ -1,7 +1,7 @@
-use bluejay_core::definition::SchemaDefinition;
+use bluejay_core::definition::{InputValueDefinition, SchemaDefinition};
 use std::marker::PhantomData;
 
-pub trait Warden {
+pub trait Warden: Sized {
     type SchemaDefinition: SchemaDefinition;
 
     fn is_field_definition_visible(
@@ -63,6 +63,13 @@ pub trait Warden {
         &self,
         union_type_definition: &<Self::SchemaDefinition as SchemaDefinition>::UnionTypeDefinition,
     ) -> bool;
+
+    fn input_value_definition_default_value<'a>(
+        &self,
+        scoped_input_value_definition: &crate::InputValueDefinition<'a, Self::SchemaDefinition, Self>,
+    ) -> Option<&'a <<Self::SchemaDefinition as SchemaDefinition>::InputValueDefinition as InputValueDefinition>::Value>{
+        scoped_input_value_definition.inner().default_value()
+    }
 }
 
 pub struct NullWarden<S: SchemaDefinition>(PhantomData<S>);
