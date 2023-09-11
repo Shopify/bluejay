@@ -5,6 +5,7 @@ pub struct InputValueDefinition<'a, S: SchemaDefinition, W: Warden<SchemaDefinit
     inner: &'a S::InputValueDefinition,
     r#type: InputType<'a, S, W>,
     directives: Option<Directives<'a, S, W>>,
+    cache: &'a Cache<'a, S, W>,
 }
 
 impl<'a, S: SchemaDefinition, W: Warden<SchemaDefinition = S>> InputValueDefinition<'a, S, W> {
@@ -22,6 +23,7 @@ impl<'a, S: SchemaDefinition, W: Warden<SchemaDefinition = S>> InputValueDefinit
                         r#type,
                         directives: definition::InputValueDefinition::directives(inner)
                             .map(|d| Directives::new(d, cache)),
+                        cache,
                     },
                 )
             })
@@ -30,6 +32,10 @@ impl<'a, S: SchemaDefinition, W: Warden<SchemaDefinition = S>> InputValueDefinit
 
     pub fn inner(&self) -> &'a S::InputValueDefinition {
         self.inner
+    }
+
+    pub fn cache(&self) -> &'a Cache<'a, S, W> {
+        self.cache
     }
 }
 
@@ -49,7 +55,9 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> definition::
     }
 
     fn default_value(&self) -> Option<&Self::Value> {
-        self.inner.default_value()
+        self.cache
+            .warden()
+            .input_value_definition_default_value(self)
     }
 
     fn directives(&self) -> Option<&Self::Directives> {
