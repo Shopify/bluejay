@@ -51,6 +51,8 @@ impl<'a, C: Context> DefinitionDocument<'a, C> {
             directive_definitions: vec![
                 DirectiveDefinition::skip(),
                 DirectiveDefinition::include(),
+                DirectiveDefinition::deprecated(),
+                DirectiveDefinition::specified_by(),
             ],
             type_definitions: vec![
                 ObjectTypeDefinition::__schema().into(),
@@ -760,7 +762,10 @@ mod tests {
             .filter_map(|dd| dd.is_builtin().then_some(dd.name()))
             .collect();
 
-        assert_eq!(HashSet::from(["include", "skip"]), builtin_directives);
+        assert_eq!(
+            HashSet::from(["include", "skip", "deprecated", "specifiedBy"]),
+            builtin_directives
+        );
 
         let builtin_types: HashSet<&str> = schema_definition
             .type_definitions()
