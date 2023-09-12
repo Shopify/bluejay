@@ -55,7 +55,7 @@ impl<'a, C: Context> DirectiveDefinition<'a, C> {
         "directive @skip(if: Boolean!) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT";
     const INCLUDE_DEFINITION: &'static str =
         "directive @include(if: Boolean!) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT";
-    const DEPRECATED_DEFINITION: &'static str = "directive @deprecated(reason: String = \"No longer supported\") on FIELD_DEFINITION | ENUM_VALUE";
+    const DEPRECATED_DEFINITION: &'static str = "directive @deprecated(reason: String = \"No longer supported\") on FIELD_DEFINITION | ARGUMENT_DEFINITION | INPUT_FIELD_DEFINITION | ENUM_VALUE";
     const SPECIFIED_BY_DEFINITION: &'static str = "directive @specifiedBy(url: String!) on SCALAR";
 
     fn builtin(s: &'static str) -> Self {
