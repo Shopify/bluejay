@@ -6,7 +6,7 @@ use crate::{
     InterfaceTypeDefinition, ObjectTypeDefinition, OutputType, ScalarTypeDefinition,
     TypeDefinition, UnionMemberType, UnionMemberTypes, UnionTypeDefinition, Warden,
 };
-use bluejay_core::definition::{self, prelude::*};
+use bluejay_core::definition::{self, prelude::*, HasDirectives};
 use bluejay_core::AsIter;
 use elsa::FrozenMap;
 use once_cell::unsync::OnceCell;
@@ -20,7 +20,7 @@ pub struct SchemaDefinition<'a, S: definition::SchemaDefinition, W: Warden<Schem
     interface_implementors: FrozenMap<&'a str, Vec<&'a ObjectTypeDefinition<'a, S, W>>>,
     type_definitions: OnceCell<Vec<&'a TypeDefinition<'a, S, W>>>,
     directive_definitions: OnceCell<Vec<&'a DirectiveDefinition<'a, S, W>>>,
-    schema_directives: Option<Directives<'a, S, W>>,
+    directives: Option<Directives<'a, S, W>>,
 }
 
 impl<'a, S: definition::SchemaDefinition, W: Warden<SchemaDefinition = S>>
@@ -40,8 +40,7 @@ impl<'a, S: definition::SchemaDefinition, W: Warden<SchemaDefinition = S>>
             interface_implementors: FrozenMap::new(),
             type_definitions: OnceCell::new(),
             directive_definitions: OnceCell::new(),
-            schema_directives: definition::SchemaDefinition::schema_directives(inner)
-                .map(|d| Directives::new(d, cache)),
+            directives: inner.directives().map(|d| Directives::new(d, cache)),
         }
     }
 
@@ -53,8 +52,6 @@ impl<'a, S: definition::SchemaDefinition, W: Warden<SchemaDefinition = S>>
 impl<'a, S: definition::SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>>
     definition::SchemaDefinition for SchemaDefinition<'a, S, W>
 {
-    type Directive = S::Directive;
-    type Directives = Directives<'a, S, W>;
     type InputValueDefinition = InputValueDefinition<'a, S, W>;
     type InputFieldsDefinition = InputFieldsDefinition<'a, S, W>;
     type ArgumentsDefinition = ArgumentsDefinition<'a, S, W>;
@@ -96,10 +93,6 @@ impl<'a, S: definition::SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>>
 
     fn subscription(&self) -> Option<&Self::ObjectTypeDefinition> {
         self.subscription.as_ref()
-    }
-
-    fn schema_directives(&self) -> Option<&Self::Directives> {
-        self.schema_directives.as_ref()
     }
 
     fn type_definitions(&self) -> Self::TypeDefinitions<'_> {
@@ -182,5 +175,15 @@ impl<'a, S: definition::SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>>
                 .get_directive_definition(name)
                 .map(|dd| self.cache.get_or_create_directive_definition(dd))
         })
+    }
+}
+
+impl<'a, S: definition::SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> HasDirectives
+    for SchemaDefinition<'a, S, W>
+{
+    type Directives = Directives<'a, S, W>;
+
+    fn directives(&self) -> Option<&Self::Directives> {
+        self.directives.as_ref()
     }
 }

@@ -1,5 +1,5 @@
 use crate::{Cache, Directives, InputType, Warden};
-use bluejay_core::definition::{self, SchemaDefinition};
+use bluejay_core::definition::{self, HasDirectives, SchemaDefinition};
 
 pub struct InputValueDefinition<'a, S: SchemaDefinition, W: Warden<SchemaDefinition = S>> {
     inner: &'a S::InputValueDefinition,
@@ -21,8 +21,7 @@ impl<'a, S: SchemaDefinition, W: Warden<SchemaDefinition = S>> InputValueDefinit
                     |r#type| Self {
                         inner,
                         r#type,
-                        directives: definition::InputValueDefinition::directives(inner)
-                            .map(|d| Directives::new(d, cache)),
+                        directives: inner.directives().map(|d| Directives::new(d, cache)),
                         cache,
                     },
                 )
@@ -43,7 +42,6 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> definition::
     for InputValueDefinition<'a, S, W>
 {
     type Value = <S::InputValueDefinition as definition::InputValueDefinition>::Value;
-    type Directives = Directives<'a, S, W>;
     type InputType = InputType<'a, S, W>;
 
     fn description(&self) -> Option<&str> {
@@ -60,11 +58,17 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> definition::
             .input_value_definition_default_value(self)
     }
 
-    fn directives(&self) -> Option<&Self::Directives> {
-        self.directives.as_ref()
-    }
-
     fn r#type(&self) -> &Self::InputType {
         &self.r#type
+    }
+}
+
+impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> HasDirectives
+    for InputValueDefinition<'a, S, W>
+{
+    type Directives = Directives<'a, S, W>;
+
+    fn directives(&self) -> Option<&Self::Directives> {
+        self.directives.as_ref()
     }
 }

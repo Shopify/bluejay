@@ -1,7 +1,7 @@
 use crate::ast::definition::{ArgumentsDefinition, Context, OutputType};
 use crate::ast::{ConstDirectives, FromTokens, Parse, ParseError, Tokens, TryFromTokens};
 use crate::lexical_token::{Name, PunctuatorType, StringValue};
-use bluejay_core::definition::FieldDefinition as CoreFieldDefinition;
+use bluejay_core::definition::{FieldDefinition as CoreFieldDefinition, HasDirectives};
 
 #[derive(Debug)]
 pub struct FieldDefinition<'a, C: Context> {
@@ -40,7 +40,6 @@ impl<'a, C: Context> FieldDefinition<'a, C> {
 impl<'a, C: Context> CoreFieldDefinition for FieldDefinition<'a, C> {
     type ArgumentsDefinition = ArgumentsDefinition<'a, C>;
     type OutputType = OutputType<'a, C>;
-    type Directives = ConstDirectives<'a>;
 
     fn description(&self) -> Option<&str> {
         self.description.as_ref().map(AsRef::as_ref)
@@ -56,10 +55,6 @@ impl<'a, C: Context> CoreFieldDefinition for FieldDefinition<'a, C> {
 
     fn r#type(&self) -> &Self::OutputType {
         &self.r#type
-    }
-
-    fn directives(&self) -> Option<&Self::Directives> {
-        self.directives.as_ref()
     }
 
     fn is_builtin(&self) -> bool {
@@ -83,5 +78,13 @@ impl<'a, C: Context> FromTokens<'a> for FieldDefinition<'a, C> {
             directives,
             is_builtin: false,
         })
+    }
+}
+
+impl<'a, C: Context> HasDirectives for FieldDefinition<'a, C> {
+    type Directives = ConstDirectives<'a>;
+
+    fn directives(&self) -> Option<&Self::Directives> {
+        self.directives.as_ref()
     }
 }

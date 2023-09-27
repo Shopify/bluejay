@@ -1,5 +1,5 @@
 use crate::{Cache, Directives, Warden};
-use bluejay_core::definition::{self, SchemaDefinition};
+use bluejay_core::definition::{self, HasDirectives, SchemaDefinition};
 
 pub struct ScalarTypeDefinition<'a, S: SchemaDefinition, W: Warden<SchemaDefinition = S>> {
     inner: &'a S::CustomScalarTypeDefinition,
@@ -13,8 +13,7 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> ScalarTypeDe
     ) -> Self {
         Self {
             inner,
-            directives: definition::ScalarTypeDefinition::directives(inner)
-                .map(|d| Directives::new(d, cache)),
+            directives: inner.directives().map(|d| Directives::new(d, cache)),
         }
     }
 
@@ -26,8 +25,6 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> ScalarTypeDe
 impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> definition::ScalarTypeDefinition
     for ScalarTypeDefinition<'a, S, W>
 {
-    type Directives = Directives<'a, S, W>;
-
     fn description(&self) -> Option<&str> {
         self.inner.description()
     }
@@ -36,14 +33,20 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> definition::
         self.inner.name()
     }
 
-    fn directives(&self) -> Option<&Self::Directives> {
-        self.directives.as_ref()
-    }
-
     fn coerce_input<const CONST: bool>(
         &self,
         value: &impl bluejay_core::Value<CONST>,
     ) -> Result<(), std::borrow::Cow<'static, str>> {
         self.inner.coerce_input(value)
+    }
+}
+
+impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> HasDirectives
+    for ScalarTypeDefinition<'a, S, W>
+{
+    type Directives = Directives<'a, S, W>;
+
+    fn directives(&self) -> Option<&Self::Directives> {
+        self.directives.as_ref()
     }
 }

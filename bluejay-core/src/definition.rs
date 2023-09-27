@@ -5,6 +5,7 @@ mod enum_value_definition;
 mod enum_value_definitions;
 mod field_definition;
 mod fields_definition;
+mod has_directives;
 mod input_fields_definition;
 mod input_object_type_definition;
 mod input_type;
@@ -28,6 +29,7 @@ pub use enum_value_definition::EnumValueDefinition;
 pub use enum_value_definitions::EnumValueDefinitions;
 pub use field_definition::FieldDefinition;
 pub use fields_definition::FieldsDefinition;
+pub use has_directives::HasDirectives;
 pub use input_fields_definition::InputFieldsDefinition;
 pub use input_object_type_definition::InputObjectTypeDefinition;
 pub use input_type::{BaseInputType, BaseInputTypeReference, InputType, InputTypeReference};
@@ -48,7 +50,7 @@ pub mod prelude {
     pub use super::{
         ArgumentsDefinition as _, BaseInputType as _, BaseOutputType as _,
         DirectiveDefinition as _, EnumTypeDefinition as _, EnumValueDefinition as _,
-        EnumValueDefinitions as _, FieldDefinition as _, FieldsDefinition as _,
+        EnumValueDefinitions as _, FieldDefinition as _, FieldsDefinition as _, HasDirectives as _,
         InputFieldsDefinition as _, InputObjectTypeDefinition as _, InputType as _,
         InputValueDefinition as _, InterfaceImplementation as _, InterfaceImplementations as _,
         InterfaceTypeDefinition as _, ObjectTypeDefinition as _, OutputType as _,

@@ -1,16 +1,13 @@
 use crate::definition::{
     ArgumentsDefinition, BaseInputType, BaseOutputType, DirectiveDefinition, EnumTypeDefinition,
-    EnumValueDefinition, EnumValueDefinitions, FieldDefinition, FieldsDefinition,
+    EnumValueDefinition, EnumValueDefinitions, FieldDefinition, FieldsDefinition, HasDirectives,
     InputFieldsDefinition, InputObjectTypeDefinition, InputType, InputValueDefinition,
     InterfaceImplementation, InterfaceImplementations, InterfaceTypeDefinition,
     ObjectTypeDefinition, OutputType, ScalarTypeDefinition, TypeDefinition,
     TypeDefinitionReference, UnionMemberType, UnionMemberTypes, UnionTypeDefinition,
 };
-use crate::{ConstDirective, ConstDirectives};
 
-pub trait SchemaDefinition {
-    type Directive: ConstDirective;
-    type Directives: ConstDirectives<Directive = Self::Directive>;
+pub trait SchemaDefinition: HasDirectives {
     type InputValueDefinition: InputValueDefinition<
         InputType = Self::InputType,
         Directives = Self::Directives,
@@ -96,7 +93,6 @@ pub trait SchemaDefinition {
     fn query(&self) -> &Self::ObjectTypeDefinition;
     fn mutation(&self) -> Option<&Self::ObjectTypeDefinition>;
     fn subscription(&self) -> Option<&Self::ObjectTypeDefinition>;
-    fn schema_directives(&self) -> Option<&Self::Directives>;
     fn get_type_definition(
         &self,
         name: &str,

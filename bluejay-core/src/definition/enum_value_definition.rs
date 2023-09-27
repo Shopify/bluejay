@@ -1,9 +1,6 @@
-use crate::ConstDirectives;
+use crate::definition::HasDirectives;
 
-pub trait EnumValueDefinition {
-    type Directives: ConstDirectives;
-
+pub trait EnumValueDefinition: HasDirectives {
     fn description(&self) -> Option<&str>;
     fn name(&self) -> &str;
-    fn directives(&self) -> Option<&Self::Directives>;
 }

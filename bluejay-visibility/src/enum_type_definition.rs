@@ -1,5 +1,5 @@
 use crate::{Cache, Directives, EnumValueDefinitions, Warden};
-use bluejay_core::definition::{self, SchemaDefinition};
+use bluejay_core::definition::{self, HasDirectives, SchemaDefinition};
 use once_cell::unsync::OnceCell;
 
 pub struct EnumTypeDefinition<'a, S: SchemaDefinition, W: Warden<SchemaDefinition = S>> {
@@ -15,8 +15,7 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> EnumTypeDefi
             inner,
             cache,
             enum_value_definitions: OnceCell::new(),
-            directives: definition::EnumTypeDefinition::directives(inner)
-                .map(|d| Directives::new(d, cache)),
+            directives: inner.directives().map(|d| Directives::new(d, cache)),
         }
     }
 }
@@ -24,7 +23,6 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> EnumTypeDefi
 impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> definition::EnumTypeDefinition
     for EnumTypeDefinition<'a, S, W>
 {
-    type Directives = Directives<'a, S, W>;
     type EnumValueDefinitions = EnumValueDefinitions<'a, S, W>;
 
     fn description(&self) -> Option<&str> {
@@ -35,10 +33,6 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> definition::
         self.inner.name()
     }
 
-    fn directives(&self) -> Option<&Self::Directives> {
-        self.directives.as_ref()
-    }
-
     fn enum_value_definitions(&self) -> &Self::EnumValueDefinitions {
         self.enum_value_definitions.get_or_init(|| {
             EnumValueDefinitions::new(self.inner.enum_value_definitions(), self.cache)
@@ -47,5 +41,15 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> definition::
 
     fn is_builtin(&self) -> bool {
         self.inner.is_builtin()
+    }
+}
+
+impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> HasDirectives
+    for EnumTypeDefinition<'a, S, W>
+{
+    type Directives = Directives<'a, S, W>;
+
+    fn directives(&self) -> Option<&Self::Directives> {
+        self.directives.as_ref()
     }
 }

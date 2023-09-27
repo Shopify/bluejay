@@ -1,15 +1,12 @@
-use crate::definition::{ArgumentsDefinition, OutputType};
-use crate::ConstDirectives;
+use crate::definition::{ArgumentsDefinition, HasDirectives, OutputType};
 
-pub trait FieldDefinition {
+pub trait FieldDefinition: HasDirectives {
     type ArgumentsDefinition: ArgumentsDefinition;
     type OutputType: OutputType;
-    type Directives: ConstDirectives;
 
     fn description(&self) -> Option<&str>;
     fn name(&self) -> &str;
     fn arguments_definition(&self) -> Option<&Self::ArgumentsDefinition>;
     fn r#type(&self) -> &Self::OutputType;
-    fn directives(&self) -> Option<&Self::Directives>;
     fn is_builtin(&self) -> bool;
 }

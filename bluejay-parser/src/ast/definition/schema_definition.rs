@@ -6,10 +6,10 @@ use crate::ast::definition::{
     InterfaceImplementations, InterfaceTypeDefinition, ObjectTypeDefinition, OutputType,
     TypeDefinition, UnionMemberType, UnionMemberTypes, UnionTypeDefinition,
 };
-use crate::ast::{ConstDirective, ConstDirectives};
+use crate::ast::ConstDirectives;
 use crate::lexical_token::StringValue;
 use bluejay_core::definition::{
-    InterfaceImplementation as CoreInterfaceImplementation,
+    HasDirectives, InterfaceImplementation as CoreInterfaceImplementation,
     ObjectTypeDefinition as CoreObjectTypeDefinition, SchemaDefinition as CoreSchemaDefinition,
     TypeDefinition as CoreTypeDefinition, TypeDefinitionReference,
 };
@@ -24,7 +24,7 @@ pub struct SchemaDefinition<'a, C: Context = DefaultContext> {
     query: &'a ObjectTypeDefinition<'a, C>,
     mutation: Option<&'a ObjectTypeDefinition<'a, C>>,
     subscription: Option<&'a ObjectTypeDefinition<'a, C>>,
-    schema_directives: Option<&'a ConstDirectives<'a>>,
+    directives: Option<&'a ConstDirectives<'a>>,
     interface_implementors: HashMap<&'a str, Vec<&'a ObjectTypeDefinition<'a, C>>>,
 }
 
@@ -36,7 +36,7 @@ impl<'a, C: Context> SchemaDefinition<'a, C> {
         query: &'a ObjectTypeDefinition<'a, C>,
         mutation: Option<&'a ObjectTypeDefinition<'a, C>>,
         subscription: Option<&'a ObjectTypeDefinition<'a, C>>,
-        schema_directives: Option<&'a ConstDirectives<'a>>,
+        directives: Option<&'a ConstDirectives<'a>>,
     ) -> Self {
         let interface_implementors = Self::interface_implementors(&type_definitions);
         Self {
@@ -46,7 +46,7 @@ impl<'a, C: Context> SchemaDefinition<'a, C> {
             query,
             mutation,
             subscription,
-            schema_directives,
+            directives,
             interface_implementors,
         }
     }
@@ -78,8 +78,6 @@ impl<'a, C: Context> SchemaDefinition<'a, C> {
 }
 
 impl<'a, C: Context> CoreSchemaDefinition for SchemaDefinition<'a, C> {
-    type Directive = ConstDirective<'a>;
-    type Directives = ConstDirectives<'a>;
     type InputValueDefinition = InputValueDefinition<'a, C>;
     type InputFieldsDefinition = InputFieldsDefinition<'a, C>;
     type ArgumentsDefinition = ArgumentsDefinition<'a, C>;
@@ -127,10 +125,6 @@ impl<'a, C: Context> CoreSchemaDefinition for SchemaDefinition<'a, C> {
         self.subscription
     }
 
-    fn schema_directives(&self) -> Option<&Self::Directives> {
-        self.schema_directives
-    }
-
     fn get_type_definition(
         &self,
         name: &str,
@@ -163,5 +157,13 @@ impl<'a, C: Context> CoreSchemaDefinition for SchemaDefinition<'a, C> {
             .map(|implementors| implementors.iter().copied())
             .into_iter()
             .flatten()
+    }
+}
+
+impl<'a, C: Context> HasDirectives for SchemaDefinition<'a, C> {
+    type Directives = ConstDirectives<'a>;
+
+    fn directives(&self) -> Option<&Self::Directives> {
+        self.directives
     }
 }

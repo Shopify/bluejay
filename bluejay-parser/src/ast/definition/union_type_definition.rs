@@ -1,7 +1,7 @@
 use crate::ast::definition::{Context, FieldsDefinition, UnionMemberTypes};
 use crate::ast::{ConstDirectives, FromTokens, ParseError, Tokens, TryFromTokens};
 use crate::lexical_token::{Name, PunctuatorType, StringValue};
-use bluejay_core::definition::UnionTypeDefinition as CoreUnionTypeDefinition;
+use bluejay_core::definition::{HasDirectives, UnionTypeDefinition as CoreUnionTypeDefinition};
 
 #[derive(Debug)]
 pub struct UnionTypeDefinition<'a, C: Context> {
@@ -14,7 +14,6 @@ pub struct UnionTypeDefinition<'a, C: Context> {
 
 impl<'a, C: Context> CoreUnionTypeDefinition for UnionTypeDefinition<'a, C> {
     type UnionMemberTypes = UnionMemberTypes<'a, C>;
-    type Directives = ConstDirectives<'a>;
     type FieldsDefinition = FieldsDefinition<'a, C>;
 
     fn description(&self) -> Option<&str> {
@@ -23,10 +22,6 @@ impl<'a, C: Context> CoreUnionTypeDefinition for UnionTypeDefinition<'a, C> {
 
     fn name(&self) -> &str {
         self.name.as_ref()
-    }
-
-    fn directives(&self) -> Option<&Self::Directives> {
-        self.directives.as_ref()
     }
 
     fn union_member_types(&self) -> &Self::UnionMemberTypes {
@@ -61,5 +56,13 @@ impl<'a, C: Context> FromTokens<'a> for UnionTypeDefinition<'a, C> {
             member_types,
             fields_definition: FieldsDefinition::__typename(),
         })
+    }
+}
+
+impl<'a, C: Context> HasDirectives for UnionTypeDefinition<'a, C> {
+    type Directives = ConstDirectives<'a>;
+
+    fn directives(&self) -> Option<&Self::Directives> {
+        self.directives.as_ref()
     }
 }

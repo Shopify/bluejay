@@ -1,7 +1,9 @@
 use crate::ast::definition::{Context, FieldsDefinition, InterfaceImplementations};
 use crate::ast::{ConstDirectives, FromTokens, ParseError, Tokens, TryFromTokens};
 use crate::lexical_token::{Name, StringValue};
-use bluejay_core::definition::InterfaceTypeDefinition as CoreInterfaceTypeDefinition;
+use bluejay_core::definition::{
+    HasDirectives, InterfaceTypeDefinition as CoreInterfaceTypeDefinition,
+};
 
 #[derive(Debug)]
 pub struct InterfaceTypeDefinition<'a, C: Context> {
@@ -15,7 +17,6 @@ pub struct InterfaceTypeDefinition<'a, C: Context> {
 impl<'a, C: Context> CoreInterfaceTypeDefinition for InterfaceTypeDefinition<'a, C> {
     type FieldsDefinition = FieldsDefinition<'a, C>;
     type InterfaceImplementations = InterfaceImplementations<'a, C>;
-    type Directives = ConstDirectives<'a>;
 
     fn description(&self) -> Option<&str> {
         self.description.as_ref().map(AsRef::as_ref)
@@ -27,10 +28,6 @@ impl<'a, C: Context> CoreInterfaceTypeDefinition for InterfaceTypeDefinition<'a,
 
     fn interface_implementations(&self) -> Option<&Self::InterfaceImplementations> {
         self.interface_implementations.as_ref()
-    }
-
-    fn directives(&self) -> Option<&Self::Directives> {
-        self.directives.as_ref()
     }
 
     fn fields_definition(&self) -> &Self::FieldsDefinition {
@@ -62,5 +59,13 @@ impl<'a, C: Context> FromTokens<'a> for InterfaceTypeDefinition<'a, C> {
             directives,
             fields_definition,
         })
+    }
+}
+
+impl<'a, C: Context> HasDirectives for InterfaceTypeDefinition<'a, C> {
+    type Directives = ConstDirectives<'a>;
+
+    fn directives(&self) -> Option<&Self::Directives> {
+        self.directives.as_ref()
     }
 }

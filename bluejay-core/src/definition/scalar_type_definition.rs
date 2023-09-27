@@ -1,12 +1,10 @@
-use crate::{ConstDirectives, Value};
+use crate::definition::HasDirectives;
+use crate::Value;
 use std::borrow::Cow;
 
-pub trait ScalarTypeDefinition {
-    type Directives: ConstDirectives;
-
+pub trait ScalarTypeDefinition: HasDirectives {
     fn description(&self) -> Option<&str>;
     fn name(&self) -> &str;
-    fn directives(&self) -> Option<&Self::Directives>;
 
     fn coerce_input<const CONST: bool>(
         &self,

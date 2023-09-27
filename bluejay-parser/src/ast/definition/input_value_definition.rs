@@ -1,7 +1,7 @@
 use crate::ast::definition::{Context, InputType};
 use crate::ast::{ConstDirectives, ConstValue, FromTokens, ParseError, Tokens};
 use crate::lexical_token::{Name, PunctuatorType, StringValue};
-use bluejay_core::definition::InputValueDefinition as CoreInputValueDefinition;
+use bluejay_core::definition::{HasDirectives, InputValueDefinition as CoreInputValueDefinition};
 
 #[derive(Debug)]
 pub struct InputValueDefinition<'a, C: Context> {
@@ -21,7 +21,6 @@ impl<'a, C: Context> InputValueDefinition<'a, C> {
 impl<'a, C: Context> CoreInputValueDefinition for InputValueDefinition<'a, C> {
     type InputType = InputType<'a, C>;
     type Value = ConstValue<'a>;
-    type Directives = ConstDirectives<'a>;
 
     fn description(&self) -> Option<&str> {
         self.description.as_ref().map(AsRef::as_ref)
@@ -37,10 +36,6 @@ impl<'a, C: Context> CoreInputValueDefinition for InputValueDefinition<'a, C> {
 
     fn default_value(&self) -> Option<&Self::Value> {
         self.default_value.as_ref()
-    }
-
-    fn directives(&self) -> Option<&Self::Directives> {
-        self.directives.as_ref()
     }
 }
 
@@ -64,5 +59,13 @@ impl<'a, C: Context> FromTokens<'a> for InputValueDefinition<'a, C> {
             default_value,
             directives,
         })
+    }
+}
+
+impl<'a, C: Context> HasDirectives for InputValueDefinition<'a, C> {
+    type Directives = ConstDirectives<'a>;
+
+    fn directives(&self) -> Option<&Self::Directives> {
+        self.directives.as_ref()
     }
 }
