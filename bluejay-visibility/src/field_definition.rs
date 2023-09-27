@@ -1,5 +1,6 @@
 use crate::{ArgumentsDefinition, Cache, Directives, OutputType, Warden};
-use bluejay_core::definition::{self, SchemaDefinition};
+use bluejay_core::definition::{self, HasDirectives, SchemaDefinition};
+
 use once_cell::unsync::OnceCell;
 
 pub struct FieldDefinition<'a, S: SchemaDefinition, W: Warden<SchemaDefinition = S>> {
@@ -22,8 +23,7 @@ impl<'a, S: SchemaDefinition, W: Warden<SchemaDefinition = S>> FieldDefinition<'
                         cache,
                         r#type,
                         arguments_definition: OnceCell::new(),
-                        directives: definition::FieldDefinition::directives(inner)
-                            .map(|d| Directives::new(d, cache)),
+                        directives: inner.directives().map(|d| Directives::new(d, cache)),
                     }
                 })
             })
@@ -39,7 +39,6 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> definition::
     for FieldDefinition<'a, S, W>
 {
     type OutputType = OutputType<'a, S, W>;
-    type Directives = Directives<'a, S, W>;
     type ArgumentsDefinition = ArgumentsDefinition<'a, S, W>;
 
     fn description(&self) -> Option<&str> {
@@ -58,10 +57,6 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> definition::
         &self.r#type
     }
 
-    fn directives(&self) -> Option<&Self::Directives> {
-        self.directives.as_ref()
-    }
-
     fn arguments_definition(&self) -> Option<&Self::ArgumentsDefinition> {
         self.arguments_definition
             .get_or_init(|| {
@@ -70,5 +65,15 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> definition::
                     .map(|ad| ArgumentsDefinition::new(ad, self.cache))
             })
             .as_ref()
+    }
+}
+
+impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> HasDirectives
+    for FieldDefinition<'a, S, W>
+{
+    type Directives = Directives<'a, S, W>;
+
+    fn directives(&self) -> Option<&Self::Directives> {
+        self.directives.as_ref()
     }
 }

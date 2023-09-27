@@ -3,7 +3,7 @@ use crate::{
     INDENTATION_SIZE,
 };
 use bluejay_core::{
-    definition::{EnumTypeDefinition, EnumValueDefinition},
+    definition::{EnumTypeDefinition, EnumValueDefinition, HasDirectives},
     AsIter,
 };
 use std::fmt::{Display, Formatter, Result};

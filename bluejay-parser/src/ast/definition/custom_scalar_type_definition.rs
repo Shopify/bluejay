@@ -3,7 +3,7 @@ use crate::ast::{
 };
 use crate::lexical_token::{Name, StringValue};
 use crate::Span;
-use bluejay_core::definition::ScalarTypeDefinition as CoreScalarTypeDefinition;
+use bluejay_core::definition::{HasDirectives, ScalarTypeDefinition as CoreScalarTypeDefinition};
 use bluejay_core::Value;
 use std::borrow::Cow;
 use std::marker::PhantomData;
@@ -24,18 +24,12 @@ impl<'a, C: Context> CustomScalarTypeDefinition<'a, C> {
 }
 
 impl<'a, C: Context> CoreScalarTypeDefinition for CustomScalarTypeDefinition<'a, C> {
-    type Directives = ConstDirectives<'a>;
-
     fn description(&self) -> Option<&str> {
         self.description.as_ref().map(AsRef::as_ref)
     }
 
     fn name(&self) -> &str {
         self.name.as_ref()
-    }
-
-    fn directives(&self) -> Option<&Self::Directives> {
-        self.directives.as_ref()
     }
 
     fn coerce_input<const CONST: bool>(
@@ -63,5 +57,13 @@ impl<'a, C: Context> FromTokens<'a> for CustomScalarTypeDefinition<'a, C> {
             directives,
             context: Default::default(),
         })
+    }
+}
+
+impl<'a, C: Context> HasDirectives for CustomScalarTypeDefinition<'a, C> {
+    type Directives = ConstDirectives<'a>;
+
+    fn directives(&self) -> Option<&Self::Directives> {
+        self.directives.as_ref()
     }
 }

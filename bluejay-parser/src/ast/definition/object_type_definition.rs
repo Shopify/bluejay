@@ -1,7 +1,7 @@
 use crate::ast::definition::{Context, FieldsDefinition, InterfaceImplementations};
 use crate::ast::{ConstDirectives, FromTokens, Parse, ParseError, Tokens, TryFromTokens};
 use crate::lexical_token::{Name, StringValue};
-use bluejay_core::definition::ObjectTypeDefinition as CoreObjectTypeDefinition;
+use bluejay_core::definition::{HasDirectives, ObjectTypeDefinition as CoreObjectTypeDefinition};
 
 #[derive(Debug)]
 pub struct ObjectTypeDefinition<'a, C: Context> {
@@ -16,7 +16,6 @@ pub struct ObjectTypeDefinition<'a, C: Context> {
 impl<'a, C: Context> CoreObjectTypeDefinition for ObjectTypeDefinition<'a, C> {
     type FieldsDefinition = FieldsDefinition<'a, C>;
     type InterfaceImplementations = InterfaceImplementations<'a, C>;
-    type Directives = ConstDirectives<'a>;
 
     fn description(&self) -> Option<&str> {
         self.description.as_ref().map(AsRef::as_ref)
@@ -28,10 +27,6 @@ impl<'a, C: Context> CoreObjectTypeDefinition for ObjectTypeDefinition<'a, C> {
 
     fn interface_implementations(&self) -> Option<&Self::InterfaceImplementations> {
         self.interface_implementations.as_ref()
-    }
-
-    fn directives(&self) -> Option<&Self::Directives> {
-        self.directives.as_ref()
     }
 
     fn fields_definition(&self) -> &Self::FieldsDefinition {
@@ -156,5 +151,13 @@ impl<'a, C: Context> FromTokens<'a> for ObjectTypeDefinition<'a, C> {
             fields_definition,
             is_builtin: false,
         })
+    }
+}
+
+impl<'a, C: Context> HasDirectives for ObjectTypeDefinition<'a, C> {
+    type Directives = ConstDirectives<'a>;
+
+    fn directives(&self) -> Option<&Self::Directives> {
+        self.directives.as_ref()
     }
 }

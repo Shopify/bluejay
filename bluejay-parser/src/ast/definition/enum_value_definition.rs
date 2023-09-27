@@ -1,6 +1,6 @@
 use crate::ast::{ConstDirectives, FromTokens, ParseError, Tokens, TryFromTokens};
 use crate::lexical_token::{Name, StringValue};
-use bluejay_core::definition::EnumValueDefinition as CoreEnumValueDefinition;
+use bluejay_core::definition::{EnumValueDefinition as CoreEnumValueDefinition, HasDirectives};
 
 #[derive(Debug)]
 pub struct EnumValueDefinition<'a> {
@@ -16,18 +16,12 @@ impl<'a> EnumValueDefinition<'a> {
 }
 
 impl<'a> CoreEnumValueDefinition for EnumValueDefinition<'a> {
-    type Directives = ConstDirectives<'a>;
-
     fn description(&self) -> Option<&str> {
         self.description.as_ref().map(AsRef::as_ref)
     }
 
     fn name(&self) -> &str {
         self.name.as_ref()
-    }
-
-    fn directives(&self) -> Option<&Self::Directives> {
-        self.directives.as_ref()
     }
 }
 
@@ -41,5 +35,13 @@ impl<'a> FromTokens<'a> for EnumValueDefinition<'a> {
             name,
             directives,
         })
+    }
+}
+
+impl<'a> HasDirectives for EnumValueDefinition<'a> {
+    type Directives = ConstDirectives<'a>;
+
+    fn directives(&self) -> Option<&Self::Directives> {
+        self.directives.as_ref()
     }
 }

@@ -42,7 +42,7 @@ impl<'a, S: SchemaDefinition> SchemaDefinitionPrinter<'a, S> {
                 .map(|subscription| subscription.name() == "Subscription")
                 .unwrap_or(true)
             && schema_definition
-                .schema_directives()
+                .directives()
                 .map(AsIter::is_empty)
                 .unwrap_or(true)
     }
@@ -54,7 +54,7 @@ impl<'a, S: SchemaDefinition> SchemaDefinitionPrinter<'a, S> {
 
         write!(f, "schema")?;
 
-        if let Some(directives) = schema_definition.schema_directives() {
+        if let Some(directives) = schema_definition.directives() {
             if !directives.is_empty() {
                 write!(f, " {}", DirectivesPrinter::new(directives))?;
             }

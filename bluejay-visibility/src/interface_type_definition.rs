@@ -1,5 +1,5 @@
 use crate::{Cache, Directives, FieldsDefinition, InterfaceImplementations, Warden};
-use bluejay_core::definition::{self, SchemaDefinition};
+use bluejay_core::definition::{self, HasDirectives, SchemaDefinition};
 use once_cell::unsync::OnceCell;
 
 pub struct InterfaceTypeDefinition<'a, S: SchemaDefinition, W: Warden<SchemaDefinition = S>> {
@@ -19,8 +19,7 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>>
             cache,
             fields_definition: OnceCell::new(),
             interface_implementations: OnceCell::new(),
-            directives: definition::InterfaceTypeDefinition::directives(inner)
-                .map(|d| Directives::new(d, cache)),
+            directives: inner.directives().map(|d| Directives::new(d, cache)),
         }
     }
 
@@ -32,7 +31,6 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>>
 impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>>
     definition::InterfaceTypeDefinition for InterfaceTypeDefinition<'a, S, W>
 {
-    type Directives = Directives<'a, S, W>;
     type FieldsDefinition = FieldsDefinition<'a, S, W>;
     type InterfaceImplementations = InterfaceImplementations<'a, S, W>;
 
@@ -42,10 +40,6 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>>
 
     fn name(&self) -> &str {
         self.inner.name()
-    }
-
-    fn directives(&self) -> Option<&Self::Directives> {
-        self.directives.as_ref()
     }
 
     fn fields_definition(&self) -> &Self::FieldsDefinition {
@@ -61,5 +55,15 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>>
                     .map(|ii| InterfaceImplementations::new(ii, self.cache))
             })
             .as_ref()
+    }
+}
+
+impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> HasDirectives
+    for InterfaceTypeDefinition<'a, S, W>
+{
+    type Directives = Directives<'a, S, W>;
+
+    fn directives(&self) -> Option<&Self::Directives> {
+        self.directives.as_ref()
     }
 }

@@ -1,7 +1,7 @@
 use crate::ast::definition::EnumValueDefinitions;
 use crate::ast::{ConstDirectives, FromTokens, Parse, ParseError, Tokens, TryFromTokens};
 use crate::lexical_token::{Name, StringValue};
-use bluejay_core::definition::EnumTypeDefinition as CoreEnumTypeDefinition;
+use bluejay_core::definition::{EnumTypeDefinition as CoreEnumTypeDefinition, HasDirectives};
 
 #[derive(Debug)]
 pub struct EnumTypeDefinition<'a> {
@@ -14,7 +14,6 @@ pub struct EnumTypeDefinition<'a> {
 
 impl<'a> CoreEnumTypeDefinition for EnumTypeDefinition<'a> {
     type EnumValueDefinitions = EnumValueDefinitions<'a>;
-    type Directives = ConstDirectives<'a>;
 
     fn description(&self) -> Option<&str> {
         self.description.as_ref().map(AsRef::as_ref)
@@ -22,10 +21,6 @@ impl<'a> CoreEnumTypeDefinition for EnumTypeDefinition<'a> {
 
     fn name(&self) -> &str {
         self.name.as_ref()
-    }
-
-    fn directives(&self) -> Option<&Self::Directives> {
-        self.directives.as_ref()
     }
 
     fn enum_value_definitions(&self) -> &Self::EnumValueDefinitions {
@@ -110,5 +105,13 @@ impl<'a> FromTokens<'a> for EnumTypeDefinition<'a> {
 impl<'a> AsRef<EnumTypeDefinition<'a>> for EnumTypeDefinition<'a> {
     fn as_ref(&self) -> &EnumTypeDefinition<'a> {
         self
+    }
+}
+
+impl<'a> HasDirectives for EnumTypeDefinition<'a> {
+    type Directives = ConstDirectives<'a>;
+
+    fn directives(&self) -> Option<&Self::Directives> {
+        self.directives.as_ref()
     }
 }
