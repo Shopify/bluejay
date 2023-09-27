@@ -13,7 +13,7 @@ input MyInput @visible {
 
 type MyObject @visible {
   visible(
-    visible: Int @visible
+    visible: MyInput @visible
     notVisible: Int
     notVisibleByType: InvisibleScalar @visible
   ): Int @visible

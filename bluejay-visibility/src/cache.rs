@@ -45,14 +45,14 @@ impl<'a, S: SchemaDefinition, W: Warden<SchemaDefinition = S>> Cache<'a, S, W> {
     pub(crate) fn get_or_create_directive_definition(
         &'a self,
         directive_definition: &'a S::DirectiveDefinition,
-    ) -> &'a DirectiveDefinition<'a, S, W> {
+    ) -> Option<&'a DirectiveDefinition<'a, S, W>> {
         self.directive_definitions
             .get(directive_definition.name())
-            .unwrap_or_else(|| {
-                self.directive_definitions.insert(
-                    directive_definition.name(),
-                    Box::new(DirectiveDefinition::new(directive_definition, self)),
-                )
+            .or_else(|| {
+                DirectiveDefinition::new(directive_definition, self).map(|dd| {
+                    self.directive_definitions
+                        .insert(directive_definition.name(), Box::new(dd))
+                })
             })
     }
 

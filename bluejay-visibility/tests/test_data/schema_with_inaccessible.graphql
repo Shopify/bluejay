@@ -1,0 +1,36 @@
+directive @visible on FIELD_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION | ARGUMENT_DEFINITION | SCALAR | OBJECT | INTERFACE | UNION | ENUM
+
+type Query @visible {
+  visibleField(
+    input: InaccessibleInputObject! # argument not marked as @visible
+  ): String! @visible # visible field to ensure the query root isn't empty
+  objectField: InaccessibleObject! # field not marked as @visible
+  scalarField: InaccessibleCustomScalar! # field not marked as @visible
+  enumField: InaccessibleEnum! # field not marked as @visible
+  unionField: InaccessibleUnion! # field not marked as @visible
+  interfaceField: InaccessibleInterface! # field not marked as @visible
+}
+
+type InaccessibleObject implements InaccessibleInterfaceThroughImplementor @visible {
+  field: String! @visible
+}
+
+input InaccessibleInputObject @visible {
+  field: String! @visible
+}
+
+scalar InaccessibleCustomScalar @visible
+
+enum InaccessibleEnum @visible {
+  VALUE @visible
+}
+
+union InaccessibleUnion @visible = InaccessibleObject
+
+interface InaccessibleInterface @visible {
+  field: String! @visible
+}
+
+interface InaccessibleInterfaceThroughImplementor @visible {
+  field: String! @visible
+}

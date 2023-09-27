@@ -9,12 +9,15 @@ pub struct DirectiveDefinition<'a, S: SchemaDefinition, W: Warden<SchemaDefiniti
 }
 
 impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> DirectiveDefinition<'a, S, W> {
-    pub fn new(inner: &'a S::DirectiveDefinition, cache: &'a Cache<'a, S, W>) -> Self {
-        Self {
-            inner,
-            cache,
-            arguments_definition: OnceCell::new(),
-        }
+    pub fn new(inner: &'a S::DirectiveDefinition, cache: &'a Cache<'a, S, W>) -> Option<Self> {
+        cache
+            .warden()
+            .is_directive_definition_visible(inner)
+            .then(|| Self {
+                inner,
+                cache,
+                arguments_definition: OnceCell::new(),
+            })
     }
 
     pub fn inner(&self) -> &'a S::DirectiveDefinition {

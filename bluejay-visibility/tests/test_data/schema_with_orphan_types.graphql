@@ -1,0 +1,22 @@
+directive @visible on FIELD_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION | ARGUMENT_DEFINITION | SCALAR | OBJECT | INTERFACE | UNION | ENUM
+
+type Query @visible {
+  visibleInterfaceField: VisibleInterface! @visible
+  invisibleInterfaceField: InvisibleInterface! @visible
+}
+
+interface VisibleInterface @visible {
+  field: String! @visible
+}
+
+type VisibleObject implements VisibleInterface @visible {
+  field: String! @visible
+}
+
+interface InvisibleInterface {
+  field: String! @visible
+}
+
+type InvisibleObject implements InvisibleInterface @visible {
+  field: String! @visible
+}

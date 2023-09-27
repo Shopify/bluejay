@@ -1,21 +1,18 @@
-use crate::{Cache, DirectiveDefinition, Warden};
+use crate::{DirectiveDefinition, Warden};
 use bluejay_core::definition::{Directive as CoreDefinitionDirective, SchemaDefinition};
 use bluejay_core::Directive as CoreDirective;
-use once_cell::unsync::OnceCell;
 
 pub struct Directive<'a, S: SchemaDefinition, W: Warden<SchemaDefinition = S>> {
     inner: &'a S::Directive,
-    cache: &'a Cache<'a, S, W>,
-    definition: OnceCell<&'a DirectiveDefinition<'a, S, W>>,
+    definition: &'a DirectiveDefinition<'a, S, W>,
 }
 
 impl<'a, S: SchemaDefinition, W: Warden<SchemaDefinition = S>> Directive<'a, S, W> {
-    pub(crate) fn new(inner: &'a S::Directive, cache: &'a Cache<'a, S, W>) -> Self {
-        Self {
-            inner,
-            cache,
-            definition: OnceCell::new(),
-        }
+    pub(crate) fn new(
+        inner: &'a S::Directive,
+        definition: &'a DirectiveDefinition<'a, S, W>,
+    ) -> Self {
+        Self { inner, definition }
     }
 }
 
@@ -39,9 +36,6 @@ impl<'a, S: SchemaDefinition, W: Warden<SchemaDefinition = S>> CoreDefinitionDir
     type DirectiveDefinition = DirectiveDefinition<'a, S, W>;
 
     fn definition(&self) -> &Self::DirectiveDefinition {
-        self.definition.get_or_init(|| {
-            self.cache
-                .get_or_create_directive_definition(self.inner.definition())
-        })
+        self.definition
     }
 }
