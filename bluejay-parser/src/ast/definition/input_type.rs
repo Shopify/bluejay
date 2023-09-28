@@ -62,7 +62,7 @@ impl<'a, C: Context> InputType<'a, C> {
 
 impl<'a, C: Context + 'a> CoreInputType for InputType<'a, C> {
     type CustomScalarTypeDefinition = CustomScalarTypeDefinition<'a, C>;
-    type EnumTypeDefinition = EnumTypeDefinition<'a>;
+    type EnumTypeDefinition = EnumTypeDefinition<'a, C>;
     type InputObjectTypeDefinition = InputObjectTypeDefinition<'a, C>;
 
     fn as_ref(&self) -> InputTypeReference<'_, Self> {

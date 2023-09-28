@@ -1,5 +1,5 @@
 use crate::{
-    ArgumentsDefinition, Cache, DirectiveDefinition, Directives, EnumTypeDefinition,
+    ArgumentsDefinition, Cache, Directive, DirectiveDefinition, Directives, EnumTypeDefinition,
     EnumValueDefinition, EnumValueDefinitions, FieldDefinition, FieldsDefinition,
     InputFieldsDefinition, InputObjectTypeDefinition, InputType, InputValueDefinition,
     InterfaceImplementation, InterfaceImplementations, InterfaceTypeDefinition,
@@ -52,6 +52,8 @@ impl<'a, S: definition::SchemaDefinition, W: Warden<SchemaDefinition = S>>
 impl<'a, S: definition::SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>>
     definition::SchemaDefinition for SchemaDefinition<'a, S, W>
 {
+    type Directive = Directive<'a, S, W>;
+    type Directives = Directives<'a, S, W>;
     type InputValueDefinition = InputValueDefinition<'a, S, W>;
     type InputFieldsDefinition = InputFieldsDefinition<'a, S, W>;
     type ArgumentsDefinition = ArgumentsDefinition<'a, S, W>;

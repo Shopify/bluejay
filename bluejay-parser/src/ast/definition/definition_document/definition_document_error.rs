@@ -1,5 +1,5 @@
 use crate::ast::definition::{
-    Context, DirectiveDefinition, ExplicitSchemaDefinition, RootOperationTypeDefinition,
+    Context, Directive, DirectiveDefinition, ExplicitSchemaDefinition, RootOperationTypeDefinition,
     TypeDefinition,
 };
 use crate::error::{Annotation, Error};
@@ -8,7 +8,7 @@ use crate::HasSpan;
 use bluejay_core::definition::{
     DirectiveDefinition as CoreDirectiveDefinition, TypeDefinition as CoreTypeDefinition,
 };
-use bluejay_core::OperationType;
+use bluejay_core::{Directive as _, OperationType};
 use std::ops::Not;
 
 #[derive(Debug)]
@@ -29,10 +29,10 @@ pub enum DefinitionDocumentError<'a, C: Context> {
     },
     ImplicitSchemaDefinitionMissingQuery,
     ExplicitSchemaDefinitionMissingQuery {
-        definition: &'a ExplicitSchemaDefinition<'a>,
+        definition: &'a ExplicitSchemaDefinition<'a, C>,
     },
     DuplicateExplicitSchemaDefinitions {
-        definitions: &'a [ExplicitSchemaDefinition<'a>],
+        definitions: &'a [ExplicitSchemaDefinition<'a, C>],
     },
     DuplicateExplicitRootOperationDefinitions {
         operation_type: OperationType,
@@ -56,6 +56,9 @@ pub enum DefinitionDocumentError<'a, C: Context> {
     },
     ReferencedTypeIsNotAnInterface {
         name: &'a Name<'a>,
+    },
+    ReferencedDirectiveDoesNotExist {
+        directive: &'a Directive<'a, C>,
     },
 }
 
@@ -222,6 +225,17 @@ impl<'a, C: Context> From<DefinitionDocumentError<'a, C>> for Error {
             DefinitionDocumentError::ExplicitRootOperationTypeNotAnObject { name } => Error::new(
                 format!("Referenced type `{}` is not an object", name.as_ref()),
                 Some(Annotation::new("Not an object type", name.span().clone())),
+                Vec::new(),
+            ),
+            DefinitionDocumentError::ReferencedDirectiveDoesNotExist { directive } => Error::new(
+                format!(
+                    "Referenced directive `@{}` does not exist",
+                    directive.name()
+                ),
+                Some(Annotation::new(
+                    "No definition for referenced directive",
+                    directive.span().clone(),
+                )),
                 Vec::new(),
             ),
         }

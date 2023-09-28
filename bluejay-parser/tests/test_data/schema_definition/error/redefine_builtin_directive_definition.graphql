@@ -1,5 +1,5 @@
 directive @include on FIELD
 
-type Query @foo {
+type Query {
   intField: Int!
 }

@@ -1,6 +1,7 @@
-use crate::directive::Directives;
+use crate::definition::Directives;
+
 pub trait HasDirectives {
-    type Directives: Directives<true>;
+    type Directives: Directives;
 
     fn directives(&self) -> Option<&Self::Directives>;
 }

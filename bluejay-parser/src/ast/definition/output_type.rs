@@ -72,7 +72,7 @@ impl<'a, C: Context + 'a> OutputType<'a, C> {
 
 impl<'a, C: Context + 'a> CoreOutputType for OutputType<'a, C> {
     type CustomScalarTypeDefinition = CustomScalarTypeDefinition<'a, C>;
-    type EnumTypeDefinition = EnumTypeDefinition<'a>;
+    type EnumTypeDefinition = EnumTypeDefinition<'a, C>;
     type InterfaceTypeDefinition = InterfaceTypeDefinition<'a, C>;
     type ObjectTypeDefinition = ObjectTypeDefinition<'a, C>;
     type UnionTypeDefinition = UnionTypeDefinition<'a, C>;

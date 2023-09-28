@@ -1,4 +1,4 @@
-use crate::ast::definition::EnumValueDefinition;
+use crate::ast::definition::{Context, EnumValueDefinition};
 use crate::ast::{FromTokens, ParseError, Tokens};
 use crate::lexical_token::PunctuatorType;
 use crate::Span;
@@ -6,13 +6,13 @@ use bluejay_core::definition::EnumValueDefinitions as CoreEnumValueDefinitions;
 use bluejay_core::AsIter;
 
 #[derive(Debug)]
-pub struct EnumValueDefinitions<'a> {
-    enum_value_definitions: Vec<EnumValueDefinition<'a>>,
+pub struct EnumValueDefinitions<'a, C: Context> {
+    enum_value_definitions: Vec<EnumValueDefinition<'a, C>>,
     _span: Span,
 }
 
-impl<'a> AsIter for EnumValueDefinitions<'a> {
-    type Item = EnumValueDefinition<'a>;
+impl<'a, C: Context> AsIter for EnumValueDefinitions<'a, C> {
+    type Item = EnumValueDefinition<'a, C>;
     type Iterator<'b> = std::slice::Iter<'b, Self::Item> where 'a: 'b;
 
     fn iter(&self) -> Self::Iterator<'_> {
@@ -20,11 +20,11 @@ impl<'a> AsIter for EnumValueDefinitions<'a> {
     }
 }
 
-impl<'a> CoreEnumValueDefinitions for EnumValueDefinitions<'a> {
-    type EnumValueDefinition = EnumValueDefinition<'a>;
+impl<'a, C: Context> CoreEnumValueDefinitions for EnumValueDefinitions<'a, C> {
+    type EnumValueDefinition = EnumValueDefinition<'a, C>;
 }
 
-impl<'a> FromTokens<'a> for EnumValueDefinitions<'a> {
+impl<'a, C: Context> FromTokens<'a> for EnumValueDefinitions<'a, C> {
     fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
         let open_span = tokens.expect_punctuator(PunctuatorType::OpenBrace)?;
         let mut enum_value_definitions = Vec::new();

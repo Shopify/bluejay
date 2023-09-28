@@ -57,6 +57,7 @@ impl<'a, C: Context> DirectiveDefinition<'a, C> {
         "directive @include(if: Boolean!) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT";
     const DEPRECATED_DEFINITION: &'static str = "directive @deprecated(reason: String = \"No longer supported\") on FIELD_DEFINITION | ARGUMENT_DEFINITION | INPUT_FIELD_DEFINITION | ENUM_VALUE";
     const SPECIFIED_BY_DEFINITION: &'static str = "directive @specifiedBy(url: String!) on SCALAR";
+    const ONE_OF_DEFINITION: &'static str = "directive @oneOf on INPUT_OBJECT";
 
     fn builtin(s: &'static str) -> Self {
         let mut definition = DirectiveDefinition::parse(s).unwrap();
@@ -78,6 +79,10 @@ impl<'a, C: Context> DirectiveDefinition<'a, C> {
 
     pub(crate) fn specified_by() -> Self {
         Self::builtin(Self::SPECIFIED_BY_DEFINITION)
+    }
+
+    pub(crate) fn one_of() -> Self {
+        Self::builtin(Self::ONE_OF_DEFINITION)
     }
 
     pub(crate) fn name_token(&self) -> &Name<'a> {

@@ -1,19 +1,22 @@
-use crate::ast::{ConstDirectives, FromTokens, ParseError, Tokens, TryFromTokens};
+use crate::ast::{
+    definition::{Context, Directives},
+    ConstDirectives, FromTokens, ParseError, Tokens, TryFromTokens,
+};
 use crate::lexical_token::{Name, PunctuatorType, StringValue};
 use crate::Span;
 use bluejay_core::OperationType;
 use std::str::FromStr;
 
 #[derive(Debug)]
-pub struct ExplicitSchemaDefinition<'a> {
+pub struct ExplicitSchemaDefinition<'a, C: Context> {
     description: Option<StringValue<'a>>,
     schema_identifier_span: Span,
-    directives: Option<ConstDirectives<'a>>,
+    directives: Option<Directives<'a, C>>,
     root_operation_type_definitions: Vec<RootOperationTypeDefinition<'a>>,
     root_operation_type_definitions_span: Span,
 }
 
-impl<'a> ExplicitSchemaDefinition<'a> {
+impl<'a, C: Context> ExplicitSchemaDefinition<'a, C> {
     pub(crate) const SCHEMA_IDENTIFIER: &'static str = "schema";
 
     pub(crate) fn description(&self) -> Option<&StringValue> {
@@ -24,7 +27,7 @@ impl<'a> ExplicitSchemaDefinition<'a> {
         &self.root_operation_type_definitions
     }
 
-    pub(crate) fn directives(&self) -> Option<&ConstDirectives<'a>> {
+    pub(crate) fn directives(&self) -> Option<&Directives<'a, C>> {
         self.directives.as_ref()
     }
 
@@ -37,7 +40,7 @@ impl<'a> ExplicitSchemaDefinition<'a> {
     }
 }
 
-impl<'a> FromTokens<'a> for ExplicitSchemaDefinition<'a> {
+impl<'a, C: Context> FromTokens<'a> for ExplicitSchemaDefinition<'a, C> {
     fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
         let description = tokens.next_if_string_value();
 
@@ -61,7 +64,7 @@ impl<'a> FromTokens<'a> for ExplicitSchemaDefinition<'a> {
         Ok(Self {
             description,
             schema_identifier_span,
-            directives,
+            directives: directives.map(Directives::from),
             root_operation_type_definitions,
             root_operation_type_definitions_span,
         })

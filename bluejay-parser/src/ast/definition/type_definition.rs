@@ -12,7 +12,7 @@ pub enum TypeDefinition<'a, C: Context> {
     CustomScalar(CustomScalarTypeDefinition<'a, C>),
     Object(ObjectTypeDefinition<'a, C>),
     InputObject(InputObjectTypeDefinition<'a, C>),
-    Enum(EnumTypeDefinition<'a>),
+    Enum(EnumTypeDefinition<'a, C>),
     Union(UnionTypeDefinition<'a, C>),
     Interface(InterfaceTypeDefinition<'a, C>),
 }
@@ -47,7 +47,7 @@ impl<'a, C: Context> CoreTypeDefinition for TypeDefinition<'a, C> {
     type CustomScalarTypeDefinition = CustomScalarTypeDefinition<'a, C>;
     type ObjectTypeDefinition = ObjectTypeDefinition<'a, C>;
     type InputObjectTypeDefinition = InputObjectTypeDefinition<'a, C>;
-    type EnumTypeDefinition = EnumTypeDefinition<'a>;
+    type EnumTypeDefinition = EnumTypeDefinition<'a, C>;
     type UnionTypeDefinition = UnionTypeDefinition<'a, C>;
     type InterfaceTypeDefinition = InterfaceTypeDefinition<'a, C>;
 
@@ -88,8 +88,8 @@ impl<'a, C: Context> From<InterfaceTypeDefinition<'a, C>> for TypeDefinition<'a,
     }
 }
 
-impl<'a, C: Context> From<EnumTypeDefinition<'a>> for TypeDefinition<'a, C> {
-    fn from(value: EnumTypeDefinition<'a>) -> Self {
+impl<'a, C: Context> From<EnumTypeDefinition<'a, C>> for TypeDefinition<'a, C> {
+    fn from(value: EnumTypeDefinition<'a, C>) -> Self {
         Self::Enum(value)
     }
 }

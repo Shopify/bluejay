@@ -1,5 +1,6 @@
 use crate::ast::{
-    definition::Context, ConstDirectives, FromTokens, ParseError, Tokens, TryFromTokens,
+    definition::{Context, Directives},
+    ConstDirectives, FromTokens, ParseError, Tokens, TryFromTokens,
 };
 use crate::lexical_token::{Name, StringValue};
 use crate::Span;
@@ -13,7 +14,7 @@ pub struct CustomScalarTypeDefinition<'a, C: Context> {
     description: Option<StringValue<'a>>,
     _scalar_identifier_span: Span,
     name: Name<'a>,
-    directives: Option<ConstDirectives<'a>>,
+    directives: Option<Directives<'a, C>>,
     context: PhantomData<C>,
 }
 
@@ -54,14 +55,14 @@ impl<'a, C: Context> FromTokens<'a> for CustomScalarTypeDefinition<'a, C> {
             description,
             _scalar_identifier_span: scalar_identifier_span,
             name,
-            directives,
+            directives: directives.map(Directives::from),
             context: Default::default(),
         })
     }
 }
 
 impl<'a, C: Context> HasDirectives for CustomScalarTypeDefinition<'a, C> {
-    type Directives = ConstDirectives<'a>;
+    type Directives = Directives<'a, C>;
 
     fn directives(&self) -> Option<&Self::Directives> {
         self.directives.as_ref()

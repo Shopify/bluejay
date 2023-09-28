@@ -1,19 +1,19 @@
-use crate::ast::definition::EnumValueDefinitions;
+use crate::ast::definition::{Context, Directives, EnumValueDefinitions};
 use crate::ast::{ConstDirectives, FromTokens, Parse, ParseError, Tokens, TryFromTokens};
 use crate::lexical_token::{Name, StringValue};
 use bluejay_core::definition::{EnumTypeDefinition as CoreEnumTypeDefinition, HasDirectives};
 
 #[derive(Debug)]
-pub struct EnumTypeDefinition<'a> {
+pub struct EnumTypeDefinition<'a, C: Context> {
     description: Option<StringValue<'a>>,
     name: Name<'a>,
-    directives: Option<ConstDirectives<'a>>,
-    enum_value_definitions: EnumValueDefinitions<'a>,
+    directives: Option<Directives<'a, C>>,
+    enum_value_definitions: EnumValueDefinitions<'a, C>,
     is_builtin: bool,
 }
 
-impl<'a> CoreEnumTypeDefinition for EnumTypeDefinition<'a> {
-    type EnumValueDefinitions = EnumValueDefinitions<'a>;
+impl<'a, C: Context> CoreEnumTypeDefinition for EnumTypeDefinition<'a, C> {
+    type EnumValueDefinitions = EnumValueDefinitions<'a, C>;
 
     fn description(&self) -> Option<&str> {
         self.description.as_ref().map(AsRef::as_ref)
@@ -32,7 +32,7 @@ impl<'a> CoreEnumTypeDefinition for EnumTypeDefinition<'a> {
     }
 }
 
-impl<'a> EnumTypeDefinition<'a> {
+impl<'a, C: Context> EnumTypeDefinition<'a, C> {
     pub(crate) const ENUM_IDENTIFIER: &'static str = "enum";
     const __TYPE_KIND_DEFINITION: &'static str = "enum __TypeKind {
         SCALAR
@@ -85,7 +85,7 @@ impl<'a> EnumTypeDefinition<'a> {
     }
 }
 
-impl<'a> FromTokens<'a> for EnumTypeDefinition<'a> {
+impl<'a, C: Context> FromTokens<'a> for EnumTypeDefinition<'a, C> {
     fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
         let description = tokens.next_if_string_value();
         tokens.expect_name_value(Self::ENUM_IDENTIFIER)?;
@@ -95,21 +95,21 @@ impl<'a> FromTokens<'a> for EnumTypeDefinition<'a> {
         Ok(Self {
             description,
             name,
-            directives,
+            directives: directives.map(Directives::from),
             enum_value_definitions,
             is_builtin: false,
         })
     }
 }
 
-impl<'a> AsRef<EnumTypeDefinition<'a>> for EnumTypeDefinition<'a> {
-    fn as_ref(&self) -> &EnumTypeDefinition<'a> {
+impl<'a, C: Context> AsRef<EnumTypeDefinition<'a, C>> for EnumTypeDefinition<'a, C> {
+    fn as_ref(&self) -> &EnumTypeDefinition<'a, C> {
         self
     }
 }
 
-impl<'a> HasDirectives for EnumTypeDefinition<'a> {
-    type Directives = ConstDirectives<'a>;
+impl<'a, C: Context> HasDirectives for EnumTypeDefinition<'a, C> {
+    type Directives = Directives<'a, C>;
 
     fn directives(&self) -> Option<&Self::Directives> {
         self.directives.as_ref()
