@@ -5,16 +5,16 @@ use crate::definition::{
 use crate::BuiltinScalarDefinition;
 
 #[derive(Debug)]
-pub enum BaseOutputTypeReference<'a, B: BaseOutputType> {
+pub enum BaseOutputTypeReference<'a, O: OutputType> {
     BuiltinScalar(BuiltinScalarDefinition),
-    CustomScalar(&'a B::CustomScalarTypeDefinition),
-    Enum(&'a B::EnumTypeDefinition),
-    Object(&'a B::ObjectTypeDefinition),
-    Interface(&'a B::InterfaceTypeDefinition),
-    Union(&'a B::UnionTypeDefinition),
+    CustomScalar(&'a O::CustomScalarTypeDefinition),
+    Enum(&'a O::EnumTypeDefinition),
+    Object(&'a O::ObjectTypeDefinition),
+    Interface(&'a O::InterfaceTypeDefinition),
+    Union(&'a O::UnionTypeDefinition),
 }
 
-impl<'a, B: BaseOutputType> BaseOutputTypeReference<'a, B> {
+impl<'a, O: OutputType> BaseOutputTypeReference<'a, O> {
     pub fn name(&self) -> &'a str {
         match self {
             Self::BuiltinScalar(bstd) => bstd.name(),
@@ -34,27 +34,16 @@ impl<'a, B: BaseOutputType> BaseOutputTypeReference<'a, B> {
     }
 }
 
-impl<'a, B: BaseOutputType> Clone for BaseOutputTypeReference<'a, B> {
+impl<'a, O: OutputType> Clone for BaseOutputTypeReference<'a, O> {
     fn clone(&self) -> Self {
         *self
     }
 }
 
-impl<'a, B: BaseOutputType> Copy for BaseOutputTypeReference<'a, B> {}
+impl<'a, O: OutputType> Copy for BaseOutputTypeReference<'a, O> {}
 
-pub trait BaseOutputType: Sized {
-    type CustomScalarTypeDefinition: ScalarTypeDefinition;
-    type EnumTypeDefinition: EnumTypeDefinition;
-    type ObjectTypeDefinition: ObjectTypeDefinition;
-    type InterfaceTypeDefinition: InterfaceTypeDefinition;
-    type UnionTypeDefinition: UnionTypeDefinition;
-
-    fn as_ref(&self) -> BaseOutputTypeReference<'_, Self>;
-}
-
-#[derive(Debug)]
 pub enum OutputTypeReference<'a, O: OutputType> {
-    Base(&'a O::BaseOutputType, bool),
+    Base(BaseOutputTypeReference<'a, O>, bool),
     List(&'a O, bool),
 }
 
@@ -74,9 +63,9 @@ impl<'a, O: OutputType> OutputTypeReference<'a, O> {
         }
     }
 
-    pub fn base(&self) -> &'a O::BaseOutputType {
+    pub fn base(&self) -> BaseOutputTypeReference<'a, O> {
         match self {
-            Self::Base(b, _) => b,
+            Self::Base(b, _) => *b,
             Self::List(l, _) => l.as_ref().base(),
         }
     }
@@ -84,7 +73,7 @@ impl<'a, O: OutputType> OutputTypeReference<'a, O> {
     pub fn display_name(&self) -> String {
         match self {
             Self::Base(b, required) => {
-                format!("{}{}", b.as_ref().name(), if *required { "!" } else { "" })
+                format!("{}{}", b.name(), if *required { "!" } else { "" })
             }
             Self::List(inner, required) => {
                 format!(
@@ -98,7 +87,11 @@ impl<'a, O: OutputType> OutputTypeReference<'a, O> {
 }
 
 pub trait OutputType: Sized {
-    type BaseOutputType: BaseOutputType;
+    type CustomScalarTypeDefinition: ScalarTypeDefinition;
+    type EnumTypeDefinition: EnumTypeDefinition;
+    type ObjectTypeDefinition: ObjectTypeDefinition;
+    type InterfaceTypeDefinition: InterfaceTypeDefinition;
+    type UnionTypeDefinition: UnionTypeDefinition;
 
     fn as_ref(&self) -> OutputTypeReference<'_, Self>;
 }

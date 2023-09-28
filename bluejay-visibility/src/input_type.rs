@@ -6,20 +6,28 @@ use bluejay_core::definition::{
     self, prelude::*, BaseInputTypeReference, InputTypeReference, SchemaDefinition,
     TypeDefinitionReference,
 };
-use bluejay_core::BuiltinScalarDefinition;
 
-pub enum BaseInputType<'a, S: SchemaDefinition, W: Warden<SchemaDefinition = S>> {
-    BuiltinScalar(BuiltinScalarDefinition),
-    CustomScalar(&'a ScalarTypeDefinition<'a, S, W>),
-    InputObject(&'a InputObjectTypeDefinition<'a, S, W>),
-    Enum(&'a EnumTypeDefinition<'a, S, W>),
+pub enum InputType<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S> + 'a> {
+    Base(BaseInputTypeReference<'a, Self>, bool),
+    List(Box<Self>, bool),
 }
 
-impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> BaseInputType<'a, S, W> {
-    pub(crate) fn new(
+impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> InputType<'a, S, W> {
+    pub fn new(inner: &'a S::InputType, cache: &'a Cache<'a, S, W>) -> Option<Self> {
+        match inner.as_ref() {
+            InputTypeReference::Base(b, required) => {
+                Self::base(b, cache).map(|base| Self::Base(base, required))
+            }
+            InputTypeReference::List(inner, required) => {
+                Self::new(inner, cache).map(|inner| Self::List(Box::new(inner), required))
+            }
+        }
+    }
+
+    fn base(
         inner: BaseInputTypeReference<'a, S::InputType>,
         cache: &'a Cache<'a, S, W>,
-    ) -> Option<Self> {
+    ) -> Option<BaseInputTypeReference<'a, Self>> {
         let tdr = match inner {
             BaseInputTypeReference::BuiltinScalar(bstd) => {
                 TypeDefinitionReference::BuiltinScalar(bstd)
@@ -34,47 +42,16 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> BaseInputTyp
         cache
             .get_or_create_type_definition(tdr)
             .map(|type_definition| match type_definition {
-                TypeDefinition::BuiltinScalar(bstd) => Self::BuiltinScalar(*bstd),
-                TypeDefinition::CustomScalar(cstd) => Self::CustomScalar(cstd),
-                TypeDefinition::Enum(etd) => Self::Enum(etd),
-                TypeDefinition::InputObject(iotd) => Self::InputObject(iotd),
+                TypeDefinition::BuiltinScalar(bstd) => BaseInputTypeReference::BuiltinScalar(*bstd),
+                TypeDefinition::CustomScalar(cstd) => BaseInputTypeReference::CustomScalar(cstd),
+                TypeDefinition::Enum(etd) => BaseInputTypeReference::Enum(etd),
+                TypeDefinition::InputObject(iotd) => BaseInputTypeReference::InputObject(iotd),
                 TypeDefinition::Interface(_)
                 | TypeDefinition::Object(_)
                 | TypeDefinition::Union(_) => {
                     panic!("Schema definition does not have unique type names");
                 }
             })
-    }
-}
-
-impl<'a, S: SchemaDefinition, W: Warden<SchemaDefinition = S>> From<&BaseInputType<'a, S, W>>
-    for BaseInputTypeReference<'a, InputType<'a, S, W>>
-{
-    fn from(value: &BaseInputType<'a, S, W>) -> Self {
-        match value {
-            BaseInputType::BuiltinScalar(bstd) => BaseInputTypeReference::BuiltinScalar(*bstd),
-            BaseInputType::CustomScalar(cstd) => BaseInputTypeReference::CustomScalar(*cstd),
-            BaseInputType::Enum(etd) => BaseInputTypeReference::Enum(*etd),
-            BaseInputType::InputObject(iotd) => BaseInputTypeReference::InputObject(*iotd),
-        }
-    }
-}
-
-pub enum InputType<'a, S: SchemaDefinition, W: Warden<SchemaDefinition = S>> {
-    Base(BaseInputType<'a, S, W>, bool),
-    List(Box<Self>, bool),
-}
-
-impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> InputType<'a, S, W> {
-    pub fn new(inner: &'a S::InputType, cache: &'a Cache<'a, S, W>) -> Option<Self> {
-        match inner.as_ref() {
-            InputTypeReference::Base(b, required) => {
-                BaseInputType::new(b, cache).map(|base| Self::Base(base, required))
-            }
-            InputTypeReference::List(inner, required) => {
-                Self::new(inner, cache).map(|inner| Self::List(Box::new(inner), required))
-            }
-        }
     }
 }
 
@@ -87,7 +64,7 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> definition::
 
     fn as_ref(&self) -> InputTypeReference<'_, Self> {
         match self {
-            Self::Base(b, required) => InputTypeReference::Base(b.into(), *required),
+            Self::Base(b, required) => InputTypeReference::Base(*b, *required),
             Self::List(inner, required) => InputTypeReference::List(inner, *required),
         }
     }

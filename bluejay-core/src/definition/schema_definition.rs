@@ -1,10 +1,10 @@
 use crate::definition::{
-    ArgumentsDefinition, BaseOutputType, DirectiveDefinition, EnumTypeDefinition,
-    EnumValueDefinition, EnumValueDefinitions, FieldDefinition, FieldsDefinition, HasDirectives,
-    InputFieldsDefinition, InputObjectTypeDefinition, InputType, InputValueDefinition,
-    InterfaceImplementation, InterfaceImplementations, InterfaceTypeDefinition,
-    ObjectTypeDefinition, OutputType, ScalarTypeDefinition, TypeDefinition,
-    TypeDefinitionReference, UnionMemberType, UnionMemberTypes, UnionTypeDefinition,
+    ArgumentsDefinition, DirectiveDefinition, EnumTypeDefinition, EnumValueDefinition,
+    EnumValueDefinitions, FieldDefinition, FieldsDefinition, HasDirectives, InputFieldsDefinition,
+    InputObjectTypeDefinition, InputType, InputValueDefinition, InterfaceImplementation,
+    InterfaceImplementations, InterfaceTypeDefinition, ObjectTypeDefinition, OutputType,
+    ScalarTypeDefinition, TypeDefinition, TypeDefinitionReference, UnionMemberType,
+    UnionMemberTypes, UnionTypeDefinition,
 };
 
 pub trait SchemaDefinition: HasDirectives {
@@ -37,14 +37,13 @@ pub trait SchemaDefinition: HasDirectives {
         InputObjectTypeDefinition = Self::InputObjectTypeDefinition,
         EnumTypeDefinition = Self::EnumTypeDefinition,
     >;
-    type BaseOutputType: BaseOutputType<
+    type OutputType: OutputType<
         CustomScalarTypeDefinition = Self::CustomScalarTypeDefinition,
         EnumTypeDefinition = Self::EnumTypeDefinition,
         ObjectTypeDefinition = Self::ObjectTypeDefinition,
         InterfaceTypeDefinition = Self::InterfaceTypeDefinition,
         UnionTypeDefinition = Self::UnionTypeDefinition,
     >;
-    type OutputType: OutputType<BaseOutputType = Self::BaseOutputType>;
     type CustomScalarTypeDefinition: ScalarTypeDefinition<Directives = Self::Directives>;
     type ObjectTypeDefinition: ObjectTypeDefinition<
         FieldsDefinition = Self::FieldsDefinition,

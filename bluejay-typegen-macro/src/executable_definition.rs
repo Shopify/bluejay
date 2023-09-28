@@ -7,9 +7,9 @@ use crate::{
 };
 use bluejay_core::{
     definition::{
-        BaseOutputType, BaseOutputTypeReference, EnumTypeDefinition, FieldDefinition,
-        FieldsDefinition, InterfaceTypeDefinition, ObjectTypeDefinition, OutputType,
-        OutputTypeReference, ScalarTypeDefinition, SchemaDefinition, TypeDefinitionReference,
+        BaseOutputTypeReference, EnumTypeDefinition, FieldDefinition, FieldsDefinition,
+        InterfaceTypeDefinition, ObjectTypeDefinition, OutputType, OutputTypeReference,
+        ScalarTypeDefinition, SchemaDefinition, TypeDefinitionReference,
     },
     executable::{
         Field, FragmentDefinition, FragmentSpread, InlineFragment, OperationDefinition, Selection,
@@ -131,7 +131,7 @@ impl<'a, 'b> Context<'a, 'b> {
     ) -> syn::TypePath {
         match ty {
             OutputTypeReference::Base(base, required) => {
-                let inner = self.type_for_base_output_type(base.as_ref(), field);
+                let inner = self.type_for_base_output_type(base, field);
                 if required {
                     inner
                 } else {
@@ -149,7 +149,7 @@ impl<'a, 'b> Context<'a, 'b> {
         }
     }
 
-    fn type_for_base_output_type<T: BaseOutputType>(
+    fn type_for_base_output_type<T: OutputType>(
         &self,
         ty: BaseOutputTypeReference<T>,
         field: &impl Field,
@@ -292,7 +292,7 @@ impl<'a, 'b> Context<'a, 'b> {
         field_definition: &'a impl FieldDefinition,
         visited: &mut HashSet<&'a str>,
     ) -> bool {
-        let ty = field_definition.r#type().as_ref().base().as_ref();
+        let ty = field_definition.r#type().as_ref().base();
         if !self.config.borrow() || !visited.insert(ty.name()) {
             return false;
         }

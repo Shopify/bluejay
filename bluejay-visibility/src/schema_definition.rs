@@ -1,10 +1,10 @@
 use crate::{
-    ArgumentsDefinition, BaseOutputType, Cache, DirectiveDefinition, Directives,
-    EnumTypeDefinition, EnumValueDefinition, EnumValueDefinitions, FieldDefinition,
-    FieldsDefinition, InputFieldsDefinition, InputObjectTypeDefinition, InputType,
-    InputValueDefinition, InterfaceImplementation, InterfaceImplementations,
-    InterfaceTypeDefinition, ObjectTypeDefinition, OutputType, ScalarTypeDefinition,
-    TypeDefinition, UnionMemberType, UnionMemberTypes, UnionTypeDefinition, Warden,
+    ArgumentsDefinition, Cache, DirectiveDefinition, Directives, EnumTypeDefinition,
+    EnumValueDefinition, EnumValueDefinitions, FieldDefinition, FieldsDefinition,
+    InputFieldsDefinition, InputObjectTypeDefinition, InputType, InputValueDefinition,
+    InterfaceImplementation, InterfaceImplementations, InterfaceTypeDefinition,
+    ObjectTypeDefinition, OutputType, ScalarTypeDefinition, TypeDefinition, UnionMemberType,
+    UnionMemberTypes, UnionTypeDefinition, Warden,
 };
 use bluejay_core::definition::{self, prelude::*, HasDirectives};
 use bluejay_core::AsIter;
@@ -64,7 +64,6 @@ impl<'a, S: definition::SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>>
     type UnionMemberType = UnionMemberType<'a, S, W>;
     type UnionMemberTypes = UnionMemberTypes<'a, S, W>;
     type InputType = InputType<'a, S, W>;
-    type BaseOutputType = BaseOutputType<'a, S, W>;
     type OutputType = OutputType<'a, S, W>;
     type CustomScalarTypeDefinition = ScalarTypeDefinition<'a, S, W>;
     type ObjectTypeDefinition = ObjectTypeDefinition<'a, S, W>;

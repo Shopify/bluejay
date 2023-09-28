@@ -1,7 +1,7 @@
 use crate::executable::{BuiltinRules, Cache, Path, PathRoot, Rule};
 use bluejay_core::definition::{
-    ArgumentsDefinition, BaseOutputType, DirectiveDefinition, DirectiveLocation, FieldDefinition,
-    FieldsDefinition, ObjectTypeDefinition, OutputType, SchemaDefinition, TypeDefinitionReference,
+    ArgumentsDefinition, DirectiveDefinition, DirectiveLocation, FieldDefinition, FieldsDefinition,
+    ObjectTypeDefinition, OutputType, SchemaDefinition, TypeDefinitionReference,
 };
 use bluejay_core::executable::{
     ExecutableDocument, Field, FragmentDefinition, FragmentSpread, InlineFragment,
@@ -156,7 +156,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, R: Rule<'a, E, S>> Validato
         if let Some(selection_set) = field.selection_set() {
             if let Some(nested_type) = self
                 .schema_definition
-                .get_type_definition(field_definition.r#type().as_ref().base().as_ref().name())
+                .get_type_definition(field_definition.r#type().as_ref().base().name())
             {
                 self.visit_selection_set(selection_set, nested_type, path);
             }

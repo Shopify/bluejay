@@ -13,8 +13,8 @@ use bluejay_core::definition::{
     InputObjectTypeDefinition as CoreInputObjectTypeDefinition,
     InputValueDefinition as CoreInputValueDefinition,
     InterfaceTypeDefinition as CoreInterfaceTypeDefinition,
-    ObjectTypeDefinition as CoreObjectTypeDefinition, OutputType,
-    TypeDefinition as CoreTypeDefinition, UnionTypeDefinition as CoreUnionTypeDefinition,
+    ObjectTypeDefinition as CoreObjectTypeDefinition, TypeDefinition as CoreTypeDefinition,
+    UnionTypeDefinition as CoreUnionTypeDefinition,
 };
 use bluejay_core::{AsIter, BuiltinScalarDefinition, IntoEnumIterator, OperationType};
 use std::collections::btree_map::Entry;
@@ -565,7 +565,7 @@ impl<'a, C: Context> DefinitionDocument<'a, C> {
         errors: &mut Vec<DefinitionDocumentError<'a, C>>,
     ) {
         fields_definition.iter().for_each(|field_definition| {
-            let t = field_definition.r#type().as_ref().base();
+            let t = field_definition.r#type().base();
             match indexed_type_definitions.get(t.name().as_ref()) {
                 Some(&td) => match BaseOutputType::core_type_from_type_definition(td) {
                     Ok(core_t) => t.set_type(core_t).unwrap(),

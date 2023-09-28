@@ -2,8 +2,8 @@ use crate::attributes::doc_string;
 use crate::executable_definition::{generate_union_type_definition, Context};
 use crate::names::{field_ident, module_ident, type_ident};
 use bluejay_core::definition::{
-    BaseOutputType, BaseOutputTypeReference, FieldDefinition, FieldsDefinition,
-    InterfaceTypeDefinition, ObjectTypeDefinition, OutputType,
+    BaseOutputTypeReference, FieldDefinition, FieldsDefinition, InterfaceTypeDefinition,
+    ObjectTypeDefinition, OutputType,
 };
 use bluejay_core::executable::{Field, Selection, SelectionReference, SelectionSet};
 use proc_macro2::Span;
@@ -138,8 +138,8 @@ pub(crate) fn nested_module(
 ) -> Option<syn::Item> {
     let nested = fields_and_definitions
         .iter()
-        .flat_map(|(field, field_definition)| {
-            match field_definition.r#type().as_ref().base().as_ref() {
+        .flat_map(
+            |(field, field_definition)| match field_definition.r#type().as_ref().base() {
                 BaseOutputTypeReference::Object(otd) => generate_object_type_definition(
                     otd,
                     field.selection_set().unwrap(),
@@ -156,8 +156,8 @@ pub(crate) fn nested_module(
                     context.dive(field.response_name()),
                 ),
                 _ => Vec::new(),
-            }
-        })
+            },
+        )
         .collect::<Vec<syn::Item>>();
 
     nested.is_empty().not().then(|| {

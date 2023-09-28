@@ -1,7 +1,7 @@
 use crate::executable::{Cache, Error, Rule, Visitor};
 use bluejay_core::definition::{
-    BaseOutputType, FieldDefinition, FieldsDefinition, ObjectTypeDefinition, OutputType,
-    OutputTypeReference, SchemaDefinition, TypeDefinitionReference,
+    FieldDefinition, FieldsDefinition, ObjectTypeDefinition, OutputType, OutputTypeReference,
+    SchemaDefinition, TypeDefinitionReference,
 };
 use bluejay_core::executable::{
     ExecutableDocument, Field, FragmentDefinition, FragmentSpread, InlineFragment, Selection,
@@ -239,7 +239,6 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> FieldSelectionMer
                         .r#type()
                         .as_ref()
                         .base()
-                        .as_ref()
                         .name(),
                 ) {
                     if self.selection_set_valid(selection_set, parent_type) {
@@ -333,8 +332,6 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> FieldSelectionMer
                 OutputTypeReference::Base(type_a_base, type_a_required),
                 OutputTypeReference::Base(type_b_base, type_b_required),
             ) if type_a_required == type_b_required => {
-                let type_a_base = type_a_base.as_ref();
-                let type_b_base = type_b_base.as_ref();
                 !(type_a_base.is_scalar_or_enum() || type_b_base.is_scalar_or_enum())
                     || type_a_base.name() == type_b_base.name()
             }
