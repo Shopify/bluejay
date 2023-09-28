@@ -38,7 +38,7 @@ pub use interface_implementation::InterfaceImplementation;
 pub use interface_implementations::InterfaceImplementations;
 pub use interface_type_definition::InterfaceTypeDefinition;
 pub use object_type_definition::ObjectTypeDefinition;
-pub use output_type::{BaseOutputType, BaseOutputTypeReference, OutputType, OutputTypeReference};
+pub use output_type::{BaseOutputTypeReference, OutputType, OutputTypeReference};
 pub use scalar_type_definition::ScalarTypeDefinition;
 pub use schema_definition::SchemaDefinition;
 pub use type_definition::{TypeDefinition, TypeDefinitionReference};
@@ -48,13 +48,13 @@ pub use union_type_definition::UnionTypeDefinition;
 
 pub mod prelude {
     pub use super::{
-        ArgumentsDefinition as _, BaseOutputType as _, DirectiveDefinition as _,
-        EnumTypeDefinition as _, EnumValueDefinition as _, EnumValueDefinitions as _,
-        FieldDefinition as _, FieldsDefinition as _, HasDirectives as _,
-        InputFieldsDefinition as _, InputObjectTypeDefinition as _, InputType as _,
-        InputValueDefinition as _, InterfaceImplementation as _, InterfaceImplementations as _,
-        InterfaceTypeDefinition as _, ObjectTypeDefinition as _, OutputType as _,
-        ScalarTypeDefinition as _, SchemaDefinition as _, TypeDefinition as _,
-        UnionMemberType as _, UnionMemberTypes as _, UnionTypeDefinition as _,
+        ArgumentsDefinition as _, DirectiveDefinition as _, EnumTypeDefinition as _,
+        EnumValueDefinition as _, EnumValueDefinitions as _, FieldDefinition as _,
+        FieldsDefinition as _, HasDirectives as _, InputFieldsDefinition as _,
+        InputObjectTypeDefinition as _, InputType as _, InputValueDefinition as _,
+        InterfaceImplementation as _, InterfaceImplementations as _, InterfaceTypeDefinition as _,
+        ObjectTypeDefinition as _, OutputType as _, ScalarTypeDefinition as _,
+        SchemaDefinition as _, TypeDefinition as _, UnionMemberType as _, UnionMemberTypes as _,
+        UnionTypeDefinition as _,
     };
 }

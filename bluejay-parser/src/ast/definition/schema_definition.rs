@@ -1,7 +1,7 @@
 use crate::ast::definition::{
-    ArgumentsDefinition, BaseOutputType, Context, CustomScalarTypeDefinition, DefaultContext,
-    DirectiveDefinition, EnumTypeDefinition, EnumValueDefinition, EnumValueDefinitions,
-    FieldDefinition, FieldsDefinition, InputFieldsDefinition, InputObjectTypeDefinition, InputType,
+    ArgumentsDefinition, Context, CustomScalarTypeDefinition, DefaultContext, DirectiveDefinition,
+    EnumTypeDefinition, EnumValueDefinition, EnumValueDefinitions, FieldDefinition,
+    FieldsDefinition, InputFieldsDefinition, InputObjectTypeDefinition, InputType,
     InputValueDefinition, InterfaceImplementation, InterfaceImplementations,
     InterfaceTypeDefinition, ObjectTypeDefinition, OutputType, TypeDefinition, UnionMemberType,
     UnionMemberTypes, UnionTypeDefinition,
@@ -90,7 +90,6 @@ impl<'a, C: Context> CoreSchemaDefinition for SchemaDefinition<'a, C> {
     type UnionMemberType = UnionMemberType<'a, C>;
     type UnionMemberTypes = UnionMemberTypes<'a, C>;
     type InputType = InputType<'a, C>;
-    type BaseOutputType = BaseOutputType<'a, C>;
     type OutputType = OutputType<'a, C>;
     type CustomScalarTypeDefinition = CustomScalarTypeDefinition<'a, C>;
     type ObjectTypeDefinition = ObjectTypeDefinition<'a, C>;

@@ -18,8 +18,11 @@ pub enum BaseOutputType<'a, S: SchemaDefinition, W: Warden<SchemaDefinition = S>
 }
 
 impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> BaseOutputType<'a, S, W> {
-    pub(crate) fn new(inner: &'a S::BaseOutputType, cache: &'a Cache<'a, S, W>) -> Option<Self> {
-        let tdr = match inner.as_ref() {
+    pub(crate) fn new(
+        inner: BaseOutputTypeReference<'a, S::OutputType>,
+        cache: &'a Cache<'a, S, W>,
+    ) -> Option<Self> {
+        let tdr = match inner {
             BaseOutputTypeReference::BuiltinScalar(bstd) => {
                 TypeDefinitionReference::BuiltinScalar(bstd)
             }
@@ -48,23 +51,17 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> BaseOutputTy
     }
 }
 
-impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> definition::BaseOutputType
-    for BaseOutputType<'a, S, W>
+impl<'a, S: SchemaDefinition, W: Warden<SchemaDefinition = S>> From<&BaseOutputType<'a, S, W>>
+    for BaseOutputTypeReference<'a, OutputType<'a, S, W>>
 {
-    type ObjectTypeDefinition = ObjectTypeDefinition<'a, S, W>;
-    type CustomScalarTypeDefinition = ScalarTypeDefinition<'a, S, W>;
-    type InterfaceTypeDefinition = InterfaceTypeDefinition<'a, S, W>;
-    type EnumTypeDefinition = EnumTypeDefinition<'a, S, W>;
-    type UnionTypeDefinition = UnionTypeDefinition<'a, S, W>;
-
-    fn as_ref(&self) -> BaseOutputTypeReference<'_, Self> {
-        match self {
-            Self::Object(otd) => BaseOutputTypeReference::Object(*otd),
-            Self::Interface(itd) => BaseOutputTypeReference::Interface(*itd),
-            Self::CustomScalar(cstd) => BaseOutputTypeReference::CustomScalar(*cstd),
-            Self::BuiltinScalar(bstd) => BaseOutputTypeReference::BuiltinScalar(*bstd),
-            Self::Enum(etd) => BaseOutputTypeReference::Enum(*etd),
-            Self::Union(utd) => BaseOutputTypeReference::Union(*utd),
+    fn from(value: &BaseOutputType<'a, S, W>) -> Self {
+        match value {
+            BaseOutputType::BuiltinScalar(bstd) => BaseOutputTypeReference::BuiltinScalar(*bstd),
+            BaseOutputType::CustomScalar(cstd) => BaseOutputTypeReference::CustomScalar(*cstd),
+            BaseOutputType::Enum(etd) => BaseOutputTypeReference::Enum(*etd),
+            BaseOutputType::Interface(itd) => BaseOutputTypeReference::Interface(*itd),
+            BaseOutputType::Object(otd) => BaseOutputTypeReference::Object(*otd),
+            BaseOutputType::Union(utd) => BaseOutputTypeReference::Union(*utd),
         }
     }
 }
@@ -90,11 +87,15 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> OutputType<'
 impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> definition::OutputType
     for OutputType<'a, S, W>
 {
-    type BaseOutputType = BaseOutputType<'a, S, W>;
+    type ObjectTypeDefinition = ObjectTypeDefinition<'a, S, W>;
+    type CustomScalarTypeDefinition = ScalarTypeDefinition<'a, S, W>;
+    type InterfaceTypeDefinition = InterfaceTypeDefinition<'a, S, W>;
+    type EnumTypeDefinition = EnumTypeDefinition<'a, S, W>;
+    type UnionTypeDefinition = UnionTypeDefinition<'a, S, W>;
 
     fn as_ref(&self) -> OutputTypeReference<'_, Self> {
         match self {
-            Self::Base(b, required) => OutputTypeReference::Base(b, *required),
+            Self::Base(b, required) => OutputTypeReference::Base(b.into(), *required),
             Self::List(inner, required) => OutputTypeReference::List(inner, *required),
         }
     }
