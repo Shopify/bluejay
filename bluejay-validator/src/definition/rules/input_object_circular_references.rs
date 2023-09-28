@@ -1,7 +1,7 @@
 use crate::definition::{Error, Rule, Visitor};
 use bluejay_core::definition::{
-    BaseInputType, BaseInputTypeReference, InputObjectTypeDefinition, InputType,
-    InputTypeReference, InputValueDefinition, SchemaDefinition,
+    BaseInputTypeReference, InputObjectTypeDefinition, InputType, InputTypeReference,
+    InputValueDefinition, SchemaDefinition,
 };
 use bluejay_core::AsIter;
 use std::collections::HashSet;
@@ -44,9 +44,9 @@ impl<'a, S: SchemaDefinition + 'a> InputObjectCircularReferences<'a, S> {
             .iter()
             .for_each(|ivd| match ivd.r#type().as_ref() {
                 InputTypeReference::Base(inner, required) if required => {
-                    if inner.as_ref().name() == target.name() {
+                    if inner.name() == target.name() {
                         circular_references.push(ivd.r#type());
-                    } else if let BaseInputTypeReference::InputObject(inner_iotd) = inner.as_ref() {
+                    } else if let BaseInputTypeReference::InputObject(inner_iotd) = inner {
                         if encountered.insert(inner_iotd.name()) {
                             Self::visit_for_circular_references(
                                 target,

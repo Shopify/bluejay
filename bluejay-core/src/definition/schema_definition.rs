@@ -1,5 +1,5 @@
 use crate::definition::{
-    ArgumentsDefinition, BaseInputType, BaseOutputType, DirectiveDefinition, EnumTypeDefinition,
+    ArgumentsDefinition, BaseOutputType, DirectiveDefinition, EnumTypeDefinition,
     EnumValueDefinition, EnumValueDefinitions, FieldDefinition, FieldsDefinition, HasDirectives,
     InputFieldsDefinition, InputObjectTypeDefinition, InputType, InputValueDefinition,
     InterfaceImplementation, InterfaceImplementations, InterfaceTypeDefinition,
@@ -32,12 +32,11 @@ pub trait SchemaDefinition: HasDirectives {
     >;
     type UnionMemberType: UnionMemberType<ObjectTypeDefinition = Self::ObjectTypeDefinition>;
     type UnionMemberTypes: UnionMemberTypes<UnionMemberType = Self::UnionMemberType>;
-    type BaseInputType: BaseInputType<
+    type InputType: InputType<
         CustomScalarTypeDefinition = Self::CustomScalarTypeDefinition,
         InputObjectTypeDefinition = Self::InputObjectTypeDefinition,
         EnumTypeDefinition = Self::EnumTypeDefinition,
     >;
-    type InputType: InputType<BaseInputType = Self::BaseInputType>;
     type BaseOutputType: BaseOutputType<
         CustomScalarTypeDefinition = Self::CustomScalarTypeDefinition,
         EnumTypeDefinition = Self::EnumTypeDefinition,

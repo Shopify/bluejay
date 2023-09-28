@@ -16,8 +16,11 @@ pub enum BaseInputType<'a, S: SchemaDefinition, W: Warden<SchemaDefinition = S>>
 }
 
 impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> BaseInputType<'a, S, W> {
-    pub(crate) fn new(inner: &'a S::BaseInputType, cache: &'a Cache<'a, S, W>) -> Option<Self> {
-        let tdr = match inner.as_ref() {
+    pub(crate) fn new(
+        inner: BaseInputTypeReference<'a, S::InputType>,
+        cache: &'a Cache<'a, S, W>,
+    ) -> Option<Self> {
+        let tdr = match inner {
             BaseInputTypeReference::BuiltinScalar(bstd) => {
                 TypeDefinitionReference::BuiltinScalar(bstd)
             }
@@ -44,19 +47,15 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> BaseInputTyp
     }
 }
 
-impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> definition::BaseInputType
-    for BaseInputType<'a, S, W>
+impl<'a, S: SchemaDefinition, W: Warden<SchemaDefinition = S>> From<&BaseInputType<'a, S, W>>
+    for BaseInputTypeReference<'a, InputType<'a, S, W>>
 {
-    type CustomScalarTypeDefinition = ScalarTypeDefinition<'a, S, W>;
-    type EnumTypeDefinition = EnumTypeDefinition<'a, S, W>;
-    type InputObjectTypeDefinition = InputObjectTypeDefinition<'a, S, W>;
-
-    fn as_ref(&self) -> BaseInputTypeReference<'_, Self> {
-        match self {
-            Self::InputObject(iotd) => BaseInputTypeReference::InputObject(*iotd),
-            Self::CustomScalar(cstd) => BaseInputTypeReference::CustomScalar(*cstd),
-            Self::BuiltinScalar(bstd) => BaseInputTypeReference::BuiltinScalar(*bstd),
-            Self::Enum(etd) => BaseInputTypeReference::Enum(*etd),
+    fn from(value: &BaseInputType<'a, S, W>) -> Self {
+        match value {
+            BaseInputType::BuiltinScalar(bstd) => BaseInputTypeReference::BuiltinScalar(*bstd),
+            BaseInputType::CustomScalar(cstd) => BaseInputTypeReference::CustomScalar(*cstd),
+            BaseInputType::Enum(etd) => BaseInputTypeReference::Enum(*etd),
+            BaseInputType::InputObject(iotd) => BaseInputTypeReference::InputObject(*iotd),
         }
     }
 }
@@ -82,11 +81,13 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> InputType<'a
 impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> definition::InputType
     for InputType<'a, S, W>
 {
-    type BaseInputType = BaseInputType<'a, S, W>;
+    type CustomScalarTypeDefinition = ScalarTypeDefinition<'a, S, W>;
+    type EnumTypeDefinition = EnumTypeDefinition<'a, S, W>;
+    type InputObjectTypeDefinition = InputObjectTypeDefinition<'a, S, W>;
 
     fn as_ref(&self) -> InputTypeReference<'_, Self> {
         match self {
-            Self::Base(b, required) => InputTypeReference::Base(b, *required),
+            Self::Base(b, required) => InputTypeReference::Base(b.into(), *required),
             Self::List(inner, required) => InputTypeReference::List(inner, *required),
         }
     }

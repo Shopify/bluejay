@@ -5,22 +5,22 @@ use crate::definition::{
 use crate::BuiltinScalarDefinition;
 
 #[derive(Debug)]
-pub enum BaseInputTypeReference<'a, B: BaseInputType> {
+pub enum BaseInputTypeReference<'a, T: InputType> {
     BuiltinScalar(BuiltinScalarDefinition),
-    CustomScalar(&'a B::CustomScalarTypeDefinition),
-    InputObject(&'a B::InputObjectTypeDefinition),
-    Enum(&'a B::EnumTypeDefinition),
+    CustomScalar(&'a T::CustomScalarTypeDefinition),
+    InputObject(&'a T::InputObjectTypeDefinition),
+    Enum(&'a T::EnumTypeDefinition),
 }
 
-impl<'a, B: BaseInputType> Clone for BaseInputTypeReference<'a, B> {
+impl<'a, T: InputType> Clone for BaseInputTypeReference<'a, T> {
     fn clone(&self) -> Self {
         *self
     }
 }
 
-impl<'a, B: BaseInputType> Copy for BaseInputTypeReference<'a, B> {}
+impl<'a, T: InputType> Copy for BaseInputTypeReference<'a, T> {}
 
-impl<'a, B: BaseInputType> BaseInputTypeReference<'a, B> {
+impl<'a, T: InputType> BaseInputTypeReference<'a, T> {
     pub fn name(&self) -> &'a str {
         match self {
             Self::BuiltinScalar(bstd) => bstd.name(),
@@ -29,22 +29,16 @@ impl<'a, B: BaseInputType> BaseInputTypeReference<'a, B> {
             Self::InputObject(iotd) => iotd.name(),
         }
     }
-}
 
-pub trait BaseInputType: Sized {
-    type CustomScalarTypeDefinition: ScalarTypeDefinition;
-    type InputObjectTypeDefinition: InputObjectTypeDefinition;
-    type EnumTypeDefinition: EnumTypeDefinition;
-
-    fn as_ref(&self) -> BaseInputTypeReference<'_, Self>;
-}
-
-impl<'a, B: BaseInputType> BaseInputType for BaseInputTypeReference<'a, B> {
-    type CustomScalarTypeDefinition = B::CustomScalarTypeDefinition;
-    type InputObjectTypeDefinition = B::InputObjectTypeDefinition;
-    type EnumTypeDefinition = B::EnumTypeDefinition;
-
-    fn as_ref(&self) -> BaseInputTypeReference<'_, Self> {
+    pub fn convert<
+        I: InputType<
+            CustomScalarTypeDefinition = T::CustomScalarTypeDefinition,
+            InputObjectTypeDefinition = T::InputObjectTypeDefinition,
+            EnumTypeDefinition = T::EnumTypeDefinition,
+        >,
+    >(
+        &self,
+    ) -> BaseInputTypeReference<'a, I> {
         match self {
             Self::BuiltinScalar(bstd) => BaseInputTypeReference::BuiltinScalar(*bstd),
             Self::CustomScalar(cstd) => BaseInputTypeReference::CustomScalar(*cstd),
@@ -54,9 +48,8 @@ impl<'a, B: BaseInputType> BaseInputType for BaseInputTypeReference<'a, B> {
     }
 }
 
-#[derive(Debug)]
 pub enum InputTypeReference<'a, I: InputType> {
-    Base(&'a I::BaseInputType, bool),
+    Base(BaseInputTypeReference<'a, I>, bool),
     List(&'a I, bool),
 }
 
@@ -76,9 +69,9 @@ impl<'a, I: InputType> InputTypeReference<'a, I> {
         }
     }
 
-    pub fn base(&self) -> &'a I::BaseInputType {
+    pub fn base(&self) -> BaseInputTypeReference<'a, I> {
         match self {
-            Self::Base(b, _) => b,
+            Self::Base(b, _) => *b,
             Self::List(l, _) => l.as_ref().base(),
         }
     }
@@ -86,7 +79,7 @@ impl<'a, I: InputType> InputTypeReference<'a, I> {
     pub fn display_name(&self) -> String {
         match self {
             Self::Base(b, required) => {
-                format!("{}{}", b.as_ref().name(), if *required { "!" } else { "" })
+                format!("{}{}", b.name(), if *required { "!" } else { "" })
             }
             Self::List(inner, required) => {
                 format!(
@@ -100,14 +93,16 @@ impl<'a, I: InputType> InputTypeReference<'a, I> {
 
     pub fn unwrap_nullable(&self) -> Self {
         match self {
-            Self::Base(b, _) => Self::Base(b, false),
+            Self::Base(b, _) => Self::Base(*b, false),
             Self::List(l, _) => Self::List(l, false),
         }
     }
 }
 
 pub trait InputType: Sized {
-    type BaseInputType: BaseInputType;
+    type CustomScalarTypeDefinition: ScalarTypeDefinition;
+    type InputObjectTypeDefinition: InputObjectTypeDefinition;
+    type EnumTypeDefinition: EnumTypeDefinition;
 
     fn as_ref(&self) -> InputTypeReference<'_, Self>;
 }
@@ -115,12 +110,12 @@ pub trait InputType: Sized {
 impl<
         'a,
         T: TypeDefinition,
-        B: BaseInputType<
+        I: InputType<
             CustomScalarTypeDefinition = T::CustomScalarTypeDefinition,
             InputObjectTypeDefinition = T::InputObjectTypeDefinition,
             EnumTypeDefinition = T::EnumTypeDefinition,
         >,
-    > TryFrom<TypeDefinitionReference<'a, T>> for BaseInputTypeReference<'a, B>
+    > TryFrom<TypeDefinitionReference<'a, T>> for BaseInputTypeReference<'a, I>
 {
     type Error = ();
 

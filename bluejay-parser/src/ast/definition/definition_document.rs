@@ -10,7 +10,7 @@ use crate::scanner::LogosScanner;
 use crate::Error;
 use bluejay_core::definition::{
     DirectiveDefinition as CoreDirectiveDefinition, FieldDefinition as CoreFieldDefinition,
-    InputObjectTypeDefinition as CoreInputObjectTypeDefinition, InputType,
+    InputObjectTypeDefinition as CoreInputObjectTypeDefinition,
     InputValueDefinition as CoreInputValueDefinition,
     InterfaceTypeDefinition as CoreInterfaceTypeDefinition,
     ObjectTypeDefinition as CoreObjectTypeDefinition, OutputType,
@@ -617,7 +617,7 @@ impl<'a, C: Context> DefinitionDocument<'a, C> {
         errors: &mut Vec<DefinitionDocumentError<'a, C>>,
     ) {
         input_value_definitions.for_each(|input_value_definition| {
-            let t = input_value_definition.r#type().as_ref().base();
+            let t = input_value_definition.r#type().base();
             match indexed_type_definitions.get(t.name().as_ref()) {
                 Some(&td) => match BaseInputType::core_type_from_type_definition(td) {
                     Ok(core_t) => t.set_type(core_t).unwrap(),

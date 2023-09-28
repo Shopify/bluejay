@@ -3,8 +3,8 @@ use crate::builtin_scalar::{builtin_scalar_type, scalar_is_reference};
 use crate::names::{enum_variant_ident, field_ident, type_ident};
 use crate::Config;
 use bluejay_core::definition::{
-    BaseInputType, BaseInputTypeReference, EnumTypeDefinition, InputObjectTypeDefinition,
-    InputType, InputTypeReference, InputValueDefinition, ScalarTypeDefinition,
+    BaseInputTypeReference, EnumTypeDefinition, InputObjectTypeDefinition, InputType,
+    InputTypeReference, InputValueDefinition, ScalarTypeDefinition,
 };
 use bluejay_core::{AsIter, Directive};
 use proc_macro2::{Ident, Span};
@@ -52,12 +52,7 @@ pub(crate) fn generate_input_object_type_definition(
         .input_field_definitions()
         .iter()
         .map(|ivd| {
-            contains_reference_types(
-                ivd.r#type().as_ref().base().as_ref(),
-                config,
-                &mut HashSet::new(),
-            )
-            .then(|| {
+            contains_reference_types(ivd.r#type(), config, &mut HashSet::new()).then(|| {
                 parse_quote! { #[serde(borrow)] }
             })
         })
@@ -122,12 +117,7 @@ fn generate_one_of_input_object_type_definition(
         .input_field_definitions()
         .iter()
         .map(|ivd| {
-            contains_reference_types(
-                ivd.r#type().as_ref().base().as_ref(),
-                config,
-                &mut HashSet::new(),
-            )
-            .then(|| {
+            contains_reference_types(ivd.r#type(), config, &mut HashSet::new()).then(|| {
                 parse_quote! { #[serde(borrow)] }
             })
         })
@@ -174,7 +164,7 @@ fn type_for_input_type<T: InputType>(
     );
     match ty {
         InputTypeReference::Base(base, _) => {
-            let mut inner = type_for_base_input_type(base.as_ref(), config);
+            let mut inner = type_for_base_input_type::<T>(base, config);
             if let Some(parent_type_name) = parent_type_name {
                 if contains_non_list_reference(parent_type_name, ty, &mut HashSet::new()) {
                     inner = parse_quote! { ::std::boxed::Box<#inner> };
@@ -198,7 +188,7 @@ fn type_for_input_type<T: InputType>(
     }
 }
 
-fn type_for_base_input_type<T: BaseInputType>(
+fn type_for_base_input_type<T: InputType>(
     base: BaseInputTypeReference<T>,
     config: &Config,
 ) -> syn::TypePath {
@@ -230,19 +220,20 @@ fn input_object_contains_reference_types<'a>(
 ) -> bool {
     iotd.input_field_definitions()
         .iter()
-        .any(|ivd| contains_reference_types(ivd.r#type().as_ref().base().as_ref(), config, visited))
+        .any(|ivd| contains_reference_types(ivd.r#type(), config, visited))
 }
 
-fn contains_reference_types<'a, T: BaseInputType>(
-    ty: BaseInputTypeReference<'a, T>,
+fn contains_reference_types<'a>(
+    ty: &'a impl InputType,
     config: &Config,
     visited: &mut HashSet<&'a str>,
 ) -> bool {
-    if !config.borrow() || !visited.insert(ty.name()) {
+    let base = ty.as_ref().base();
+    if !config.borrow() || !visited.insert(base.name()) {
         return false;
     }
 
-    match ty {
+    match base {
         BaseInputTypeReference::BuiltinScalar(bstd) => scalar_is_reference(bstd),
         BaseInputTypeReference::CustomScalar(cstd) => config.custom_scalar_borrows(cstd),
         BaseInputTypeReference::Enum(_) => false,
@@ -258,8 +249,8 @@ fn contains_non_list_reference<'a, T: InputType>(
     visited: &mut HashSet<&'a str>,
 ) -> bool {
     match ty {
-        InputTypeReference::Base(base, _) if base.as_ref().name() == target => true,
-        ty => match ty.base().as_ref() {
+        InputTypeReference::Base(base, _) if base.name() == target => true,
+        ty => match ty.base() {
             BaseInputTypeReference::InputObject(iotd) => {
                 if visited.insert(iotd.name()) {
                     iotd.input_field_definitions().iter().any(|ivd| {

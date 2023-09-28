@@ -6,8 +6,7 @@ use crate::ast::{FromTokens, ParseError, Tokens};
 use crate::lexical_token::{Name, PunctuatorType};
 use crate::{HasSpan, Span};
 use bluejay_core::definition::{
-    BaseInputType as CoreBaseInputType, BaseInputTypeReference, InputType as CoreInputType,
-    InputTypeReference,
+    BaseInputTypeReference, InputType as CoreInputType, InputTypeReference,
 };
 use once_cell::sync::OnceCell;
 use std::marker::PhantomData;
@@ -15,18 +14,8 @@ use std::marker::PhantomData;
 #[derive(Debug)]
 pub struct BaseInputType<'a, C: Context + 'a> {
     name: Name<'a>,
-    r#type: OnceCell<BaseInputTypeReference<'a, Self>>,
+    r#type: OnceCell<BaseInputTypeReference<'a, InputType<'a, C>>>,
     context: PhantomData<C>,
-}
-
-impl<'a, C: Context + 'a> CoreBaseInputType for BaseInputType<'a, C> {
-    type CustomScalarTypeDefinition = CustomScalarTypeDefinition<'a, C>;
-    type EnumTypeDefinition = EnumTypeDefinition<'a>;
-    type InputObjectTypeDefinition = InputObjectTypeDefinition<'a, C>;
-
-    fn as_ref(&self) -> BaseInputTypeReference<'a, Self> {
-        *self.r#type.get().unwrap()
-    }
 }
 
 impl<'a, C: Context + 'a> BaseInputType<'a, C> {
@@ -36,14 +25,14 @@ impl<'a, C: Context + 'a> BaseInputType<'a, C> {
 
     pub(crate) fn set_type(
         &self,
-        type_reference: BaseInputTypeReference<'a, Self>,
-    ) -> Result<(), BaseInputTypeReference<'a, Self>> {
+        type_reference: BaseInputTypeReference<'a, InputType<'a, C>>,
+    ) -> Result<(), BaseInputTypeReference<'a, InputType<'a, C>>> {
         self.r#type.set(type_reference)
     }
 
     pub(crate) fn core_type_from_type_definition(
         type_definition: &'a TypeDefinition<'a, C>,
-    ) -> Result<BaseInputTypeReference<'a, Self>, ()> {
+    ) -> Result<BaseInputTypeReference<'a, InputType<'a, C>>, ()> {
         match type_definition {
             TypeDefinition::BuiltinScalar(bstd) => Ok(BaseInputTypeReference::BuiltinScalar(*bstd)),
             TypeDefinition::CustomScalar(cstd) => Ok(BaseInputTypeReference::CustomScalar(cstd)),
@@ -62,12 +51,25 @@ pub enum InputType<'a, C: Context = DefaultContext> {
     List(Box<Self>, bool, Span),
 }
 
+impl<'a, C: Context> InputType<'a, C> {
+    pub(crate) fn base(&self) -> &BaseInputType<'a, C> {
+        match self {
+            Self::Base(base, _, _) => base,
+            Self::List(inner, _, _) => inner.base(),
+        }
+    }
+}
+
 impl<'a, C: Context + 'a> CoreInputType for InputType<'a, C> {
-    type BaseInputType = BaseInputType<'a, C>;
+    type CustomScalarTypeDefinition = CustomScalarTypeDefinition<'a, C>;
+    type EnumTypeDefinition = EnumTypeDefinition<'a>;
+    type InputObjectTypeDefinition = InputObjectTypeDefinition<'a, C>;
 
     fn as_ref(&self) -> InputTypeReference<'_, Self> {
         match self {
-            Self::Base(base, required, _) => InputTypeReference::Base(base, *required),
+            Self::Base(base, required, _) => {
+                InputTypeReference::Base(*base.r#type.get().unwrap(), *required)
+            }
             Self::List(inner, required, _) => InputTypeReference::List(inner.as_ref(), *required),
         }
     }

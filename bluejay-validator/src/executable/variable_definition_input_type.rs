@@ -1,27 +1,31 @@
 use bluejay_core::definition::{
-    BaseInputType, BaseInputTypeReference, InputType, InputTypeReference, SchemaDefinition,
+    BaseInputTypeReference, InputType, InputTypeReference, SchemaDefinition,
 };
 use bluejay_core::executable::{VariableType, VariableTypeReference};
 
 #[derive(Clone)]
-pub enum VariableDefinitionInputType<'a, B: BaseInputType> {
-    Base(BaseInputTypeReference<'a, B>, bool),
+pub enum VariableDefinitionInputType<'a, I: InputType> {
+    Base(BaseInputTypeReference<'a, I>, bool),
     List(Box<Self>, bool),
 }
 
-impl<'a, B: BaseInputType> InputType for VariableDefinitionInputType<'a, B> {
-    type BaseInputType = BaseInputTypeReference<'a, B>;
+impl<'a, I: InputType> InputType for VariableDefinitionInputType<'a, I> {
+    type CustomScalarTypeDefinition = I::CustomScalarTypeDefinition;
+    type EnumTypeDefinition = I::EnumTypeDefinition;
+    type InputObjectTypeDefinition = I::InputObjectTypeDefinition;
 
     fn as_ref(&self) -> InputTypeReference<'_, Self> {
         match self {
-            Self::Base(base, required) => InputTypeReference::Base(base, *required),
+            Self::Base(base, required) => {
+                InputTypeReference::Base(base.convert::<Self>(), *required)
+            }
             Self::List(inner, required) => InputTypeReference::List(inner.as_ref(), *required),
         }
     }
 }
 
 impl<'a, S: SchemaDefinition, T: VariableType> TryFrom<(&'a S, &T)>
-    for VariableDefinitionInputType<'a, S::BaseInputType>
+    for VariableDefinitionInputType<'a, S::InputType>
 {
     type Error = ();
 
@@ -34,13 +38,13 @@ impl<'a, S: SchemaDefinition, T: VariableType> TryFrom<(&'a S, &T)>
     }
 }
 
-impl<'a, B: BaseInputType, T: VariableType> TryFrom<(BaseInputTypeReference<'a, B>, &T)>
-    for VariableDefinitionInputType<'a, B>
+impl<'a, I: InputType, T: VariableType> TryFrom<(BaseInputTypeReference<'a, I>, &T)>
+    for VariableDefinitionInputType<'a, I>
 {
     type Error = ();
 
     fn try_from(
-        (base, variable_type): (BaseInputTypeReference<'a, B>, &T),
+        (base, variable_type): (BaseInputTypeReference<'a, I>, &T),
     ) -> Result<Self, Self::Error> {
         match variable_type.as_ref() {
             VariableTypeReference::Named(_, required) => {

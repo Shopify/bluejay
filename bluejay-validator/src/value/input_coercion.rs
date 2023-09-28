@@ -1,8 +1,8 @@
 use crate::Path;
 use bluejay_core::definition::{
-    BaseInputType, BaseInputTypeReference, EnumTypeDefinition, EnumValueDefinition,
-    InputFieldsDefinition, InputObjectTypeDefinition, InputType, InputTypeReference,
-    InputValueDefinition, ScalarTypeDefinition,
+    BaseInputTypeReference, EnumTypeDefinition, EnumValueDefinition, InputFieldsDefinition,
+    InputObjectTypeDefinition, InputType, InputTypeReference, InputValueDefinition,
+    ScalarTypeDefinition,
 };
 use bluejay_core::{
     AsIter, BuiltinScalarDefinition, Directive, ObjectValue, Value, ValueReference,
@@ -94,7 +94,7 @@ fn coerce_value_for_base_input_type<'a, const CONST: bool, V: Value<CONST>, T: I
     value: &'a V,
     path: Path<'a>,
 ) -> Result<(), Vec<Error<'a, CONST, V>>> {
-    let base = input_type.as_ref().base().as_ref();
+    let base = input_type.as_ref().base();
     match base {
         BaseInputTypeReference::BuiltinScalar(bstd) => {
             coerce_builtin_scalar_value(input_type, bstd, value, path)
@@ -148,7 +148,7 @@ fn coerce_custom_scalar_value<'a, const CONST: bool, V: Value<CONST>>(
 
 fn coerce_enum_value<'a, const CONST: bool, V: Value<CONST>, T: InputType>(
     input_type: &'a T,
-    enum_type_definition: &'a <T::BaseInputType as BaseInputType>::EnumTypeDefinition,
+    enum_type_definition: &'a T::EnumTypeDefinition,
     value: &'a V,
     path: Path<'a>,
 ) -> Result<(), Vec<Error<'a, CONST, V>>> {
@@ -191,7 +191,7 @@ fn coerce_enum_value_from_name<'a, const CONST: bool, V: Value<CONST>>(
 
 fn coerce_input_object_value<'a, const CONST: bool, V: Value<CONST>, T: InputType>(
     input_type: &'a T,
-    input_object_type_definition: &'a <T::BaseInputType as BaseInputType>::InputObjectTypeDefinition,
+    input_object_type_definition: &'a T::InputObjectTypeDefinition,
     value: &'a V,
     path: Path<'a>,
 ) -> Result<(), Vec<Error<'a, CONST, V>>> {

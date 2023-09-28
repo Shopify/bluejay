@@ -1,7 +1,7 @@
 use crate::executable::{Cache, Error, Path, PathRoot, Rule, Visitor};
 use bluejay_core::definition::{
-    BaseInputType, BaseInputTypeReference, InputFieldsDefinition, InputObjectTypeDefinition,
-    InputType, InputTypeReference, InputValueDefinition, SchemaDefinition, TypeDefinitionReference,
+    BaseInputTypeReference, InputFieldsDefinition, InputObjectTypeDefinition, InputType,
+    InputTypeReference, InputValueDefinition, SchemaDefinition, TypeDefinitionReference,
 };
 use bluejay_core::executable::{
     ExecutableDocument, FragmentSpread, OperationDefinition, VariableDefinition, VariableType,
@@ -71,8 +71,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> AllVariableUsagesAllowed<'a
             }),
             ValueReference::Object(o) => o.iter().for_each(|(key, value)| {
                 if let Some(ivd) = location.input_value_definition() {
-                    if let BaseInputTypeReference::InputObject(iotd) =
-                        ivd.r#type().as_ref().base().as_ref()
+                    if let BaseInputTypeReference::InputObject(iotd) = ivd.r#type().as_ref().base()
                     {
                         if let Some(ivd) = iotd.input_field_definitions().get(key.as_ref()) {
                             self.visit_value(value, root, VariableUsageLocation::ObjectField(ivd));
@@ -162,7 +161,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> AllVariableUsagesAllowed<'a
                 VariableTypeReference::Named(base_variable_type, variable_required),
                 InputTypeReference::Base(base_location_type, location_required),
             ) if variable_required || !location_required => {
-                base_location_type.as_ref().name() == base_variable_type
+                base_location_type.name() == base_variable_type
             }
             _ => false,
         }
