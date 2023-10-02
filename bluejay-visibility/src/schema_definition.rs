@@ -23,11 +23,6 @@ pub enum SchemaDefinitionError<'a> {
     NonUniqueTypeDefinitionName(&'a str),
 }
 
-type TypeDefinitionsAndDirectiveDefinitions<'a, S, W> = (
-    BTreeMap<&'a str, TypeDefinitionReference<'a, TypeDefinition<'a, S, W>>>,
-    BTreeMap<&'a str, &'a DirectiveDefinition<'a, S, W>>,
-);
-
 pub struct SchemaDefinition<'a, S: definition::SchemaDefinition, W: Warden<SchemaDefinition = S>> {
     inner: &'a S,
     cache: &'a Cache<'a, S, W>,
@@ -200,7 +195,7 @@ impl<'a, S: definition::SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>>
 
     fn type_definitions(&self) -> Self::TypeDefinitions<'_> {
         self.type_definitions_and_directive_definitions()
-            .0
+            .type_definitions
             .values()
             .copied()
     }
@@ -228,13 +223,48 @@ impl<'a, S: definition::SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>>
 
     fn directive_definitions(&self) -> Self::DirectiveDefinitions<'_> {
         self.type_definitions_and_directive_definitions()
-            .1
+            .directive_definitions
             .values()
             .copied()
     }
 
     fn get_directive_definition(&self, name: &str) -> Option<&Self::DirectiveDefinition> {
         SchemaDefinition::get_directive_definition(self, name)
+    }
+}
+
+impl<'a, S: definition::SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> HasDirectives
+    for SchemaDefinition<'a, S, W>
+{
+    type Directives = Directives<'a, S, W>;
+
+    fn directives(&self) -> Option<&Self::Directives> {
+        self.directives.as_ref()
+    }
+}
+
+struct TypeDefinitionsAndDirectiveDefinitions<
+    'a,
+    S: definition::SchemaDefinition,
+    W: Warden<SchemaDefinition = S>,
+> {
+    type_definitions: BTreeMap<&'a str, TypeDefinitionReference<'a, TypeDefinition<'a, S, W>>>,
+    directive_definitions: BTreeMap<&'a str, &'a DirectiveDefinition<'a, S, W>>,
+}
+
+impl<'a, S: definition::SchemaDefinition, W: Warden<SchemaDefinition = S>>
+    From<VisibilityVisitor<'a, '_, S, W>> for TypeDefinitionsAndDirectiveDefinitions<'a, S, W>
+{
+    fn from(value: VisibilityVisitor<'a, '_, S, W>) -> Self {
+        let VisibilityVisitor {
+            type_definitions,
+            directive_definitions,
+            ..
+        } = value;
+        Self {
+            type_definitions,
+            directive_definitions,
+        }
     }
 }
 
@@ -284,7 +314,7 @@ impl<'a, 'b, S: definition::SchemaDefinition, W: Warden<SchemaDefinition = S>>
             instance.visit_type_definition(TypeDefinitionReference::Object(subscription));
         }
 
-        (instance.type_definitions, instance.directive_definitions)
+        instance.into()
     }
 
     fn visit_type_definition(
@@ -460,15 +490,5 @@ impl<'a, 'b, S: definition::SchemaDefinition, W: Warden<SchemaDefinition = S>>
         interface_implementations.iter().for_each(|ii| {
             self.visit_type_definition(TypeDefinitionReference::Interface(ii.interface()));
         })
-    }
-}
-
-impl<'a, S: definition::SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> HasDirectives
-    for SchemaDefinition<'a, S, W>
-{
-    type Directives = Directives<'a, S, W>;
-
-    fn directives(&self) -> Option<&Self::Directives> {
-        self.directives.as_ref()
     }
 }
