@@ -2,6 +2,6 @@ type __Schema {
     description: String
 }
 
-type Query @foo {
+type Query {
   intField: Int!
 }

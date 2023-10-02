@@ -1,4 +1,5 @@
 mod arguments_definition;
+mod directive;
 mod directive_definition;
 mod enum_type_definition;
 mod enum_value_definition;
@@ -23,6 +24,7 @@ mod union_member_types;
 mod union_type_definition;
 
 pub use arguments_definition::ArgumentsDefinition;
+pub use directive::{Directive, Directives};
 pub use directive_definition::{DirectiveDefinition, DirectiveLocation};
 pub use enum_type_definition::EnumTypeDefinition;
 pub use enum_value_definition::EnumValueDefinition;
@@ -48,13 +50,13 @@ pub use union_type_definition::UnionTypeDefinition;
 
 pub mod prelude {
     pub use super::{
-        ArgumentsDefinition as _, DirectiveDefinition as _, EnumTypeDefinition as _,
-        EnumValueDefinition as _, EnumValueDefinitions as _, FieldDefinition as _,
-        FieldsDefinition as _, HasDirectives as _, InputFieldsDefinition as _,
-        InputObjectTypeDefinition as _, InputType as _, InputValueDefinition as _,
-        InterfaceImplementation as _, InterfaceImplementations as _, InterfaceTypeDefinition as _,
-        ObjectTypeDefinition as _, OutputType as _, ScalarTypeDefinition as _,
-        SchemaDefinition as _, TypeDefinition as _, UnionMemberType as _, UnionMemberTypes as _,
-        UnionTypeDefinition as _,
+        ArgumentsDefinition as _, Directive as _, DirectiveDefinition as _,
+        EnumTypeDefinition as _, EnumValueDefinition as _, EnumValueDefinitions as _,
+        FieldDefinition as _, FieldsDefinition as _, HasDirectives as _,
+        InputFieldsDefinition as _, InputObjectTypeDefinition as _, InputType as _,
+        InputValueDefinition as _, InterfaceImplementation as _, InterfaceImplementations as _,
+        InterfaceTypeDefinition as _, ObjectTypeDefinition as _, OutputType as _,
+        ScalarTypeDefinition as _, SchemaDefinition as _, TypeDefinition as _,
+        UnionMemberType as _, UnionMemberTypes as _, UnionTypeDefinition as _,
     };
 }

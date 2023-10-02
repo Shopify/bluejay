@@ -1,12 +1,11 @@
 use crate::ast::definition::{
-    ArgumentsDefinition, Context, CustomScalarTypeDefinition, DefaultContext, DirectiveDefinition,
-    EnumTypeDefinition, EnumValueDefinition, EnumValueDefinitions, FieldDefinition,
-    FieldsDefinition, InputFieldsDefinition, InputObjectTypeDefinition, InputType,
+    ArgumentsDefinition, Context, CustomScalarTypeDefinition, DefaultContext, Directive,
+    DirectiveDefinition, Directives, EnumTypeDefinition, EnumValueDefinition, EnumValueDefinitions,
+    FieldDefinition, FieldsDefinition, InputFieldsDefinition, InputObjectTypeDefinition, InputType,
     InputValueDefinition, InterfaceImplementation, InterfaceImplementations,
     InterfaceTypeDefinition, ObjectTypeDefinition, OutputType, TypeDefinition, UnionMemberType,
     UnionMemberTypes, UnionTypeDefinition,
 };
-use crate::ast::ConstDirectives;
 use crate::lexical_token::StringValue;
 use bluejay_core::definition::{
     HasDirectives, InterfaceImplementation as CoreInterfaceImplementation,
@@ -24,7 +23,7 @@ pub struct SchemaDefinition<'a, C: Context = DefaultContext> {
     query: &'a ObjectTypeDefinition<'a, C>,
     mutation: Option<&'a ObjectTypeDefinition<'a, C>>,
     subscription: Option<&'a ObjectTypeDefinition<'a, C>>,
-    directives: Option<&'a ConstDirectives<'a>>,
+    directives: Option<&'a Directives<'a, C>>,
     interface_implementors: HashMap<&'a str, Vec<&'a ObjectTypeDefinition<'a, C>>>,
 }
 
@@ -36,7 +35,7 @@ impl<'a, C: Context> SchemaDefinition<'a, C> {
         query: &'a ObjectTypeDefinition<'a, C>,
         mutation: Option<&'a ObjectTypeDefinition<'a, C>>,
         subscription: Option<&'a ObjectTypeDefinition<'a, C>>,
-        directives: Option<&'a ConstDirectives<'a>>,
+        directives: Option<&'a Directives<'a, C>>,
     ) -> Self {
         let interface_implementors = Self::interface_implementors(&type_definitions);
         Self {
@@ -78,11 +77,13 @@ impl<'a, C: Context> SchemaDefinition<'a, C> {
 }
 
 impl<'a, C: Context> CoreSchemaDefinition for SchemaDefinition<'a, C> {
+    type Directive = Directive<'a, C>;
+    type Directives = Directives<'a, C>;
     type InputValueDefinition = InputValueDefinition<'a, C>;
     type InputFieldsDefinition = InputFieldsDefinition<'a, C>;
     type ArgumentsDefinition = ArgumentsDefinition<'a, C>;
-    type EnumValueDefinition = EnumValueDefinition<'a>;
-    type EnumValueDefinitions = EnumValueDefinitions<'a>;
+    type EnumValueDefinition = EnumValueDefinition<'a, C>;
+    type EnumValueDefinitions = EnumValueDefinitions<'a, C>;
     type FieldDefinition = FieldDefinition<'a, C>;
     type FieldsDefinition = FieldsDefinition<'a, C>;
     type InterfaceImplementation = InterfaceImplementation<'a, C>;
@@ -96,7 +97,7 @@ impl<'a, C: Context> CoreSchemaDefinition for SchemaDefinition<'a, C> {
     type InterfaceTypeDefinition = InterfaceTypeDefinition<'a, C>;
     type UnionTypeDefinition = UnionTypeDefinition<'a, C>;
     type InputObjectTypeDefinition = InputObjectTypeDefinition<'a, C>;
-    type EnumTypeDefinition = EnumTypeDefinition<'a>;
+    type EnumTypeDefinition = EnumTypeDefinition<'a, C>;
     type TypeDefinition = TypeDefinition<'a, C>;
     type DirectiveDefinition = DirectiveDefinition<'a, C>;
     type TypeDefinitions<'b> = std::iter::Map<
@@ -159,7 +160,7 @@ impl<'a, C: Context> CoreSchemaDefinition for SchemaDefinition<'a, C> {
 }
 
 impl<'a, C: Context> HasDirectives for SchemaDefinition<'a, C> {
-    type Directives = ConstDirectives<'a>;
+    type Directives = Directives<'a, C>;
 
     fn directives(&self) -> Option<&Self::Directives> {
         self.directives

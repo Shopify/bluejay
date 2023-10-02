@@ -52,3 +52,12 @@ impl<'a, const CONST: bool> Directives<'a, CONST> {
         self.span.as_ref()
     }
 }
+
+impl<'a, const CONST: bool> IntoIterator for Directives<'a, CONST> {
+    type Item = Directive<'a, CONST>;
+    type IntoIter = std::vec::IntoIter<Self::Item>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.directives.into_iter()
+    }
+}

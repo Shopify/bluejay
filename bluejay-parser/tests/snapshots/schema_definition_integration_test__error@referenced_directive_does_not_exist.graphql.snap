@@ -1,0 +1,13 @@
+---
+source: bluejay-parser/tests/schema_definition_integration_test.rs
+expression: formatted_errors
+input_file: bluejay-parser/tests/test_data/schema_definition/error/referenced_directive_does_not_exist.graphql
+---
+Error: Referenced directive `@foo` does not exist
+   ╭─[<unknown>:1:12]
+   │
+ 1 │ type Query @foo {
+   │            ──┬─  
+   │              ╰─── No definition for referenced directive
+───╯
+

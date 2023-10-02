@@ -1,4 +1,4 @@
-use crate::ast::definition::{Context, InputFieldsDefinition};
+use crate::ast::definition::{Context, Directives, InputFieldsDefinition};
 use crate::ast::{ConstDirectives, FromTokens, ParseError, Tokens, TryFromTokens};
 use crate::lexical_token::{Name, StringValue};
 use bluejay_core::definition::{
@@ -9,7 +9,7 @@ use bluejay_core::definition::{
 pub struct InputObjectTypeDefinition<'a, C: Context> {
     description: Option<StringValue<'a>>,
     name: Name<'a>,
-    directives: Option<ConstDirectives<'a>>,
+    directives: Option<Directives<'a, C>>,
     input_fields_definition: InputFieldsDefinition<'a, C>,
 }
 
@@ -47,14 +47,14 @@ impl<'a, C: Context> FromTokens<'a> for InputObjectTypeDefinition<'a, C> {
         Ok(Self {
             description,
             name,
-            directives,
+            directives: directives.map(Directives::from),
             input_fields_definition,
         })
     }
 }
 
 impl<'a, C: Context> HasDirectives for InputObjectTypeDefinition<'a, C> {
-    type Directives = ConstDirectives<'a>;
+    type Directives = Directives<'a, C>;
 
     fn directives(&self) -> Option<&Self::Directives> {
         self.directives.as_ref()

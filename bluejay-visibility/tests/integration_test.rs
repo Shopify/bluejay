@@ -1,7 +1,6 @@
-use bluejay_core::{definition::prelude::*, AsIter};
-use bluejay_parser::ast::{
-    definition::{DefinitionDocument, SchemaDefinition as ParserSchemaDefinition},
-    Directives,
+use bluejay_core::{definition::prelude::*, AsIter, Directive as _};
+use bluejay_parser::ast::definition::{
+    DefaultContext, DefinitionDocument, Directives, SchemaDefinition as ParserSchemaDefinition,
 };
 use bluejay_printer::definition::SchemaDefinitionPrinter;
 use bluejay_visibility::{Cache, SchemaDefinition, Warden};
@@ -11,7 +10,7 @@ use std::marker::PhantomData;
 struct DirectiveWarden<'a>(PhantomData<ParserSchemaDefinition<'a>>);
 
 impl<'a> DirectiveWarden<'a> {
-    fn has_visible_directive(directives: Option<&Directives<'a, true>>) -> bool {
+    fn has_visible_directive(directives: Option<&Directives<'a, DefaultContext>>) -> bool {
         directives.map_or(false, |directives| {
             directives
                 .iter()

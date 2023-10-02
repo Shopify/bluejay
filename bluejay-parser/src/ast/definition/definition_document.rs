@@ -1,22 +1,17 @@
 use crate::ast::definition::{
     BaseInputType, BaseOutputType, Context, CustomScalarTypeDefinition, DefaultContext,
-    DirectiveDefinition, EnumTypeDefinition, ExplicitSchemaDefinition, FieldsDefinition,
-    InputObjectTypeDefinition, InputValueDefinition, InterfaceImplementations,
+    DirectiveDefinition, Directives, EnumTypeDefinition, ExplicitSchemaDefinition,
+    FieldsDefinition, InputObjectTypeDefinition, InputValueDefinition, InterfaceImplementations,
     InterfaceTypeDefinition, ObjectTypeDefinition, SchemaDefinition, TypeDefinition,
     UnionTypeDefinition,
 };
 use crate::ast::{FromTokens, ParseError, ScannerTokens, Tokens};
 use crate::scanner::LogosScanner;
 use crate::Error;
-use bluejay_core::definition::{
-    DirectiveDefinition as CoreDirectiveDefinition, FieldDefinition as CoreFieldDefinition,
-    InputObjectTypeDefinition as CoreInputObjectTypeDefinition,
-    InputValueDefinition as CoreInputValueDefinition,
-    InterfaceTypeDefinition as CoreInterfaceTypeDefinition,
-    ObjectTypeDefinition as CoreObjectTypeDefinition, TypeDefinition as CoreTypeDefinition,
-    UnionTypeDefinition as CoreUnionTypeDefinition,
+use bluejay_core::definition::{prelude::*, HasDirectives};
+use bluejay_core::{
+    AsIter, BuiltinScalarDefinition, Directive as _, IntoEnumIterator, OperationType,
 };
-use bluejay_core::{AsIter, BuiltinScalarDefinition, IntoEnumIterator, OperationType};
 use std::collections::btree_map::Entry;
 use std::collections::{BTreeMap, HashMap, HashSet};
 
@@ -25,7 +20,7 @@ use definition_document_error::DefinitionDocumentError;
 
 #[derive(Debug)]
 pub struct DefinitionDocument<'a, C: Context = DefaultContext> {
-    schema_definitions: Vec<ExplicitSchemaDefinition<'a>>,
+    schema_definitions: Vec<ExplicitSchemaDefinition<'a, C>>,
     directive_definitions: Vec<DirectiveDefinition<'a, C>>,
     type_definitions: Vec<TypeDefinition<'a, C>>,
 }
@@ -38,7 +33,7 @@ pub struct ImplicitSchemaDefinition<'a, C: Context> {
 }
 
 type ExplicitSchemaDefinitionWithRootTypes<'a, C> = (
-    &'a ExplicitSchemaDefinition<'a>,
+    &'a ExplicitSchemaDefinition<'a, C>,
     &'a ObjectTypeDefinition<'a, C>,
     Option<&'a ObjectTypeDefinition<'a, C>>,
     Option<&'a ObjectTypeDefinition<'a, C>>,
@@ -53,6 +48,7 @@ impl<'a, C: Context> DefinitionDocument<'a, C> {
                 DirectiveDefinition::include(),
                 DirectiveDefinition::deprecated(),
                 DirectiveDefinition::specified_by(),
+                DirectiveDefinition::one_of(),
             ],
             type_definitions: vec![
                 ObjectTypeDefinition::__schema().into(),
@@ -121,8 +117,8 @@ impl<'a, C: Context> DefinitionDocument<'a, C> {
                         &mut last_pass_had_error,
                     )
                 }
-                Some(EnumTypeDefinition::ENUM_IDENTIFIER) => {
-                    Self::parse_definition::<_, EnumTypeDefinition>(
+                Some(EnumTypeDefinition::<C>::ENUM_IDENTIFIER) => {
+                    Self::parse_definition::<_, EnumTypeDefinition<C>>(
                         &mut instance.type_definitions,
                         &mut tokens,
                         &mut errors,
@@ -145,8 +141,8 @@ impl<'a, C: Context> DefinitionDocument<'a, C> {
                         &mut last_pass_had_error,
                     )
                 }
-                Some(ExplicitSchemaDefinition::SCHEMA_IDENTIFIER) => {
-                    Self::parse_definition::<_, ExplicitSchemaDefinition>(
+                Some(ExplicitSchemaDefinition::<C>::SCHEMA_IDENTIFIER) => {
+                    Self::parse_definition::<_, ExplicitSchemaDefinition<C>>(
                         &mut instance.schema_definitions,
                         &mut tokens,
                         &mut errors,
@@ -439,7 +435,7 @@ impl<'a, C: Context> DefinitionDocument<'a, C> {
 
     fn explicit_operation_type_definition(
         operation_type: OperationType,
-        explicit_schema_definition: &'a ExplicitSchemaDefinition<'a>,
+        explicit_schema_definition: &'a ExplicitSchemaDefinition<'a, C>,
         indexed_type_definitions: &BTreeMap<&str, &'a TypeDefinition<'a, C>>,
     ) -> Result<Option<&'a ObjectTypeDefinition<'a, C>>, DefinitionDocumentError<'a, C>> {
         let root_operation_type_definitions: Vec<_> = explicit_schema_definition
@@ -476,7 +472,7 @@ impl<'a, C: Context> DefinitionDocument<'a, C> {
         }
     }
 
-    fn resolve_type_definitions(
+    fn resolve_type_and_directive_definitions(
         indexed_type_definitions: &BTreeMap<&str, &'a TypeDefinition<'a, C>>,
         indexed_directive_definitions: &BTreeMap<&str, &'a DirectiveDefinition<'a, C>>,
         errors: &mut Vec<DefinitionDocumentError<'a, C>>,
@@ -485,8 +481,9 @@ impl<'a, C: Context> DefinitionDocument<'a, C> {
             .values()
             .for_each(|type_definition| match type_definition {
                 TypeDefinition::Object(otd) => {
-                    Self::resolve_fields_definition_types(
+                    Self::resolve_fields_definition_types_and_directives(
                         indexed_type_definitions,
+                        indexed_directive_definitions,
                         otd.fields_definition(),
                         errors,
                     );
@@ -497,10 +494,12 @@ impl<'a, C: Context> DefinitionDocument<'a, C> {
                             errors,
                         );
                     }
+                    Self::resolve_directive_definitions(indexed_directive_definitions, otd, errors);
                 }
                 TypeDefinition::Interface(itd) => {
-                    Self::resolve_fields_definition_types(
+                    Self::resolve_fields_definition_types_and_directives(
                         indexed_type_definitions,
+                        indexed_directive_definitions,
                         itd.fields_definition(),
                         errors,
                     );
@@ -511,10 +510,12 @@ impl<'a, C: Context> DefinitionDocument<'a, C> {
                             errors,
                         );
                     }
+                    Self::resolve_directive_definitions(indexed_directive_definitions, itd, errors);
                 }
                 TypeDefinition::Union(utd) => {
-                    Self::resolve_fields_definition_types(
+                    Self::resolve_fields_definition_types_and_directives(
                         indexed_type_definitions,
+                        indexed_directive_definitions,
                         utd.fields_definition(),
                         errors,
                     );
@@ -535,23 +536,45 @@ impl<'a, C: Context> DefinitionDocument<'a, C> {
                             }
                         }
                     });
+                    Self::resolve_directive_definitions(indexed_directive_definitions, utd, errors);
                 }
-                TypeDefinition::InputObject(iotd) => Self::resolve_input_types(
-                    indexed_type_definitions,
-                    iotd.input_field_definitions().iter(),
-                    errors,
-                ),
-                TypeDefinition::BuiltinScalar(_)
-                | TypeDefinition::CustomScalar(_)
-                | TypeDefinition::Enum(_) => {}
+                TypeDefinition::InputObject(iotd) => {
+                    Self::resolve_input_types_and_directives(
+                        indexed_type_definitions,
+                        indexed_directive_definitions,
+                        iotd.input_field_definitions().iter(),
+                        errors,
+                    );
+
+                    Self::resolve_directive_definitions(
+                        indexed_directive_definitions,
+                        iotd,
+                        errors,
+                    );
+                }
+                TypeDefinition::CustomScalar(cstd) => {
+                    Self::resolve_directive_definitions(indexed_directive_definitions, cstd, errors)
+                }
+                TypeDefinition::Enum(etd) => {
+                    Self::resolve_directive_definitions(indexed_directive_definitions, etd, errors);
+                    etd.enum_value_definitions().iter().for_each(|evd| {
+                        Self::resolve_directive_definitions(
+                            indexed_directive_definitions,
+                            evd,
+                            errors,
+                        );
+                    });
+                }
+                TypeDefinition::BuiltinScalar(_) => {}
             });
 
         indexed_directive_definitions
             .values()
             .for_each(|directive_definition| {
                 if let Some(arguments_definition) = directive_definition.arguments_definition() {
-                    Self::resolve_input_types(
+                    Self::resolve_input_types_and_directives(
                         indexed_type_definitions,
+                        indexed_directive_definitions,
                         arguments_definition.iter(),
                         errors,
                     );
@@ -559,8 +582,9 @@ impl<'a, C: Context> DefinitionDocument<'a, C> {
             })
     }
 
-    fn resolve_fields_definition_types(
+    fn resolve_fields_definition_types_and_directives(
         indexed_type_definitions: &BTreeMap<&str, &'a TypeDefinition<'a, C>>,
+        indexed_directive_definitions: &BTreeMap<&str, &'a DirectiveDefinition<'a, C>>,
         fields_definition: &'a FieldsDefinition<'a, C>,
         errors: &mut Vec<DefinitionDocumentError<'a, C>>,
     ) {
@@ -580,12 +604,19 @@ impl<'a, C: Context> DefinitionDocument<'a, C> {
             }
 
             if let Some(arguments_definition) = field_definition.arguments_definition() {
-                Self::resolve_input_types(
+                Self::resolve_input_types_and_directives(
                     indexed_type_definitions,
+                    indexed_directive_definitions,
                     arguments_definition.iter(),
                     errors,
                 )
             }
+
+            Self::resolve_directive_definitions(
+                indexed_directive_definitions,
+                field_definition,
+                errors,
+            );
         })
     }
 
@@ -611,8 +642,9 @@ impl<'a, C: Context> DefinitionDocument<'a, C> {
             })
     }
 
-    fn resolve_input_types(
+    fn resolve_input_types_and_directives(
         indexed_type_definitions: &BTreeMap<&str, &'a TypeDefinition<'a, C>>,
+        indexed_directive_definitions: &BTreeMap<&str, &'a DirectiveDefinition<'a, C>>,
         input_value_definitions: impl Iterator<Item = &'a InputValueDefinition<'a, C>>,
         errors: &mut Vec<DefinitionDocumentError<'a, C>>,
     ) {
@@ -630,7 +662,30 @@ impl<'a, C: Context> DefinitionDocument<'a, C> {
                 None => errors
                     .push(DefinitionDocumentError::ReferencedTypeDoesNotExist { name: t.name() }),
             }
+
+            Self::resolve_directive_definitions(
+                indexed_directive_definitions,
+                input_value_definition,
+                errors,
+            );
         })
+    }
+
+    fn resolve_directive_definitions(
+        indexed_directive_definitions: &BTreeMap<&str, &'a DirectiveDefinition<'a, C>>,
+        subject: &'a impl HasDirectives<Directives = Directives<'a, C>>,
+        errors: &mut Vec<DefinitionDocumentError<'a, C>>,
+    ) {
+        if let Some(directives) = subject.directives() {
+            directives.iter().for_each(|directive| {
+                match indexed_directive_definitions.get(directive.name()) {
+                    Some(&dd) => directive.set_definition(dd).unwrap(),
+                    None => errors.push(DefinitionDocumentError::ReferencedDirectiveDoesNotExist {
+                        directive,
+                    }),
+                }
+            })
+        }
     }
 }
 
@@ -645,7 +700,7 @@ impl<'a, C: Context> TryFrom<&'a DefinitionDocument<'a, C>> for SchemaDefinition
         let indexed_directive_definitions =
             definition_document.index_directive_definitions(&mut errors);
 
-        DefinitionDocument::resolve_type_definitions(
+        DefinitionDocument::resolve_type_and_directive_definitions(
             &indexed_type_definitions,
             &indexed_directive_definitions,
             &mut errors,
@@ -763,7 +818,7 @@ mod tests {
             .collect();
 
         assert_eq!(
-            HashSet::from(["include", "skip", "deprecated", "specifiedBy"]),
+            HashSet::from(["include", "skip", "deprecated", "specifiedBy", "oneOf"]),
             builtin_directives
         );
 
