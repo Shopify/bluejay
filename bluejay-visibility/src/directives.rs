@@ -33,13 +33,12 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> AsIter
     fn iter(&self) -> Self::Iterator<'_> {
         self.directives
             .get_or_init(|| {
-                let warden = self.cache.warden();
                 self.inner
                     .iter()
                     .filter_map(|directive| {
-                        warden
-                            .is_directive_definition_visible(directive.definition())
-                            .then(|| Directive::new(directive, self.cache))
+                        self.cache
+                            .get_or_create_directive_definition(directive.definition())
+                            .map(|definition| Directive::new(directive, definition))
                     })
                     .collect()
             })

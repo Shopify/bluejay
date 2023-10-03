@@ -30,6 +30,20 @@ pub enum DirectiveLocation {
 
 impl DirectiveLocation {
     pub const POSSIBLE_VALUES: &'static [&'static str] = Self::VARIANTS;
+
+    pub fn is_executable(&self) -> bool {
+        matches!(
+            self,
+            Self::Query
+                | Self::Mutation
+                | Self::Subscription
+                | Self::Field
+                | Self::FragmentDefinition
+                | Self::FragmentSpread
+                | Self::InlineFragment
+                | Self::VariableDefinition
+        )
+    }
 }
 
 pub trait DirectiveDefinition {

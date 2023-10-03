@@ -1,6 +1,7 @@
 ---
 source: bluejay-visibility/tests/integration_test.rs
 expression: printed_schema_definition
+input_file: bluejay-visibility/tests/test_data/simple_schema.graphql
 ---
 directive @visible on FIELD_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION | ARGUMENT_DEFINITION | SCALAR | OBJECT | INTERFACE | UNION | ENUM
 
@@ -14,7 +15,7 @@ input MyInput @visible {
 
 type MyObject @visible {
   visible(
-    visible: Int @visible
+    visible: MyInput @visible
   ): Int @visible
 }
 

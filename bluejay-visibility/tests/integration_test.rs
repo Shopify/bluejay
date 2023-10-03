@@ -1,6 +1,9 @@
 use bluejay_core::{definition::prelude::*, AsIter, Directive as _};
-use bluejay_parser::ast::definition::{
-    DefaultContext, DefinitionDocument, Directives, SchemaDefinition as ParserSchemaDefinition,
+use bluejay_parser::{
+    ast::definition::{
+        DefaultContext, DefinitionDocument, Directives, SchemaDefinition as ParserSchemaDefinition,
+    },
+    Error,
 };
 use bluejay_printer::definition::SchemaDefinitionPrinter;
 use bluejay_visibility::{Cache, SchemaDefinition, Warden};
@@ -109,18 +112,32 @@ impl<'a> Warden for DirectiveWarden<'a> {
 
 #[test]
 fn test_visibility() {
-    let path = std::path::Path::new("tests/test_data/schema.graphql");
-    let input = std::fs::read_to_string(path).unwrap();
-    let definition_document: DefinitionDocument = DefinitionDocument::parse(&input)
-        .unwrap_or_else(|_| panic!("Schema `{}` had parse errors", path.display()));
-    let schema_definition = ParserSchemaDefinition::try_from(&definition_document)
-        .unwrap_or_else(|_| panic!("Schema `{}` had coercion errors", path.display()));
+    insta::glob!("test_data/*.graphql", |path| {
+        let input = std::fs::read_to_string(path).unwrap();
+        let definition_document: DefinitionDocument = DefinitionDocument::parse(&input)
+            .unwrap_or_else(|errors| {
+                panic!(
+                    "Schema `{}` had parse errors:\n{}",
+                    path.display(),
+                    Error::format_errors(&input, errors)
+                )
+            });
+        let schema_definition = ParserSchemaDefinition::try_from(&definition_document)
+            .unwrap_or_else(|errors| {
+                panic!(
+                    "Schema `{}` had coercion errors:\n:{}",
+                    path.display(),
+                    Error::format_errors(&input, errors)
+                )
+            });
 
-    let cache = Cache::new(DirectiveWarden::default());
-    let visibility_scoped_schema_definition = SchemaDefinition::new(&schema_definition, &cache);
+        let cache = Cache::new(DirectiveWarden::default());
+        let visibility_scoped_schema_definition =
+            SchemaDefinition::new(&schema_definition, &cache).unwrap();
 
-    let printed_schema_definition =
-        SchemaDefinitionPrinter::to_string(&visibility_scoped_schema_definition);
+        let printed_schema_definition =
+            SchemaDefinitionPrinter::to_string(&visibility_scoped_schema_definition);
 
-    insta::assert_snapshot!(printed_schema_definition);
+        insta::assert_snapshot!(printed_schema_definition);
+    });
 }

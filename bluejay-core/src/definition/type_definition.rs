@@ -1,6 +1,7 @@
 use crate::definition::{
-    EnumTypeDefinition, InputObjectTypeDefinition, InterfaceTypeDefinition, ObjectTypeDefinition,
-    ScalarTypeDefinition, UnionTypeDefinition,
+    BaseInputTypeReference, BaseOutputTypeReference, EnumTypeDefinition, InputObjectTypeDefinition,
+    InputType, InterfaceTypeDefinition, ObjectTypeDefinition, OutputType, ScalarTypeDefinition,
+    UnionTypeDefinition,
 };
 use crate::BuiltinScalarDefinition;
 use enum_as_inner::EnumAsInner;
@@ -14,6 +15,50 @@ pub enum TypeDefinitionReference<'a, T: TypeDefinition> {
     Enum(&'a T::EnumTypeDefinition),
     Union(&'a T::UnionTypeDefinition),
     Interface(&'a T::InterfaceTypeDefinition),
+}
+
+impl<
+        'a,
+        T: TypeDefinition,
+        I: InputType<
+            CustomScalarTypeDefinition = T::CustomScalarTypeDefinition,
+            InputObjectTypeDefinition = T::InputObjectTypeDefinition,
+            EnumTypeDefinition = T::EnumTypeDefinition,
+        >,
+    > From<BaseInputTypeReference<'a, I>> for TypeDefinitionReference<'a, T>
+{
+    fn from(value: BaseInputTypeReference<'a, I>) -> Self {
+        match value {
+            BaseInputTypeReference::BuiltinScalar(bstd) => Self::BuiltinScalar(bstd),
+            BaseInputTypeReference::CustomScalar(cstd) => Self::CustomScalar(cstd),
+            BaseInputTypeReference::Enum(etd) => Self::Enum(etd),
+            BaseInputTypeReference::InputObject(iotd) => Self::InputObject(iotd),
+        }
+    }
+}
+
+impl<
+        'a,
+        T: TypeDefinition,
+        O: OutputType<
+            CustomScalarTypeDefinition = T::CustomScalarTypeDefinition,
+            EnumTypeDefinition = T::EnumTypeDefinition,
+            ObjectTypeDefinition = T::ObjectTypeDefinition,
+            InterfaceTypeDefinition = T::InterfaceTypeDefinition,
+            UnionTypeDefinition = T::UnionTypeDefinition,
+        >,
+    > From<BaseOutputTypeReference<'a, O>> for TypeDefinitionReference<'a, T>
+{
+    fn from(value: BaseOutputTypeReference<'a, O>) -> Self {
+        match value {
+            BaseOutputTypeReference::BuiltinScalar(bstd) => Self::BuiltinScalar(bstd),
+            BaseOutputTypeReference::CustomScalar(cstd) => Self::CustomScalar(cstd),
+            BaseOutputTypeReference::Enum(etd) => Self::Enum(etd),
+            BaseOutputTypeReference::Object(otd) => Self::Object(otd),
+            BaseOutputTypeReference::Interface(itd) => Self::Interface(itd),
+            BaseOutputTypeReference::Union(utd) => Self::Union(utd),
+        }
+    }
 }
 
 pub trait TypeDefinition: Sized {
