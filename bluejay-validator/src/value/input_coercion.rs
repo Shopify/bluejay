@@ -211,26 +211,33 @@ fn coerce_input_object_value<'a, const CONST: bool, V: Value<CONST>, T: InputTyp
                     index
                 });
 
-        errors.extend(indexed_object.iter().filter_map(|(&field_name, entries)| {
-            (entries.len() > 1).then(|| Error::NonUniqueFieldNames {
-                value,
-                field_name,
-                keys: Vec::from_iter(entries.iter().map(|&(key, _)| key)),
-                path: path.clone(),
-            })
-        }));
+        errors.extend(
+            indexed_object
+                .iter()
+                .filter(|(_, entries)| (entries.len() > 1))
+                .map(|(&field_name, entries)| Error::NonUniqueFieldNames {
+                    value,
+                    field_name,
+                    keys: Vec::from_iter(entries.iter().map(|&(key, _)| key)),
+                    path: path.clone(),
+                }),
+        );
 
-        errors.extend(object.iter().filter_map(|(field, _)| {
-            input_object_type_definition
-                .input_field_definitions()
-                .get(field.as_ref())
-                .is_none()
-                .then(|| Error::NoInputFieldWithName {
+        errors.extend(
+            object
+                .iter()
+                .filter(|(field, _)| {
+                    input_object_type_definition
+                        .input_field_definitions()
+                        .get(field.as_ref())
+                        .is_none()
+                })
+                .map(|(field, _)| Error::NoInputFieldWithName {
                     field,
                     input_object_type_name: input_object_type_definition.name(),
                     path: path.push(field.as_ref()),
-                })
-        }));
+                }),
+        );
 
         input_object_type_definition
             .input_field_definitions()

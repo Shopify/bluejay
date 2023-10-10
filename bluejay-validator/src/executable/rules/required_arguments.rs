@@ -60,14 +60,14 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> RequiredArguments
                     )
                 })
                 .unwrap_or_default();
-            let missing_argument_definitions =
-                Vec::from_iter(arguments_definition.iter().filter_map(|ivd| {
-                    let argument = indexed_arguments.get(ivd.name()).copied();
-                    (ivd.r#type().as_ref().is_required()
+            let missing_argument_definitions = arguments_definition
+                .iter()
+                .filter(|ivd| {
+                    ivd.r#type().as_ref().is_required()
                         && ivd.default_value().is_none()
-                        && argument.is_none())
-                    .then_some(ivd)
-                }));
+                        && !indexed_arguments.contains_key(ivd.name())
+                })
+                .collect::<Vec<_>>();
             if !missing_argument_definitions.is_empty() {
                 self.errors.push(build_error(missing_argument_definitions));
             }
