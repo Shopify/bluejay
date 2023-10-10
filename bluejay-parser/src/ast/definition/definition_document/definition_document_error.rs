@@ -9,7 +9,6 @@ use bluejay_core::definition::{
     DirectiveDefinition as CoreDirectiveDefinition, TypeDefinition as CoreTypeDefinition,
 };
 use bluejay_core::{Directive as _, OperationType};
-use std::ops::Not;
 
 #[derive(Debug)]
 pub enum DefinitionDocumentError<'a, C: Context> {
@@ -81,13 +80,12 @@ impl<'a, C: Context> From<DefinitionDocumentError<'a, C>> for Error {
                     None,
                     definitions
                         .into_iter()
-                        .filter_map(|definition| {
-                            definition.is_builtin().not().then(|| {
-                                Annotation::new(
-                                    format!("Directive definition with name `@{name}`"),
-                                    definition.name_token().span().clone(),
-                                )
-                            })
+                        .filter(|definition| !definition.is_builtin())
+                        .map(|definition| {
+                            Annotation::new(
+                                format!("Directive definition with name `@{name}`"),
+                                definition.name_token().span().clone(),
+                            )
                         })
                         .collect(),
                 )
@@ -138,13 +136,12 @@ impl<'a, C: Context> From<DefinitionDocumentError<'a, C>> for Error {
                     None,
                     definitions
                         .into_iter()
-                        .filter_map(|definition| {
-                            definition.as_ref().is_builtin().not().then(|| {
-                                Annotation::new(
-                                    format!("Type definition with name `{name}`"),
-                                    definition.name_token().unwrap().span().clone(),
-                                )
-                            })
+                        .filter(|definition| !definition.as_ref().is_builtin())
+                        .map(|definition| {
+                            Annotation::new(
+                                format!("Type definition with name `{name}`"),
+                                definition.name_token().unwrap().span().clone(),
+                            )
                         })
                         .collect(),
                 )

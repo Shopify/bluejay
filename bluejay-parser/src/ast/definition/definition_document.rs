@@ -214,9 +214,8 @@ impl<'a, C: Context> DefinitionDocument<'a, C> {
                     schema_definition
                         .root_operation_type_definitions()
                         .iter()
-                        .filter_map(|rotd| {
-                            (rotd.operation_type() == OperationType::Query).then(|| rotd.name())
-                        })
+                        .filter(|rotd| rotd.operation_type() == OperationType::Query)
+                        .map(|rotd| rotd.name())
                 }),
         );
 
