@@ -3,6 +3,7 @@ members = [
     "bluejay-core",
     "bluejay-parser",
     "bluejay-printer",
+    "bluejay-schema-comparator",
     "bluejay-typegen",
     "bluejay-typegen-macro",
     "bluejay-validator",

@@ -97,6 +97,30 @@ impl<'a, T: TypeDefinition> TypeDefinitionReference<'a, T> {
         }
     }
 
+    pub fn description(&self) -> Option<&'a str> {
+        match self {
+            Self::BuiltinScalar(_) => None,
+            Self::CustomScalar(cstd) => cstd.description(),
+            Self::Object(otd) => otd.description(),
+            Self::InputObject(iotd) => iotd.description(),
+            Self::Enum(etd) => etd.description(),
+            Self::Union(utd) => utd.description(),
+            Self::Interface(itd) => itd.description(),
+        }
+    }
+
+    pub fn kind(&self) -> &'static str {
+        match self {
+            TypeDefinitionReference::BuiltinScalar(_) => "SCALAR",
+            TypeDefinitionReference::CustomScalar(_) => "SCALAR",
+            TypeDefinitionReference::Enum(_) => "ENUM",
+            TypeDefinitionReference::InputObject(_) => "INPUT_OBJECT",
+            TypeDefinitionReference::Interface(_) => "INTERFACE",
+            TypeDefinitionReference::Object(_) => "OBJECT",
+            TypeDefinitionReference::Union(_) => "UNION",
+        }
+    }
+
     pub fn is_builtin(&self) -> bool {
         match self {
             Self::BuiltinScalar(_) => true,
