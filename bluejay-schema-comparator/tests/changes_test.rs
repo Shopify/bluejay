@@ -152,7 +152,7 @@ fn test_safe_input_field_changes() {
 }
 
 fn change_for_path<'a, S: CoreSchemaDefinition>(
-    changes: &'a Vec<Change<'a, S>>,
+    changes: &'a [Change<'a, S>],
     path: &str,
 ) -> Option<&'a Change<'a, S>> {
     changes.iter().find(|change| change.path() == path)

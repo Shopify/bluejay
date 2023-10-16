@@ -77,13 +77,10 @@ impl<'a, S: SchemaDefinition + 'a> DirectiveDiff<'a, S> {
             .map(|ii| ii.iter())
             .into_iter()
             .flatten()
-            .filter_map(|new_arg| {
-                self.old_directive
-                    .arguments()
-                    .map_or(true, |args| {
-                        !args.iter().any(|old_arg| old_arg.name() == new_arg.name())
-                    })
-                    .then_some(new_arg)
+            .filter(|new_arg| {
+                self.old_directive.arguments().map_or(true, |args| {
+                    !args.iter().any(|old_arg| old_arg.name() == new_arg.name())
+                })
             })
     }
 
@@ -93,13 +90,10 @@ impl<'a, S: SchemaDefinition + 'a> DirectiveDiff<'a, S> {
             .map(|ii| ii.iter())
             .into_iter()
             .flatten()
-            .filter_map(|old_arg| {
-                self.new_directive
-                    .arguments()
-                    .map_or(false, |args| {
-                        !args.iter().any(|new_arg| old_arg.name() == new_arg.name())
-                    })
-                    .then_some(old_arg)
+            .filter(|old_arg| {
+                self.new_directive.arguments().map_or(false, |args| {
+                    !args.iter().any(|new_arg| old_arg.name() == new_arg.name())
+                })
             })
     }
 }
@@ -117,15 +111,12 @@ pub fn directive_additions<
         .map(|ii| ii.iter())
         .into_iter()
         .flatten()
-        .filter_map(|new_directive| {
-            old_member
-                .directives()
-                .map_or(true, |directives| {
-                    !directives
-                        .iter()
-                        .any(|old_directive| old_directive.name() == new_directive.name())
-                })
-                .then_some(new_directive)
+        .filter(|new_directive| {
+            old_member.directives().map_or(true, |directives| {
+                !directives
+                    .iter()
+                    .any(|old_directive| old_directive.name() == new_directive.name())
+            })
         })
 }
 
@@ -142,15 +133,12 @@ pub fn directive_removals<
         .map(|ii| ii.iter())
         .into_iter()
         .flatten()
-        .filter_map(|old_directive| {
-            new_member
-                .directives()
-                .map_or(true, |directives| {
-                    !directives
-                        .iter()
-                        .any(|new_directive| old_directive.name() == new_directive.name())
-                })
-                .then_some(old_directive)
+        .filter(|old_directive| {
+            new_member.directives().map_or(true, |directives| {
+                !directives
+                    .iter()
+                    .any(|new_directive| old_directive.name() == new_directive.name())
+            })
         })
 }
 

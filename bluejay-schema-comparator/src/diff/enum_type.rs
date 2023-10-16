@@ -94,12 +94,11 @@ impl<'a, S: SchemaDefinition + 'a> EnumTypeDiff<'a, S> {
         self.new_type_definition
             .enum_value_definitions()
             .iter()
-            .filter_map(|new_enum_value| {
+            .filter(|new_enum_value| {
                 self.old_type_definition
                     .enum_value_definitions()
                     .iter()
                     .all(|old_enum_value| old_enum_value.name() != new_enum_value.name())
-                    .then_some(new_enum_value)
             })
     }
 
@@ -107,12 +106,11 @@ impl<'a, S: SchemaDefinition + 'a> EnumTypeDiff<'a, S> {
         self.old_type_definition
             .enum_value_definitions()
             .iter()
-            .filter_map(|old_enum_value| {
+            .filter(|old_enum_value| {
                 self.new_type_definition
                     .enum_value_definitions()
                     .iter()
                     .all(|new_enum_value| old_enum_value.name() != new_enum_value.name())
-                    .then_some(old_enum_value)
             })
     }
 }

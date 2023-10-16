@@ -124,13 +124,12 @@ impl<'a, S: SchemaDefinition + 'a> FieldDiff<'a, S> {
             .map(|ii| ii.iter())
             .into_iter()
             .flatten()
-            .filter_map(|new_arg| {
+            .filter(|new_arg| {
                 self.old_field_definition
                     .arguments_definition()
                     .map_or(true, |args| {
                         !args.iter().any(|old_arg| old_arg.name() == new_arg.name())
                     })
-                    .then_some(new_arg)
             })
     }
 
@@ -140,13 +139,12 @@ impl<'a, S: SchemaDefinition + 'a> FieldDiff<'a, S> {
             .map(|ii| ii.iter())
             .into_iter()
             .flatten()
-            .filter_map(|new_arg| {
+            .filter(|new_arg| {
                 self.new_field_definition
                     .arguments_definition()
                     .map_or(true, |args| {
                         !args.iter().any(|old_arg| old_arg.name() == new_arg.name())
                     })
-                    .then_some(new_arg)
             })
     }
 }

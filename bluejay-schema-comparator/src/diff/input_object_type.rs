@@ -96,12 +96,11 @@ impl<'a, S: SchemaDefinition + 'a> InputObjectTypeDiff<'a, S> {
         self.new_type_definition
             .input_field_definitions()
             .iter()
-            .filter_map(|new_input_field| {
+            .filter(|new_input_field| {
                 self.old_type_definition
                     .input_field_definitions()
                     .get(new_input_field.name())
                     .is_none()
-                    .then_some(new_input_field)
             })
     }
 
@@ -109,14 +108,11 @@ impl<'a, S: SchemaDefinition + 'a> InputObjectTypeDiff<'a, S> {
         self.old_type_definition
             .input_field_definitions()
             .iter()
-            .filter_map(
-                |old_input_field: &'a <S as SchemaDefinition>::InputValueDefinition| {
-                    self.new_type_definition
-                        .input_field_definitions()
-                        .get(old_input_field.name())
-                        .is_none()
-                        .then_some(old_input_field)
-                },
-            )
+            .filter(|old_input_field| {
+                self.new_type_definition
+                    .input_field_definitions()
+                    .get(old_input_field.name())
+                    .is_none()
+            })
     }
 }
