@@ -105,12 +105,11 @@ impl<'a, S: SchemaDefinition + 'a> ObjectTypeDiff<'a, S> {
         self.new_type_definition
             .fields_definition()
             .iter()
-            .filter_map(|new_field: &'a <S as SchemaDefinition>::FieldDefinition| {
+            .filter(|new_field| {
                 self.old_type_definition
                     .fields_definition()
                     .contains_field(new_field.name())
                     .not()
-                    .then_some(new_field)
             })
     }
 
@@ -118,12 +117,11 @@ impl<'a, S: SchemaDefinition + 'a> ObjectTypeDiff<'a, S> {
         self.old_type_definition
             .fields_definition()
             .iter()
-            .filter_map(|old_field: &'a <S as SchemaDefinition>::FieldDefinition| {
+            .filter(|old_field| {
                 self.new_type_definition
                     .fields_definition()
                     .contains_field(old_field.name())
                     .not()
-                    .then_some(old_field)
             })
     }
 

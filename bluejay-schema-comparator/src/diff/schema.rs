@@ -164,44 +164,40 @@ impl<'a, S: SchemaDefinition> SchemaDiff<'a, S> {
     ) -> impl Iterator<Item = TypeDefinitionReference<'a, S::TypeDefinition>> {
         self.old_schema_definition
             .type_definitions()
-            .filter_map(|old_type| {
+            .filter(|old_type| {
                 self.new_schema_definition
                     .get_type_definition(old_type.name())
                     .is_none()
-                    .then_some(old_type)
             })
     }
 
     fn added_types(&self) -> impl Iterator<Item = TypeDefinitionReference<'a, S::TypeDefinition>> {
         self.new_schema_definition
             .type_definitions()
-            .filter_map(|new_type| {
+            .filter(|new_type| {
                 self.old_schema_definition
                     .get_type_definition(new_type.name())
                     .is_none()
-                    .then_some(new_type)
             })
     }
 
     fn removed_directive_definitions(&self) -> impl Iterator<Item = &'a S::DirectiveDefinition> {
         self.old_schema_definition
             .directive_definitions()
-            .filter_map(|old_directive| {
+            .filter(|old_directive| {
                 self.new_schema_definition
                     .get_directive_definition(old_directive.name())
                     .is_none()
-                    .then_some(old_directive)
             })
     }
 
     fn added_directive_definitions(&self) -> impl Iterator<Item = &'a S::DirectiveDefinition> {
         self.new_schema_definition
             .directive_definitions()
-            .filter_map(|new_directive| {
+            .filter(|new_directive| {
                 self.old_schema_definition
                     .get_directive_definition(new_directive.name())
                     .is_none()
-                    .then_some(new_directive)
             })
     }
 }

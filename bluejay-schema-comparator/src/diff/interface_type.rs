@@ -96,12 +96,11 @@ impl<'a, S: SchemaDefinition + 'a> InterfaceTypeDiff<'a, S> {
         self.new_interface_definition
             .fields_definition()
             .iter()
-            .filter_map(|field: &'a <S as SchemaDefinition>::FieldDefinition| {
+            .filter(|field| {
                 self.old_interface_definition
                     .fields_definition()
                     .contains_field(field.name())
                     .not()
-                    .then_some(field)
             })
     }
 
@@ -109,12 +108,11 @@ impl<'a, S: SchemaDefinition + 'a> InterfaceTypeDiff<'a, S> {
         self.old_interface_definition
             .fields_definition()
             .iter()
-            .filter_map(|field: &'a <S as SchemaDefinition>::FieldDefinition| {
+            .filter(|field| {
                 self.new_interface_definition
                     .fields_definition()
                     .contains_field(field.name())
                     .not()
-                    .then_some(field)
             })
     }
 }

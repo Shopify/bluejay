@@ -97,25 +97,24 @@ impl<'a, S: SchemaDefinition + 'a> DirectiveDefinitionDiff<'a, S> {
         self.old_directive_definition
             .locations()
             .iter()
-            .filter_map(|old_location| {
+            .filter(|&old_location| {
                 self.new_directive_definition
                     .locations()
                     .iter()
                     .all(|new_location| new_location != old_location)
-                    .then_some(old_location)
             })
     }
 
     fn location_additions(&self) -> impl Iterator<Item = &'a DirectiveLocation> {
-        self.new_directive_definition.locations().iter().filter_map(
-            |new_location: &DirectiveLocation| {
+        self.new_directive_definition
+            .locations()
+            .iter()
+            .filter(|&new_location| {
                 self.old_directive_definition
                     .locations()
                     .iter()
                     .all(|old_location| old_location != new_location)
-                    .then_some(new_location)
-            },
-        )
+            })
     }
 
     fn argument_removals(&self) -> impl Iterator<Item = &'a S::InputValueDefinition> {
