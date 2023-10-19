@@ -91,6 +91,10 @@ impl<'a, S: definition::SchemaDefinition, W: Warden<SchemaDefinition = S>>
         self.inner
     }
 
+    pub fn cache(&self) -> &'a Cache<'a, S, W> {
+        self.cache
+    }
+
     fn type_definitions_and_directive_definitions(
         &self,
     ) -> &TypeDefinitionsAndDirectiveDefinitions<'a, S, W> {
