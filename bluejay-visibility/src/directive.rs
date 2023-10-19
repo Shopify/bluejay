@@ -14,6 +14,10 @@ impl<'a, S: SchemaDefinition, W: Warden<SchemaDefinition = S>> Directive<'a, S, 
     ) -> Self {
         Self { inner, definition }
     }
+
+    pub fn inner(&self) -> &'a S::Directive {
+        self.inner
+    }
 }
 
 impl<'a, S: SchemaDefinition, W: Warden<SchemaDefinition = S>> CoreDirective<true>
@@ -26,7 +30,7 @@ impl<'a, S: SchemaDefinition, W: Warden<SchemaDefinition = S>> CoreDirective<tru
     }
 
     fn arguments(&self) -> Option<&Self::Arguments> {
-        self.inner.arguments()
+        self.definition.cache().warden().directive_arguments(self)
     }
 }
 

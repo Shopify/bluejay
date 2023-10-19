@@ -1,4 +1,7 @@
-use bluejay_core::definition::{InputValueDefinition, SchemaDefinition};
+use bluejay_core::{
+    definition::{InputValueDefinition, SchemaDefinition},
+    Directive,
+};
 use std::marker::PhantomData;
 
 pub trait Warden: Sized {
@@ -69,6 +72,15 @@ pub trait Warden: Sized {
         scoped_input_value_definition: &crate::InputValueDefinition<'a, Self::SchemaDefinition, Self>,
     ) -> Option<&'a <<Self::SchemaDefinition as SchemaDefinition>::InputValueDefinition as InputValueDefinition>::Value>{
         scoped_input_value_definition.inner().default_value()
+    }
+
+    fn directive_arguments<'a>(
+        &self,
+        scoped_directive: &crate::Directive<'a, Self::SchemaDefinition, Self>,
+    ) -> Option<
+        &'a <<Self::SchemaDefinition as SchemaDefinition>::Directive as Directive<true>>::Arguments,
+    > {
+        scoped_directive.inner().arguments()
     }
 }
 
