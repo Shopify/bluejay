@@ -23,6 +23,10 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> DirectiveDef
     pub fn inner(&self) -> &'a S::DirectiveDefinition {
         self.inner
     }
+
+    pub fn cache(&self) -> &'a Cache<'a, S, W> {
+        self.cache
+    }
 }
 
 impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> definition::DirectiveDefinition
