@@ -13,7 +13,7 @@ use std::borrow::Cow;
 pub enum Criticality {
     Breaking { reason: Cow<'static, str> },
     Dangerous { reason: Cow<'static, str> },
-    NonBreaking { reason: Cow<'static, str> },
+    Safe { reason: Cow<'static, str> },
 }
 
 impl Criticality {
@@ -29,9 +29,29 @@ impl Criticality {
         }
     }
 
-    fn non_breaking(reason: Option<Cow<'static, str>>) -> Self {
-        Self::NonBreaking {
+    fn safe(reason: Option<Cow<'static, str>>) -> Self {
+        Self::Safe {
             reason: reason.unwrap_or(Cow::from("This change is safe")),
+        }
+    }
+
+    pub fn is_breaking(&self) -> bool {
+        matches!(self, Self::Breaking { .. })
+    }
+
+    pub fn is_dangerous(&self) -> bool {
+        matches!(self, Self::Dangerous { .. })
+    }
+
+    pub fn is_safe(&self) -> bool {
+        matches!(self, Self::Safe { .. })
+    }
+
+    pub fn reason(&self) -> &str {
+        match self {
+            Self::Breaking { reason } => reason.as_ref(),
+            Self::Dangerous { reason } => reason.as_ref(),
+            Self::Safe { reason } => reason.as_ref(),
         }
     }
 }
@@ -221,7 +241,7 @@ impl<'a, S: SchemaDefinition> Change<'a, S> {
     }
 
     pub fn non_breaking(&self) -> bool {
-        matches!(self.criticality(), Criticality::NonBreaking { .. })
+        matches!(self.criticality(), Criticality::Safe { .. })
     }
 
     pub fn dangerous(&self) -> bool {
@@ -233,10 +253,10 @@ impl<'a, S: SchemaDefinition> Change<'a, S> {
             Self::TypeRemoved { .. } => Criticality::breaking(
                 Some(Cow::from("Removing a type is a breaking change. It is preferable to deprecate and remove all references to this type first."))
             ),
-            Self::TypeAdded { .. } => Criticality::non_breaking(None),
+            Self::TypeAdded { .. } => Criticality::safe(None),
             Self::TypeKindChanged { .. } => Criticality::breaking(None),
-            Self::TypeDescriptionChanged { .. } => Criticality::non_breaking(None),
-            Self::FieldAdded { .. } => Criticality::non_breaking(None),
+            Self::TypeDescriptionChanged { .. } => Criticality::safe(None),
+            Self::FieldAdded { .. } => Criticality::safe(None),
             Self::FieldRemoved { removed_field_definition: removed_field, type_name: _ } => {
                 if removed_field.directives()
                 .map_or(
@@ -248,10 +268,10 @@ impl<'a, S: SchemaDefinition> Change<'a, S> {
                     Criticality::breaking(Some(Cow::from("Removing a field is a breaking change. It is preferable to deprecate the field before removing it.")))
                 }
             },
-            Self::FieldDescriptionChanged { .. } => Criticality::non_breaking(None),
+            Self::FieldDescriptionChanged { .. } => Criticality::safe(None),
             Self::FieldTypeChanged { type_name: _, old_field_definition: old_field, new_field_definition: new_field } => {
                 if is_change_safe_for_field::<S>(old_field.r#type().as_ref(), new_field.r#type().as_ref()) {
-                    Criticality::non_breaking(None)
+                    Criticality::safe(None)
                 } else {
                     Criticality::breaking(Some(Cow::from("Changing a field's type can cause existing queries that use this field to error.")))
                 }
@@ -260,7 +280,7 @@ impl<'a, S: SchemaDefinition> Change<'a, S> {
                 if argument.r#type().as_ref().is_required() && argument.default_value().is_none() {
                     Criticality::breaking(Some(Cow::from("Adding a required argument without a default value to an existing field is a breaking change because it will cause existing uses of this field to error.")))
                 } else {
-                    Criticality::non_breaking(None)
+                    Criticality::safe(None)
                 }
 
             },
@@ -268,14 +288,14 @@ impl<'a, S: SchemaDefinition> Change<'a, S> {
                 Criticality::breaking(Some(Cow::from("Removing a field argument is a breaking change because it will cause existing queries that use this argument to error.")))
             },
             Self::FieldArgumentDescriptionChanged { .. } => {
-                Criticality::non_breaking(None)
+                Criticality::safe(None)
             },
             Self::FieldArgumentDefaultValueChanged { .. } => {
                 Criticality::dangerous(Some(Cow::from("Changing the default value for an argument may change the runtime behaviour of a field if it was never provided.")))
             },
             Self::FieldArgumentTypeChanged{ type_name: _, field_definition: _, old_argument_definition: old_argument, new_argument_definition: new_argument } => {
                 if is_change_safe_for_input_value::<S>(old_argument.r#type().as_ref(), new_argument.r#type().as_ref()) {
-                    Criticality::non_breaking(None)
+                    Criticality::safe(None)
                 } else {
                     Criticality::breaking(Some(Cow::from("Changing the type of a field's argument can cause existing queries that use this argument to error.")))
                 }
@@ -293,7 +313,7 @@ impl<'a, S: SchemaDefinition> Change<'a, S> {
                 Criticality::breaking(Some(Cow::from("Removing an enum value will cause existing queries that use this enum value to error.")))
             },
             Self::EnumValueDescriptionChanged { .. } => {
-                Criticality::non_breaking(None)
+                Criticality::safe(None)
             },
             Self::UnionMemberAdded { .. } => {
                 Criticality::dangerous(Some(Cow::from("Adding a possible type to Unions may break existing clients that were not programming defensively against a new possible type..")))
@@ -305,7 +325,7 @@ impl<'a, S: SchemaDefinition> Change<'a, S> {
                 if added_field.r#type().as_ref().is_required() && added_field.default_value().is_none() {
                     Criticality::breaking(Some(Cow::from("Adding a non-null input field without a default value to an existing input type will cause existing queries that use this input type to error because they will not provide a value for this new field.")))
                 } else {
-                    Criticality::non_breaking(None)
+                    Criticality::safe(None)
                 }
             },
             Self::InputFieldRemoved { .. } => {
@@ -313,48 +333,48 @@ impl<'a, S: SchemaDefinition> Change<'a, S> {
             },
             Self::InputFieldTypeChanged { input_object_type_definition: _, old_field_definition: old_field, new_field_definition: new_field } => {
                 if is_change_safe_for_input_value::<S>(old_field.r#type().as_ref(), new_field.r#type().as_ref()) {
-                    Criticality::non_breaking(Some(Cow::from("Changing an input field from non-null to null is considered non-breaking")))
+                    Criticality::safe(Some(Cow::from("Changing an input field from non-null to null is considered non-breaking")))
                 } else {
                     Criticality::breaking(Some(Cow::from("Changing the type of an input field can cause existing queries that use this field to error.")))
                 }
             },
             Self::InputFieldDescriptionChanged { .. } => {
-                Criticality::non_breaking(None)
+                Criticality::safe(None)
             },
             Self::InputFieldDefaultValueChanged { .. } => {
                 Criticality::dangerous(Some(Cow::from("Changing the default value for an argument may change the runtime behaviour of a field if it was never provided.")))
             },
             Self::DirectiveDefinitionAdded { .. } => {
-                Criticality::non_breaking(None)
+                Criticality::safe(None)
             },
             Self::DirectiveDefinitionRemoved { .. } => {
                 Criticality::breaking(None)
             },
             Self::DirectiveDefinitionLocationAdded { .. } => {
-                Criticality::non_breaking(None)
+                Criticality::safe(None)
             },
             Self::DirectiveDefinitionLocationRemoved { .. } => {
                 Criticality::breaking(None)
             },
             Self::DirectiveDefinitionDescriptionChanged { .. } => {
-                Criticality::non_breaking(None)
+                Criticality::safe(None)
             },
             Self::DirectiveDefinitionArgumentAdded { directive_definition: _, argument_definition } => {
                 if argument_definition.is_required() {
                     Criticality::breaking(None)
                 } else {
-                    Criticality::non_breaking(None)
+                    Criticality::safe(None)
                 }
             },
             Self::DirectiveDefinitionArgumentRemoved { .. } => {
                 Criticality::breaking(None)
             },
             Self::DirectiveDefinitionArgumentDescriptionChanged { .. } => {
-                Criticality::non_breaking(None)
+                Criticality::safe(None)
             },
             Self::DirectiveDefinitionArgumentTypeChanged { directive_definition: _, old_argument_definition, new_argument_definition } => {
                 if is_change_safe_for_input_value::<S>(old_argument_definition.r#type().as_ref(), new_argument_definition.r#type().as_ref()) {
-                    Criticality::non_breaking(Some(Cow::from("Changing an input field from non-null to null is considered non-breaking")))
+                    Criticality::safe(Some(Cow::from("Changing an input field from non-null to null is considered non-breaking")))
                 } else {
                     Criticality::breaking(None)
                 }
@@ -363,19 +383,19 @@ impl<'a, S: SchemaDefinition> Change<'a, S> {
                 Criticality::dangerous(Some(Cow::from("Changing the default value for an argument may change the runtime behaviour of a field if it was never provided.")))
             },
             Self::DirectiveAdded { .. } => {
-                Criticality::non_breaking(None)
+                Criticality::safe(None)
             },
             Self::DirectiveRemoved { .. } => {
                 Criticality::breaking(None)
             },
             Self::DirectiveArgumentAdded { .. } => {
-                Criticality::non_breaking(None)
+                Criticality::safe(None)
             },
             Self::DirectiveArgumentRemoved { .. } => {
-                Criticality::non_breaking(None)
+                Criticality::safe(None)
             },
             Self::DirectiveArgumentValueChanged { .. } => {
-                Criticality::non_breaking(None)
+                Criticality::safe(None)
             },
         }
     }
