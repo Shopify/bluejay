@@ -7,6 +7,46 @@ use bluejay_core::definition::{
 };
 use bluejay_core::AsIter;
 use std::str::FromStr;
+use strum::{EnumIter, IntoStaticStr};
+
+#[derive(IntoStaticStr, EnumIter, Clone, Copy, Debug, PartialEq)]
+#[strum(serialize_all = "camelCase")]
+pub enum BuiltinDirectiveDefinition {
+    Deprecated,
+    Include,
+    OneOf,
+    Skip,
+    SpecifiedBy,
+}
+
+impl BuiltinDirectiveDefinition {
+    const SKIP_DEFINITION: &'static str =
+        "directive @skip(if: Boolean!) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT";
+    const INCLUDE_DEFINITION: &'static str =
+        "directive @include(if: Boolean!) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT";
+    const DEPRECATED_DEFINITION: &'static str = "directive @deprecated(reason: String = \"No longer supported\") on FIELD_DEFINITION | ARGUMENT_DEFINITION | INPUT_FIELD_DEFINITION | ENUM_VALUE";
+    const SPECIFIED_BY_DEFINITION: &'static str = "directive @specifiedBy(url: String!) on SCALAR";
+    const ONE_OF_DEFINITION: &'static str = "directive @oneOf on INPUT_OBJECT";
+
+    fn definition(&self) -> &'static str {
+        match self {
+            Self::Deprecated => Self::DEPRECATED_DEFINITION,
+            Self::Include => Self::INCLUDE_DEFINITION,
+            Self::OneOf => Self::ONE_OF_DEFINITION,
+            Self::Skip => Self::SKIP_DEFINITION,
+            Self::SpecifiedBy => Self::SPECIFIED_BY_DEFINITION,
+        }
+    }
+}
+
+impl<'a, C: Context> From<BuiltinDirectiveDefinition> for DirectiveDefinition<'a, C> {
+    fn from(value: BuiltinDirectiveDefinition) -> Self {
+        let mut definition = DirectiveDefinition::parse(value.definition()).unwrap();
+
+        definition.is_builtin = true;
+        definition
+    }
+}
 
 #[derive(Debug)]
 pub struct DirectiveDefinition<'a, C: Context> {
@@ -51,39 +91,6 @@ impl<'a, C: Context> DirectiveDefinition<'a, C> {
     pub(crate) const DIRECTIVE_IDENTIFIER: &'static str = "directive";
     const REPEATABLE_IDENTIFIER: &'static str = "repeatable";
     const ON_IDENTIFIER: &'static str = "on";
-    const SKIP_DEFINITION: &'static str =
-        "directive @skip(if: Boolean!) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT";
-    const INCLUDE_DEFINITION: &'static str =
-        "directive @include(if: Boolean!) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT";
-    const DEPRECATED_DEFINITION: &'static str = "directive @deprecated(reason: String = \"No longer supported\") on FIELD_DEFINITION | ARGUMENT_DEFINITION | INPUT_FIELD_DEFINITION | ENUM_VALUE";
-    const SPECIFIED_BY_DEFINITION: &'static str = "directive @specifiedBy(url: String!) on SCALAR";
-    const ONE_OF_DEFINITION: &'static str = "directive @oneOf on INPUT_OBJECT";
-
-    fn builtin(s: &'static str) -> Self {
-        let mut definition = DirectiveDefinition::parse(s).unwrap();
-        definition.is_builtin = true;
-        definition
-    }
-
-    pub(crate) fn skip() -> Self {
-        Self::builtin(Self::SKIP_DEFINITION)
-    }
-
-    pub(crate) fn include() -> Self {
-        Self::builtin(Self::INCLUDE_DEFINITION)
-    }
-
-    pub(crate) fn deprecated() -> Self {
-        Self::builtin(Self::DEPRECATED_DEFINITION)
-    }
-
-    pub(crate) fn specified_by() -> Self {
-        Self::builtin(Self::SPECIFIED_BY_DEFINITION)
-    }
-
-    pub(crate) fn one_of() -> Self {
-        Self::builtin(Self::ONE_OF_DEFINITION)
-    }
 
     pub(crate) fn name_token(&self) -> &Name<'a> {
         &self.name
