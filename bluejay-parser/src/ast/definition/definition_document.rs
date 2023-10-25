@@ -1,9 +1,9 @@
 use crate::ast::definition::{
-    BaseInputType, BaseOutputType, Context, CustomScalarTypeDefinition, DefaultContext,
-    DirectiveDefinition, Directives, EnumTypeDefinition, ExplicitSchemaDefinition,
-    FieldsDefinition, InputObjectTypeDefinition, InputValueDefinition, InterfaceImplementations,
-    InterfaceTypeDefinition, ObjectTypeDefinition, SchemaDefinition, TypeDefinition,
-    UnionTypeDefinition,
+    directive_definition::BuiltinDirectiveDefinition, BaseInputType, BaseOutputType, Context,
+    CustomScalarTypeDefinition, DefaultContext, DirectiveDefinition, Directives,
+    EnumTypeDefinition, ExplicitSchemaDefinition, FieldsDefinition, InputObjectTypeDefinition,
+    InputValueDefinition, InterfaceImplementations, InterfaceTypeDefinition, ObjectTypeDefinition,
+    SchemaDefinition, TypeDefinition, UnionTypeDefinition,
 };
 use crate::ast::{FromTokens, ParseError, ScannerTokens, Tokens};
 use crate::scanner::LogosScanner;
@@ -43,13 +43,7 @@ impl<'a, C: Context> DefinitionDocument<'a, C> {
     fn new() -> Self {
         Self {
             schema_definitions: Vec::new(),
-            directive_definitions: vec![
-                DirectiveDefinition::skip(),
-                DirectiveDefinition::include(),
-                DirectiveDefinition::deprecated(),
-                DirectiveDefinition::specified_by(),
-                DirectiveDefinition::one_of(),
-            ],
+            directive_definitions: Vec::new(),
             type_definitions: vec![
                 ObjectTypeDefinition::__schema().into(),
                 ObjectTypeDefinition::__type().into(),
@@ -182,6 +176,7 @@ impl<'a, C: Context> DefinitionDocument<'a, C> {
 
         if errors.is_empty() {
             instance.insert_builtin_scalar_definitions();
+            instance.insert_builtin_directive_definitions();
             instance.add_query_root_fields();
             Ok(instance)
         } else {
@@ -203,6 +198,26 @@ impl<'a, C: Context> DefinitionDocument<'a, C> {
             builtin_scalars_by_name
                 .into_values()
                 .map(TypeDefinition::BuiltinScalar),
+        );
+    }
+
+    /// Inserts builtin directive definitions only for type names that have not already been parsed
+    /// to allow optional explicit definition of builtin definitions (since they are optional)
+    fn insert_builtin_directive_definitions(&mut self) {
+        let mut builtin_directive_definitions_by_name: HashMap<&str, BuiltinDirectiveDefinition> =
+            HashMap::from_iter(
+                BuiltinDirectiveDefinition::iter()
+                    .map(|bdd: BuiltinDirectiveDefinition| (bdd.into(), bdd)),
+            );
+
+        self.directive_definitions().iter().for_each(|dd| {
+            builtin_directive_definitions_by_name.remove(dd.name());
+        });
+
+        self.directive_definitions.extend(
+            builtin_directive_definitions_by_name
+                .into_values()
+                .map(DirectiveDefinition::from),
         );
     }
 
@@ -772,6 +787,8 @@ mod tests {
     #[test]
     fn builtin_fields_and_types_test() {
         let s = r#"
+        directive @skip(if: Boolean!) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+
         type Query {
             foo: String!
         }
@@ -811,14 +828,14 @@ mod tests {
 
         assert_eq!(HashSet::from(["__typename"]), mutation_root_builtin_fields);
 
-        let builtin_directives: HashSet<&str> = schema_definition
+        let directives: HashSet<&str> = schema_definition
             .directive_definitions()
-            .filter_map(|dd| dd.is_builtin().then_some(dd.name()))
+            .map(|dd| dd.name())
             .collect();
 
-        assert_eq!(
-            HashSet::from(["include", "skip", "deprecated", "specifiedBy", "oneOf"]),
-            builtin_directives
+        assert!(
+            HashSet::from(["include", "skip", "deprecated", "specifiedBy", "oneOf"])
+                .is_subset(&directives)
         );
 
         let builtin_types: HashSet<&str> = schema_definition
