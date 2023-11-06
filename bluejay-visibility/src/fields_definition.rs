@@ -37,6 +37,7 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> AsIter
             .get_or_init(|| {
                 self.inner
                     .iter()
+                    .filter(|fd| self.cache.warden().is_field_definition_visible(fd))
                     .filter_map(|fd| {
                         self.indexed_fields_definition
                             .get(fd.name())

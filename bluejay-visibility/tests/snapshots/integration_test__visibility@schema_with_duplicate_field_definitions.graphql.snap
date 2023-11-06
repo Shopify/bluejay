@@ -1,0 +1,11 @@
+---
+source: bluejay-visibility/tests/integration_test.rs
+expression: printed_schema_definition
+input_file: bluejay-visibility/tests/test_data/schema_with_duplicate_field_definitions.graphql
+---
+directive @visible on FIELD_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION | ARGUMENT_DEFINITION | SCALAR | OBJECT | INTERFACE | UNION | ENUM
+
+type Query @visible {
+  field: String @visible
+}
+
