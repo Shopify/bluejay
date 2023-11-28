@@ -141,3 +141,45 @@ fn test_visibility() {
         insta::assert_snapshot!(printed_schema_definition);
     });
 }
+
+#[test]
+fn test_fields_definition_get() {
+    let schema = "
+        directive @visible on FIELD_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION | ARGUMENT_DEFINITION | SCALAR | OBJECT | INTERFACE | UNION | ENUM
+
+        type Query @visible {
+            otherField: String @visible
+            field: String
+            field: String @visible
+        }
+    ";
+
+    let definition_document: DefinitionDocument =
+        DefinitionDocument::parse(schema).unwrap_or_else(|errors| {
+            panic!(
+                "Schema had parse errors:\n{}",
+                Error::format_errors(schema, errors)
+            )
+        });
+    let schema_definition =
+        ParserSchemaDefinition::try_from(&definition_document).unwrap_or_else(|errors| {
+            panic!(
+                "Schema had coercion errors:\n:{}",
+                Error::format_errors(schema, errors)
+            )
+        });
+
+    let cache = Cache::new(DirectiveWarden::default());
+    let visibility_scoped_schema_definition =
+        SchemaDefinition::new(&schema_definition, &cache).unwrap();
+
+    assert_eq!(
+        visibility_scoped_schema_definition
+            .query()
+            .fields_definition()
+            .get("field")
+            .map(|fd| fd.name()),
+        Some("field"),
+        "Expected field to be visible",
+    );
+}

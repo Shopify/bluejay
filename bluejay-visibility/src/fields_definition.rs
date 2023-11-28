@@ -5,8 +5,7 @@ use elsa::FrozenMap;
 use once_cell::unsync::OnceCell;
 use std::rc::Rc;
 
-type IndexedFieldsDefinition<'a, S, W> =
-    FrozenMap<&'a str, Box<Option<Rc<FieldDefinition<'a, S, W>>>>>;
+type IndexedFieldsDefinition<'a, S, W> = FrozenMap<&'a str, Box<Rc<FieldDefinition<'a, S, W>>>>;
 
 pub struct FieldsDefinition<'a, S: SchemaDefinition, W: Warden<SchemaDefinition = S>> {
     inner: &'a S::FieldsDefinition,
@@ -41,12 +40,17 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> AsIter
                     .filter_map(|fd| {
                         self.indexed_fields_definition
                             .get(fd.name())
-                            .unwrap_or_else(|| {
+                            .or_else(|| {
                                 let scoped_fd = FieldDefinition::new(fd, self.cache).map(Rc::new);
-                                self.indexed_fields_definition
-                                    .insert(fd.name(), Box::new(scoped_fd))
+                                if let Some(scoped_fd) = scoped_fd {
+                                    Some(
+                                        self.indexed_fields_definition
+                                            .insert(fd.name(), Box::new(scoped_fd)),
+                                    )
+                                } else {
+                                    None
+                                }
                             })
-                            .as_ref()
                             .cloned()
                     })
                     .collect()
@@ -64,16 +68,24 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> definition::
     fn get(&self, name: &str) -> Option<&Self::FieldDefinition> {
         self.indexed_fields_definition
             .get(name)
-            .unwrap_or_else(|| {
-                if let Some(fd) = self.inner.get(name) {
-                    let scoped_fd = FieldDefinition::new(fd, self.cache).map(Rc::new);
-                    self.indexed_fields_definition
-                        .insert(fd.name(), Box::new(scoped_fd))
+            .or_else(|| {
+                if let Some((fd, fd_scoped)) = self
+                    .inner
+                    .iter()
+                    .filter(|fd| fd.name() == name)
+                    .find_map(|fd| {
+                        FieldDefinition::new(fd, self.cache).map(|fd_scoped| (fd, fd_scoped))
+                    })
+                {
+                    Some(
+                        self.indexed_fields_definition
+                            .insert(fd.name(), Box::new(Rc::new(fd_scoped))),
+                    )
                 } else {
-                    &None
+                    None
                 }
             })
-            .as_deref()
+            .map(std::ops::Deref::deref)
     }
 
     fn contains_field(&self, name: &str) -> bool {
