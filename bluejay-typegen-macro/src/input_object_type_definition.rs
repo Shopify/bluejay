@@ -3,17 +3,17 @@ use crate::builtin_scalar::{builtin_scalar_type, scalar_is_reference};
 use crate::names::{enum_variant_ident, field_ident, type_ident};
 use crate::Config;
 use bluejay_core::definition::{
-    BaseInputTypeReference, EnumTypeDefinition, InputObjectTypeDefinition, InputType,
-    InputTypeReference, InputValueDefinition, ScalarTypeDefinition,
+    prelude::*, BaseInputTypeReference, EnumTypeDefinition, InputTypeReference,
+    ScalarTypeDefinition, SchemaDefinition,
 };
 use bluejay_core::{AsIter, Directive};
 use proc_macro2::{Ident, Span};
 use std::collections::HashSet;
 use syn::parse_quote;
 
-pub(crate) fn generate_input_object_type_definition(
-    iotd: &impl InputObjectTypeDefinition,
-    config: &Config,
+pub(crate) fn generate_input_object_type_definition<S: SchemaDefinition>(
+    iotd: &S::InputObjectTypeDefinition,
+    config: &Config<S>,
 ) -> Vec<syn::Item> {
     if matches!(iotd.directives(), Some(directives) if directives.iter().any(|directive| directive.name() == "oneOf"))
     {
@@ -74,9 +74,9 @@ pub(crate) fn generate_input_object_type_definition(
     }]
 }
 
-fn generate_one_of_input_object_type_definition(
-    iotd: &impl InputObjectTypeDefinition,
-    config: &Config,
+fn generate_one_of_input_object_type_definition<S: SchemaDefinition>(
+    iotd: &S::InputObjectTypeDefinition,
+    config: &Config<S>,
 ) -> Vec<syn::Item> {
     let description = iotd.description().map(doc_string);
 
@@ -99,7 +99,7 @@ fn generate_one_of_input_object_type_definition(
         .iter()
         .map(|ivd| {
             // kind of a hack
-            let required_type = match ivd.r#type().as_ref() {
+            let required_type = match ivd.r#type().as_ref(config.schema_definition()) {
                 InputTypeReference::Base(base, _) => InputTypeReference::Base(base, true),
                 InputTypeReference::List(inner, _) => InputTypeReference::List(inner, true),
             };
@@ -139,24 +139,24 @@ fn generate_one_of_input_object_type_definition(
     }]
 }
 
-fn type_for_input_value_definition(
+fn type_for_input_value_definition<S: SchemaDefinition>(
     parent_type_name: &str,
-    ivd: &impl InputValueDefinition,
-    config: &Config,
+    ivd: &S::InputValueDefinition,
+    config: &Config<S>,
 ) -> syn::TypePath {
     type_for_input_type(
-        ivd.r#type().as_ref(),
+        ivd.r#type().as_ref(config.schema_definition()),
         Some(parent_type_name),
         Some(ivd.default_value().is_some()),
         config,
     )
 }
 
-fn type_for_input_type<T: InputType>(
-    ty: InputTypeReference<T>,
+fn type_for_input_type<S: SchemaDefinition>(
+    ty: InputTypeReference<S::InputType>,
     parent_type_name: Option<&str>,
     has_default_value: Option<bool>,
-    config: &Config,
+    config: &Config<S>,
 ) -> syn::TypePath {
     let required = has_default_value.map_or_else(
         || ty.is_required(),
@@ -164,9 +164,9 @@ fn type_for_input_type<T: InputType>(
     );
     match ty {
         InputTypeReference::Base(base, _) => {
-            let mut inner = type_for_base_input_type::<T>(base, config);
+            let mut inner = type_for_base_input_type(base, config);
             if let Some(parent_type_name) = parent_type_name {
-                if contains_non_list_reference(parent_type_name, ty, &mut HashSet::new()) {
+                if contains_non_list_reference(parent_type_name, ty, config, &mut HashSet::new()) {
                     inner = parse_quote! { ::std::boxed::Box<#inner> };
                 }
             }
@@ -177,8 +177,12 @@ fn type_for_input_type<T: InputType>(
             }
         }
         InputTypeReference::List(inner, _) => {
-            let inner_ty =
-                crate::types::vec(type_for_input_type(inner.as_ref(), None, None, config));
+            let inner_ty = crate::types::vec(type_for_input_type(
+                inner.as_ref(config.schema_definition()),
+                None,
+                None,
+                config,
+            ));
             if required {
                 inner_ty
             } else {
@@ -188,9 +192,9 @@ fn type_for_input_type<T: InputType>(
     }
 }
 
-fn type_for_base_input_type<T: InputType>(
-    base: BaseInputTypeReference<T>,
-    config: &Config,
+fn type_for_base_input_type<S: SchemaDefinition>(
+    base: BaseInputTypeReference<S::InputType>,
+    config: &Config<S>,
 ) -> syn::TypePath {
     match base {
         BaseInputTypeReference::BuiltinScalar(bstd) => builtin_scalar_type(bstd, config),
@@ -213,9 +217,9 @@ fn type_for_base_input_type<T: InputType>(
     }
 }
 
-fn input_object_contains_reference_types<'a>(
-    iotd: &'a impl InputObjectTypeDefinition,
-    config: &Config,
+fn input_object_contains_reference_types<'a, S: SchemaDefinition>(
+    iotd: &'a S::InputObjectTypeDefinition,
+    config: &Config<'a, S>,
     visited: &mut HashSet<&'a str>,
 ) -> bool {
     iotd.input_field_definitions()
@@ -223,12 +227,14 @@ fn input_object_contains_reference_types<'a>(
         .any(|ivd| contains_reference_types(ivd.r#type(), config, visited))
 }
 
-fn contains_reference_types<'a>(
-    ty: &'a impl InputType,
-    config: &Config,
+fn contains_reference_types<'a, S: SchemaDefinition>(
+    ty: &'a S::InputType,
+    config: &Config<'a, S>,
     visited: &mut HashSet<&'a str>,
 ) -> bool {
-    let base = ty.as_ref().base();
+    let base = ty
+        .as_ref(config.schema_definition())
+        .base(config.schema_definition());
     if !config.borrow() || !visited.insert(base.name()) {
         return false;
     }
@@ -243,18 +249,24 @@ fn contains_reference_types<'a>(
     }
 }
 
-fn contains_non_list_reference<'a, T: InputType>(
+fn contains_non_list_reference<'a, S: SchemaDefinition>(
     target: &str,
-    ty: InputTypeReference<'a, T>,
+    ty: InputTypeReference<'a, S::InputType>,
+    config: &Config<'a, S>,
     visited: &mut HashSet<&'a str>,
 ) -> bool {
     match ty {
         InputTypeReference::Base(base, _) if base.name() == target => true,
-        ty => match ty.base() {
+        ty => match ty.base(config.schema_definition()) {
             BaseInputTypeReference::InputObject(iotd) => {
                 if visited.insert(iotd.name()) {
                     iotd.input_field_definitions().iter().any(|ivd| {
-                        contains_non_list_reference(target, ivd.r#type().as_ref(), visited)
+                        contains_non_list_reference(
+                            target,
+                            ivd.r#type().as_ref(config.schema_definition()),
+                            config,
+                            visited,
+                        )
                     })
                 } else {
                     false
@@ -265,7 +277,10 @@ fn contains_non_list_reference<'a, T: InputType>(
     }
 }
 
-fn lifetime(iotd: &impl InputObjectTypeDefinition, config: &Config) -> Option<syn::Generics> {
+fn lifetime<S: SchemaDefinition>(
+    iotd: &S::InputObjectTypeDefinition,
+    config: &Config<S>,
+) -> Option<syn::Generics> {
     (input_object_contains_reference_types(iotd, config, &mut HashSet::new()))
         .then(|| parse_quote! { <'a> })
 }

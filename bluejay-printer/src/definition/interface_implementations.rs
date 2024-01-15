@@ -1,6 +1,4 @@
-use bluejay_core::definition::{
-    InterfaceImplementation, InterfaceImplementations, InterfaceTypeDefinition,
-};
+use bluejay_core::definition::{InterfaceImplementation, InterfaceImplementations};
 use std::fmt::{Display, Formatter, Result};
 
 pub(crate) struct InterfaceImplementationsPrinter<'a, I: InterfaceImplementations>(&'a I);
@@ -23,7 +21,7 @@ impl<'a, I: InterfaceImplementations> Display for InterfaceImplementationsPrinte
                     if idx != 0 {
                         write!(f, " & ")?;
                     }
-                    write!(f, "{}", ii.interface().name())
+                    write!(f, "{}", ii.name())
                 })?;
             write!(f, " ")
         } else {

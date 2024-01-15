@@ -11,6 +11,6 @@ pub trait InputValueDefinition: HasDirectives {
     fn default_value(&self) -> Option<&Self::Value>;
 
     fn is_required(&self) -> bool {
-        self.default_value().is_none() && self.r#type().as_ref().is_required()
+        self.default_value().is_none() && self.r#type().is_required()
     }
 }

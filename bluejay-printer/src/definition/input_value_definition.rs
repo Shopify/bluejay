@@ -41,7 +41,7 @@ impl<'a, T: InputValueDefinition> Display for InputValueDefinitionPrinter<'a, T>
             f,
             "{}: {}",
             input_value_definition.name(),
-            input_value_definition.r#type().as_ref().display_name(),
+            input_value_definition.r#type().display_name(),
         )?;
 
         if let Some(default_value) = input_value_definition.default_value() {

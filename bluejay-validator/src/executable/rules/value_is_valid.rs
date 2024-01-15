@@ -5,6 +5,7 @@ use bluejay_core::executable::{ExecutableDocument, VariableDefinition};
 use bluejay_core::Argument;
 
 pub struct ValueIsValid<'a, E: ExecutableDocument, S: SchemaDefinition> {
+    schema_definition: &'a S,
     errors: Vec<Error<'a, E, S>>,
     cache: &'a Cache<'a, E, S>,
 }
@@ -21,9 +22,11 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Visitor<'a, E, S>
                 .cache
                 .variable_definition_input_type(variable_definition.r#type())
             {
-                if let Err(coercion_errors) =
-                    input_value_definition.coerce_value(default_value, Default::default())
-                {
+                if let Err(coercion_errors) = self.schema_definition.coerce_value(
+                    input_value_definition,
+                    default_value,
+                    Default::default(),
+                ) {
                     self.errors
                         .extend(coercion_errors.into_iter().map(Error::InvalidConstValue));
                 }
@@ -36,10 +39,11 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Visitor<'a, E, S>
         argument: &'a <E as ExecutableDocument>::Argument<true>,
         input_value_definition: &'a <S as SchemaDefinition>::InputValueDefinition,
     ) {
-        if let Err(coercion_errors) = input_value_definition
-            .r#type()
-            .coerce_value(argument.value(), Default::default())
-        {
+        if let Err(coercion_errors) = self.schema_definition.coerce_value(
+            input_value_definition.r#type(),
+            argument.value(),
+            Default::default(),
+        ) {
             self.errors
                 .extend(coercion_errors.into_iter().map(Error::InvalidConstValue));
         }
@@ -51,10 +55,11 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Visitor<'a, E, S>
         input_value_definition: &'a <S as SchemaDefinition>::InputValueDefinition,
         _: &Path<'a, E>,
     ) {
-        if let Err(coercion_errors) = input_value_definition
-            .r#type()
-            .coerce_value(argument.value(), Default::default())
-        {
+        if let Err(coercion_errors) = self.schema_definition.coerce_value(
+            input_value_definition.r#type(),
+            argument.value(),
+            Default::default(),
+        ) {
             self.errors
                 .extend(coercion_errors.into_iter().map(Error::InvalidVariableValue));
         }
@@ -77,8 +82,9 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Rule<'a, E, S>
 {
     type Error = Error<'a, E, S>;
 
-    fn new(_: &'a E, _: &'a S, cache: &'a Cache<'a, E, S>) -> Self {
+    fn new(_: &'a E, schema_definition: &'a S, cache: &'a Cache<'a, E, S>) -> Self {
         Self {
+            schema_definition,
             errors: Vec::new(),
             cache,
         }

@@ -1,6 +1,6 @@
 use crate::{directive::DirectivesPrinter, string_value::BlockStringValuePrinter};
 use bluejay_core::{
-    definition::{ObjectTypeDefinition, UnionMemberType, UnionTypeDefinition},
+    definition::{UnionMemberType, UnionTypeDefinition},
     AsIter,
 };
 use std::fmt::{Display, Formatter, Result};
@@ -38,7 +38,7 @@ impl<'a, U: UnionTypeDefinition> Display for UnionTypeDefinitionPrinter<'a, U> {
                 if idx != 0 {
                     write!(f, " | ")?;
                 }
-                write!(f, "{}", union_member.member_type().name())
+                write!(f, "{}", union_member.name())
             })?;
 
         writeln!(f)

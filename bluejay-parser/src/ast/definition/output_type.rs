@@ -7,14 +7,13 @@ use crate::lexical_token::{Name, PunctuatorType};
 use crate::{HasSpan, Span};
 use bluejay_core::definition::{
     BaseOutputTypeReference, OutputType as CoreOutputType, OutputTypeReference,
+    SchemaDefinition as CoreSchemaDefinition, ShallowOutputTypeReference,
 };
-use once_cell::sync::OnceCell;
 use std::marker::PhantomData;
 
 #[derive(Debug)]
 pub struct BaseOutputType<'a, C: Context + 'a> {
     name: Name<'a>,
-    r#type: OnceCell<BaseOutputTypeReference<'a, OutputType<'a, C>>>,
     context: PhantomData<C>,
 }
 
@@ -22,16 +21,8 @@ impl<'a, C: Context + 'a> BaseOutputType<'a, C> {
     fn new(name: Name<'a>) -> Self {
         Self {
             name,
-            r#type: OnceCell::new(),
             context: Default::default(),
         }
-    }
-
-    pub(crate) fn set_type(
-        &self,
-        type_reference: BaseOutputTypeReference<'a, OutputType<'a, C>>,
-    ) -> Result<(), BaseOutputTypeReference<'a, OutputType<'a, C>>> {
-        self.r#type.set(type_reference)
     }
 
     pub(crate) fn name(&self) -> &Name<'a> {
@@ -77,12 +68,40 @@ impl<'a, C: Context + 'a> CoreOutputType for OutputType<'a, C> {
     type ObjectTypeDefinition = ObjectTypeDefinition<'a, C>;
     type UnionTypeDefinition = UnionTypeDefinition<'a, C>;
 
-    fn as_ref(&self) -> OutputTypeReference<'_, Self> {
+    fn as_ref<
+        'b,
+        S: CoreSchemaDefinition<
+            CustomScalarTypeDefinition = Self::CustomScalarTypeDefinition,
+            EnumTypeDefinition = Self::EnumTypeDefinition,
+            ObjectTypeDefinition = Self::ObjectTypeDefinition,
+            InterfaceTypeDefinition = Self::InterfaceTypeDefinition,
+            UnionTypeDefinition = Self::UnionTypeDefinition,
+        >,
+    >(
+        &'b self,
+        schema_definition: &'b S,
+    ) -> OutputTypeReference<'_, Self> {
+        match self {
+            Self::Base(base, required, _) => OutputTypeReference::Base(
+                schema_definition
+                    .get_type_definition(base.name().as_str())
+                    .unwrap()
+                    .try_into()
+                    .unwrap(),
+                *required,
+            ),
+            Self::List(inner, required, _) => OutputTypeReference::List(inner.as_ref(), *required),
+        }
+    }
+
+    fn as_shallow_ref(&self) -> ShallowOutputTypeReference<'_, Self> {
         match self {
             Self::Base(base, required, _) => {
-                OutputTypeReference::Base(*base.r#type.get().unwrap(), *required)
+                ShallowOutputTypeReference::Base(base.name().as_str(), *required)
             }
-            Self::List(inner, required, _) => OutputTypeReference::List(inner.as_ref(), *required),
+            Self::List(inner, required, _) => {
+                ShallowOutputTypeReference::List(inner.as_ref(), *required)
+            }
         }
     }
 }

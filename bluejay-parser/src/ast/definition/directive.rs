@@ -3,21 +3,13 @@ use crate::ast::{
     definition::{Context, DirectiveDefinition},
 };
 use crate::{HasSpan, Span};
-use once_cell::sync::OnceCell;
+use bluejay_core::definition::SchemaDefinition;
+use std::marker::PhantomData;
 
 #[derive(Debug)]
-pub struct Directive<'a, C: Context> {
+pub struct Directive<'a, C: Context + 'a> {
     inner: ast::Directive<'a, true>,
-    definition: OnceCell<&'a DirectiveDefinition<'a, C>>,
-}
-
-impl<'a, C: Context> Directive<'a, C> {
-    pub(crate) fn set_definition(
-        &self,
-        definition: &'a DirectiveDefinition<'a, C>,
-    ) -> Result<(), &'a DirectiveDefinition<'a, C>> {
-        self.definition.set(definition)
-    }
+    context: PhantomData<C>,
 }
 
 impl<'a, C: Context> bluejay_core::Directive<true> for Directive<'a, C> {
@@ -35,8 +27,13 @@ impl<'a, C: Context> bluejay_core::Directive<true> for Directive<'a, C> {
 impl<'a, C: Context> bluejay_core::definition::Directive for Directive<'a, C> {
     type DirectiveDefinition = DirectiveDefinition<'a, C>;
 
-    fn definition(&self) -> &Self::DirectiveDefinition {
-        self.definition.get().unwrap()
+    fn definition<'b, S: SchemaDefinition<DirectiveDefinition = Self::DirectiveDefinition>>(
+        &'b self,
+        schema_definition: &'b S,
+    ) -> &'b Self::DirectiveDefinition {
+        schema_definition
+            .get_directive_definition(self.inner.name().as_str())
+            .unwrap()
     }
 }
 
@@ -44,7 +41,7 @@ impl<'a, C: Context> From<ast::Directive<'a, true>> for Directive<'a, C> {
     fn from(value: ast::Directive<'a, true>) -> Self {
         Self {
             inner: value,
-            definition: OnceCell::new(),
+            context: PhantomData,
         }
     }
 }

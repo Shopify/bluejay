@@ -196,7 +196,7 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
             } => Self::new(
                 format!(
                     "Selection on field of leaf type `{}` was not empty",
-                    r#type.as_ref().display_name()
+                    r#type.display_name()
                 ),
                 Some(Annotation::new(
                     "Selection set on field of leaf type must be empty",
@@ -207,7 +207,7 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
             Error::NonLeafFieldSelectionEmpty { field, r#type } => Self::new(
                 format!(
                     "No selection on field of non-leaf type `{}`",
-                    r#type.as_ref().display_name()
+                    r#type.display_name()
                 ),
                 Some(Annotation::new(
                     "Fields of non-leaf types must have a selection",
@@ -381,14 +381,14 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                     Annotation::new(
                         format!(
                             "First field has type {}",
-                            field_definition_a.r#type().as_ref().display_name(),
+                            field_definition_a.r#type().display_name(),
                         ),
                         field_a.name().span().clone(),
                     ),
                     Annotation::new(
                         format!(
                             "Second field has type {}",
-                            field_definition_b.r#type().as_ref().display_name(),
+                            field_definition_b.r#type().display_name(),
                         ),
                         field_b.name().span().clone(),
                     ),
@@ -507,13 +507,13 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                     "Variable ${} of type {} cannot be used here, where {} is expected",
                     variable.name(),
                     variable_type.as_ref().display_name(),
-                    location_type.as_ref().display_name(),
+                    location_type.display_name(),
                 ),
                 Some(Annotation::new(
                     format!(
                         "Cannot use variable of type {} where {} is expected",
                         variable_type.as_ref().display_name(),
-                        location_type.as_ref().display_name(),
+                        location_type.display_name(),
                     ),
                     variable.span().clone(),
                 )),

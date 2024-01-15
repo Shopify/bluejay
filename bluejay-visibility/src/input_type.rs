@@ -12,11 +12,11 @@ pub enum InputType<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>
     List(Box<Self>, bool),
 }
 
-impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> InputType<'a, S, W> {
+impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S> + 'a> InputType<'a, S, W> {
     pub fn new(inner: &'a S::InputType, cache: &'a Cache<'a, S, W>) -> Option<Self> {
-        match inner.as_ref() {
+        match inner.as_ref(cache.inner_schema_definition()) {
             InputTypeReference::Base(b, required) => {
-                Self::base(b, cache).map(|base| Self::Base(base, required))
+                Self::new_base(b, cache).map(|base| Self::Base(base, required))
             }
             InputTypeReference::List(inner, required) => {
                 Self::new(inner, cache).map(|inner| Self::List(Box::new(inner), required))
@@ -24,7 +24,7 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> InputType<'a
         }
     }
 
-    fn base(
+    fn new_base(
         inner: BaseInputTypeReference<'a, S::InputType>,
         cache: &'a Cache<'a, S, W>,
     ) -> Option<BaseInputTypeReference<'a, Self>> {
@@ -53,6 +53,13 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> InputType<'a
                 }
             })
     }
+
+    pub(crate) fn base(&self) -> BaseInputTypeReference<'a, Self> {
+        match self {
+            Self::Base(base, _) => *base,
+            Self::List(inner, _) => inner.base(),
+        }
+    }
 }
 
 impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> definition::InputType
@@ -62,10 +69,32 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> definition::
     type EnumTypeDefinition = EnumTypeDefinition<'a, S, W>;
     type InputObjectTypeDefinition = InputObjectTypeDefinition<'a, S, W>;
 
-    fn as_ref(&self) -> InputTypeReference<'_, Self> {
+    fn as_ref<
+        'b,
+        S2: SchemaDefinition<
+            CustomScalarTypeDefinition = Self::CustomScalarTypeDefinition,
+            InputObjectTypeDefinition = Self::InputObjectTypeDefinition,
+            EnumTypeDefinition = Self::EnumTypeDefinition,
+        >,
+    >(
+        &'b self,
+        _: &'b S2,
+    ) -> InputTypeReference<'b, Self> {
         match self {
             Self::Base(b, required) => InputTypeReference::Base(*b, *required),
             Self::List(inner, required) => InputTypeReference::List(inner, *required),
+        }
+    }
+
+    fn as_shallow_ref(&self) -> definition::ShallowInputTypeReference<'_, Self> {
+        match self {
+            Self::Base(base, required) => {
+                definition::ShallowInputTypeReference::Base(base.name(), *required)
+            }
+            Self::List(inner, required) => definition::ShallowInputTypeReference::List(
+                std::ops::Deref::deref(inner),
+                *required,
+            ),
         }
     }
 }

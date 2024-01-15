@@ -7,27 +7,20 @@ use crate::lexical_token::{Name, PunctuatorType};
 use crate::{HasSpan, Span};
 use bluejay_core::definition::{
     BaseInputTypeReference, InputType as CoreInputType, InputTypeReference,
+    SchemaDefinition as CoreSchemaDefinition, ShallowInputTypeReference,
 };
-use once_cell::sync::OnceCell;
 use std::marker::PhantomData;
+use std::ops::Deref;
 
 #[derive(Debug)]
 pub struct BaseInputType<'a, C: Context + 'a> {
     name: Name<'a>,
-    r#type: OnceCell<BaseInputTypeReference<'a, InputType<'a, C>>>,
     context: PhantomData<C>,
 }
 
 impl<'a, C: Context + 'a> BaseInputType<'a, C> {
     pub(crate) fn name(&self) -> &Name<'a> {
         &self.name
-    }
-
-    pub(crate) fn set_type(
-        &self,
-        type_reference: BaseInputTypeReference<'a, InputType<'a, C>>,
-    ) -> Result<(), BaseInputTypeReference<'a, InputType<'a, C>>> {
-        self.r#type.set(type_reference)
     }
 
     pub(crate) fn core_type_from_type_definition(
@@ -65,12 +58,38 @@ impl<'a, C: Context + 'a> CoreInputType for InputType<'a, C> {
     type EnumTypeDefinition = EnumTypeDefinition<'a, C>;
     type InputObjectTypeDefinition = InputObjectTypeDefinition<'a, C>;
 
-    fn as_ref(&self) -> InputTypeReference<'_, Self> {
+    fn as_ref<
+        'b,
+        S: CoreSchemaDefinition<
+            CustomScalarTypeDefinition = Self::CustomScalarTypeDefinition,
+            InputObjectTypeDefinition = Self::InputObjectTypeDefinition,
+            EnumTypeDefinition = Self::EnumTypeDefinition,
+        >,
+    >(
+        &'b self,
+        schema_definition: &'b S,
+    ) -> InputTypeReference<'b, Self> {
+        match self {
+            Self::Base(base, required, _) => InputTypeReference::Base(
+                schema_definition
+                    .get_type_definition(base.name().as_str())
+                    .unwrap()
+                    .try_into()
+                    .unwrap(),
+                *required,
+            ),
+            Self::List(inner, required, _) => {
+                InputTypeReference::List(Deref::deref(inner), *required)
+            }
+        }
+    }
+
+    fn as_shallow_ref(&self) -> ShallowInputTypeReference<'_, Self> {
         match self {
             Self::Base(base, required, _) => {
-                InputTypeReference::Base(*base.r#type.get().unwrap(), *required)
+                ShallowInputTypeReference::Base(base.name().as_str(), *required)
             }
-            Self::List(inner, required, _) => InputTypeReference::List(inner.as_ref(), *required),
+            Self::List(inner, required, _) => ShallowInputTypeReference::List(inner, *required),
         }
     }
 }
@@ -92,7 +111,6 @@ impl<'a, C: Context + 'a> FromTokens<'a> for InputType<'a, C> {
             };
             let base = BaseInputType {
                 name: base_name,
-                r#type: OnceCell::new(),
                 context: Default::default(),
             };
             Ok(InputType::Base(base, bang_span.is_some(), span))

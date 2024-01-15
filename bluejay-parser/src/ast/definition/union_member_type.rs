@@ -1,20 +1,32 @@
+use std::marker::PhantomData;
+
 use crate::ast::definition::{Context, ObjectTypeDefinition};
 use crate::ast::{FromTokens, ParseError, Tokens};
 use crate::lexical_token::Name;
-use bluejay_core::definition::UnionMemberType as CoreUnionMemberType;
-use once_cell::sync::OnceCell;
+use bluejay_core::definition::{SchemaDefinition, UnionMemberType as CoreUnionMemberType};
 
 #[derive(Debug)]
-pub struct UnionMemberType<'a, C: Context> {
+pub struct UnionMemberType<'a, C: Context + 'a> {
     name: Name<'a>,
-    r#type: OnceCell<&'a ObjectTypeDefinition<'a, C>>,
+    context: PhantomData<C>,
 }
 
-impl<'a, C: Context> CoreUnionMemberType for UnionMemberType<'a, C> {
+impl<'a, C: Context + 'a> CoreUnionMemberType for UnionMemberType<'a, C> {
     type ObjectTypeDefinition = ObjectTypeDefinition<'a, C>;
 
-    fn member_type(&self) -> &Self::ObjectTypeDefinition {
-        self.r#type.get().unwrap()
+    fn member_type<'b, S: SchemaDefinition<ObjectTypeDefinition = Self::ObjectTypeDefinition>>(
+        &'b self,
+        schema_definition: &'b S,
+    ) -> &'b Self::ObjectTypeDefinition {
+        schema_definition
+            .get_type_definition(self.name.as_str())
+            .unwrap()
+            .as_object()
+            .unwrap()
+    }
+
+    fn name(&self) -> &str {
+        self.name.as_str()
     }
 }
 
@@ -22,20 +34,13 @@ impl<'a, C: Context> UnionMemberType<'a, C> {
     pub(crate) fn name(&self) -> &Name<'a> {
         &self.name
     }
-
-    pub(crate) fn set_type(
-        &self,
-        type_definition: &'a ObjectTypeDefinition<'a, C>,
-    ) -> Result<(), &'a ObjectTypeDefinition<'a, C>> {
-        self.r#type.set(type_definition)
-    }
 }
 
 impl<'a, C: Context> FromTokens<'a> for UnionMemberType<'a, C> {
     fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
         tokens.expect_name().map(|name| Self {
             name,
-            r#type: OnceCell::new(),
+            context: PhantomData,
         })
     }
 }

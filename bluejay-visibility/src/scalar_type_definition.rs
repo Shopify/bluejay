@@ -6,7 +6,7 @@ pub struct ScalarTypeDefinition<'a, S: SchemaDefinition, W: Warden<SchemaDefinit
     directives: Option<Directives<'a, S, W>>,
 }
 
-impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> ScalarTypeDefinition<'a, S, W> {
+impl<'a, S: SchemaDefinition, W: Warden<SchemaDefinition = S>> ScalarTypeDefinition<'a, S, W> {
     pub(crate) fn new(
         inner: &'a S::CustomScalarTypeDefinition,
         cache: &'a Cache<'a, S, W>,
@@ -22,7 +22,7 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> ScalarTypeDe
     }
 }
 
-impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> definition::ScalarTypeDefinition
+impl<'a, S: SchemaDefinition, W: Warden<SchemaDefinition = S>> definition::ScalarTypeDefinition
     for ScalarTypeDefinition<'a, S, W>
 {
     fn description(&self) -> Option<&str> {
@@ -41,7 +41,7 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> definition::
     }
 }
 
-impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> HasDirectives
+impl<'a, S: SchemaDefinition, W: Warden<SchemaDefinition = S>> HasDirectives
     for ScalarTypeDefinition<'a, S, W>
 {
     type Directives = Directives<'a, S, W>;

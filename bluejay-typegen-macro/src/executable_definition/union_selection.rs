@@ -5,24 +5,24 @@ use crate::{
     names::{enum_variant_ident, type_ident},
 };
 use bluejay_core::definition::{
-    ObjectTypeDefinition, UnionMemberType, UnionMemberTypes, UnionTypeDefinition,
+    prelude::*, SchemaDefinition, UnionMemberType, UnionMemberTypes, UnionTypeDefinition,
 };
 use bluejay_core::executable::{InlineFragment, Selection, SelectionReference, SelectionSet};
 use bluejay_core::AsIter;
 use proc_macro2::Span;
 use syn::parse_quote;
 
-pub(crate) fn generate_union_type_definition(
-    union_type_definition: &impl UnionTypeDefinition,
+pub(crate) fn generate_union_type_definition<S: SchemaDefinition>(
+    union_type_definition: &S::UnionTypeDefinition,
     selection_set: &impl SelectionSet,
-    context: Context,
+    context: Context<S>,
 ) -> Vec<syn::Item> {
     let description = union_type_definition.description().map(doc_string);
 
     let ident = type_ident(context.name());
 
     let inline_fragments_and_definitions =
-        inline_fragments_and_definitions(selection_set, union_type_definition);
+        inline_fragments_and_definitions(union_type_definition, selection_set, &context);
 
     // when fragment spread is used
     if inline_fragments_and_definitions.is_empty() {
@@ -105,14 +105,13 @@ pub(crate) fn generate_union_type_definition(
     items
 }
 
-type ObjectTypeDefinitionForUnionTypeDefinition<U> = <<<U as UnionTypeDefinition>::UnionMemberTypes as UnionMemberTypes>::UnionMemberType as UnionMemberType>::ObjectTypeDefinition;
-
-pub(crate) fn inline_fragments_and_definitions<'a, S: SelectionSet, U: UnionTypeDefinition>(
-    selection_set: &'a S,
-    union_type_definition: &'a U,
+pub(crate) fn inline_fragments_and_definitions<'a, S: SchemaDefinition, SS: SelectionSet>(
+    union_type_definition: &'a S::UnionTypeDefinition,
+    selection_set: &'a SS,
+    context: &Context<'a, S>,
 ) -> Vec<(
-    &'a <S::Selection as Selection>::InlineFragment,
-    &'a ObjectTypeDefinitionForUnionTypeDefinition<U>,
+    &'a <SS::Selection as Selection>::InlineFragment,
+    &'a S::ObjectTypeDefinition,
 )> {
     selection_set
         .iter()
@@ -123,7 +122,7 @@ pub(crate) fn inline_fragments_and_definitions<'a, S: SelectionSet, U: UnionType
                     .union_member_types()
                     .get(i.type_condition().unwrap())
                     .unwrap()
-                    .member_type(),
+                    .member_type(context.schema_definition()),
             )),
             SelectionReference::Field(_) | SelectionReference::FragmentSpread(_) => None,
         })

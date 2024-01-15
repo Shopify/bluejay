@@ -7,9 +7,8 @@ use crate::{
 };
 use bluejay_core::{
     definition::{
-        BaseOutputTypeReference, EnumTypeDefinition, FieldDefinition, FieldsDefinition,
-        InterfaceTypeDefinition, ObjectTypeDefinition, OutputType, OutputTypeReference,
-        ScalarTypeDefinition, SchemaDefinition, TypeDefinitionReference,
+        prelude::*, BaseOutputTypeReference, OutputTypeReference, SchemaDefinition,
+        TypeDefinitionReference,
     },
     executable::{
         Field, FragmentDefinition, FragmentSpread, InlineFragment, OperationDefinition, Selection,
@@ -43,18 +42,18 @@ impl Parse for Input {
 }
 
 #[derive(Clone)]
-pub(crate) struct Context<'a, 'b> {
+pub(crate) struct Context<'a, S: SchemaDefinition> {
     name: &'a str,
     enum_variant: Option<&'a str>,
-    config: &'a Config<'b>,
+    config: &'a Config<'a, S>,
     executable_document: &'a ExecutableDocument<'a>,
     depth: usize,
 }
 
-impl<'a, 'b> Context<'a, 'b> {
+impl<'a, S: SchemaDefinition> Context<'a, S> {
     pub(crate) fn new(
         name: &'a str,
-        config: &'a Config<'b>,
+        config: &'a Config<'a, S>,
         executable_document: &'a ExecutableDocument<'a>,
     ) -> Self {
         Self {
@@ -66,8 +65,12 @@ impl<'a, 'b> Context<'a, 'b> {
         }
     }
 
-    pub(crate) fn config(&self) -> &'a Config<'b> {
+    pub(crate) fn config(&self) -> &'a Config<'a, S> {
         self.config
+    }
+
+    pub(crate) fn schema_definition(&self) -> &'a S {
+        self.config.schema_definition()
     }
 
     pub(crate) fn name(&self) -> &'a str {
@@ -124,9 +127,9 @@ impl<'a, 'b> Context<'a, 'b> {
         std::iter::repeat(Default::default()).take(self.depth)
     }
 
-    pub(crate) fn type_for_output_type<T: OutputType>(
+    pub(crate) fn type_for_output_type(
         &self,
-        ty: OutputTypeReference<T>,
+        ty: OutputTypeReference<S::OutputType>,
         field: &impl Field,
     ) -> syn::TypePath {
         match ty {
@@ -139,7 +142,9 @@ impl<'a, 'b> Context<'a, 'b> {
                 }
             }
             OutputTypeReference::List(inner, required) => {
-                let inner_ty = crate::types::vec(self.type_for_output_type(inner.as_ref(), field));
+                let inner_ty = crate::types::vec(
+                    self.type_for_output_type(inner.as_ref(self.schema_definition()), field),
+                );
                 if required {
                     inner_ty
                 } else {
@@ -149,9 +154,9 @@ impl<'a, 'b> Context<'a, 'b> {
         }
     }
 
-    fn type_for_base_output_type<T: OutputType>(
+    fn type_for_base_output_type(
         &self,
-        ty: BaseOutputTypeReference<T>,
+        ty: BaseOutputTypeReference<S::OutputType>,
         field: &impl Field,
     ) -> syn::TypePath {
         match ty {
@@ -185,7 +190,7 @@ impl<'a, 'b> Context<'a, 'b> {
                     let prefix = self.prefix_for_contained_type();
                     let type_ident = type_ident(field.response_name());
                     let inline_fragments_and_definitions =
-                        inline_fragments_and_definitions(selection_set, utd);
+                        inline_fragments_and_definitions(utd, selection_set, self);
                     let lifetime: Option<syn::Generics> = self
                         .inline_fragments_contains_reference_types(
                             &inline_fragments_and_definitions,
@@ -211,7 +216,7 @@ impl<'a, 'b> Context<'a, 'b> {
     fn field_selection_type(
         &self,
         field: &impl Field,
-        fields_definition: &impl FieldsDefinition,
+        fields_definition: &S::FieldsDefinition,
     ) -> syn::TypePath {
         let selection_set = field.selection_set().unwrap();
 
@@ -248,7 +253,7 @@ impl<'a, 'b> Context<'a, 'b> {
 
     fn lifetime(
         &self,
-        fields_and_field_definitions: &[(&impl Field, &impl FieldDefinition)],
+        fields_and_field_definitions: &[(&impl Field, &S::FieldDefinition)],
     ) -> Option<syn::Generics> {
         (self.selection_set_contains_reference_types(
             fields_and_field_definitions,
@@ -259,7 +264,7 @@ impl<'a, 'b> Context<'a, 'b> {
 
     fn selection_set_contains_reference_types(
         &self,
-        fields_and_field_definitions: &[(&'a impl Field, &'a impl FieldDefinition)],
+        fields_and_field_definitions: &[(&'a impl Field, &'a S::FieldDefinition)],
         visited: &mut HashSet<&'a str>,
     ) -> bool {
         fields_and_field_definitions
@@ -271,7 +276,7 @@ impl<'a, 'b> Context<'a, 'b> {
         &self,
         inline_fragments_and_object_type_definitions: &[(
             &'a impl InlineFragment,
-            &'a impl ObjectTypeDefinition,
+            &'a S::ObjectTypeDefinition,
         )],
         visited: &mut HashSet<&'a str>,
     ) -> bool {
@@ -289,10 +294,13 @@ impl<'a, 'b> Context<'a, 'b> {
     fn contains_reference_types(
         &self,
         field: &'a impl Field,
-        field_definition: &'a impl FieldDefinition,
+        field_definition: &'a S::FieldDefinition,
         visited: &mut HashSet<&'a str>,
     ) -> bool {
-        let ty = field_definition.r#type().as_ref().base();
+        let ty = field_definition
+            .r#type()
+            .as_ref(self.schema_definition())
+            .base(self.schema_definition());
         if !self.config.borrow() || !visited.insert(ty.name()) {
             return false;
         }
@@ -315,7 +323,7 @@ impl<'a, 'b> Context<'a, 'b> {
             }
             BaseOutputTypeReference::Union(utd) => {
                 let inline_fragments_and_definitions =
-                    inline_fragments_and_definitions(field.selection_set().unwrap(), utd);
+                    inline_fragments_and_definitions(utd, field.selection_set().unwrap(), self);
 
                 self.inline_fragments_contains_reference_types(
                     &inline_fragments_and_definitions,
@@ -326,8 +334,8 @@ impl<'a, 'b> Context<'a, 'b> {
     }
 }
 
-pub(crate) fn generate_executable_definition(
-    config: &Config,
+pub(crate) fn generate_executable_definition<S: SchemaDefinition>(
+    config: &Config<S>,
     configuration: proc_macro2::TokenStream,
 ) -> syn::Result<Vec<syn::Item>> {
     let Input { query } = parse2(configuration)?;
@@ -383,9 +391,9 @@ pub(crate) fn generate_executable_definition(
         .collect())
 }
 
-fn generate_operation_definition(
+fn generate_operation_definition<S: SchemaDefinition>(
     operation_definition: &impl OperationDefinition,
-    context: Context,
+    context: Context<S>,
 ) -> Vec<syn::Item> {
     let schema_definition = context.config.schema_definition();
     let operation_definition = operation_definition.as_ref();
@@ -402,9 +410,9 @@ fn generate_operation_definition(
     )
 }
 
-fn generate_fragment_definition(
+fn generate_fragment_definition<S: SchemaDefinition>(
     fragment_definition: &impl FragmentDefinition,
-    context: Context,
+    context: Context<S>,
 ) -> Vec<syn::Item> {
     let selection_set = fragment_definition.selection_set();
     match context

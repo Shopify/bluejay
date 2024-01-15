@@ -1,6 +1,6 @@
 use crate::definition::{
     EnumTypeDefinition, InterfaceTypeDefinition, ObjectTypeDefinition, ScalarTypeDefinition,
-    UnionTypeDefinition,
+    SchemaDefinition, TypeDefinition, TypeDefinitionReference, UnionTypeDefinition,
 };
 use crate::BuiltinScalarDefinition;
 
@@ -63,22 +63,74 @@ impl<'a, O: OutputType> OutputTypeReference<'a, O> {
         }
     }
 
-    pub fn base(&self) -> BaseOutputTypeReference<'a, O> {
+    pub fn base<
+        S: SchemaDefinition<
+            CustomScalarTypeDefinition = O::CustomScalarTypeDefinition,
+            EnumTypeDefinition = O::EnumTypeDefinition,
+            ObjectTypeDefinition = O::ObjectTypeDefinition,
+            InterfaceTypeDefinition = O::InterfaceTypeDefinition,
+            UnionTypeDefinition = O::UnionTypeDefinition,
+        >,
+    >(
+        &self,
+        schema_definition: &'a S,
+    ) -> BaseOutputTypeReference<'a, O> {
         match self {
             Self::Base(b, _) => *b,
-            Self::List(l, _) => l.as_ref().base(),
+            Self::List(l, _) => l.as_ref(schema_definition).base(schema_definition),
+        }
+    }
+}
+
+#[derive(Clone)]
+pub enum ShallowOutputTypeReference<'a, O: OutputType> {
+    Base(&'a str, bool),
+    List(&'a O, bool),
+}
+
+impl<'a, O: OutputType> ShallowOutputTypeReference<'a, O> {
+    pub fn is_required(&self) -> bool {
+        match self {
+            Self::Base(_, r) => *r,
+            Self::List(_, r) => *r,
         }
     }
 
-    pub fn display_name(&self) -> String {
+    pub fn base_name(&self) -> &'a str {
         match self {
-            Self::Base(b, required) => {
-                format!("{}{}", b.name(), if *required { "!" } else { "" })
+            Self::Base(b, _) => b,
+            Self::List(inner, _) => inner.as_shallow_ref().base_name(),
+        }
+    }
+}
+
+impl<'a, O: OutputType> PartialEq for ShallowOutputTypeReference<'a, O> {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (
+                ShallowOutputTypeReference::Base(name1, required1),
+                ShallowOutputTypeReference::Base(name2, required2),
+            ) => required1 == required2 && name1 == name2,
+            (
+                ShallowOutputTypeReference::List(inner1, required1),
+                ShallowOutputTypeReference::List(inner2, required2),
+            ) => required1 == required2 && inner1.as_shallow_ref() == inner2.as_shallow_ref(),
+            _ => false,
+        }
+    }
+}
+
+impl<'a, O: OutputType> std::fmt::Display for ShallowOutputTypeReference<'a, O> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ShallowOutputTypeReference::Base(name, required) => {
+                write!(f, "{}{}", name, if *required { "!" } else { "" })
             }
-            Self::List(inner, required) => {
-                format!(
+            ShallowOutputTypeReference::List(inner, required) => {
+                write!(
+                    f,
                     "[{}]{}",
-                    inner.as_ref().display_name(),
+                    inner.as_shallow_ref(),
                     if *required { "!" } else { "" }
                 )
             }
@@ -93,5 +145,58 @@ pub trait OutputType: Sized {
     type InterfaceTypeDefinition: InterfaceTypeDefinition;
     type UnionTypeDefinition: UnionTypeDefinition;
 
-    fn as_ref(&self) -> OutputTypeReference<'_, Self>;
+    fn as_ref<
+        'a,
+        S: SchemaDefinition<
+            CustomScalarTypeDefinition = Self::CustomScalarTypeDefinition,
+            EnumTypeDefinition = Self::EnumTypeDefinition,
+            ObjectTypeDefinition = Self::ObjectTypeDefinition,
+            InterfaceTypeDefinition = Self::InterfaceTypeDefinition,
+            UnionTypeDefinition = Self::UnionTypeDefinition,
+        >,
+    >(
+        &'a self,
+        schema_definition: &'a S,
+    ) -> OutputTypeReference<'a, Self>;
+
+    fn as_shallow_ref(&self) -> ShallowOutputTypeReference<'_, Self>;
+
+    fn display_name(&self) -> String {
+        self.as_shallow_ref().to_string()
+    }
+
+    fn is_required(&self) -> bool {
+        self.as_shallow_ref().is_required()
+    }
+
+    fn base_name(&self) -> &str {
+        self.as_shallow_ref().base_name()
+    }
+}
+
+impl<
+        'a,
+        T: TypeDefinition,
+        O: OutputType<
+            CustomScalarTypeDefinition = T::CustomScalarTypeDefinition,
+            EnumTypeDefinition = T::EnumTypeDefinition,
+            ObjectTypeDefinition = T::ObjectTypeDefinition,
+            InterfaceTypeDefinition = T::InterfaceTypeDefinition,
+            UnionTypeDefinition = T::UnionTypeDefinition,
+        >,
+    > TryFrom<TypeDefinitionReference<'a, T>> for BaseOutputTypeReference<'a, O>
+{
+    type Error = ();
+
+    fn try_from(value: TypeDefinitionReference<'a, T>) -> Result<Self, Self::Error> {
+        match value {
+            TypeDefinitionReference::BuiltinScalar(bstd) => Ok(Self::BuiltinScalar(bstd)),
+            TypeDefinitionReference::CustomScalar(cstd) => Ok(Self::CustomScalar(cstd)),
+            TypeDefinitionReference::Enum(etd) => Ok(Self::Enum(etd)),
+            TypeDefinitionReference::Interface(itd) => Ok(Self::Interface(itd)),
+            TypeDefinitionReference::Object(otd) => Ok(Self::Object(otd)),
+            TypeDefinitionReference::Union(utd) => Ok(Self::Union(utd)),
+            TypeDefinitionReference::InputObject(_) => Err(()),
+        }
+    }
 }

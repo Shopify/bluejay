@@ -95,6 +95,10 @@ impl<'a, C: Context> DirectiveDefinition<'a, C> {
     pub(crate) fn name_token(&self) -> &Name<'a> {
         &self.name
     }
+
+    pub(crate) fn name(&self) -> &'a str {
+        self.name.as_str()
+    }
 }
 
 impl<'a, C: Context> FromTokens<'a> for DirectiveDefinition<'a, C> {

@@ -2,7 +2,7 @@ use crate::Path;
 use bluejay_core::definition::{
     BaseInputTypeReference, EnumTypeDefinition, EnumValueDefinition, InputFieldsDefinition,
     InputObjectTypeDefinition, InputType, InputTypeReference, InputValueDefinition,
-    ScalarTypeDefinition,
+    ScalarTypeDefinition, SchemaDefinition,
 };
 use bluejay_core::{
     AsIter, BuiltinScalarDefinition, Directive, ObjectValue, Value, ValueReference,
@@ -13,50 +13,90 @@ mod error;
 
 pub use error::Error;
 
-pub trait CoerceInput: InputType {
-    fn coerce_value<'a, const CONST: bool, V: Value<CONST>>(
+pub trait CoerceInput: SchemaDefinition {
+    fn coerce_value<
+        'a,
+        const CONST: bool,
+        I: InputType<
+            CustomScalarTypeDefinition = Self::CustomScalarTypeDefinition,
+            InputObjectTypeDefinition = Self::InputObjectTypeDefinition,
+            EnumTypeDefinition = Self::EnumTypeDefinition,
+        >,
+        V: Value<CONST>,
+    >(
         &'a self,
+        input_type: &'a I,
         value: &'a V,
         path: Path<'a>,
     ) -> Result<(), Vec<Error<'a, CONST, V>>>;
 
-    fn coerce_const_value<'a, V: Value<true>>(
+    fn coerce_const_value<
+        'a,
+        I: InputType<
+            CustomScalarTypeDefinition = Self::CustomScalarTypeDefinition,
+            InputObjectTypeDefinition = Self::InputObjectTypeDefinition,
+            EnumTypeDefinition = Self::EnumTypeDefinition,
+        >,
+        V: Value<true>,
+    >(
         &'a self,
+        input_type: &'a I,
         value: &'a V,
         path: Path<'a>,
     ) -> Result<(), Vec<Error<'a, true, V>>> {
-        self.coerce_value(value, path)
+        self.coerce_value(input_type, value, path)
     }
 }
 
-impl<T: InputType> CoerceInput for T {
-    fn coerce_value<'a, const CONST: bool, V: Value<CONST>>(
+impl<S: SchemaDefinition> CoerceInput for S {
+    fn coerce_value<
+        'a,
+        const CONST: bool,
+        I: InputType<
+            CustomScalarTypeDefinition = Self::CustomScalarTypeDefinition,
+            InputObjectTypeDefinition = Self::InputObjectTypeDefinition,
+            EnumTypeDefinition = Self::EnumTypeDefinition,
+        >,
+        V: Value<CONST>,
+    >(
         &'a self,
+        input_type: &'a I,
         value: &'a V,
         path: Path<'a>,
     ) -> Result<(), Vec<Error<'a, CONST, V>>> {
-        coerce_value_for_input_type(self, value, path, true)
+        coerce_value_for_input_type(self, input_type, value, path, true)
     }
 }
 
-fn coerce_value_for_input_type<'a, const CONST: bool, V: Value<CONST>, T: InputType>(
+fn coerce_value_for_input_type<
+    'a,
+    const CONST: bool,
+    S: SchemaDefinition,
+    T: InputType<
+        CustomScalarTypeDefinition = S::CustomScalarTypeDefinition,
+        InputObjectTypeDefinition = S::InputObjectTypeDefinition,
+        EnumTypeDefinition = S::EnumTypeDefinition,
+    >,
+    V: Value<CONST>,
+>(
+    schema_definition: &'a S,
     input_type: &'a T,
     value: &'a V,
     path: Path<'a>,
     allow_implicit_list: bool,
 ) -> Result<(), Vec<Error<'a, CONST, V>>> {
-    let core_type = input_type.as_ref();
+    let core_type = input_type.as_ref(schema_definition);
     let is_required = core_type.is_required();
     match value.as_ref() {
         ValueReference::Null if is_required => Err(vec![Error::NullValueForRequiredType {
             value,
-            input_type_name: input_type.as_ref().display_name(),
+            input_type_name: input_type.display_name(),
             path,
         }]),
         ValueReference::Null | ValueReference::Variable(_) => Ok(()),
         core_value => match core_type {
             InputTypeReference::Base(_, _) => {
-                coerce_value_for_base_input_type(input_type, value, path)
+                coerce_value_for_base_input_type(schema_definition, input_type, value, path)
             }
             InputTypeReference::List(inner, _) => {
                 if let ValueReference::List(values) = core_value {
@@ -64,9 +104,15 @@ fn coerce_value_for_input_type<'a, const CONST: bool, V: Value<CONST>, T: InputT
                         .iter()
                         .enumerate()
                         .flat_map(|(idx, value)| {
-                            coerce_value_for_input_type(inner, value, path.push(idx), false)
-                                .err()
-                                .unwrap_or_default()
+                            coerce_value_for_input_type(
+                                schema_definition,
+                                inner,
+                                value,
+                                path.push(idx),
+                                false,
+                            )
+                            .err()
+                            .unwrap_or_default()
                         })
                         .collect();
 
@@ -76,11 +122,11 @@ fn coerce_value_for_input_type<'a, const CONST: bool, V: Value<CONST>, T: InputT
                         Err(errors)
                     }
                 } else if allow_implicit_list {
-                    coerce_value_for_input_type(inner, value, path, true)
+                    coerce_value_for_input_type(schema_definition, inner, value, path, true)
                 } else {
                     Err(vec![Error::NoImplicitConversion {
                         value,
-                        input_type_name: input_type.as_ref().display_name(),
+                        input_type_name: input_type.display_name(),
                         path,
                     }])
                 }
@@ -89,12 +135,23 @@ fn coerce_value_for_input_type<'a, const CONST: bool, V: Value<CONST>, T: InputT
     }
 }
 
-fn coerce_value_for_base_input_type<'a, const CONST: bool, V: Value<CONST>, T: InputType>(
+fn coerce_value_for_base_input_type<
+    'a,
+    const CONST: bool,
+    S: SchemaDefinition,
+    T: InputType<
+        CustomScalarTypeDefinition = S::CustomScalarTypeDefinition,
+        InputObjectTypeDefinition = S::InputObjectTypeDefinition,
+        EnumTypeDefinition = S::EnumTypeDefinition,
+    >,
+    V: Value<CONST>,
+>(
+    schema_definition: &'a S,
     input_type: &'a T,
     value: &'a V,
     path: Path<'a>,
 ) -> Result<(), Vec<Error<'a, CONST, V>>> {
-    let base = input_type.as_ref().base();
+    let base = input_type.as_ref(schema_definition).base(schema_definition);
     match base {
         BaseInputTypeReference::BuiltinScalar(bstd) => {
             coerce_builtin_scalar_value(input_type, bstd, value, path)
@@ -102,7 +159,7 @@ fn coerce_value_for_base_input_type<'a, const CONST: bool, V: Value<CONST>, T: I
         BaseInputTypeReference::CustomScalar(cstd) => coerce_custom_scalar_value(cstd, value, path),
         BaseInputTypeReference::Enum(etd) => coerce_enum_value(input_type, etd, value, path),
         BaseInputTypeReference::InputObject(iotd) => {
-            coerce_input_object_value(input_type, iotd, value, path)
+            coerce_input_object_value(schema_definition, input_type, iotd, value, path)
         }
     }
 }
@@ -125,7 +182,7 @@ fn coerce_builtin_scalar_value<'a, const CONST: bool, V: Value<CONST>, T: InputT
         (BuiltinScalarDefinition::Int, ValueReference::Integer(_)) => Ok(()),
         _ => Err(vec![Error::NoImplicitConversion {
             value,
-            input_type_name: input_type.as_ref().display_name(),
+            input_type_name: input_type.display_name(),
             path,
         }]),
     }
@@ -161,7 +218,7 @@ fn coerce_enum_value<'a, const CONST: bool, V: Value<CONST>, T: InputType>(
         }
         _ => Err(vec![Error::NoImplicitConversion {
             value,
-            input_type_name: input_type.as_ref().display_name(),
+            input_type_name: input_type.display_name(),
             path,
         }]),
     }
@@ -189,7 +246,18 @@ fn coerce_enum_value_from_name<'a, const CONST: bool, V: Value<CONST>>(
     }
 }
 
-fn coerce_input_object_value<'a, const CONST: bool, V: Value<CONST>, T: InputType>(
+fn coerce_input_object_value<
+    'a,
+    const CONST: bool,
+    S: SchemaDefinition,
+    T: InputType<
+        CustomScalarTypeDefinition = S::CustomScalarTypeDefinition,
+        InputObjectTypeDefinition = S::InputObjectTypeDefinition,
+        EnumTypeDefinition = S::EnumTypeDefinition,
+    >,
+    V: Value<CONST>,
+>(
+    schema_definition: &'a S,
     input_type: &'a T,
     input_object_type_definition: &'a T::InputObjectTypeDefinition,
     value: &'a V,
@@ -250,13 +318,17 @@ fn coerce_input_object_value<'a, const CONST: bool, V: Value<CONST>, T: InputTyp
 
                 match (value_for_field, default_value) {
                     (None, None) => {
-                        if ivd.r#type().as_ref().is_required() {
+                        if ivd.r#type().is_required() {
                             missing_required_values.push(ivd.name());
                         }
                     }
                     (None, Some(_)) => {}
                     (Some(value), _) => {
-                        match ivd.r#type().coerce_value(value, path.push(ivd.name())) {
+                        match schema_definition.coerce_value(
+                            ivd.r#type(),
+                            value,
+                            path.push(ivd.name()),
+                        ) {
                             Ok(_) => {}
                             Err(errs) => errors.extend(errs),
                         }
@@ -291,7 +363,7 @@ fn coerce_input_object_value<'a, const CONST: bool, V: Value<CONST>, T: InputTyp
     } else {
         Err(vec![Error::NoImplicitConversion {
             value,
-            input_type_name: input_type.as_ref().display_name(),
+            input_type_name: input_type.display_name(),
             path,
         }])
     }
@@ -464,15 +536,19 @@ mod tests {
 
         assert_eq!(
             Ok(()),
-            it.coerce_const_value(&json!("This is a string"), Default::default())
+            SCHEMA_DEFINITION.coerce_const_value(
+                it,
+                &json!("This is a string"),
+                Default::default()
+            )
         );
         assert_eq!(
             Err(vec![Error::NoImplicitConversion {
                 value: &json!(123),
-                input_type_name: it.as_ref().display_name(),
+                input_type_name: it.display_name(),
                 path: Default::default(),
             }]),
-            it.coerce_const_value(&json!(123), Default::default()),
+            SCHEMA_DEFINITION.coerce_const_value(it, &json!(123), Default::default()),
         );
     }
 
@@ -482,15 +558,15 @@ mod tests {
 
         assert_eq!(
             Ok(()),
-            it.coerce_const_value(&json!(123), Default::default())
+            SCHEMA_DEFINITION.coerce_const_value(it, &json!(123), Default::default())
         );
         assert_eq!(
             Err(vec![Error::NoImplicitConversion {
                 value: &json!(123.4),
-                input_type_name: it.as_ref().display_name(),
+                input_type_name: it.display_name(),
                 path: Default::default(),
             }]),
-            it.coerce_const_value(&json!(123.4), Default::default()),
+            SCHEMA_DEFINITION.coerce_const_value(it, &json!(123.4), Default::default()),
         );
     }
 
@@ -500,19 +576,19 @@ mod tests {
 
         assert_eq!(
             Ok(()),
-            it.coerce_const_value(&json!(123.456), Default::default())
+            SCHEMA_DEFINITION.coerce_const_value(it, &json!(123.456), Default::default())
         );
         assert_eq!(
             Ok(()),
-            it.coerce_const_value(&json!(123), Default::default())
+            SCHEMA_DEFINITION.coerce_const_value(it, &json!(123), Default::default())
         );
         assert_eq!(
             Err(vec![Error::NoImplicitConversion {
                 value: &json!("123.4"),
-                input_type_name: it.as_ref().display_name(),
+                input_type_name: it.display_name(),
                 path: Default::default(),
             }]),
-            it.coerce_const_value(&json!("123.4"), Default::default()),
+            SCHEMA_DEFINITION.coerce_const_value(it, &json!("123.4"), Default::default()),
         );
     }
 
@@ -520,18 +596,21 @@ mod tests {
     fn test_id() {
         let it = input_type("Query", "field", "idArg");
 
-        assert_eq!(Ok(()), it.coerce_const_value(&json!(1), Default::default()));
         assert_eq!(
             Ok(()),
-            it.coerce_const_value(&json!("a"), Default::default())
+            SCHEMA_DEFINITION.coerce_const_value(it, &json!(1), Default::default())
+        );
+        assert_eq!(
+            Ok(()),
+            SCHEMA_DEFINITION.coerce_const_value(it, &json!("a"), Default::default())
         );
         assert_eq!(
             Err(vec![Error::NoImplicitConversion {
                 value: &json!(123.4),
-                input_type_name: it.as_ref().display_name(),
+                input_type_name: it.display_name(),
                 path: Default::default(),
             }]),
-            it.coerce_const_value(&json!(123.4), Default::default()),
+            SCHEMA_DEFINITION.coerce_const_value(it, &json!(123.4), Default::default()),
         );
     }
 
@@ -541,27 +620,27 @@ mod tests {
 
         assert_eq!(
             Ok(()),
-            it.coerce_const_value(&json!(true), Default::default())
+            SCHEMA_DEFINITION.coerce_const_value(it, &json!(true), Default::default())
         );
         assert_eq!(
             Ok(()),
-            it.coerce_const_value(&json!(false), Default::default())
+            SCHEMA_DEFINITION.coerce_const_value(it, &json!(false), Default::default())
         );
         assert_eq!(
             Err(vec![Error::NoImplicitConversion {
                 value: &json!(1),
-                input_type_name: it.as_ref().display_name(),
+                input_type_name: it.display_name(),
                 path: Default::default(),
             }]),
-            it.coerce_const_value(&json!(1), Default::default()),
+            SCHEMA_DEFINITION.coerce_const_value(it, &json!(1), Default::default()),
         );
         assert_eq!(
             Err(vec![Error::NoImplicitConversion {
                 value: &json!("true"),
-                input_type_name: it.as_ref().display_name(),
+                input_type_name: it.display_name(),
                 path: Default::default(),
             }]),
-            it.coerce_const_value(&json!("true"), Default::default()),
+            SCHEMA_DEFINITION.coerce_const_value(it, &json!("true"), Default::default()),
         );
     }
 
@@ -571,19 +650,19 @@ mod tests {
 
         assert_eq!(
             Ok(()),
-            it.coerce_const_value(&json!(null), Default::default())
+            SCHEMA_DEFINITION.coerce_const_value(it, &json!(null), Default::default())
         );
         assert_eq!(
             Ok(()),
-            it.coerce_const_value(&json!(123), Default::default())
+            SCHEMA_DEFINITION.coerce_const_value(it, &json!(123), Default::default())
         );
         assert_eq!(
             Err(vec![Error::NoImplicitConversion {
                 value: &json!("123"),
-                input_type_name: it.as_ref().display_name(),
+                input_type_name: it.display_name(),
                 path: Default::default(),
             }]),
-            it.coerce_const_value(&json!("123"), Default::default()),
+            SCHEMA_DEFINITION.coerce_const_value(it, &json!("123"), Default::default()),
         );
     }
 
@@ -593,16 +672,19 @@ mod tests {
 
         assert_eq!(
             Ok(()),
-            it.coerce_const_value(&json!(null), Default::default())
-        );
-        assert_eq!(Ok(()), it.coerce_const_value(&json!(1), Default::default()));
-        assert_eq!(
-            Ok(()),
-            it.coerce_const_value(&json!([1]), Default::default())
+            SCHEMA_DEFINITION.coerce_const_value(it, &json!(null), Default::default())
         );
         assert_eq!(
             Ok(()),
-            it.coerce_const_value(&json!([1, 2, 3]), Default::default())
+            SCHEMA_DEFINITION.coerce_const_value(it, &json!(1), Default::default())
+        );
+        assert_eq!(
+            Ok(()),
+            SCHEMA_DEFINITION.coerce_const_value(it, &json!([1]), Default::default())
+        );
+        assert_eq!(
+            Ok(()),
+            SCHEMA_DEFINITION.coerce_const_value(it, &json!([1, 2, 3]), Default::default())
         );
         assert_eq!(
             Err(vec![
@@ -617,7 +699,7 @@ mod tests {
                     path: Path::new(2),
                 },
             ]),
-            it.coerce_const_value(&json!([1, "b", true]), Default::default()),
+            SCHEMA_DEFINITION.coerce_const_value(it, &json!([1, "b", true]), Default::default()),
         );
     }
 
@@ -627,12 +709,15 @@ mod tests {
 
         assert_eq!(
             Ok(()),
-            it.coerce_const_value(&json!(null), Default::default())
+            SCHEMA_DEFINITION.coerce_const_value(it, &json!(null), Default::default())
         );
-        assert_eq!(Ok(()), it.coerce_const_value(&json!(1), Default::default()));
         assert_eq!(
             Ok(()),
-            it.coerce_const_value(&json!([[1], [2, 3]]), Default::default())
+            SCHEMA_DEFINITION.coerce_const_value(it, &json!(1), Default::default())
+        );
+        assert_eq!(
+            Ok(()),
+            SCHEMA_DEFINITION.coerce_const_value(it, &json!([[1], [2, 3]]), Default::default())
         );
         assert_eq!(
             Err(vec![
@@ -652,7 +737,7 @@ mod tests {
                     path: Path::new(2),
                 },
             ]),
-            it.coerce_const_value(&json!([1, 2, 3]), Default::default()),
+            SCHEMA_DEFINITION.coerce_const_value(it, &json!([1, 2, 3]), Default::default()),
         );
     }
 
@@ -662,11 +747,11 @@ mod tests {
 
         assert_eq!(
             Ok(()),
-            it.coerce_const_value(&json!("FIRST"), Default::default())
+            SCHEMA_DEFINITION.coerce_const_value(it, &json!("FIRST"), Default::default())
         );
         assert_eq!(
             Ok(()),
-            it.coerce_const_value(&json!("SECOND"), Default::default())
+            SCHEMA_DEFINITION.coerce_const_value(it, &json!("SECOND"), Default::default())
         );
         assert_eq!(
             Err(vec![Error::NoEnumMemberWithName {
@@ -675,7 +760,7 @@ mod tests {
                 enum_type_name: "Choices",
                 path: Default::default(),
             }]),
-            it.coerce_const_value(&json!("first"), Default::default()),
+            SCHEMA_DEFINITION.coerce_const_value(it, &json!("first"), Default::default()),
         );
     }
 
@@ -685,11 +770,15 @@ mod tests {
 
         assert_eq!(
             Ok(()),
-            it.coerce_const_value(&json!({ "stringArg": "abc" }), Default::default()),
+            SCHEMA_DEFINITION.coerce_const_value(
+                it,
+                &json!({ "stringArg": "abc" }),
+                Default::default()
+            ),
         );
         assert_eq!(
             Ok(()),
-            it.coerce_const_value(
+            SCHEMA_DEFINITION.coerce_const_value(it,
                 &json!({ "stringArg": "abc", "optionalStringArg": "def", "stringArgWithDefault": "ghi" }),
                 Default::default(),
             ),
@@ -697,10 +786,10 @@ mod tests {
         assert_eq!(
             Err(vec![Error::NoImplicitConversion {
                 value: &json!(""),
-                input_type_name: it.as_ref().display_name(),
+                input_type_name: it.display_name(),
                 path: Default::default(),
             }]),
-            it.coerce_const_value(&json!(""), Default::default()),
+            SCHEMA_DEFINITION.coerce_const_value(it, &json!(""), Default::default()),
         );
         assert_eq!(
             Err(vec![Error::NoValueForRequiredFields {
@@ -709,7 +798,7 @@ mod tests {
                 input_object_type_name: "CustomInput",
                 path: Default::default(),
             }]),
-            it.coerce_const_value(&json!({}), Default::default()),
+            SCHEMA_DEFINITION.coerce_const_value(it, &json!({}), Default::default()),
         );
         assert_eq!(
             Err(vec![Error::NoInputFieldWithName {
@@ -717,7 +806,8 @@ mod tests {
                 input_object_type_name: "CustomInput",
                 path: Path::new("notDefined"),
             }]),
-            it.coerce_const_value(
+            SCHEMA_DEFINITION.coerce_const_value(
+                it,
                 &json!({ "stringArg": "abc", "notDefined": "def" }),
                 Default::default()
             ),
@@ -728,7 +818,8 @@ mod tests {
                 input_type_name: "String!".to_owned(),
                 path: Path::new("stringArgWithDefault"),
             }]),
-            it.coerce_const_value(
+            SCHEMA_DEFINITION.coerce_const_value(
+                it,
                 &json!({ "stringArg": "abc", "stringArgWithDefault": null }),
                 Default::default()
             ),
@@ -741,7 +832,7 @@ mod tests {
 
         assert_eq!(
             Ok(()),
-            it.coerce_const_value(&json!("123.456"), Default::default())
+            SCHEMA_DEFINITION.coerce_const_value(it, &json!("123.456"), Default::default())
         );
         assert_eq!(
             Err(vec![Error::CustomScalarInvalidValue {
@@ -750,7 +841,7 @@ mod tests {
                 message: Cow::Owned("Cannot coerce float to Decimal".to_owned()),
                 path: Default::default(),
             }]),
-            it.coerce_const_value(&json!(123.456), Default::default()),
+            SCHEMA_DEFINITION.coerce_const_value(it, &json!(123.456), Default::default()),
         );
     }
 
@@ -760,11 +851,11 @@ mod tests {
 
         assert_eq!(
             Ok(()),
-            it.coerce_const_value(&json!({ "first": "s" }), Default::default())
+            SCHEMA_DEFINITION.coerce_const_value(it, &json!({ "first": "s" }), Default::default())
         );
         assert_eq!(
             Ok(()),
-            it.coerce_const_value(&json!({ "second": 1 }), Default::default())
+            SCHEMA_DEFINITION.coerce_const_value(it, &json!({ "second": 1 }), Default::default())
         );
         assert_eq!(
             Err(vec![Error::OneOfInputNullValues {
@@ -773,7 +864,11 @@ mod tests {
                 null_entries: vec![(&"first".to_owned(), &json!(null))],
                 path: Default::default(),
             }]),
-            it.coerce_const_value(&json!({ "first": null, "second": 1 }), Default::default()),
+            SCHEMA_DEFINITION.coerce_const_value(
+                it,
+                &json!({ "first": null, "second": 1 }),
+                Default::default()
+            ),
         );
         assert_eq!(
             Err(vec![Error::OneOfInputNotSingleNonNullValue {
@@ -785,7 +880,11 @@ mod tests {
                 ],
                 path: Default::default(),
             }]),
-            it.coerce_const_value(&json!({ "first": "s", "second": 1 }), Default::default()),
+            SCHEMA_DEFINITION.coerce_const_value(
+                it,
+                &json!({ "first": "s", "second": 1 }),
+                Default::default()
+            ),
         )
     }
 }

@@ -18,6 +18,10 @@ impl<'a, S: SchemaDefinition, W: Warden<SchemaDefinition = S>> Directive<'a, S, 
     pub fn inner(&self) -> &'a S::Directive {
         self.inner
     }
+
+    pub fn definition(&self) -> &'a DirectiveDefinition<'a, S, W> {
+        self.definition
+    }
 }
 
 impl<'a, S: SchemaDefinition, W: Warden<SchemaDefinition = S>> CoreDirective<true>
@@ -39,7 +43,10 @@ impl<'a, S: SchemaDefinition, W: Warden<SchemaDefinition = S>> CoreDefinitionDir
 {
     type DirectiveDefinition = DirectiveDefinition<'a, S, W>;
 
-    fn definition(&self) -> &Self::DirectiveDefinition {
+    fn definition<'b, S2: SchemaDefinition<DirectiveDefinition = Self::DirectiveDefinition>>(
+        &'b self,
+        _: &'b S2,
+    ) -> &'b Self::DirectiveDefinition {
         self.definition
     }
 }

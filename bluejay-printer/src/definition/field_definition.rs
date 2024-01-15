@@ -47,7 +47,7 @@ impl<'a, F: FieldDefinition> Display for FieldDefinitionPrinter<'a, F> {
             )?;
         }
 
-        write!(f, ": {}", field_definition.r#type().as_ref().display_name())?;
+        write!(f, ": {}", field_definition.r#type().display_name())?;
 
         if let Some(directives) = field_definition.directives() {
             if !directives.is_empty() {
