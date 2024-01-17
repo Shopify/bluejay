@@ -141,11 +141,7 @@ pub(crate) fn nested_module<S: SchemaDefinition>(
     let nested = fields_and_definitions
         .iter()
         .flat_map(|(field, field_definition)| {
-            match field_definition
-                .r#type()
-                .as_ref(context.schema_definition())
-                .base(context.schema_definition())
-            {
+            match field_definition.r#type().base(context.schema_definition()) {
                 BaseOutputTypeReference::Object(otd) => generate_object_type_definition(
                     otd,
                     field.selection_set().unwrap(),

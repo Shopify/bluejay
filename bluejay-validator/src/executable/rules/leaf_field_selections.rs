@@ -17,11 +17,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Visitor<'a, E, S>
         _: &Path<'a, E>,
     ) {
         let r#type = field_definition.r#type();
-        if r#type
-            .as_ref(self.schema_definition)
-            .base(self.schema_definition)
-            .is_scalar_or_enum()
-        {
+        if r#type.base(self.schema_definition).is_scalar_or_enum() {
             if let Some(selection_set) = field.selection_set() {
                 self.errors.push(Error::LeafFieldSelectionNotEmpty {
                     selection_set,

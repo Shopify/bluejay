@@ -77,7 +77,7 @@ impl<'a, O: OutputType> OutputTypeReference<'a, O> {
     ) -> BaseOutputTypeReference<'a, O> {
         match self {
             Self::Base(b, _) => *b,
-            Self::List(l, _) => l.as_ref(schema_definition).base(schema_definition),
+            Self::List(l, _) => l.base(schema_definition),
         }
     }
 }
@@ -171,6 +171,22 @@ pub trait OutputType: Sized {
 
     fn base_name(&self) -> &str {
         self.as_shallow_ref().base_name()
+    }
+
+    fn base<
+        'a,
+        S: SchemaDefinition<
+            CustomScalarTypeDefinition = Self::CustomScalarTypeDefinition,
+            EnumTypeDefinition = Self::EnumTypeDefinition,
+            ObjectTypeDefinition = Self::ObjectTypeDefinition,
+            InterfaceTypeDefinition = Self::InterfaceTypeDefinition,
+            UnionTypeDefinition = Self::UnionTypeDefinition,
+        >,
+    >(
+        &'a self,
+        schema_definition: &'a S,
+    ) -> BaseOutputTypeReference<'a, Self> {
+        self.as_ref(schema_definition).base(schema_definition)
     }
 }
 

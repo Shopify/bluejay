@@ -151,7 +151,7 @@ fn coerce_value_for_base_input_type<
     value: &'a V,
     path: Path<'a>,
 ) -> Result<(), Vec<Error<'a, CONST, V>>> {
-    let base = input_type.as_ref(schema_definition).base(schema_definition);
+    let base = input_type.base(schema_definition);
     match base {
         BaseInputTypeReference::BuiltinScalar(bstd) => {
             coerce_builtin_scalar_value(input_type, bstd, value, path)

@@ -73,10 +73,8 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> AllVariableUsagesAllowed<'a
             }),
             ValueReference::Object(o) => o.iter().for_each(|(key, value)| {
                 if let Some(ivd) = location.input_value_definition() {
-                    if let BaseInputTypeReference::InputObject(iotd) = ivd
-                        .r#type()
-                        .as_ref(self.schema_definition)
-                        .base(self.schema_definition)
+                    if let BaseInputTypeReference::InputObject(iotd) =
+                        ivd.r#type().base(self.schema_definition)
                     {
                         if let Some(ivd) = iotd.input_field_definitions().get(key.as_ref()) {
                             self.visit_value(value, root, VariableUsageLocation::ObjectField(ivd));

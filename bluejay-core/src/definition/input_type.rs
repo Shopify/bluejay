@@ -81,7 +81,7 @@ impl<'a, I: InputType> InputTypeReference<'a, I> {
     ) -> BaseInputTypeReference<'a, I> {
         match self {
             Self::Base(b, _) => *b,
-            Self::List(l, _) => l.as_ref(schema_definition).base(schema_definition),
+            Self::List(l, _) => l.base(schema_definition),
         }
     }
 
@@ -167,6 +167,20 @@ pub trait InputType: Sized {
 
     fn is_required(&self) -> bool {
         self.as_shallow_ref().is_required()
+    }
+
+    fn base<
+        'a,
+        S: SchemaDefinition<
+            CustomScalarTypeDefinition = Self::CustomScalarTypeDefinition,
+            InputObjectTypeDefinition = Self::InputObjectTypeDefinition,
+            EnumTypeDefinition = Self::EnumTypeDefinition,
+        >,
+    >(
+        &'a self,
+        schema_definition: &'a S,
+    ) -> BaseInputTypeReference<'a, Self> {
+        self.as_ref(schema_definition).base(schema_definition)
     }
 }
 

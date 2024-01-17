@@ -232,9 +232,7 @@ fn contains_reference_types<'a, S: SchemaDefinition>(
     config: &Config<'a, S>,
     visited: &mut HashSet<&'a str>,
 ) -> bool {
-    let base = ty
-        .as_ref(config.schema_definition())
-        .base(config.schema_definition());
+    let base = ty.base(config.schema_definition());
     if !config.borrow() || !visited.insert(base.name()) {
         return false;
     }

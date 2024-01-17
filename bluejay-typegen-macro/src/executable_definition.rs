@@ -297,10 +297,7 @@ impl<'a, S: SchemaDefinition> Context<'a, S> {
         field_definition: &'a S::FieldDefinition,
         visited: &mut HashSet<&'a str>,
     ) -> bool {
-        let ty = field_definition
-            .r#type()
-            .as_ref(self.schema_definition())
-            .base(self.schema_definition());
+        let ty = field_definition.r#type().base(self.schema_definition());
         if !self.config.borrow() || !visited.insert(ty.name()) {
             return false;
         }
