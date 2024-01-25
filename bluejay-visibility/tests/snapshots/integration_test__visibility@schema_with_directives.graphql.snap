@@ -3,9 +3,15 @@ source: bluejay-visibility/tests/integration_test.rs
 expression: printed_schema_definition
 input_file: bluejay-visibility/tests/test_data/schema_with_directives.graphql
 ---
-directive @executableDirective on QUERY | MUTATION | SUBSCRIPTION | FIELD | FRAGMENT_DEFINITION | FRAGMENT_SPREAD | INLINE_FRAGMENT | VARIABLE_DEFINITION
+directive @executableDirective(
+  enum: Enum! @visible
+) on QUERY | MUTATION | SUBSCRIPTION | FIELD | FRAGMENT_DEFINITION | FRAGMENT_SPREAD | INLINE_FRAGMENT | VARIABLE_DEFINITION
 
 directive @visible on FIELD_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION | ARGUMENT_DEFINITION | SCALAR | OBJECT | INTERFACE | UNION | ENUM
+
+enum Enum @visible {
+  VALUE @visible
+}
 
 type Query @visible {
   field: String @visible
