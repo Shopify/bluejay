@@ -1,8 +1,6 @@
-use bluejay_core::definition::{
-    ScalarTypeDefinition, SchemaDefinition as CoreSchemaDefinition, TypeDefinitionReference,
-};
+use bluejay_core::definition::{ScalarTypeDefinition, SchemaDefinition, TypeDefinitionReference};
 use bluejay_parser::{
-    ast::definition::{DefinitionDocument, SchemaDefinition},
+    ast::definition::{DefinitionDocument, SchemaDefinition as ParserSchemaDefinition},
     Error as ParserError,
 };
 use bluejay_validator::definition::BuiltinRulesValidator;
@@ -26,14 +24,14 @@ use executable_definition::generate_executable_definition;
 use input::{DocumentInput, Input};
 use input_object_type_definition::generate_input_object_type_definition;
 
-pub(crate) struct Config<'a> {
+pub(crate) struct Config<'a, S: SchemaDefinition> {
     borrow: bool,
-    schema_definition: &'a SchemaDefinition<'a>,
+    schema_definition: &'a S,
     custom_scalar_borrows: HashMap<String, bool>,
 }
 
-impl<'a> Config<'a> {
-    pub(crate) fn schema_definition(&self) -> &'a SchemaDefinition<'a> {
+impl<'a, S: SchemaDefinition> Config<'a, S> {
+    pub(crate) fn schema_definition(&self) -> &'a S {
         self.schema_definition
     }
 
@@ -56,7 +54,7 @@ fn generate_schema(input: Input, module: &mut syn::ItemMod) -> syn::Result<()> {
 
     let definition_document: DefinitionDocument = DefinitionDocument::parse(&schema_contents)
         .map_err(|errors| map_parser_errors(schema, &schema_contents, errors))?;
-    let schema_definition = SchemaDefinition::try_from(&definition_document)
+    let schema_definition = ParserSchemaDefinition::try_from(&definition_document)
         .map_err(|errors| map_parser_errors(schema, &schema_contents, errors))?;
     let schema_errors: Vec<_> = BuiltinRulesValidator::validate(&schema_definition).collect();
     if !schema_errors.is_empty() {
@@ -88,7 +86,7 @@ fn generate_schema(input: Input, module: &mut syn::ItemMod) -> syn::Result<()> {
 
 fn custom_scalar_borrows(
     module: &syn::ItemMod,
-    schema_definition: &impl CoreSchemaDefinition,
+    schema_definition: &impl SchemaDefinition,
     borrow: bool,
 ) -> syn::Result<HashMap<String, bool>> {
     let items = module
@@ -180,7 +178,10 @@ fn custom_scalar_borrows(
     Ok(custom_scalars)
 }
 
-fn process_module_items(config: &Config, items: Vec<syn::Item>) -> syn::Result<Vec<syn::Item>> {
+fn process_module_items<S: SchemaDefinition>(
+    config: &Config<S>,
+    items: Vec<syn::Item>,
+) -> syn::Result<Vec<syn::Item>> {
     config
         .schema_definition
         .type_definitions()
@@ -201,7 +202,10 @@ fn process_module_items(config: &Config, items: Vec<syn::Item>) -> syn::Result<V
         .collect()
 }
 
-fn process_module_item(config: &Config, item: syn::Item) -> syn::Result<syn::Item> {
+fn process_module_item<S: SchemaDefinition>(
+    config: &Config<S>,
+    item: syn::Item,
+) -> syn::Result<syn::Item> {
     if let syn::Item::Mod(mut module) = item {
         if let Some((attribute, &mut [])) = module.attrs.split_first_mut() {
             if matches!(attribute.style, syn::AttrStyle::Inner(_)) {

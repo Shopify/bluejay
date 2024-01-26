@@ -156,7 +156,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, R: Rule<'a, E, S>> Validato
         if let Some(selection_set) = field.selection_set() {
             if let Some(nested_type) = self
                 .schema_definition
-                .get_type_definition(field_definition.r#type().as_ref().base().name())
+                .get_type_definition(field_definition.r#type().base_name())
             {
                 self.visit_selection_set(selection_set, nested_type, path);
             }

@@ -131,9 +131,8 @@ fn test_visibility() {
                 )
             });
 
-        let cache = Cache::new(DirectiveWarden::default());
-        let visibility_scoped_schema_definition =
-            SchemaDefinition::new(&schema_definition, &cache).unwrap();
+        let cache = Cache::new(DirectiveWarden::default(), &schema_definition);
+        let visibility_scoped_schema_definition = SchemaDefinition::new(&cache).unwrap();
 
         let printed_schema_definition =
             SchemaDefinitionPrinter::to_string(&visibility_scoped_schema_definition);
@@ -169,9 +168,8 @@ fn test_fields_definition_get() {
             )
         });
 
-    let cache = Cache::new(DirectiveWarden::default());
-    let visibility_scoped_schema_definition =
-        SchemaDefinition::new(&schema_definition, &cache).unwrap();
+    let cache = Cache::new(DirectiveWarden::default(), &schema_definition);
+    let visibility_scoped_schema_definition = SchemaDefinition::new(&cache).unwrap();
 
     assert_eq!(
         visibility_scoped_schema_definition

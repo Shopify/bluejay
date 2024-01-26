@@ -37,7 +37,9 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> AsIter
                     .iter()
                     .filter_map(|directive| {
                         self.cache
-                            .get_or_create_directive_definition(directive.definition())
+                            .get_or_create_directive_definition(
+                                directive.definition(self.cache.inner_schema_definition()),
+                            )
                             .map(|definition| Directive::new(directive, definition))
                     })
                     .collect()

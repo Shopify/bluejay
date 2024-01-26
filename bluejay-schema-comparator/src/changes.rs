@@ -1,9 +1,9 @@
 use crate::diff::ArgumentForDirective;
 use bluejay_core::definition::{
-    DirectiveDefinition, DirectiveLocation, EnumTypeDefinition, EnumValueDefinition,
-    FieldDefinition, HasDirectives, InputObjectTypeDefinition, InputType, InputTypeReference,
-    InputValueDefinition, InterfaceTypeDefinition, ObjectTypeDefinition, OutputType,
-    OutputTypeReference, SchemaDefinition, TypeDefinitionReference, UnionTypeDefinition,
+    prelude::*, DirectiveDefinition, DirectiveLocation, EnumTypeDefinition, EnumValueDefinition,
+    FieldDefinition, HasDirectives, InputObjectTypeDefinition, InputType, InputValueDefinition,
+    ObjectTypeDefinition, OutputType, SchemaDefinition, ShallowInputTypeReference,
+    ShallowOutputTypeReference, TypeDefinitionReference, UnionTypeDefinition,
 };
 use bluejay_core::{Argument, AsIter, Directive, Value};
 use bluejay_printer::value::ValuePrinter;
@@ -119,11 +119,11 @@ pub enum Change<'a, S: SchemaDefinition> {
     },
     ObjectInterfaceAddition {
         object_type_definition: &'a S::ObjectTypeDefinition,
-        interface_type_definition: &'a S::InterfaceTypeDefinition,
+        interface_implementation: &'a S::InterfaceImplementation,
     },
     ObjectInterfaceRemoval {
         object_type_definition: &'a S::ObjectTypeDefinition,
-        interface_type_definition: &'a S::InterfaceTypeDefinition,
+        interface_implementation: &'a S::InterfaceImplementation,
     },
     EnumValueAdded {
         enum_type_definition: &'a S::EnumTypeDefinition,
@@ -140,11 +140,11 @@ pub enum Change<'a, S: SchemaDefinition> {
     },
     UnionMemberAdded {
         union_type_definition: &'a S::UnionTypeDefinition,
-        union_member_definition: &'a S::ObjectTypeDefinition,
+        union_member_type: &'a S::UnionMemberType,
     },
     UnionMemberRemoved {
         union_type_definition: &'a S::UnionTypeDefinition,
-        union_member_definition: &'a S::ObjectTypeDefinition,
+        union_member_type: &'a S::UnionMemberType,
     },
     InputFieldAdded {
         input_object_type_definition: &'a S::InputObjectTypeDefinition,
@@ -270,14 +270,14 @@ impl<'a, S: SchemaDefinition> Change<'a, S> {
             },
             Self::FieldDescriptionChanged { .. } => Criticality::safe(None),
             Self::FieldTypeChanged { type_name: _, old_field_definition: old_field, new_field_definition: new_field } => {
-                if is_change_safe_for_field::<S>(old_field.r#type().as_ref(), new_field.r#type().as_ref()) {
+                if is_change_safe_for_field::<S>(old_field.r#type().as_shallow_ref(), new_field.r#type().as_shallow_ref()) {
                     Criticality::safe(None)
                 } else {
                     Criticality::breaking(Some(Cow::from("Changing a field's type can cause existing queries that use this field to error.")))
                 }
             },
             Self::FieldArgumentAdded { type_name: _, field_definition: _, argument_definition: argument } => {
-                if argument.r#type().as_ref().is_required() && argument.default_value().is_none() {
+                if argument.r#type().is_required() && argument.default_value().is_none() {
                     Criticality::breaking(Some(Cow::from("Adding a required argument without a default value to an existing field is a breaking change because it will cause existing uses of this field to error.")))
                 } else {
                     Criticality::safe(None)
@@ -294,7 +294,7 @@ impl<'a, S: SchemaDefinition> Change<'a, S> {
                 Criticality::dangerous(Some(Cow::from("Changing the default value for an argument may change the runtime behaviour of a field if it was never provided.")))
             },
             Self::FieldArgumentTypeChanged{ type_name: _, field_definition: _, old_argument_definition: old_argument, new_argument_definition: new_argument } => {
-                if is_change_safe_for_input_value::<S>(old_argument.r#type().as_ref(), new_argument.r#type().as_ref()) {
+                if is_change_safe_for_input_value::<S>(old_argument.r#type().as_shallow_ref(), new_argument.r#type().as_shallow_ref()) {
                     Criticality::safe(None)
                 } else {
                     Criticality::breaking(Some(Cow::from("Changing the type of a field's argument can cause existing queries that use this argument to error.")))
@@ -322,7 +322,7 @@ impl<'a, S: SchemaDefinition> Change<'a, S> {
                 Criticality::breaking(Some(Cow::from("Removing a union member from a union can cause existing queries that use this union member in a fragment spread to error.")))
             },
             Self::InputFieldAdded { input_object_type_definition: _, added_field_definition: added_field } => {
-                if added_field.r#type().as_ref().is_required() && added_field.default_value().is_none() {
+                if added_field.r#type().is_required() && added_field.default_value().is_none() {
                     Criticality::breaking(Some(Cow::from("Adding a non-null input field without a default value to an existing input type will cause existing queries that use this input type to error because they will not provide a value for this new field.")))
                 } else {
                     Criticality::safe(None)
@@ -332,7 +332,7 @@ impl<'a, S: SchemaDefinition> Change<'a, S> {
                 Criticality::breaking(Some(Cow::from("Removing an input field will cause existing queries that use this input field to error.")))
             },
             Self::InputFieldTypeChanged { input_object_type_definition: _, old_field_definition: old_field, new_field_definition: new_field } => {
-                if is_change_safe_for_input_value::<S>(old_field.r#type().as_ref(), new_field.r#type().as_ref()) {
+                if is_change_safe_for_input_value::<S>(old_field.r#type().as_shallow_ref(), new_field.r#type().as_shallow_ref()) {
                     Criticality::safe(Some(Cow::from("Changing an input field from non-null to null is considered non-breaking")))
                 } else {
                     Criticality::breaking(Some(Cow::from("Changing the type of an input field can cause existing queries that use this field to error.")))
@@ -373,7 +373,7 @@ impl<'a, S: SchemaDefinition> Change<'a, S> {
                 Criticality::safe(None)
             },
             Self::DirectiveDefinitionArgumentTypeChanged { directive_definition: _, old_argument_definition, new_argument_definition } => {
-                if is_change_safe_for_input_value::<S>(old_argument_definition.r#type().as_ref(), new_argument_definition.r#type().as_ref()) {
+                if is_change_safe_for_input_value::<S>(old_argument_definition.r#type().as_shallow_ref(), new_argument_definition.r#type().as_shallow_ref()) {
                     Criticality::safe(Some(Cow::from("Changing an input field from non-null to null is considered non-breaking")))
                 } else {
                     Criticality::breaking(None)
@@ -474,8 +474,8 @@ impl<'a, S: SchemaDefinition> Change<'a, S> {
                 format!(
                     "Field `{}` changed type from `{}` to `{}`.",
                     self.path(),
-                    old_field.r#type().as_ref().display_name(),
-                    new_field.r#type().as_ref().display_name()
+                    old_field.r#type().display_name(),
+                    new_field.r#type().display_name()
                 )
             }
             Self::FieldArgumentAdded {
@@ -561,28 +561,28 @@ impl<'a, S: SchemaDefinition> Change<'a, S> {
                     new_argument.name(),
                     field.name(),
                     type_name,
-                    old_argument.r#type().as_ref().display_name(),
-                    new_argument.r#type().as_ref().display_name()
+                    old_argument.r#type().display_name(),
+                    new_argument.r#type().display_name()
                 )
             }
             Self::ObjectInterfaceAddition {
                 object_type_definition: object_type,
-                interface_type_definition: interface_type,
+                interface_implementation,
             } => {
                 format!(
                     "`{}` object implements `{}` interface",
                     object_type.name(),
-                    interface_type.name()
+                    interface_implementation.name()
                 )
             }
             Self::ObjectInterfaceRemoval {
                 object_type_definition: object_type,
-                interface_type_definition: interface_type,
+                interface_implementation,
             } => {
                 format!(
                     "`{}` object type no longer implements `{}` interface",
                     object_type.name(),
-                    interface_type.name()
+                    interface_implementation.name()
                 )
             }
             Self::EnumValueAdded {
@@ -619,23 +619,23 @@ impl<'a, S: SchemaDefinition> Change<'a, S> {
                 )
             }
             Self::UnionMemberAdded {
-                union_type_definition: union_type,
-                union_member_definition: union_member,
+                union_type_definition,
+                union_member_type,
             } => {
                 format!(
                     "Union member `{}` was added to union type `{}`",
-                    union_member.name(),
-                    union_type.name()
+                    union_member_type.name(),
+                    union_type_definition.name()
                 )
             }
             Self::UnionMemberRemoved {
-                union_type_definition: union_type,
-                union_member_definition: union_member,
+                union_type_definition,
+                union_member_type,
             } => {
                 format!(
                     "Union member `{}` was removed from union type `{}`",
-                    union_member.name(),
-                    union_type.name()
+                    union_member_type.name(),
+                    union_type_definition.name()
                 )
             }
             Self::InputFieldAdded {
@@ -680,8 +680,8 @@ impl<'a, S: SchemaDefinition> Change<'a, S> {
                     "Input field `{}.{}` changed type from `{}` to `{}`",
                     input_object_type.name(),
                     new_field.name(),
-                    old_field.r#type().as_ref().display_name(),
-                    new_field.r#type().as_ref().display_name()
+                    old_field.r#type().display_name(),
+                    new_field.r#type().display_name()
                 )
             }
             Self::InputFieldDefaultValueChanged {
@@ -806,8 +806,8 @@ impl<'a, S: SchemaDefinition> Change<'a, S> {
                     "Type for argument `{}` on directive `{}` changed from `{}` to `{}`",
                     new_argument_definition.name(),
                     directive_definition.name(),
-                    old_argument_definition.r#type().as_ref().display_name(),
-                    new_argument_definition.r#type().as_ref().display_name()
+                    old_argument_definition.r#type().display_name(),
+                    new_argument_definition.r#type().display_name()
                 )
             }
             Self::DirectiveDefinitionArgumentDefaultValueChanged {
@@ -968,13 +968,13 @@ impl<'a, S: SchemaDefinition> Change<'a, S> {
                 new_argument_definition: _,
             } => [type_name, field.name(), old_argument.name()].join("."),
             Self::ObjectInterfaceAddition {
-                object_type_definition: object_type,
-                interface_type_definition: _,
-            } => object_type.name().to_string(),
+                object_type_definition,
+                ..
+            } => object_type_definition.name().to_string(),
             Self::ObjectInterfaceRemoval {
-                object_type_definition: object_type,
-                interface_type_definition: _,
-            } => object_type.name().to_string(),
+                object_type_definition,
+                ..
+            } => object_type_definition.name().to_string(),
             Self::EnumValueAdded {
                 enum_type_definition: enum_type,
                 enum_value_definition: enum_value,
@@ -989,13 +989,13 @@ impl<'a, S: SchemaDefinition> Change<'a, S> {
                 new_enum_value_definition: _,
             } => [enum_type.name(), old_enum_value.name()].join("."),
             Self::UnionMemberAdded {
-                union_type_definition: union_type,
-                union_member_definition: _,
-            } => union_type.name().to_string(),
+                union_type_definition,
+                ..
+            } => union_type_definition.name().to_string(),
             Self::UnionMemberRemoved {
-                union_type_definition: union_type,
-                union_member_definition: _,
-            } => union_type.name().to_string(),
+                union_type_definition,
+                ..
+            } => union_type_definition.name().to_string(),
             Self::InputFieldAdded {
                 input_object_type_definition: input_object_type,
                 added_field_definition: added_field,
@@ -1136,40 +1136,46 @@ impl<'a, S: SchemaDefinition> Change<'a, S> {
 }
 
 fn is_change_safe_for_field<S: SchemaDefinition>(
-    old_type: OutputTypeReference<S::OutputType>,
-    new_type: OutputTypeReference<S::OutputType>,
+    old_type: ShallowOutputTypeReference<S::OutputType>,
+    new_type: ShallowOutputTypeReference<S::OutputType>,
 ) -> bool {
     match (old_type, new_type) {
         (
-            OutputTypeReference::Base(old_base, old_required),
-            OutputTypeReference::Base(new_base, new_required),
-        ) => (!old_required || new_required) && old_base.name() == new_base.name(),
+            ShallowOutputTypeReference::Base(old_base, old_required),
+            ShallowOutputTypeReference::Base(new_base, new_required),
+        ) => (!old_required || new_required) && old_base == new_base,
         (
-            OutputTypeReference::List(old_inner, old_required),
-            OutputTypeReference::List(new_inner, new_required),
+            ShallowOutputTypeReference::List(old_inner, old_required),
+            ShallowOutputTypeReference::List(new_inner, new_required),
         ) => {
             (!old_required || new_required)
-                && is_change_safe_for_field::<S>(old_inner.as_ref(), new_inner.as_ref())
+                && is_change_safe_for_field::<S>(
+                    old_inner.as_shallow_ref(),
+                    new_inner.as_shallow_ref(),
+                )
         }
         _ => false,
     }
 }
 
 fn is_change_safe_for_input_value<S: SchemaDefinition>(
-    old_type: InputTypeReference<S::InputType>,
-    new_type: InputTypeReference<S::InputType>,
+    old_type: ShallowInputTypeReference<S::InputType>,
+    new_type: ShallowInputTypeReference<S::InputType>,
 ) -> bool {
     match (old_type, new_type) {
         (
-            InputTypeReference::Base(old_base, old_required),
-            InputTypeReference::Base(new_base, new_required),
-        ) => (old_required || !new_required) && old_base.name() == new_base.name(),
+            ShallowInputTypeReference::Base(old_base, old_required),
+            ShallowInputTypeReference::Base(new_base, new_required),
+        ) => (old_required || !new_required) && old_base == new_base,
         (
-            InputTypeReference::List(old_inner, old_required),
-            InputTypeReference::List(new_inner, new_required),
+            ShallowInputTypeReference::List(old_inner, old_required),
+            ShallowInputTypeReference::List(new_inner, new_required),
         ) => {
             (old_required || !new_required)
-                && is_change_safe_for_input_value::<S>(old_inner.as_ref(), new_inner.as_ref())
+                && is_change_safe_for_input_value::<S>(
+                    old_inner.as_shallow_ref(),
+                    new_inner.as_shallow_ref(),
+                )
         }
         _ => false,
     }

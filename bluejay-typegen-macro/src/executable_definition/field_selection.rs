@@ -3,17 +3,17 @@ use crate::executable_definition::{generate_union_type_definition, Context};
 use crate::names::{field_ident, module_ident, type_ident};
 use bluejay_core::definition::{
     BaseOutputTypeReference, FieldDefinition, FieldsDefinition, InterfaceTypeDefinition,
-    ObjectTypeDefinition, OutputType,
+    ObjectTypeDefinition, OutputType, SchemaDefinition,
 };
 use bluejay_core::executable::{Field, Selection, SelectionReference, SelectionSet};
 use proc_macro2::Span;
 use std::ops::Not;
 use syn::parse_quote;
 
-pub(crate) fn generate_object_type_definition(
-    object_type_definition: &impl ObjectTypeDefinition,
+pub(crate) fn generate_object_type_definition<S: SchemaDefinition>(
+    object_type_definition: &S::ObjectTypeDefinition,
     selection_set: &impl SelectionSet,
-    context: Context,
+    context: Context<S>,
 ) -> Vec<syn::Item> {
     generate_type_for_selections(
         object_type_definition.description(),
@@ -23,10 +23,10 @@ pub(crate) fn generate_object_type_definition(
     )
 }
 
-pub(crate) fn generate_interface_type_definition(
-    interface_type_definition: &impl InterfaceTypeDefinition,
+pub(crate) fn generate_interface_type_definition<S: SchemaDefinition>(
+    interface_type_definition: &S::InterfaceTypeDefinition,
     selection_set: &impl SelectionSet,
-    context: Context,
+    context: Context<S>,
 ) -> Vec<syn::Item> {
     generate_type_for_selections(
         interface_type_definition.description(),
@@ -36,11 +36,11 @@ pub(crate) fn generate_interface_type_definition(
     )
 }
 
-fn generate_type_for_selections(
+fn generate_type_for_selections<S: SchemaDefinition>(
     description: Option<&str>,
-    fields_definition: &impl FieldsDefinition,
+    fields_definition: &S::FieldsDefinition,
     selection_set: &impl SelectionSet,
-    context: Context,
+    context: Context<S>,
 ) -> Vec<syn::Item> {
     let ident = type_ident(context.name());
     let description = description.map(doc_string);
@@ -84,9 +84,9 @@ pub(crate) fn fields_and_definitions<'a, S: SelectionSet, F: FieldsDefinition>(
         .collect()
 }
 
-pub(crate) fn named_fields(
-    fields_and_definitions: &[(&impl Field, &impl FieldDefinition)],
-    context: &Context,
+pub(crate) fn named_fields<S: SchemaDefinition>(
+    fields_and_definitions: &[(&impl Field, &S::FieldDefinition)],
+    context: &Context<S>,
     for_struct: bool,
 ) -> syn::FieldsNamed {
     let fields = &fields_and_definitions
@@ -106,7 +106,9 @@ pub(crate) fn named_fields(
 
     let types = &fields_and_definitions
         .iter()
-        .map(|(f, fd)| context.type_for_output_type(fd.r#type().as_ref(), *f))
+        .map(|(f, fd)| {
+            context.type_for_output_type(fd.r#type().as_ref(context.schema_definition()), *f)
+        })
         .collect::<Vec<_>>();
 
     let borrow = &fields_and_definitions
@@ -132,14 +134,14 @@ pub(crate) fn named_fields(
     }
 }
 
-pub(crate) fn nested_module(
-    fields_and_definitions: &[(&impl Field, &impl FieldDefinition)],
-    context: &Context,
+pub(crate) fn nested_module<S: SchemaDefinition>(
+    fields_and_definitions: &[(&impl Field, &S::FieldDefinition)],
+    context: &Context<S>,
 ) -> Option<syn::Item> {
     let nested = fields_and_definitions
         .iter()
-        .flat_map(
-            |(field, field_definition)| match field_definition.r#type().as_ref().base() {
+        .flat_map(|(field, field_definition)| {
+            match field_definition.r#type().base(context.schema_definition()) {
                 BaseOutputTypeReference::Object(otd) => generate_object_type_definition(
                     otd,
                     field.selection_set().unwrap(),
@@ -156,8 +158,8 @@ pub(crate) fn nested_module(
                     context.dive(field.response_name()),
                 ),
                 _ => Vec::new(),
-            },
-        )
+            }
+        })
         .collect::<Vec<syn::Item>>();
 
     nested.is_empty().not().then(|| {

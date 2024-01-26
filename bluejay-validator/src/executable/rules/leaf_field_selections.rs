@@ -3,6 +3,7 @@ use bluejay_core::definition::{FieldDefinition, OutputType, SchemaDefinition};
 use bluejay_core::executable::{ExecutableDocument, Field};
 
 pub struct LeafFieldSelections<'a, E: ExecutableDocument, S: SchemaDefinition> {
+    schema_definition: &'a S,
     errors: Vec<Error<'a, E, S>>,
 }
 
@@ -16,7 +17,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Visitor<'a, E, S>
         _: &Path<'a, E>,
     ) {
         let r#type = field_definition.r#type();
-        if r#type.as_ref().base().is_scalar_or_enum() {
+        if r#type.base(self.schema_definition).is_scalar_or_enum() {
             if let Some(selection_set) = field.selection_set() {
                 self.errors.push(Error::LeafFieldSelectionNotEmpty {
                     selection_set,
@@ -46,7 +47,10 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Rule<'a, E, S>
 {
     type Error = Error<'a, E, S>;
 
-    fn new(_: &'a E, _: &'a S, _: &'a Cache<'a, E, S>) -> Self {
-        Self { errors: Vec::new() }
+    fn new(_: &'a E, schema_definition: &'a S, _: &'a Cache<'a, E, S>) -> Self {
+        Self {
+            schema_definition,
+            errors: Vec::new(),
+        }
     }
 }

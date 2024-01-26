@@ -24,7 +24,6 @@ pub enum SchemaDefinitionError<'a> {
 }
 
 pub struct SchemaDefinition<'a, S: definition::SchemaDefinition, W: Warden<SchemaDefinition = S>> {
-    inner: &'a S,
     cache: &'a Cache<'a, S, W>,
     query: &'a ObjectTypeDefinition<'a, S, W>,
     mutation: Option<&'a ObjectTypeDefinition<'a, S, W>>,
@@ -38,12 +37,9 @@ pub struct SchemaDefinition<'a, S: definition::SchemaDefinition, W: Warden<Schem
 impl<'a, S: definition::SchemaDefinition, W: Warden<SchemaDefinition = S>>
     SchemaDefinition<'a, S, W>
 {
-    pub fn new(
-        inner: &'a S,
-        cache: &'a Cache<'a, S, W>,
-    ) -> Result<Self, SchemaDefinitionError<'a>> {
+    pub fn new(cache: &'a Cache<'a, S, W>) -> Result<Self, SchemaDefinitionError<'a>> {
+        let inner = cache.inner_schema_definition();
         Ok(Self {
-            inner,
             cache,
             query: cache
                 .get_or_create_type_definition(TypeDefinitionReference::Object(inner.query()))
@@ -88,7 +84,7 @@ impl<'a, S: definition::SchemaDefinition, W: Warden<SchemaDefinition = S>>
     }
 
     pub fn inner(&self) -> &'a S {
-        self.inner
+        self.cache.inner_schema_definition()
     }
 
     pub fn cache(&self) -> &'a Cache<'a, S, W> {
@@ -106,7 +102,7 @@ impl<'a, S: definition::SchemaDefinition, W: Warden<SchemaDefinition = S>>
     /// except for the lifetime on the return type.
     fn get_directive_definition(&self, name: &str) -> Option<&'a DirectiveDefinition<'a, S, W>> {
         self.cache.get_directive_definition(name).or_else(|| {
-            self.inner
+            self.inner()
                 .get_directive_definition(name)
                 .and_then(|dd| self.cache.get_or_create_directive_definition(dd))
         })
@@ -123,7 +119,7 @@ impl<'a, S: definition::SchemaDefinition, W: Warden<SchemaDefinition = S>>
             .map(|ii| ii.iter())
             .unwrap_or_else(|| {
                 let interface_implementors = self
-                    .inner
+                    .inner()
                     .get_interface_implementors(itd.inner())
                     .filter_map(|otd| {
                         let otd = self
@@ -138,7 +134,7 @@ impl<'a, S: definition::SchemaDefinition, W: Warden<SchemaDefinition = S>>
                             .map_or(false, |interface_implementations| {
                                 interface_implementations
                                     .iter()
-                                    .any(|ii| ii.interface().name() == itd.name())
+                                    .any(|ii| ii.name() == itd.name())
                             })
                             .then_some(otd)
                     })
@@ -182,7 +178,7 @@ impl<'a, S: definition::SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>>
     type InterfaceImplementors<'b> = std::iter::Copied<std::slice::Iter<'b, &'b Self::ObjectTypeDefinition>> where 'a: 'b;
 
     fn description(&self) -> Option<&str> {
-        self.inner.description()
+        self.inner().description()
     }
 
     fn query(&self) -> &Self::ObjectTypeDefinition {
@@ -211,7 +207,7 @@ impl<'a, S: definition::SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>>
         self.cache
             .get_type_definition(name)
             .or_else(|| {
-                self.inner
+                self.inner()
                     .get_type_definition(name)
                     .and_then(|tdr| self.cache.get_or_create_type_definition(tdr))
             })
@@ -288,7 +284,7 @@ impl<'a, 'b, S: definition::SchemaDefinition, W: Warden<SchemaDefinition = S>>
         // also any directive definition that can be used in executable documents must be included here as they don't need to be accessible
         // through the schema visit
         let directive_definitions = schema_definition
-            .inner
+            .inner()
             .directive_definitions()
             .filter_map(|dd| {
                 (dd.is_builtin() || dd.locations().iter().any(DirectiveLocation::is_executable))
@@ -465,7 +461,7 @@ impl<'a, 'b, S: definition::SchemaDefinition, W: Warden<SchemaDefinition = S>>
         if let Some(arguments_definition) = field_definition.arguments_definition() {
             self.visit_arguments_definition(arguments_definition);
         }
-        let base_type = field_definition.r#type().as_ref().base();
+        let base_type = field_definition.r#type().base();
         self.visit_type_definition(base_type.into())
     }
 
@@ -483,7 +479,7 @@ impl<'a, 'b, S: definition::SchemaDefinition, W: Warden<SchemaDefinition = S>>
         input_value_definition: &'a InputValueDefinition<'a, S, W>,
     ) {
         self.visit_directives(input_value_definition.directives());
-        let base_type = input_value_definition.r#type().as_ref().base();
+        let base_type = input_value_definition.r#type().base();
         self.visit_type_definition(base_type.into())
     }
 

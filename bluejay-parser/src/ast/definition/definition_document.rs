@@ -535,9 +535,7 @@ impl<'a, C: Context> DefinitionDocument<'a, C> {
                     );
                     utd.union_member_types().iter().for_each(|member_type| {
                         match indexed_type_definitions.get(member_type.name().as_ref()) {
-                            Some(TypeDefinition::Object(otd)) => {
-                                member_type.set_type(otd).unwrap();
-                            }
+                            Some(TypeDefinition::Object(_)) => {}
                             Some(_) => errors.push(
                                 DefinitionDocumentError::ReferencedUnionMemberTypeIsNotAnObject {
                                     name: member_type.name(),
@@ -606,7 +604,7 @@ impl<'a, C: Context> DefinitionDocument<'a, C> {
             let t = field_definition.r#type().base();
             match indexed_type_definitions.get(t.name().as_ref()) {
                 Some(&td) => match BaseOutputType::core_type_from_type_definition(td) {
-                    Ok(core_t) => t.set_type(core_t).unwrap(),
+                    Ok(_) => {}
                     Err(_) => {
                         errors.push(DefinitionDocumentError::ReferencedTypeIsNotAnOutputType {
                             name: t.name(),
@@ -644,9 +642,7 @@ impl<'a, C: Context> DefinitionDocument<'a, C> {
             .for_each(|interface_implementation| {
                 let name = interface_implementation.interface_name();
                 match indexed_type_definitions.get(name.as_ref()) {
-                    Some(TypeDefinition::Interface(itd)) => {
-                        interface_implementation.set_type(itd).unwrap();
-                    }
+                    Some(TypeDefinition::Interface(_)) => {}
                     Some(_) => errors
                         .push(DefinitionDocumentError::ReferencedTypeIsNotAnInterface { name }),
                     None => {
@@ -666,7 +662,7 @@ impl<'a, C: Context> DefinitionDocument<'a, C> {
             let t = input_value_definition.r#type().base();
             match indexed_type_definitions.get(t.name().as_ref()) {
                 Some(&td) => match BaseInputType::core_type_from_type_definition(td) {
-                    Ok(core_t) => t.set_type(core_t).unwrap(),
+                    Ok(_) => {}
                     Err(_) => {
                         errors.push(DefinitionDocumentError::ReferencedTypeIsNotAnInputType {
                             name: t.name(),
@@ -693,7 +689,7 @@ impl<'a, C: Context> DefinitionDocument<'a, C> {
         if let Some(directives) = subject.directives() {
             directives.iter().for_each(|directive| {
                 match indexed_directive_definitions.get(directive.name()) {
-                    Some(&dd) => directive.set_definition(dd).unwrap(),
+                    Some(_) => {}
                     None => errors.push(DefinitionDocumentError::ReferencedDirectiveDoesNotExist {
                         directive,
                     }),
@@ -759,7 +755,7 @@ mod tests {
 
     use bluejay_core::{
         definition::{
-            DirectiveDefinition, FieldDefinition as CoreFieldDefinition,
+            FieldDefinition as CoreFieldDefinition,
             ObjectTypeDefinition as CoreObjectTypeDefinition,
             SchemaDefinition as CoreSchemaDefinition,
         },
@@ -767,6 +763,50 @@ mod tests {
     };
 
     use super::{DefinitionDocument, SchemaDefinition};
+
+    #[test]
+    fn test_can_be_used_owned_with_self_cell() {
+        self_cell::self_cell!(
+            struct OwnedDefinitionDocument {
+                owner: String,
+
+                #[covariant]
+                dependent: DefinitionDocument,
+            }
+        );
+
+        self_cell::self_cell!(
+            struct OwnedSchemaDefinition {
+                owner: OwnedDefinitionDocument,
+
+                #[covariant]
+                dependent: SchemaDefinition,
+            }
+        );
+
+        let source = r#"
+        """
+        Description
+        """
+        type Query {
+            foo: String!
+        }
+        "#
+        .to_string();
+
+        let owned_definition_document = OwnedDefinitionDocument::new(source, |source| {
+            DefinitionDocument::parse(source).unwrap()
+        });
+
+        let owned_schema_definition =
+            OwnedSchemaDefinition::new(owned_definition_document, |owned_definition_document| {
+                SchemaDefinition::try_from(owned_definition_document.borrow_dependent()).unwrap()
+            });
+
+        let schema_definition = owned_schema_definition.borrow_dependent();
+
+        assert_eq!("Query", schema_definition.query().name().as_str());
+    }
 
     #[test]
     fn smoke_test() {

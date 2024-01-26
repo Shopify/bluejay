@@ -4,14 +4,16 @@ use elsa::FrozenMap;
 
 pub struct Cache<'a, S: SchemaDefinition, W: Warden<SchemaDefinition = S>> {
     warden: W,
+    inner_schema_definition: &'a S,
     type_definitions: FrozenMap<&'a str, Box<TypeDefinition<'a, S, W>>>,
     directive_definitions: FrozenMap<&'a str, Box<DirectiveDefinition<'a, S, W>>>,
 }
 
 impl<'a, S: SchemaDefinition, W: Warden<SchemaDefinition = S>> Cache<'a, S, W> {
-    pub fn new(warden: W) -> Self {
+    pub fn new(warden: W, inner_schema_definition: &'a S) -> Self {
         Self {
             warden,
+            inner_schema_definition,
             type_definitions: FrozenMap::new(),
             directive_definitions: FrozenMap::new(),
         }
@@ -19,6 +21,10 @@ impl<'a, S: SchemaDefinition, W: Warden<SchemaDefinition = S>> Cache<'a, S, W> {
 
     pub fn warden(&self) -> &W {
         &self.warden
+    }
+
+    pub(crate) fn inner_schema_definition(&self) -> &'a S {
+        self.inner_schema_definition
     }
 
     pub(crate) fn get_or_create_type_definition(

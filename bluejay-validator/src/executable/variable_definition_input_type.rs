@@ -1,5 +1,6 @@
 use bluejay_core::definition::{
     BaseInputTypeReference, InputType, InputTypeReference, SchemaDefinition,
+    ShallowInputTypeReference,
 };
 use bluejay_core::executable::{VariableType, VariableTypeReference};
 
@@ -14,12 +15,28 @@ impl<'a, I: InputType> InputType for VariableDefinitionInputType<'a, I> {
     type EnumTypeDefinition = I::EnumTypeDefinition;
     type InputObjectTypeDefinition = I::InputObjectTypeDefinition;
 
-    fn as_ref(&self) -> InputTypeReference<'_, Self> {
+    fn as_ref<
+        S: SchemaDefinition<
+            CustomScalarTypeDefinition = Self::CustomScalarTypeDefinition,
+            InputObjectTypeDefinition = Self::InputObjectTypeDefinition,
+            EnumTypeDefinition = Self::EnumTypeDefinition,
+        >,
+    >(
+        &self,
+        _: &S,
+    ) -> InputTypeReference<'_, Self> {
         match self {
             Self::Base(base, required) => {
                 InputTypeReference::Base(base.convert::<Self>(), *required)
             }
             Self::List(inner, required) => InputTypeReference::List(inner.as_ref(), *required),
+        }
+    }
+
+    fn as_shallow_ref(&self) -> ShallowInputTypeReference<'_, Self> {
+        match self {
+            Self::Base(base, required) => ShallowInputTypeReference::Base(base.name(), *required),
+            Self::List(inner, required) => ShallowInputTypeReference::List(inner, *required),
         }
     }
 }

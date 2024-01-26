@@ -86,6 +86,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> FieldSelectionMer
                     .iter()
                     .filter_map(|other| {
                         Self::same_output_type_shape(
+                            self.schema_definition,
                             first.field_definition.r#type(),
                             other.field_definition.r#type(),
                         )
@@ -233,14 +234,10 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> FieldSelectionMer
         let mut fields = HashMap::new();
         field_contexts.for_each(|field_context| {
             if let Some(selection_set) = field_context.field.selection_set() {
-                if let Some(parent_type) = self.schema_definition.get_type_definition(
-                    field_context
-                        .field_definition
-                        .r#type()
-                        .as_ref()
-                        .base()
-                        .name(),
-                ) {
+                if let Some(parent_type) = self
+                    .schema_definition
+                    .get_type_definition(field_context.field_definition.r#type().base_name())
+                {
                     if self.selection_set_valid(selection_set, parent_type) {
                         self.visit_selections_for_fields(
                             selection_set.iter(),
@@ -326,8 +323,15 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> FieldSelectionMer
         });
     }
 
-    fn same_output_type_shape(type_a: &S::OutputType, type_b: &S::OutputType) -> bool {
-        match (type_a.as_ref(), type_b.as_ref()) {
+    fn same_output_type_shape(
+        schema_definition: &S,
+        type_a: &S::OutputType,
+        type_b: &S::OutputType,
+    ) -> bool {
+        match (
+            type_a.as_ref(schema_definition),
+            type_b.as_ref(schema_definition),
+        ) {
             (
                 OutputTypeReference::Base(type_a_base, type_a_required),
                 OutputTypeReference::Base(type_b_base, type_b_required),
@@ -339,7 +343,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> FieldSelectionMer
                 OutputTypeReference::List(type_a_inner, type_a_required),
                 OutputTypeReference::List(type_b_inner, type_b_required),
             ) if type_a_required == type_b_required => {
-                Self::same_output_type_shape(type_a_inner, type_b_inner)
+                Self::same_output_type_shape(schema_definition, type_a_inner, type_b_inner)
             }
             _ => false,
         }

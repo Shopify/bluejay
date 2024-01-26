@@ -34,13 +34,17 @@ pub use fields_definition::FieldsDefinition;
 pub use has_directives::HasDirectives;
 pub use input_fields_definition::InputFieldsDefinition;
 pub use input_object_type_definition::InputObjectTypeDefinition;
-pub use input_type::{BaseInputTypeReference, InputType, InputTypeReference};
+pub use input_type::{
+    BaseInputTypeReference, InputType, InputTypeReference, ShallowInputTypeReference,
+};
 pub use input_value_definition::InputValueDefinition;
 pub use interface_implementation::InterfaceImplementation;
 pub use interface_implementations::InterfaceImplementations;
 pub use interface_type_definition::InterfaceTypeDefinition;
 pub use object_type_definition::ObjectTypeDefinition;
-pub use output_type::{BaseOutputTypeReference, OutputType, OutputTypeReference};
+pub use output_type::{
+    BaseOutputTypeReference, OutputType, OutputTypeReference, ShallowOutputTypeReference,
+};
 pub use scalar_type_definition::ScalarTypeDefinition;
 pub use schema_definition::SchemaDefinition;
 pub use type_definition::{TypeDefinition, TypeDefinitionReference};

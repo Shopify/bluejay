@@ -1,10 +1,7 @@
-use std::ops::Not;
-
 use crate::changes::Change;
 use crate::diff::directive::{common_directive_changes, directive_additions, directive_removals};
 use bluejay_core::definition::{
-    DirectiveLocation, ObjectTypeDefinition, SchemaDefinition, UnionMemberType, UnionMemberTypes,
-    UnionTypeDefinition,
+    DirectiveLocation, SchemaDefinition, UnionMemberType, UnionMemberTypes, UnionTypeDefinition,
 };
 use bluejay_core::AsIter;
 
@@ -21,18 +18,20 @@ impl<'a, S: SchemaDefinition + 'a> UnionTypeDiff<'a, S> {
     pub fn diff(&self) -> Vec<Change<'a, S>> {
         let mut changes = Vec::new();
 
-        changes.extend(self.member_additions().map(|arg| Change::UnionMemberAdded {
-            union_type_definition: self.new_type,
-            union_member_definition: arg,
-        }));
-
         changes.extend(
-            self.member_removals()
-                .map(|arg| Change::UnionMemberRemoved {
+            self.member_additions()
+                .map(|union_member_type| Change::UnionMemberAdded {
                     union_type_definition: self.new_type,
-                    union_member_definition: arg,
+                    union_member_type,
                 }),
         );
+
+        changes.extend(self.member_removals().map(|union_member_type| {
+            Change::UnionMemberRemoved {
+                union_type_definition: self.new_type,
+                union_member_type,
+            }
+        }));
 
         changes.extend(
             directive_additions::<S, _>(self.old_type, self.new_type).map(|directive| {
@@ -59,29 +58,27 @@ impl<'a, S: SchemaDefinition + 'a> UnionTypeDiff<'a, S> {
         changes
     }
 
-    fn member_removals(&self) -> impl Iterator<Item = &'a S::ObjectTypeDefinition> {
+    fn member_removals(&self) -> impl Iterator<Item = &'a S::UnionMemberType> {
         self.old_type
             .union_member_types()
             .iter()
-            .filter_map(|old_member_type| {
-                self.new_type
+            .filter(|old_member_type| {
+                !self
+                    .new_type
                     .union_member_types()
-                    .contains_type(old_member_type.member_type().name())
-                    .not()
-                    .then_some(old_member_type.member_type())
+                    .contains_type(old_member_type.name())
             })
     }
 
-    fn member_additions(&self) -> impl Iterator<Item = &'a S::ObjectTypeDefinition> {
+    fn member_additions(&self) -> impl Iterator<Item = &'a S::UnionMemberType> {
         self.new_type
             .union_member_types()
             .iter()
-            .filter_map(|new_member_type| {
-                self.old_type
+            .filter(|new_member_type| {
+                !self
+                    .old_type
                     .union_member_types()
-                    .contains_type(new_member_type.member_type().name())
-                    .not()
-                    .then_some(new_member_type.member_type())
+                    .contains_type(new_member_type.name())
             })
     }
 }

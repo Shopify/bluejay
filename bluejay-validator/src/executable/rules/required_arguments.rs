@@ -63,7 +63,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> RequiredArguments
             let missing_argument_definitions = arguments_definition
                 .iter()
                 .filter(|ivd| {
-                    ivd.r#type().as_ref().is_required()
+                    ivd.r#type().is_required()
                         && ivd.default_value().is_none()
                         && !indexed_arguments.contains_key(ivd.name())
                 })

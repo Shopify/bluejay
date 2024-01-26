@@ -1,6 +1,6 @@
 use crate::definition::{
-    EnumTypeDefinition, InputObjectTypeDefinition, ScalarTypeDefinition, TypeDefinition,
-    TypeDefinitionReference,
+    EnumTypeDefinition, InputObjectTypeDefinition, ScalarTypeDefinition, SchemaDefinition,
+    TypeDefinition, TypeDefinitionReference,
 };
 use crate::BuiltinScalarDefinition;
 
@@ -69,25 +69,19 @@ impl<'a, I: InputType> InputTypeReference<'a, I> {
         }
     }
 
-    pub fn base(&self) -> BaseInputTypeReference<'a, I> {
+    pub fn base<
+        S: SchemaDefinition<
+            CustomScalarTypeDefinition = I::CustomScalarTypeDefinition,
+            InputObjectTypeDefinition = I::InputObjectTypeDefinition,
+            EnumTypeDefinition = I::EnumTypeDefinition,
+        >,
+    >(
+        &self,
+        schema_definition: &'a S,
+    ) -> BaseInputTypeReference<'a, I> {
         match self {
             Self::Base(b, _) => *b,
-            Self::List(l, _) => l.as_ref().base(),
-        }
-    }
-
-    pub fn display_name(&self) -> String {
-        match self {
-            Self::Base(b, required) => {
-                format!("{}{}", b.name(), if *required { "!" } else { "" })
-            }
-            Self::List(inner, required) => {
-                format!(
-                    "[{}]{}",
-                    inner.as_ref().display_name(),
-                    if *required { "!" } else { "" }
-                )
-            }
+            Self::List(l, _) => l.base(schema_definition),
         }
     }
 
@@ -99,12 +93,95 @@ impl<'a, I: InputType> InputTypeReference<'a, I> {
     }
 }
 
+#[derive(Clone)]
+pub enum ShallowInputTypeReference<'a, I: InputType> {
+    Base(&'a str, bool),
+    List(&'a I, bool),
+}
+
+impl<'a, I: InputType> ShallowInputTypeReference<'a, I> {
+    pub fn is_required(&self) -> bool {
+        match self {
+            Self::Base(_, r) => *r,
+            Self::List(_, r) => *r,
+        }
+    }
+}
+
+impl<'a, I: InputType> std::fmt::Display for ShallowInputTypeReference<'a, I> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ShallowInputTypeReference::Base(name, required) => {
+                write!(f, "{}{}", name, if *required { "!" } else { "" })
+            }
+            ShallowInputTypeReference::List(inner, required) => {
+                write!(
+                    f,
+                    "[{}]{}",
+                    inner.as_shallow_ref(),
+                    if *required { "!" } else { "" }
+                )
+            }
+        }
+    }
+}
+
+impl<'a, I: InputType> PartialEq for ShallowInputTypeReference<'a, I> {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (
+                ShallowInputTypeReference::Base(name1, required1),
+                ShallowInputTypeReference::Base(name2, required2),
+            ) => required1 == required2 && name1 == name2,
+            (
+                ShallowInputTypeReference::List(inner1, required1),
+                ShallowInputTypeReference::List(inner2, required2),
+            ) => required1 == required2 && inner1.as_shallow_ref() == inner2.as_shallow_ref(),
+            _ => false,
+        }
+    }
+}
+
 pub trait InputType: Sized {
     type CustomScalarTypeDefinition: ScalarTypeDefinition;
     type InputObjectTypeDefinition: InputObjectTypeDefinition;
     type EnumTypeDefinition: EnumTypeDefinition;
 
-    fn as_ref(&self) -> InputTypeReference<'_, Self>;
+    fn as_ref<
+        'a,
+        S: SchemaDefinition<
+            CustomScalarTypeDefinition = Self::CustomScalarTypeDefinition,
+            InputObjectTypeDefinition = Self::InputObjectTypeDefinition,
+            EnumTypeDefinition = Self::EnumTypeDefinition,
+        >,
+    >(
+        &'a self,
+        schema_definition: &'a S,
+    ) -> InputTypeReference<'a, Self>;
+
+    fn as_shallow_ref(&self) -> ShallowInputTypeReference<'_, Self>;
+
+    fn display_name(&self) -> String {
+        self.as_shallow_ref().to_string()
+    }
+
+    fn is_required(&self) -> bool {
+        self.as_shallow_ref().is_required()
+    }
+
+    fn base<
+        'a,
+        S: SchemaDefinition<
+            CustomScalarTypeDefinition = Self::CustomScalarTypeDefinition,
+            InputObjectTypeDefinition = Self::InputObjectTypeDefinition,
+            EnumTypeDefinition = Self::EnumTypeDefinition,
+        >,
+    >(
+        &'a self,
+        schema_definition: &'a S,
+    ) -> BaseInputTypeReference<'a, Self> {
+        self.as_ref(schema_definition).base(schema_definition)
+    }
 }
 
 impl<

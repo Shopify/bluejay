@@ -5,7 +5,7 @@ use crate::diff::directive::{common_directive_changes, directive_additions, dire
 use crate::diff::field::FieldDiff;
 use bluejay_core::definition::{
     DirectiveLocation, FieldDefinition, FieldsDefinition, InterfaceImplementation,
-    InterfaceTypeDefinition, ObjectTypeDefinition, SchemaDefinition,
+    ObjectTypeDefinition, SchemaDefinition,
 };
 use bluejay_core::AsIter;
 
@@ -28,16 +28,16 @@ impl<'a, S: SchemaDefinition + 'a> ObjectTypeDiff<'a, S> {
     pub fn diff(&self) -> Vec<Change<'a, S>> {
         let mut changes = Vec::new();
 
-        changes.extend(self.interface_additions().map(|interface_definition| {
+        changes.extend(self.interface_additions().map(|interface_implementation| {
             Change::ObjectInterfaceAddition {
                 object_type_definition: self.old_type_definition,
-                interface_type_definition: interface_definition,
+                interface_implementation,
             }
         }));
-        changes.extend(self.interface_removals().map(|interface_definition| {
+        changes.extend(self.interface_removals().map(|interface_implementation| {
             Change::ObjectInterfaceRemoval {
                 object_type_definition: self.old_type_definition,
-                interface_type_definition: interface_definition,
+                interface_implementation,
             }
         }));
 
@@ -125,44 +125,42 @@ impl<'a, S: SchemaDefinition + 'a> ObjectTypeDiff<'a, S> {
             })
     }
 
-    fn interface_additions(&self) -> impl Iterator<Item = &'a S::InterfaceTypeDefinition> {
+    fn interface_additions(&self) -> impl Iterator<Item = &'a S::InterfaceImplementation> {
         self.new_type_definition
             .interface_implementations()
             .map(|ii| ii.iter())
             .into_iter()
             .flatten()
-            .filter_map(
-                |new_interface_impl: &'a <S as SchemaDefinition>::InterfaceImplementation| {
-                    self.old_type_definition
-                        .interface_implementations()
-                        .map_or(true, |interface_implementations| {
+            .filter(
+                |new_interface_impl: &&'a <S as SchemaDefinition>::InterfaceImplementation| {
+                    self.old_type_definition.interface_implementations().map_or(
+                        true,
+                        |interface_implementations| {
                             !interface_implementations.iter().any(|old_interface_impl| {
-                                old_interface_impl.interface().name()
-                                    == new_interface_impl.interface().name()
+                                old_interface_impl.name() == new_interface_impl.name()
                             })
-                        })
-                        .then_some(new_interface_impl.interface())
+                        },
+                    )
                 },
             )
     }
 
-    fn interface_removals(&self) -> impl Iterator<Item = &'a S::InterfaceTypeDefinition> {
+    fn interface_removals(&self) -> impl Iterator<Item = &'a S::InterfaceImplementation> {
         self.old_type_definition
             .interface_implementations()
             .map(|ii| ii.iter())
             .into_iter()
             .flatten()
-            .filter_map(
-                |old_interface_impl: &'a <S as SchemaDefinition>::InterfaceImplementation| {
-                    self.new_type_definition
-                        .interface_implementations()
-                        .map_or(true, |interface_implementations| {
+            .filter(
+                |old_interface_impl: &&'a <S as SchemaDefinition>::InterfaceImplementation| {
+                    self.new_type_definition.interface_implementations().map_or(
+                        true,
+                        |interface_implementations| {
                             !interface_implementations.iter().any(|new_interface_impl| {
-                                old_interface_impl.interface().name()
-                                    == new_interface_impl.interface().name()
+                                old_interface_impl.name() == new_interface_impl.name()
                             })
-                        })
-                        .then_some(old_interface_impl.interface())
+                        },
+                    )
                 },
             )
     }

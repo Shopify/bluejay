@@ -61,9 +61,9 @@ impl<'a, C: Context> SchemaDefinition<'a, C> {
                         interface_implementations
                             .iter()
                             .for_each(|interface_implementation| {
-                                let itd = interface_implementation.interface();
+                                let itd_name = interface_implementation.name();
                                 interface_implementors
-                                    .entry(itd.name().as_ref())
+                                    .entry(itd_name)
                                     .or_default()
                                     .push(otd);
                             });

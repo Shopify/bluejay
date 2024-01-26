@@ -65,13 +65,16 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> AllVariableUsagesAllowed<'a
                     .push(VariableUsage { variable, location });
             }
             ValueReference::List(l) => l.iter().for_each(|value| {
-                if let InputTypeReference::List(inner, _) = location.r#type().as_ref() {
+                if let InputTypeReference::List(inner, _) =
+                    location.r#type().as_ref(self.schema_definition)
+                {
                     self.visit_value(value, root, VariableUsageLocation::ListValue(inner));
                 }
             }),
             ValueReference::Object(o) => o.iter().for_each(|(key, value)| {
                 if let Some(ivd) = location.input_value_definition() {
-                    if let BaseInputTypeReference::InputObject(iotd) = ivd.r#type().as_ref().base()
+                    if let BaseInputTypeReference::InputObject(iotd) =
+                        ivd.r#type().base(self.schema_definition)
                     {
                         if let Some(ivd) = iotd.input_field_definitions().get(key.as_ref()) {
                             self.visit_value(value, root, VariableUsageLocation::ObjectField(ivd));
@@ -126,7 +129,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> AllVariableUsagesAllowed<'a
         }
 
         let VariableUsage { location, .. } = variable_usage;
-        let location_type = location.r#type().as_ref();
+        let location_type = location.r#type().as_ref(self.schema_definition);
         let input_value_definition = location.input_value_definition();
 
         if location_type.is_required() && !variable_type.is_required() {
@@ -154,9 +157,10 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> AllVariableUsagesAllowed<'a
             (
                 VariableTypeReference::List(item_variable_type, variable_required),
                 InputTypeReference::List(item_location_type, location_required),
-            ) if variable_required || !location_required => {
-                self.are_types_compatible(item_variable_type.as_ref(), item_location_type.as_ref())
-            }
+            ) if variable_required || !location_required => self.are_types_compatible(
+                item_variable_type.as_ref(),
+                item_location_type.as_ref(self.schema_definition),
+            ),
             (
                 VariableTypeReference::Named(base_variable_type, variable_required),
                 InputTypeReference::Base(base_location_type, location_required),

@@ -12,7 +12,6 @@ description = "A GraphQL parser"
 [dependencies]
 logos = { version = "0.13" }
 enum-as-inner = "0.5"
-once_cell = "1.17"
 ariadne = { version = "0.2", optional = true }
 bluejay-core = { version = "0.1.0-alpha.5", path = "../bluejay-core" }
 strum = { version = "0.24", features = ["derive"] }
@@ -20,6 +19,7 @@ strum = { version = "0.24", features = ["derive"] }
 [dev-dependencies]
 criterion = "0.4"
 insta = { version = "1.28", features = ["glob"] }
+self_cell = "1.0.3"
 
 [[bench]]
 name = "parse_github_schema"

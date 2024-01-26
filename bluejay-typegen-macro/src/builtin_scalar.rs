@@ -1,10 +1,10 @@
 use crate::Config;
-use bluejay_core::BuiltinScalarDefinition;
+use bluejay_core::{definition::SchemaDefinition, BuiltinScalarDefinition};
 use syn::parse_quote;
 
-pub(crate) fn builtin_scalar_type(
+pub(crate) fn builtin_scalar_type<S: SchemaDefinition>(
     scalar: BuiltinScalarDefinition,
-    config: &Config,
+    config: &Config<S>,
 ) -> syn::TypePath {
     match scalar {
         BuiltinScalarDefinition::Boolean => parse_quote! { ::std::primitive::bool },
@@ -22,7 +22,7 @@ pub(crate) fn scalar_is_reference(scalar: BuiltinScalarDefinition) -> bool {
     )
 }
 
-fn string(config: &Config) -> syn::TypePath {
+fn string<S: SchemaDefinition>(config: &Config<S>) -> syn::TypePath {
     if config.borrow() {
         parse_quote! { ::std::borrow::Cow<'a, str> }
     } else {

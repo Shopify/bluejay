@@ -38,8 +38,8 @@ impl<'a, S: SchemaDefinition + 'a> InputFieldDiff<'a, S> {
             });
         }
 
-        if self.old_field_definition.r#type().as_ref().display_name()
-            != self.new_field_definition.r#type().as_ref().display_name()
+        if self.old_field_definition.r#type().as_shallow_ref()
+            != self.new_field_definition.r#type().as_shallow_ref()
         {
             changes.push(Change::InputFieldTypeChanged {
                 input_object_type_definition: self.old_type_definition,

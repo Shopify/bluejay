@@ -73,7 +73,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> FragmentSpreadIsPossible<'a
             TypeDefinitionReference::Union(utd) => Some(HashSet::from_iter(
                 utd.union_member_types()
                     .iter()
-                    .map(|union_member| union_member.member_type().name()),
+                    .map(|union_member| union_member.name()),
             )),
             TypeDefinitionReference::BuiltinScalar(_)
             | TypeDefinitionReference::CustomScalar(_)

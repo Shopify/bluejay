@@ -40,16 +40,8 @@ impl<'a, S: SchemaDefinition + 'a> ArgumentDiff<'a, S> {
             });
         }
 
-        if self
-            .old_argument_definition
-            .r#type()
-            .as_ref()
-            .display_name()
-            != self
-                .new_argument_definition
-                .r#type()
-                .as_ref()
-                .display_name()
+        if self.old_argument_definition.r#type().as_shallow_ref()
+            != self.new_argument_definition.r#type().as_shallow_ref()
         {
             changes.push(Change::FieldArgumentTypeChanged {
                 type_name: self.type_name,
