@@ -280,29 +280,28 @@ impl<'a, 'b, S: definition::SchemaDefinition, W: Warden<SchemaDefinition = S>>
     fn visit(
         schema_definition: &'b SchemaDefinition<'a, S, W>,
     ) -> TypeDefinitionsAndDirectiveDefinitions<'a, S, W> {
-        // all builtin directive definitions are needed for introspection regardless of whether or not they are accessible in the query
-        // also any directive definition that can be used in executable documents must be included here as they don't need to be accessible
-        // through the schema visit
-        let directive_definitions = schema_definition
-            .inner()
-            .directive_definitions()
-            .filter_map(|dd| {
-                (dd.is_builtin() || dd.locations().iter().any(DirectiveLocation::is_executable))
-                    .then(|| {
-                        schema_definition
-                            .cache
-                            .get_or_create_directive_definition(dd)
-                            .map(|dd| (dd.name(), dd))
-                    })
-                    .flatten()
-            })
-            .collect();
-
         let mut instance = Self {
             schema_definition,
             type_definitions: BTreeMap::new(),
-            directive_definitions,
+            directive_definitions: BTreeMap::new(),
         };
+
+        // all builtin directive definitions are needed for introspection regardless of whether or not they are accessible in the query
+        // also any directive definition that can be used in executable documents must be included here as they don't need to be accessible
+        // through the schema visit
+        schema_definition
+            .inner()
+            .directive_definitions()
+            .for_each(|dd| {
+                if dd.is_builtin() || dd.locations().iter().any(DirectiveLocation::is_executable) {
+                    if let Some(dd) = schema_definition
+                        .cache
+                        .get_or_create_directive_definition(dd)
+                    {
+                        instance.visit_directive_definition(dd);
+                    }
+                }
+            });
 
         instance.visit_type_definition(TypeDefinitionReference::Object(schema_definition.query));
 
