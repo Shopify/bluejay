@@ -10,6 +10,7 @@ exclude = [".gitignore", "tests/**/*"]
 description = "A GraphQL schema comparator"
 
 [dependencies]
+strum = { version = "0.24", features = ["derive"] }
 bluejay-core = { version = "0.1.0-alpha.5", path = "../bluejay-core" }
 bluejay-printer = { version = "0.1.0-alpha.5", path = "../bluejay-printer" }
 

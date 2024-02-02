@@ -8,6 +8,7 @@ use bluejay_core::definition::{
 use bluejay_core::{Argument, AsIter, Directive, Value};
 use bluejay_printer::value::ValuePrinter;
 use std::borrow::Cow;
+use strum::AsRefStr;
 
 #[derive(Eq, Ord, PartialEq, PartialOrd)]
 pub enum Criticality {
@@ -56,6 +57,7 @@ impl Criticality {
     }
 }
 
+#[derive(AsRefStr)]
 pub enum Change<'a, S: SchemaDefinition> {
     TypeRemoved {
         removed_type_definition: TypeDefinitionReference<'a, S::TypeDefinition>,
