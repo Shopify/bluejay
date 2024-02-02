@@ -11,6 +11,10 @@ pub struct VariableUniqueness<'a, E: ExecutableDocument, S: SchemaDefinition> {
 impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Visitor<'a, E, S>
     for VariableUniqueness<'a, E, S>
 {
+    fn new(_: &'a E, _: &'a S, _: &'a Cache<'a, E, S>) -> Self {
+        Self { errors: Vec::new() }
+    }
+
     fn visit_variable_definitions(
         &mut self,
         variable_definitions: &'a <E as ExecutableDocument>::VariableDefinitions,
@@ -41,8 +45,4 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Rule<'a, E, S>
     for VariableUniqueness<'a, E, S>
 {
     type Error = Error<'a, E, S>;
-
-    fn new(_: &'a E, _: &'a S, _: &'a Cache<'a, E, S>) -> Self {
-        Self { errors: Vec::new() }
-    }
 }

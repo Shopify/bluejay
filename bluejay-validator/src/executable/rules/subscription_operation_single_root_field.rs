@@ -16,6 +16,14 @@ pub struct SubscriptionOperationSingleRootField<'a, E: ExecutableDocument, S: Sc
 impl<'a, E: ExecutableDocument, S: SchemaDefinition> Visitor<'a, E, S>
     for SubscriptionOperationSingleRootField<'a, E, S>
 {
+    fn new(executable_document: &'a E, _: &'a S, _: &'a Cache<'a, E, S>) -> Self {
+        Self {
+            invalid_operation_definitions: Vec::new(),
+            executable_document,
+            schema_definition: Default::default(),
+        }
+    }
+
     fn visit_operation_definition(&mut self, operation_definition: &'a E::OperationDefinition) {
         let core_operation_definition = operation_definition.as_ref();
         if !matches!(
@@ -71,12 +79,4 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Rule<'a, E, S>
     for SubscriptionOperationSingleRootField<'a, E, S>
 {
     type Error = Error<'a, E, S>;
-
-    fn new(executable_document: &'a E, _: &'a S, _: &'a Cache<'a, E, S>) -> Self {
-        Self {
-            invalid_operation_definitions: Vec::new(),
-            executable_document,
-            schema_definition: Default::default(),
-        }
-    }
 }

@@ -43,6 +43,13 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a>
 impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Visitor<'a, E, S>
     for DirectivesAreInValidLocations<'a, E, S>
 {
+    fn new(_: &'a E, schema_definition: &'a S, _: &'a Cache<'a, E, S>) -> Self {
+        Self {
+            schema_definition,
+            errors: Vec::new(),
+        }
+    }
+
     fn visit_variable_directive(
         &mut self,
         directive: &'a <E as ExecutableDocument>::Directive<false>,
@@ -75,11 +82,4 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Rule<'a, E, S>
     for DirectivesAreInValidLocations<'a, E, S>
 {
     type Error = Error<'a, E, S>;
-
-    fn new(_: &'a E, schema_definition: &'a S, _: &'a Cache<'a, E, S>) -> Self {
-        Self {
-            schema_definition,
-            errors: Vec::new(),
-        }
-    }
 }

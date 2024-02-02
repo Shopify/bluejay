@@ -12,6 +12,14 @@ pub struct LoneAnonymousOperation<'a, E: ExecutableDocument, S: SchemaDefinition
 impl<'a, E: ExecutableDocument, S: SchemaDefinition> Visitor<'a, E, S>
     for LoneAnonymousOperation<'a, E, S>
 {
+    fn new(executable_document: &'a E, _: &'a S, _: &'a Cache<'a, E, S>) -> Self {
+        Self {
+            anonymous_operations: Vec::new(),
+            executable_document,
+            schema_definition: Default::default(),
+        }
+    }
+
     fn visit_operation_definition(&mut self, operation_definition: &'a E::OperationDefinition) {
         if operation_definition.as_ref().name().is_none() {
             self.anonymous_operations.push(operation_definition);
@@ -39,12 +47,4 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Rule<'a, E, S>
     for LoneAnonymousOperation<'a, E, S>
 {
     type Error = Error<'a, E, S>;
-
-    fn new(executable_document: &'a E, _: &'a S, _: &'a Cache<'a, E, S>) -> Self {
-        Self {
-            anonymous_operations: Vec::new(),
-            executable_document,
-            schema_definition: Default::default(),
-        }
-    }
 }

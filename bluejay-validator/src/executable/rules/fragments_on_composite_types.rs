@@ -10,6 +10,13 @@ pub struct FragmentsOnCompositeTypes<'a, E: ExecutableDocument, S: SchemaDefinit
 impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Visitor<'a, E, S>
     for FragmentsOnCompositeTypes<'a, E, S>
 {
+    fn new(_: &'a E, schema_definition: &'a S, _: &'a Cache<'a, E, S>) -> Self {
+        Self {
+            errors: Vec::new(),
+            schema_definition,
+        }
+    }
+
     fn visit_fragment_definition(
         &mut self,
         fragment_definition: &'a <E as ExecutableDocument>::FragmentDefinition,
@@ -61,11 +68,4 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Rule<'a, E, S>
     for FragmentsOnCompositeTypes<'a, E, S>
 {
     type Error = Error<'a, E, S>;
-
-    fn new(_: &'a E, schema_definition: &'a S, _: &'a Cache<'a, E, S>) -> Self {
-        Self {
-            errors: Vec::new(),
-            schema_definition,
-        }
-    }
 }

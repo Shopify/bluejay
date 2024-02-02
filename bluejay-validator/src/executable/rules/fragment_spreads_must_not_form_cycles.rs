@@ -51,24 +51,6 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> FragmentSpreadsMustNotFormC
 impl<'a, E: ExecutableDocument, S: SchemaDefinition> Visitor<'a, E, S>
     for FragmentSpreadsMustNotFormCycles<'a, E, S>
 {
-}
-
-impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> IntoIterator
-    for FragmentSpreadsMustNotFormCycles<'a, E, S>
-{
-    type Item = Error<'a, E, S>;
-    type IntoIter = std::vec::IntoIter<Error<'a, E, S>>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.errors.into_iter()
-    }
-}
-
-impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Rule<'a, E, S>
-    for FragmentSpreadsMustNotFormCycles<'a, E, S>
-{
-    type Error = Error<'a, E, S>;
-
     fn new(executable_document: &'a E, _: &'a S, _: &'a Cache<'a, E, S>) -> Self {
         let spreads_by_fragment_definition: BTreeMap<
             &'a str,
@@ -97,6 +79,23 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Rule<'a, E, S>
             .collect();
         Self { errors }
     }
+}
+
+impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> IntoIterator
+    for FragmentSpreadsMustNotFormCycles<'a, E, S>
+{
+    type Item = Error<'a, E, S>;
+    type IntoIter = std::vec::IntoIter<Error<'a, E, S>>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.errors.into_iter()
+    }
+}
+
+impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Rule<'a, E, S>
+    for FragmentSpreadsMustNotFormCycles<'a, E, S>
+{
+    type Error = Error<'a, E, S>;
 }
 
 fn contained_fragment_spreads<'a, E: ExecutableDocument + 'a>(

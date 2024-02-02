@@ -11,6 +11,18 @@ pub struct FragmentSpreadTargetDefined<'a, E: ExecutableDocument, S: SchemaDefin
 impl<'a, E: ExecutableDocument, S: SchemaDefinition> Visitor<'a, E, S>
     for FragmentSpreadTargetDefined<'a, E, S>
 {
+    fn new(executable_document: &'a E, _: &'a S, _: &'a Cache<'a, E, S>) -> Self {
+        Self {
+            errors: Vec::new(),
+            fragment_definition_names: HashSet::from_iter(
+                executable_document
+                    .fragment_definitions()
+                    .iter()
+                    .map(FragmentDefinition::name),
+            ),
+        }
+    }
+
     fn visit_fragment_spread(
         &mut self,
         fragment_spread: &'a <E as ExecutableDocument>::FragmentSpread,
@@ -42,16 +54,4 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Rule<'a, E, S>
     for FragmentSpreadTargetDefined<'a, E, S>
 {
     type Error = Error<'a, E, S>;
-
-    fn new(executable_document: &'a E, _: &'a S, _: &'a Cache<'a, E, S>) -> Self {
-        Self {
-            errors: Vec::new(),
-            fragment_definition_names: HashSet::from_iter(
-                executable_document
-                    .fragment_definitions()
-                    .iter()
-                    .map(FragmentDefinition::name),
-            ),
-        }
-    }
 }

@@ -15,6 +15,10 @@ pub(crate) struct SelectionsAreValid<'a, E: ExecutableDocument + 'a, S: SchemaDe
 impl<'a, E: ExecutableDocument, S: SchemaDefinition> Visitor<'a, E, S>
     for SelectionsAreValid<'a, E, S>
 {
+    fn new(_: &'a E, _: &'a S, _: &'a Cache<'a, E, S>) -> Self {
+        Self { errors: Vec::new() }
+    }
+
     fn visit_selection_set(
         &mut self,
         selection_set: &'a E::SelectionSet,
@@ -174,10 +178,6 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> Rule<'a, E, S>
     for SelectionsAreValid<'a, E, S>
 {
     type Error = Error<'a, E, S>;
-
-    fn new(_: &'a E, _: &'a S, _: &'a Cache<'a, E, S>) -> Self {
-        Self { errors: Vec::new() }
-    }
 }
 
 impl<'a, E: ExecutableDocument, S: SchemaDefinition> IntoIterator for SelectionsAreValid<'a, E, S> {

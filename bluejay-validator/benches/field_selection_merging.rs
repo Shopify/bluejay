@@ -3,7 +3,7 @@ use bluejay_parser::{
     ast::executable::ExecutableDocument,
 };
 use bluejay_validator::executable::rules::FieldSelectionMerging;
-use bluejay_validator::executable::{Cache, Validator};
+use bluejay_validator::executable::{Cache, Orchestrator};
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
 use once_cell::sync::Lazy;
 
@@ -71,7 +71,7 @@ static EXECUTABLE_DOCUMENTS: Lazy<Vec<(u64, ExecutableDocument<'static>)>> = Laz
         .collect::<Vec<_>>()
 });
 
-type FieldSelectionMergingValidator<'a, 'e, 's> = Validator<
+type FieldSelectionMergingValidator<'a, 'e, 's> = Orchestrator<
     'a,
     ExecutableDocument<'e>,
     SchemaDefinition<'s>,

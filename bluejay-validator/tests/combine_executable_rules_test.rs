@@ -9,7 +9,7 @@ use bluejay_validator::{
     combine_executable_rules,
     executable::{
         rules::{AllVariableUsagesAllowed, AllVariableUsesDefined},
-        Cache, Validator,
+        Cache, Orchestrator,
     },
 };
 
@@ -19,7 +19,7 @@ combine_executable_rules!(
     [AllVariableUsagesAllowed, AllVariableUsesDefined],
 );
 
-type CustomRulesValidator<'a, E, S> = Validator<'a, E, S, CustomRules<'a, E, S>>;
+type CustomRulesValidator<'a, E, S> = Orchestrator<'a, E, S, CustomRules<'a, E, S>>;
 
 #[test]
 fn test_combine_executable_rules() {

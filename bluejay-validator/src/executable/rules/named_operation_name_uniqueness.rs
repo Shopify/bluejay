@@ -15,6 +15,13 @@ pub struct NamedOperationNameUniqueness<'a, E: ExecutableDocument, S: SchemaDefi
 impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition> Visitor<'a, E, S>
     for NamedOperationNameUniqueness<'a, E, S>
 {
+    fn new(_: &'a E, _: &'a S, _: &'a Cache<'a, E, S>) -> Self {
+        Self {
+            operations: BTreeMap::new(),
+            schema_definition: Default::default(),
+        }
+    }
+
     fn visit_operation_definition(&mut self, operation_definition: &'a E::OperationDefinition) {
         if let OperationDefinitionReference::Explicit(eod) = operation_definition.as_ref() {
             if let Some(name) = eod.name() {
@@ -47,11 +54,4 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Rule<'a, E, S>
     for NamedOperationNameUniqueness<'a, E, S>
 {
     type Error = Error<'a, E, S>;
-
-    fn new(_: &'a E, _: &'a S, _: &'a Cache<'a, E, S>) -> Self {
-        Self {
-            operations: BTreeMap::new(),
-            schema_definition: Default::default(),
-        }
-    }
 }

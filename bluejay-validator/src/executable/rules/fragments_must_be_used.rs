@@ -12,6 +12,18 @@ pub struct FragmentsMustBeUsed<'a, E: ExecutableDocument, S: SchemaDefinition> {
 impl<'a, E: ExecutableDocument, S: SchemaDefinition> Visitor<'a, E, S>
     for FragmentsMustBeUsed<'a, E, S>
 {
+    fn new(executable_document: &'a E, _: &'a S, _: &'a Cache<'a, E, S>) -> Self {
+        Self {
+            unused_fragment_definitions: BTreeMap::from_iter(
+                executable_document
+                    .fragment_definitions()
+                    .iter()
+                    .map(|fd| (fd.name(), fd)),
+            ),
+            schema_definition: Default::default(),
+        }
+    }
+
     fn visit_fragment_spread(
         &mut self,
         fragment_spread: &'a <E as ExecutableDocument>::FragmentSpread,
@@ -45,16 +57,4 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Rule<'a, E, S>
     for FragmentsMustBeUsed<'a, E, S>
 {
     type Error = Error<'a, E, S>;
-
-    fn new(executable_document: &'a E, _: &'a S, _: &'a Cache<'a, E, S>) -> Self {
-        Self {
-            unused_fragment_definitions: BTreeMap::from_iter(
-                executable_document
-                    .fragment_definitions()
-                    .iter()
-                    .map(|fd| (fd.name(), fd)),
-            ),
-            schema_definition: Default::default(),
-        }
-    }
 }

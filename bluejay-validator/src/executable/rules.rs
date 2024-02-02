@@ -70,12 +70,6 @@ macro_rules! combine_executable_rules {
 
             impl<'a, E: bluejay_core::executable::ExecutableDocument + 'a, S: bluejay_core::definition::SchemaDefinition + 'a> $crate::executable::Rule<'a, E, S> for $name<'a, E, S> {
                 type Error = $err<'a, E, S>;
-
-                fn new(executable_document: &'a E, schema_definition: &'a S, cache: &'a $crate::executable::Cache<'a, E, S>) -> Self {
-                    Self {
-                        $([<$rule:snake>]: $rule::new(executable_document, schema_definition, cache),)*
-                    }
-                }
             }
 
             impl<'a, E: bluejay_core::executable::ExecutableDocument + 'a, S: bluejay_core::definition::SchemaDefinition + 'a> IntoIterator for $name<'a, E, S> {
@@ -88,6 +82,12 @@ macro_rules! combine_executable_rules {
             }
 
             impl<'a, E: bluejay_core::executable::ExecutableDocument, S: bluejay_core::definition::SchemaDefinition> $crate::executable::Visitor<'a, E, S> for $name<'a, E, S> {
+                fn new(executable_document: &'a E, schema_definition: &'a S, cache: &'a $crate::executable::Cache<'a, E, S>) -> Self {
+                    Self {
+                        $([<$rule:snake>]: $rule::new(executable_document, schema_definition, cache),)*
+                    }
+                }
+
                 fn visit_operation_definition(&mut self, operation_definition: &'a E::OperationDefinition) {
                     $(self.[<$rule:snake>].visit_operation_definition(operation_definition);)*
                 }

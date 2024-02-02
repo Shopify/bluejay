@@ -17,6 +17,15 @@ pub struct AllVariablesUsed<'a, E: ExecutableDocument, S: SchemaDefinition> {
 impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Visitor<'a, E, S>
     for AllVariablesUsed<'a, E, S>
 {
+    fn new(executable_document: &'a E, _: &'a S, cache: &'a Cache<'a, E, S>) -> Self {
+        Self {
+            fragment_references: HashMap::new(),
+            variable_usages: HashMap::new(),
+            cache,
+            executable_document,
+        }
+    }
+
     fn visit_variable_argument(
         &mut self,
         argument: &'a <E as ExecutableDocument>::Argument<false>,
@@ -145,13 +154,4 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Rule<'a, E, S>
     for AllVariablesUsed<'a, E, S>
 {
     type Error = Error<'a, E, S>;
-
-    fn new(executable_document: &'a E, _: &'a S, cache: &'a Cache<'a, E, S>) -> Self {
-        Self {
-            fragment_references: HashMap::new(),
-            variable_usages: HashMap::new(),
-            cache,
-            executable_document,
-        }
-    }
 }
