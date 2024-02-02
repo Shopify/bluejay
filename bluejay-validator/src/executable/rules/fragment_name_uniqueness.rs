@@ -12,6 +12,13 @@ pub struct FragmentNameUniqueness<'a, E: ExecutableDocument, S: SchemaDefinition
 impl<'a, E: ExecutableDocument, S: SchemaDefinition> Visitor<'a, E, S>
     for FragmentNameUniqueness<'a, E, S>
 {
+    fn new(_: &'a E, _: &'a S, _: &'a Cache<'a, E, S>) -> Self {
+        Self {
+            fragment_definitions: BTreeMap::new(),
+            schema_definition: Default::default(),
+        }
+    }
+
     fn visit_fragment_definition(&mut self, fragment_definition: &'a E::FragmentDefinition) {
         self.fragment_definitions
             .entry(fragment_definition.name())
@@ -47,11 +54,4 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Rule<'a, E, S>
     for FragmentNameUniqueness<'a, E, S>
 {
     type Error = Error<'a, E, S>;
-
-    fn new(_: &'a E, _: &'a S, _: &'a Cache<'a, E, S>) -> Self {
-        Self {
-            fragment_definitions: BTreeMap::new(),
-            schema_definition: Default::default(),
-        }
-    }
 }

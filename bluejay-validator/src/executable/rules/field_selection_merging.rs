@@ -20,6 +20,14 @@ pub struct FieldSelectionMerging<'a, E: ExecutableDocument, S: SchemaDefinition>
 impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition> Visitor<'a, E, S>
     for FieldSelectionMerging<'a, E, S>
 {
+    fn new(_: &'a E, schema_definition: &'a S, cache: &'a Cache<'a, E, S>) -> Self {
+        Self {
+            cache,
+            schema_definition,
+            cached_errors: BTreeMap::new(),
+        }
+    }
+
     fn visit_selection_set(
         &mut self,
         selection_set: &'a E::SelectionSet,
@@ -390,14 +398,6 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Rule<'a, E, S>
     for FieldSelectionMerging<'a, E, S>
 {
     type Error = Error<'a, E, S>;
-
-    fn new(_: &'a E, schema_definition: &'a S, cache: &'a Cache<'a, E, S>) -> Self {
-        Self {
-            cache,
-            schema_definition,
-            cached_errors: BTreeMap::new(),
-        }
-    }
 }
 
 struct FieldContext<'a, E: ExecutableDocument, S: SchemaDefinition> {

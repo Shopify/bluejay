@@ -22,6 +22,15 @@ pub struct AllVariableUsagesAllowed<'a, E: ExecutableDocument, S: SchemaDefiniti
 impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Visitor<'a, E, S>
     for AllVariableUsagesAllowed<'a, E, S>
 {
+    fn new(_: &'a E, schema_definition: &'a S, cache: &'a Cache<'a, E, S>) -> Self {
+        Self {
+            fragment_references: HashMap::new(),
+            variable_usages: BTreeMap::new(),
+            cache,
+            schema_definition,
+        }
+    }
+
     fn visit_variable_argument(
         &mut self,
         argument: &'a <E as ExecutableDocument>::Argument<false>,
@@ -231,15 +240,6 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Rule<'a, E, S>
     for AllVariableUsagesAllowed<'a, E, S>
 {
     type Error = Error<'a, E, S>;
-
-    fn new(_: &'a E, schema_definition: &'a S, cache: &'a Cache<'a, E, S>) -> Self {
-        Self {
-            fragment_references: HashMap::new(),
-            variable_usages: BTreeMap::new(),
-            cache,
-            schema_definition,
-        }
-    }
 }
 
 enum VariableUsageLocation<'a, S: SchemaDefinition> {

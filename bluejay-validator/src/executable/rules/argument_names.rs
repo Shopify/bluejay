@@ -58,6 +58,13 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> ArgumentNames<'a,
 impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Visitor<'a, E, S>
     for ArgumentNames<'a, E, S>
 {
+    fn new(_: &'a E, schema_definition: &'a S, _: &'a Cache<'a, E, S>) -> Self {
+        Self {
+            schema_definition,
+            errors: Vec::new(),
+        }
+    }
+
     fn visit_field(
         &mut self,
         field: &'a <E as ExecutableDocument>::Field,
@@ -108,11 +115,4 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Rule<'a, E, S>
     for ArgumentNames<'a, E, S>
 {
     type Error = Error<'a, E, S>;
-
-    fn new(_: &'a E, schema_definition: &'a S, _: &'a Cache<'a, E, S>) -> Self {
-        Self {
-            schema_definition,
-            errors: Vec::new(),
-        }
-    }
 }

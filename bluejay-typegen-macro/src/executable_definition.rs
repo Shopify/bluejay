@@ -17,7 +17,7 @@ use bluejay_core::{
     OperationType,
 };
 use bluejay_parser::ast::executable::ExecutableDocument;
-use bluejay_validator::executable::{BuiltinRulesValidator, Cache, Validator};
+use bluejay_validator::executable::{BuiltinRulesValidator, Cache, Orchestrator};
 use std::collections::HashSet;
 use syn::{parse::Parse, parse2, parse_quote};
 
@@ -351,7 +351,7 @@ pub(crate) fn generate_executable_definition<S: SchemaDefinition>(
     if !validation_errors.is_empty() {
         return Err(map_parser_errors(&query, &contents, validation_errors));
     }
-    let validation_errors: Vec<_> = Validator::<_, _, SelectionsAreValid<_, _>>::validate(
+    let validation_errors: Vec<_> = Orchestrator::<_, _, SelectionsAreValid<_, _>>::validate(
         &executable_document,
         config.schema_definition(),
         &validation_cache,

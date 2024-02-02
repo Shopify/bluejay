@@ -11,6 +11,10 @@ pub struct FieldSelections<'a, E: ExecutableDocument, S: SchemaDefinition> {
 impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Visitor<'a, E, S>
     for FieldSelections<'a, E, S>
 {
+    fn new(_: &'a E, _: &'a S, _: &'a Cache<'a, E, S>) -> Self {
+        Self { errors: Vec::new() }
+    }
+
     fn visit_selection_set(
         &mut self,
         selection_set: &'a E::SelectionSet,
@@ -48,8 +52,4 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Rule<'a, E, S>
     for FieldSelections<'a, E, S>
 {
     type Error = Error<'a, E, S>;
-
-    fn new(_: &'a E, _: &'a S, _: &'a Cache<'a, E, S>) -> Self {
-        Self { errors: Vec::new() }
-    }
 }

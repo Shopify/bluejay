@@ -14,6 +14,13 @@ pub struct OperationTypeIsDefined<'a, E: ExecutableDocument, S: SchemaDefinition
 impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition> Visitor<'a, E, S>
     for OperationTypeIsDefined<'a, E, S>
 {
+    fn new(_: &'a E, schema_definition: &'a S, _: &'a Cache<'a, E, S>) -> Self {
+        Self {
+            errors: Vec::new(),
+            schema_definition,
+        }
+    }
+
     fn visit_operation_definition(&mut self, operation_definition: &'a E::OperationDefinition) {
         if let OperationDefinitionReference::Explicit(eod) = operation_definition.as_ref() {
             match eod.operation_type() {
@@ -44,11 +51,4 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Rule<'a, E, S>
     for OperationTypeIsDefined<'a, E, S>
 {
     type Error = Error<'a, E, S>;
-
-    fn new(_: &'a E, schema_definition: &'a S, _: &'a Cache<'a, E, S>) -> Self {
-        Self {
-            errors: Vec::new(),
-            schema_definition,
-        }
-    }
 }

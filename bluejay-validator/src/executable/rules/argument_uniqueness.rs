@@ -31,6 +31,10 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> ArgumentUniquenes
 impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Visitor<'a, E, S>
     for ArgumentUniqueness<'a, E, S>
 {
+    fn new(_: &'a E, _: &'a S, _: &'a Cache<'a, E, S>) -> Self {
+        Self { errors: Vec::new() }
+    }
+
     fn visit_field(
         &mut self,
         field: &'a <E as ExecutableDocument>::Field,
@@ -72,8 +76,4 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Rule<'a, E, S>
     for ArgumentUniqueness<'a, E, S>
 {
     type Error = Error<'a, E, S>;
-
-    fn new(_: &'a E, _: &'a S, _: &'a Cache<'a, E, S>) -> Self {
-        Self { errors: Vec::new() }
-    }
 }

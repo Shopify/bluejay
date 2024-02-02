@@ -1,8 +1,14 @@
-use crate::executable::Path;
+use crate::executable::{Cache, Path};
 use bluejay_core::definition::{DirectiveLocation, SchemaDefinition, TypeDefinitionReference};
 use bluejay_core::executable::ExecutableDocument;
 
 pub trait Visitor<'a, E: ExecutableDocument, S: SchemaDefinition> {
+    fn new(
+        executable_document: &'a E,
+        schema_definition: &'a S,
+        cache: &'a Cache<'a, E, S>,
+    ) -> Self;
+
     fn visit_operation_definition(&mut self, _operation_definition: &'a E::OperationDefinition) {}
 
     fn visit_selection_set(
