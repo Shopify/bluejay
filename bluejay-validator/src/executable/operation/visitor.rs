@@ -40,3 +40,51 @@ pub trait Visitor<'a, E: ExecutableDocument, S: SchemaDefinition, V: VariableVal
     ) {
     }
 }
+
+macro_rules! impl_visitor {
+    ($n:literal) => {
+        seq_macro::seq!(N in 0..$n {
+            impl<'a, E: ExecutableDocument, S: SchemaDefinition, V: VariableValues, #(T~N: Visitor<'a, E, S, V>,)*> Visitor<'a, E, S, V> for (#(T~N,)*) {
+                fn new(
+                    operation_definition: &'a E::OperationDefinition,
+                    schema_definition: &'a S,
+                    variable_values: &'a V,
+                    cache: &'a Cache<'a, E, S>,
+                ) -> Self {
+                    (
+                        #(T~N::new(
+                            operation_definition,
+                            schema_definition,
+                            variable_values,
+                            cache,
+                        ),)*
+                    )
+                }
+
+                fn visit_field(
+                    &mut self,
+                    field: &'a E::Field,
+                    field_definition: &'a S::FieldDefinition,
+                    owner_type: TypeDefinitionReference<'a, S::TypeDefinition>,
+                    included: bool,
+                ) {
+                    #(self.N.visit_field(field, field_definition, owner_type, included);)*
+                }
+
+                fn leave_field(
+                    &mut self,
+                    field: &'a <E as ExecutableDocument>::Field,
+                    field_definition: &'a S::FieldDefinition,
+                    owner_type: TypeDefinitionReference<'a, S::TypeDefinition>,
+                    included: bool,
+                ) {
+                    #(self.N.leave_field(field, field_definition, owner_type, included);)*
+                }
+            }
+        });
+    }
+}
+
+seq_macro::seq!(N in 2..=10 {
+    impl_visitor!(N);
+});

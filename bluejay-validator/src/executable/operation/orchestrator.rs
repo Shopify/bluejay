@@ -275,7 +275,7 @@ impl<
             cache,
         );
         instance.visit();
-        Ok(instance.visitor.into())
+        Ok(instance.visitor.into_output())
     }
 }
 

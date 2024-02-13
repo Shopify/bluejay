@@ -51,11 +51,9 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, VV: VariableValues> Analyze
     for QueryDepth
 {
     type Output = usize;
-}
 
-impl From<QueryDepth> for usize {
-    fn from(depth: QueryDepth) -> usize {
-        depth.max_depth
+    fn into_output(self) -> Self::Output {
+        self.max_depth
     }
 }
 
