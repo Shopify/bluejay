@@ -5,21 +5,17 @@ use bluejay_parser::{
     },
     Error,
 };
-use bluejay_validator::{
-    combine_executable_rules,
-    executable::{
-        document::{
-            rules::{AllVariableUsagesAllowed, AllVariableUsesDefined},
-            Orchestrator,
-        },
-        Cache,
+use bluejay_validator::executable::{
+    document::{
+        rules::{AllVariableUsagesAllowed, AllVariableUsesDefined},
+        Orchestrator,
     },
+    Cache,
 };
 
-combine_executable_rules!(
-    CustomRules,
-    bluejay_validator::executable::document::Error,
-    [AllVariableUsagesAllowed, AllVariableUsesDefined],
+type CustomRules<'a, E, S> = (
+    AllVariableUsagesAllowed<'a, E, S>,
+    AllVariableUsesDefined<'a, E, S>,
 );
 
 type CustomRulesValidator<'a, E, S> = Orchestrator<'a, E, S, CustomRules<'a, E, S>>;

@@ -8,22 +8,19 @@ use bluejay_core::executable::{
     Selection, SelectionReference,
 };
 use bluejay_core::{AsIter, OperationType};
-use std::marker::PhantomData;
 
-pub struct SubscriptionOperationSingleRootField<'a, E: ExecutableDocument, S: SchemaDefinition> {
+pub struct SubscriptionOperationSingleRootField<'a, E: ExecutableDocument> {
     invalid_operation_definitions: Vec<&'a E::OperationDefinition>,
     executable_document: &'a E,
-    schema_definition: PhantomData<S>,
 }
 
 impl<'a, E: ExecutableDocument, S: SchemaDefinition> Visitor<'a, E, S>
-    for SubscriptionOperationSingleRootField<'a, E, S>
+    for SubscriptionOperationSingleRootField<'a, E>
 {
     fn new(executable_document: &'a E, _: &'a S, _: &'a Cache<'a, E, S>) -> Self {
         Self {
             invalid_operation_definitions: Vec::new(),
             executable_document,
-            schema_definition: Default::default(),
         }
     }
 
@@ -62,24 +59,18 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> Visitor<'a, E, S>
     }
 }
 
-impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> IntoIterator
-    for SubscriptionOperationSingleRootField<'a, E, S>
+impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Rule<'a, E, S>
+    for SubscriptionOperationSingleRootField<'a, E>
 {
-    type Item = Error<'a, E, S>;
-    type IntoIter = std::iter::Map<
+    type Error = Error<'a, E, S>;
+    type Errors = std::iter::Map<
         std::vec::IntoIter<&'a E::OperationDefinition>,
         fn(&'a E::OperationDefinition) -> Error<'a, E, S>,
     >;
 
-    fn into_iter(self) -> Self::IntoIter {
+    fn into_errors(self) -> Self::Errors {
         self.invalid_operation_definitions
             .into_iter()
             .map(|operation| Error::SubscriptionRootNotSingleField { operation })
     }
-}
-
-impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Rule<'a, E, S>
-    for SubscriptionOperationSingleRootField<'a, E, S>
-{
-    type Error = Error<'a, E, S>;
 }

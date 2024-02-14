@@ -5,15 +5,13 @@ use crate::executable::{
 use bluejay_core::definition::{SchemaDefinition, TypeDefinitionReference};
 use bluejay_core::executable::{ExecutableDocument, FragmentDefinition, FragmentSpread};
 use std::collections::BTreeMap;
-use std::marker::PhantomData;
 
-pub struct FragmentsMustBeUsed<'a, E: ExecutableDocument, S: SchemaDefinition> {
+pub struct FragmentsMustBeUsed<'a, E: ExecutableDocument> {
     unused_fragment_definitions: BTreeMap<&'a str, &'a E::FragmentDefinition>,
-    schema_definition: PhantomData<S>,
 }
 
 impl<'a, E: ExecutableDocument, S: SchemaDefinition> Visitor<'a, E, S>
-    for FragmentsMustBeUsed<'a, E, S>
+    for FragmentsMustBeUsed<'a, E>
 {
     fn new(executable_document: &'a E, _: &'a S, _: &'a Cache<'a, E, S>) -> Self {
         Self {
@@ -23,7 +21,6 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> Visitor<'a, E, S>
                     .iter()
                     .map(|fd| (fd.name(), fd)),
             ),
-            schema_definition: Default::default(),
         }
     }
 
@@ -38,26 +35,20 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> Visitor<'a, E, S>
     }
 }
 
-impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> IntoIterator
-    for FragmentsMustBeUsed<'a, E, S>
+impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Rule<'a, E, S>
+    for FragmentsMustBeUsed<'a, E>
 {
-    type Item = Error<'a, E, S>;
-    type IntoIter = std::iter::Map<
+    type Error = Error<'a, E, S>;
+    type Errors = std::iter::Map<
         std::collections::btree_map::IntoValues<&'a str, &'a E::FragmentDefinition>,
         fn(&'a E::FragmentDefinition) -> Error<'a, E, S>,
     >;
 
-    fn into_iter(self) -> Self::IntoIter {
+    fn into_errors(self) -> Self::Errors {
         self.unused_fragment_definitions
             .into_values()
             .map(|fragment_definition| Error::FragmentDefinitionUnused {
                 fragment_definition,
             })
     }
-}
-
-impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Rule<'a, E, S>
-    for FragmentsMustBeUsed<'a, E, S>
-{
-    type Error = Error<'a, E, S>;
 }

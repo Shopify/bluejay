@@ -124,19 +124,13 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Visitor<'a, E, S>
     }
 }
 
-impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> IntoIterator
-    for RequiredArguments<'a, E, S>
-{
-    type Item = Error<'a, E, S>;
-    type IntoIter = std::vec::IntoIter<Error<'a, E, S>>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.errors.into_iter()
-    }
-}
-
 impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Rule<'a, E, S>
     for RequiredArguments<'a, E, S>
 {
     type Error = Error<'a, E, S>;
+    type Errors = std::vec::IntoIter<Error<'a, E, S>>;
+
+    fn into_errors(self) -> Self::Errors {
+        self.errors.into_iter()
+    }
 }

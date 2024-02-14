@@ -39,19 +39,13 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition> Visitor<'a, E, S>
     }
 }
 
-impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> IntoIterator
-    for OperationTypeIsDefined<'a, E, S>
-{
-    type Item = Error<'a, E, S>;
-    type IntoIter = <Vec<Error<'a, E, S>> as IntoIterator>::IntoIter;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.errors.into_iter()
-    }
-}
-
 impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Rule<'a, E, S>
     for OperationTypeIsDefined<'a, E, S>
 {
     type Error = Error<'a, E, S>;
+    type Errors = <Vec<Error<'a, E, S>> as IntoIterator>::IntoIter;
+
+    fn into_errors(self) -> Self::Errors {
+        self.errors.into_iter()
+    }
 }

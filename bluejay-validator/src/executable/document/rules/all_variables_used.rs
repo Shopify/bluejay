@@ -98,13 +98,13 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> AllVariablesUsed<'a, E, S> 
     }
 }
 
-impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> IntoIterator
+impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Rule<'a, E, S>
     for AllVariablesUsed<'a, E, S>
 {
-    type Item = Error<'a, E, S>;
-    type IntoIter = std::vec::IntoIter<Error<'a, E, S>>;
+    type Error = Error<'a, E, S>;
+    type Errors = std::vec::IntoIter<Error<'a, E, S>>;
 
-    fn into_iter(self) -> Self::IntoIter {
+    fn into_errors(self) -> Self::Errors {
         self.executable_document
             .operation_definitions()
             .iter()
@@ -151,10 +151,4 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> IntoIterator
             .collect::<Vec<Error<'a, E, S>>>()
             .into_iter()
     }
-}
-
-impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Rule<'a, E, S>
-    for AllVariablesUsed<'a, E, S>
-{
-    type Error = Error<'a, E, S>;
 }

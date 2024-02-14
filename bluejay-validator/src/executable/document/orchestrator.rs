@@ -329,12 +329,12 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, V: Visitor<'a, E, S>>
         executable_document: &'a E,
         schema_definition: &'a S,
         cache: &'a Cache<'a, E, S>,
-    ) -> <V as IntoIterator>::IntoIter
+    ) -> <V as Rule<'a, E, S>>::Errors
     where
         V: Rule<'a, E, S>,
     {
         let mut instance = Self::new(executable_document, schema_definition, cache);
         instance.visit();
-        instance.visitor.into_iter()
+        instance.visitor.into_errors()
     }
 }
