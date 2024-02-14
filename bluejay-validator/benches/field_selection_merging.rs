@@ -2,8 +2,8 @@ use bluejay_parser::{
     ast::definition::{DefinitionDocument, SchemaDefinition},
     ast::executable::ExecutableDocument,
 };
-use bluejay_validator::executable::rules::FieldSelectionMerging;
-use bluejay_validator::executable::{Cache, Orchestrator};
+use bluejay_validator::executable::document::rules::FieldSelectionMerging;
+use bluejay_validator::executable::{document::Orchestrator, Cache};
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
 use once_cell::sync::Lazy;
 

@@ -8,14 +8,17 @@ use bluejay_parser::{
 use bluejay_validator::{
     combine_executable_rules,
     executable::{
-        rules::{AllVariableUsagesAllowed, AllVariableUsesDefined},
-        Cache, Orchestrator,
+        document::{
+            rules::{AllVariableUsagesAllowed, AllVariableUsesDefined},
+            Orchestrator,
+        },
+        Cache,
     },
 };
 
 combine_executable_rules!(
     CustomRules,
-    bluejay_validator::executable::Error,
+    bluejay_validator::executable::document::Error,
     [AllVariableUsagesAllowed, AllVariableUsesDefined],
 );
 

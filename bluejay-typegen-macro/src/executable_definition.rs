@@ -17,7 +17,10 @@ use bluejay_core::{
     OperationType,
 };
 use bluejay_parser::ast::executable::ExecutableDocument;
-use bluejay_validator::executable::{BuiltinRulesValidator, Cache, Orchestrator};
+use bluejay_validator::executable::{
+    document::{BuiltinRulesValidator, Orchestrator},
+    Cache,
+};
 use std::collections::HashSet;
 use syn::{parse::Parse, parse2, parse_quote};
 

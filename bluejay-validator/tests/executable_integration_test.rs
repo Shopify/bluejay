@@ -3,7 +3,7 @@ use bluejay_parser::{
     ast::executable::ExecutableDocument,
     Error,
 };
-use bluejay_validator::executable::{BuiltinRulesValidator, Cache};
+use bluejay_validator::executable::{document::BuiltinRulesValidator, Cache};
 
 #[test]
 fn test_error() {

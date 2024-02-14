@@ -6,7 +6,10 @@ use bluejay_core::{
     executable::{ExecutableDocument, Field, InlineFragment, Selection, SelectionReference},
     AsIter,
 };
-use bluejay_validator::executable::{Cache, Rule, Visitor};
+use bluejay_validator::executable::{
+    document::{Rule, Visitor},
+    Cache,
+};
 
 pub(crate) struct SelectionsAreValid<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> {
     errors: Vec<Error<'a, E, S>>,

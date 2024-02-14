@@ -1,4 +1,5 @@
 use crate::AsIter;
+use enum_as_inner::EnumAsInner;
 use std::collections::HashMap;
 
 #[cfg(feature = "serde_json")]
@@ -40,7 +41,7 @@ pub trait VariableValue: Value<false> {}
 impl<T: Value<true>> ConstValue for T {}
 impl<T: Value<false>> VariableValue for T {}
 
-#[derive(Debug, strum::Display)]
+#[derive(Debug, strum::Display, EnumAsInner)]
 #[strum(serialize_all = "lowercase")]
 pub enum ValueReference<'a, const CONST: bool, V: Value<CONST>> {
     Variable(&'a V::Variable),
@@ -91,11 +92,5 @@ impl<'a, const CONST: bool, V: Value<CONST>> std::cmp::PartialEq for ValueRefere
                 lhs == rhs
             }),
         }
-    }
-}
-
-impl<'a, const CONST: bool, V: Value<CONST>> ValueReference<'a, CONST, V> {
-    pub fn is_null(&self) -> bool {
-        matches!(self, Self::Null)
     }
 }

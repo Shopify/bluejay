@@ -1,4 +1,4 @@
-use crate::executable::VariableDefinitionInputType;
+use crate::executable::document::VariableDefinitionInputType;
 use bluejay_core::definition::SchemaDefinition;
 use bluejay_core::executable::{
     ExecutableDocument, FragmentDefinition, OperationDefinition, VariableDefinition,
