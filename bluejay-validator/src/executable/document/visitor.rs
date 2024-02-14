@@ -94,6 +94,7 @@ pub trait Visitor<'a, E: ExecutableDocument, S: SchemaDefinition> {
 macro_rules! impl_visitor {
     ($n:literal) => {
         seq_macro::seq!(N in 0..$n {
+            #[warn(clippy::missing_trait_methods)]
             impl<'a, E: ExecutableDocument, S: SchemaDefinition, #(T~N: Visitor<'a, E, S>,)*> Visitor<'a, E, S> for (#(T~N,)*) {
                 fn new(
                     executable_document: &'a E,
