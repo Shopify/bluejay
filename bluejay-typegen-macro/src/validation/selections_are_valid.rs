@@ -181,13 +181,9 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> Rule<'a, E, S>
     for SelectionsAreValid<'a, E, S>
 {
     type Error = Error<'a, E, S>;
-}
+    type Errors = std::vec::IntoIter<Self::Error>;
 
-impl<'a, E: ExecutableDocument, S: SchemaDefinition> IntoIterator for SelectionsAreValid<'a, E, S> {
-    type Item = Error<'a, E, S>;
-    type IntoIter = std::vec::IntoIter<Self::Item>;
-
-    fn into_iter(self) -> Self::IntoIter {
+    fn into_errors(self) -> Self::Errors {
         self.errors.into_iter()
     }
 }

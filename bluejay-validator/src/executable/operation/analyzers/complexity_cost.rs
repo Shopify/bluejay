@@ -165,18 +165,9 @@ impl<
     > Analyzer<'a, E, S, V> for ComplexityCost<'a, E, S, V, C>
 {
     type Output = usize;
-}
 
-impl<
-        'a,
-        E: ExecutableDocument,
-        S: SchemaDefinition,
-        V: VariableValues,
-        C: CostComputer<'a, E, S, V>,
-    > From<ComplexityCost<'a, E, S, V, C>> for usize
-{
-    fn from(mut cost: ComplexityCost<'a, E, S, V, C>) -> usize {
-        cost.result()
+    fn into_output(mut self) -> Self::Output {
+        self.result()
     }
 }
 

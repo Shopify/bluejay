@@ -52,161 +52,31 @@ pub use value_is_valid::ValueIsValid;
 pub use variable_uniqueness::VariableUniqueness;
 pub use variables_are_input_types::VariablesAreInputTypes;
 
-/// Combines multiple rules into a single rule.
-/// Args:
-/// 1. Name of the resulting struct
-/// 2. Name of the error type returned by the rule.
-///    Must accept generic lifetime, executable document, and schema definition. e.g. pass Error for `Error<'a, E, S>`.
-/// 3. Rules, a comma-separated list of types accepting generic lifetime, executable document, and schema definition.
-///    Must implement Rule<'a, E, S>. Must be wrapped in square brackets. e.g. `[FirstRule, SecondRule]`.
-///    The `Error` type of each rule must be convertable to the error type of the new rule via `Into::into`.
-#[macro_export]
-macro_rules! combine_executable_rules {
-    ( $name:ty, $err:ty, [$( $rule:ty ),* $(,)?] $(,)? ) => {
-        paste::paste! {
-            pub struct $name<'a, E: bluejay_core::executable::ExecutableDocument, S: bluejay_core::definition::SchemaDefinition> {
-                $([<$rule:snake>]: $rule<'a, E, S>,)*
-            }
-
-            impl<'a, E: bluejay_core::executable::ExecutableDocument + 'a, S: bluejay_core::definition::SchemaDefinition + 'a> $crate::executable::document::Rule<'a, E, S> for $name<'a, E, S> {
-                type Error = $err<'a, E, S>;
-            }
-
-            impl<'a, E: bluejay_core::executable::ExecutableDocument + 'a, S: bluejay_core::definition::SchemaDefinition + 'a> IntoIterator for $name<'a, E, S> {
-                type Item = $err<'a, E, S>;
-                type IntoIter = $crate::chain_types!($(std::iter::Map<<$rule<'a, E, S> as IntoIterator>::IntoIter, fn(<$rule<'a, E, S> as $crate::executable::document::Rule<'a, E, S>>::Error) -> $err<'a, E, S>>),*);
-
-                fn into_iter(self) -> Self::IntoIter {
-                    $crate::chain_iters!($(self.[<$rule:snake>].into_iter().map(Into::into as fn(<$rule<'a, E, S> as $crate::executable::document::Rule<'a, E, S>>::Error) -> $err<'a, E, S>)),*)
-                }
-            }
-
-            impl<'a, E: bluejay_core::executable::ExecutableDocument, S: bluejay_core::definition::SchemaDefinition> $crate::executable::document::Visitor<'a, E, S> for $name<'a, E, S> {
-                fn new(executable_document: &'a E, schema_definition: &'a S, cache: &'a $crate::executable::Cache<'a, E, S>) -> Self {
-                    Self {
-                        $([<$rule:snake>]: $rule::new(executable_document, schema_definition, cache),)*
-                    }
-                }
-
-                fn visit_operation_definition(&mut self, operation_definition: &'a E::OperationDefinition) {
-                    $(self.[<$rule:snake>].visit_operation_definition(operation_definition);)*
-                }
-
-                fn visit_selection_set(
-                    &mut self,
-                    selection_set: &'a E::SelectionSet,
-                    r#type: bluejay_core::definition::TypeDefinitionReference<'a, S::TypeDefinition>,
-                ) {
-                    $(self.[<$rule:snake>].visit_selection_set(selection_set, r#type);)*
-                }
-
-                fn visit_field(&mut self, field: &'a E::Field, field_definition: &'a S::FieldDefinition, path: &$crate::executable::document::Path<'a, E>) {
-                    $(self.[<$rule:snake>].visit_field(field, field_definition, path);)*
-                }
-
-                fn visit_const_directive(&mut self, directive: &'a E::Directive<true>, location: bluejay_core::definition::DirectiveLocation) {
-                    $(self.[<$rule:snake>].visit_const_directive(directive, location);)*
-                }
-
-                fn visit_variable_directive(&mut self, directive: &'a E::Directive<false>, location: bluejay_core::definition::DirectiveLocation) {
-                    $(self.[<$rule:snake>].visit_variable_directive(directive, location);)*
-                }
-
-                fn visit_const_directives(
-                    &mut self,
-                    directives: &'a E::Directives<true>,
-                    location: bluejay_core::definition::DirectiveLocation,
-                ) {
-                    $(self.[<$rule:snake>].visit_const_directives(directives, location);)*
-                }
-
-                fn visit_variable_directives(
-                    &mut self,
-                    directives: &'a E::Directives<false>,
-                    location: bluejay_core::definition::DirectiveLocation,
-                ) {
-                    $(self.[<$rule:snake>].visit_variable_directives(directives, location);)*
-                }
-
-                fn visit_fragment_definition(&mut self, fragment_definition: &'a E::FragmentDefinition) {
-                    $(self.[<$rule:snake>].visit_fragment_definition(fragment_definition);)*
-                }
-
-                fn visit_inline_fragment(
-                    &mut self,
-                    inline_fragment: &'a E::InlineFragment,
-                    scoped_type: bluejay_core::definition::TypeDefinitionReference<'a, S::TypeDefinition>,
-                ) {
-                    $(self.[<$rule:snake>].visit_inline_fragment(inline_fragment, scoped_type);)*
-                }
-
-                fn visit_fragment_spread(
-                    &mut self,
-                    fragment_spread: &'a E::FragmentSpread,
-                    scoped_type: bluejay_core::definition::TypeDefinitionReference<'a, S::TypeDefinition>,
-                    path: &$crate::executable::document::Path<'a, E>,
-                ) {
-                    $(self.[<$rule:snake>].visit_fragment_spread(fragment_spread, scoped_type, path);)*
-                }
-
-                fn visit_const_argument(
-                    &mut self,
-                    argument: &'a E::Argument<true>,
-                    input_value_definition: &'a S::InputValueDefinition,
-                ) {
-                    $(self.[<$rule:snake>].visit_const_argument(argument, input_value_definition);)*
-                }
-
-                fn visit_variable_argument(
-                    &mut self,
-                    argument: &'a E::Argument<false>,
-                    input_value_definition: &'a S::InputValueDefinition,
-                    path: &$crate::executable::document::Path<'a, E>,
-                ) {
-                    $(self.[<$rule:snake>].visit_variable_argument(argument, input_value_definition, path);)*
-                }
-
-                fn visit_variable_definition(&mut self, variable_definition: &'a E::VariableDefinition) {
-                    $(self.[<$rule:snake>].visit_variable_definition(variable_definition);)*
-                }
-
-                fn visit_variable_definitions(&mut self, variable_definitions: &'a E::VariableDefinitions) {
-                    $(self.[<$rule:snake>].visit_variable_definitions(variable_definitions);)*
-                }
-            }
-        }
-    };
-}
-
-combine_executable_rules!(
-    BuiltinRules,
-    crate::executable::document::Error,
-    [
-        NamedOperationNameUniqueness,
-        LoneAnonymousOperation,
-        SubscriptionOperationSingleRootField,
-        FieldSelections,
-        FieldSelectionMerging,
-        OperationTypeIsDefined,
-        LeafFieldSelections,
-        ArgumentNames,
-        ArgumentUniqueness,
-        RequiredArguments,
-        FragmentNameUniqueness,
-        FragmentSpreadTypeExists,
-        FragmentsOnCompositeTypes,
-        FragmentsMustBeUsed,
-        FragmentSpreadTargetDefined,
-        FragmentSpreadsMustNotFormCycles,
-        FragmentSpreadIsPossible,
-        ValueIsValid,
-        DirectivesAreDefined,
-        DirectivesAreInValidLocations,
-        DirectivesAreUniquePerLocation,
-        VariableUniqueness,
-        VariablesAreInputTypes,
-        AllVariableUsesDefined,
-        AllVariablesUsed,
-        AllVariableUsagesAllowed,
-    ],
+pub type BuiltinRules<'a, E, S> = (
+    NamedOperationNameUniqueness<'a, E>,
+    LoneAnonymousOperation<'a, E>,
+    SubscriptionOperationSingleRootField<'a, E>,
+    FieldSelections<'a, E, S>,
+    FieldSelectionMerging<'a, E, S>,
+    OperationTypeIsDefined<'a, E, S>,
+    LeafFieldSelections<'a, E, S>,
+    ArgumentNames<'a, E, S>,
+    ArgumentUniqueness<'a, E, S>,
+    RequiredArguments<'a, E, S>,
+    FragmentNameUniqueness<'a, E>,
+    FragmentSpreadTypeExists<'a, E, S>,
+    FragmentsOnCompositeTypes<'a, E, S>,
+    FragmentsMustBeUsed<'a, E>,
+    FragmentSpreadTargetDefined<'a, E, S>,
+    FragmentSpreadsMustNotFormCycles<'a, E, S>,
+    FragmentSpreadIsPossible<'a, E, S>,
+    ValueIsValid<'a, E, S>,
+    DirectivesAreDefined<'a, E, S>,
+    DirectivesAreInValidLocations<'a, E, S>,
+    DirectivesAreUniquePerLocation<'a, E, S>,
+    VariableUniqueness<'a, E, S>,
+    VariablesAreInputTypes<'a, E, S>,
+    AllVariableUsesDefined<'a, E, S>,
+    AllVariablesUsed<'a, E, S>,
+    AllVariableUsagesAllowed<'a, E, S>,
 );

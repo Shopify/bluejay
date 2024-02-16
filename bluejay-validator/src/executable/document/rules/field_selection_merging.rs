@@ -384,23 +384,17 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> FieldSelectionMer
     }
 }
 
-impl<'a, E: ExecutableDocument, S: SchemaDefinition> IntoIterator
-    for FieldSelectionMerging<'a, E, S>
-{
-    type Item = Error<'a, E, S>;
-    type IntoIter = std::iter::Flatten<
-        std::collections::btree_map::IntoValues<&'a E::SelectionSet, Vec<Error<'a, E, S>>>,
-    >;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.cached_errors.into_values().flatten()
-    }
-}
-
 impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Rule<'a, E, S>
     for FieldSelectionMerging<'a, E, S>
 {
     type Error = Error<'a, E, S>;
+    type Errors = std::iter::Flatten<
+        std::collections::btree_map::IntoValues<&'a E::SelectionSet, Vec<Error<'a, E, S>>>,
+    >;
+
+    fn into_errors(self) -> Self::Errors {
+        self.cached_errors.into_values().flatten()
+    }
 }
 
 struct FieldContext<'a, E: ExecutableDocument, S: SchemaDefinition> {

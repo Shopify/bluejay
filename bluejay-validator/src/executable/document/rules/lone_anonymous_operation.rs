@@ -4,22 +4,19 @@ use crate::executable::{
 };
 use bluejay_core::definition::SchemaDefinition;
 use bluejay_core::executable::{ExecutableDocument, OperationDefinition};
-use std::marker::PhantomData;
 
-pub struct LoneAnonymousOperation<'a, E: ExecutableDocument, S: SchemaDefinition> {
+pub struct LoneAnonymousOperation<'a, E: ExecutableDocument> {
     anonymous_operations: Vec<&'a E::OperationDefinition>,
     executable_document: &'a E,
-    schema_definition: PhantomData<S>,
 }
 
 impl<'a, E: ExecutableDocument, S: SchemaDefinition> Visitor<'a, E, S>
-    for LoneAnonymousOperation<'a, E, S>
+    for LoneAnonymousOperation<'a, E>
 {
     fn new(executable_document: &'a E, _: &'a S, _: &'a Cache<'a, E, S>) -> Self {
         Self {
             anonymous_operations: Vec::new(),
             executable_document,
-            schema_definition: Default::default(),
         }
     }
 
@@ -30,13 +27,13 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> Visitor<'a, E, S>
     }
 }
 
-impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> IntoIterator
-    for LoneAnonymousOperation<'a, E, S>
+impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Rule<'a, E, S>
+    for LoneAnonymousOperation<'a, E>
 {
-    type Item = Error<'a, E, S>;
-    type IntoIter = <Option<Error<'a, E, S>> as IntoIterator>::IntoIter;
+    type Error = Error<'a, E, S>;
+    type Errors = <Option<Error<'a, E, S>> as IntoIterator>::IntoIter;
 
-    fn into_iter(self) -> Self::IntoIter {
+    fn into_errors(self) -> Self::Errors {
         (self.executable_document.operation_definitions().len() != 1
             && !self.anonymous_operations.is_empty())
         .then_some(Error::NotLoneAnonymousOperation {
@@ -44,10 +41,4 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> IntoIterator
         })
         .into_iter()
     }
-}
-
-impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Rule<'a, E, S>
-    for LoneAnonymousOperation<'a, E, S>
-{
-    type Error = Error<'a, E, S>;
 }

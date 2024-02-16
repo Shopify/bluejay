@@ -190,13 +190,13 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> AllVariableUsagesAllowed<'a
     }
 }
 
-impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> IntoIterator
+impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Rule<'a, E, S>
     for AllVariableUsagesAllowed<'a, E, S>
 {
-    type Item = Error<'a, E, S>;
-    type IntoIter = std::vec::IntoIter<Error<'a, E, S>>;
+    type Error = Error<'a, E, S>;
+    type Errors = std::vec::IntoIter<Error<'a, E, S>>;
 
-    fn into_iter(self) -> Self::IntoIter {
+    fn into_errors(self) -> Self::Errors {
         self.variable_usages
             .iter()
             .filter(|(_, variable_usages)| !variable_usages.is_empty())
@@ -237,12 +237,6 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> IntoIterator
             .collect::<Vec<Error<'a, E, S>>>()
             .into_iter()
     }
-}
-
-impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Rule<'a, E, S>
-    for AllVariableUsagesAllowed<'a, E, S>
-{
-    type Error = Error<'a, E, S>;
 }
 
 enum VariableUsageLocation<'a, S: SchemaDefinition> {

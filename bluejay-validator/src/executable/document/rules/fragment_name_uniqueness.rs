@@ -5,20 +5,17 @@ use crate::executable::{
 use bluejay_core::definition::SchemaDefinition;
 use bluejay_core::executable::{ExecutableDocument, FragmentDefinition};
 use std::collections::BTreeMap;
-use std::marker::PhantomData;
 
-pub struct FragmentNameUniqueness<'a, E: ExecutableDocument, S: SchemaDefinition> {
+pub struct FragmentNameUniqueness<'a, E: ExecutableDocument> {
     fragment_definitions: BTreeMap<&'a str, Vec<&'a E::FragmentDefinition>>,
-    schema_definition: PhantomData<S>,
 }
 
 impl<'a, E: ExecutableDocument, S: SchemaDefinition> Visitor<'a, E, S>
-    for FragmentNameUniqueness<'a, E, S>
+    for FragmentNameUniqueness<'a, E>
 {
     fn new(_: &'a E, _: &'a S, _: &'a Cache<'a, E, S>) -> Self {
         Self {
             fragment_definitions: BTreeMap::new(),
-            schema_definition: Default::default(),
         }
     }
 
@@ -30,16 +27,16 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> Visitor<'a, E, S>
     }
 }
 
-impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> IntoIterator
-    for FragmentNameUniqueness<'a, E, S>
+impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Rule<'a, E, S>
+    for FragmentNameUniqueness<'a, E>
 {
-    type Item = Error<'a, E, S>;
-    type IntoIter = std::iter::FilterMap<
+    type Error = Error<'a, E, S>;
+    type Errors = std::iter::FilterMap<
         std::collections::btree_map::IntoIter<&'a str, Vec<&'a E::FragmentDefinition>>,
         fn((&'a str, Vec<&'a E::FragmentDefinition>)) -> Option<Error<'a, E, S>>,
     >;
 
-    fn into_iter(self) -> Self::IntoIter {
+    fn into_errors(self) -> Self::Errors {
         self.fragment_definitions
             .into_iter()
             .filter_map(|(name, fragment_definitions)| {
@@ -51,10 +48,4 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> IntoIterator
                 )
             })
     }
-}
-
-impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Rule<'a, E, S>
-    for FragmentNameUniqueness<'a, E, S>
-{
-    type Error = Error<'a, E, S>;
 }

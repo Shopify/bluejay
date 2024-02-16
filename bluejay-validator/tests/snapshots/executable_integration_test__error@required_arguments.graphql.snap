@@ -3,19 +3,19 @@ source: bluejay-validator/tests/executable_integration_test.rs
 expression: formatted_errors
 input_file: bluejay-validator/tests/test_data/executable/error/required_arguments.graphql
 ---
-Error: Got null when non-null value of type Boolean! was expected
-   ╭─[<unknown>:9:47]
-   │
- 9 │     nonNullBooleanArgField(nonNullBooleanArg: null)
-   │                                               ──┬─  
-   │                                                 ╰─── Expected non-null value
-───╯
-
 Error: Field `nonNullBooleanArgField` missing argument(s): nonNullBooleanArg
    ╭─[<unknown>:3:5]
    │
  3 │     nonNullBooleanArgField
    │     ───────────┬──────────  
    │                ╰──────────── Missing argument(s): nonNullBooleanArg
+───╯
+
+Error: Got null when non-null value of type Boolean! was expected
+   ╭─[<unknown>:9:47]
+   │
+ 9 │     nonNullBooleanArgField(nonNullBooleanArg: null)
+   │                                               ──┬─  
+   │                                                 ╰─── Expected non-null value
 ───╯
 
