@@ -115,7 +115,7 @@ impl<
                         .and_then(|fields_definition| fields_definition.get(f.name()));
 
                     if let Some(field_definition) = field_definition {
-                        self.visit_field(f, field_definition, included);
+                        self.visit_field(f, field_definition, scoped_type, included);
                     }
                 }
                 SelectionReference::InlineFragment(i) => {
@@ -129,11 +129,13 @@ impl<
         &mut self,
         field: &'a E::Field,
         field_definition: &'a S::FieldDefinition,
+        owner_type: TypeDefinitionReference<'a, S::TypeDefinition>,
         included: bool,
     ) {
         let included = included && self.evaluate_selection_inclusion(field.directives());
 
-        self.visitor.visit_field(field, field_definition, included);
+        self.visitor
+            .visit_field(field, field_definition, owner_type, included);
 
         if let Some(selection_set) = field.selection_set() {
             if let Some(nested_type) = self
@@ -144,7 +146,8 @@ impl<
             }
         }
 
-        self.visitor.leave_field(field, field_definition, included);
+        self.visitor
+            .leave_field(field, field_definition, owner_type, included);
     }
 
     fn visit_inline_fragment(

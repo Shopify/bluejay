@@ -32,6 +32,10 @@ impl<'a, O: OutputType> BaseOutputTypeReference<'a, O> {
             Self::BuiltinScalar(_) | Self::CustomScalar(_) | Self::Enum(_)
         )
     }
+
+    pub fn is_composite(&self) -> bool {
+        matches!(self, Self::Object(_) | Self::Interface(_) | Self::Union(_))
+    }
 }
 
 impl<'a, O: OutputType> Clone for BaseOutputTypeReference<'a, O> {

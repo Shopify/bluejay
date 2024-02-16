@@ -2,7 +2,7 @@ use crate::executable::{
     operation::{Analyzer, VariableValues, Visitor},
     Cache,
 };
-use bluejay_core::definition::SchemaDefinition;
+use bluejay_core::definition::{SchemaDefinition, TypeDefinitionReference};
 use bluejay_core::executable::ExecutableDocument;
 use std::cmp::max;
 
@@ -25,6 +25,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, VV: VariableValues> Visitor
         &mut self,
         _field: &'a <E as ExecutableDocument>::Field,
         _field_definition: &'a S::FieldDefinition,
+        _scoped_type: TypeDefinitionReference<'a, S::TypeDefinition>,
         included: bool,
     ) {
         if included {
@@ -37,6 +38,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, VV: VariableValues> Visitor
         &mut self,
         _field: &'a <E as ExecutableDocument>::Field,
         _field_definition: &'a S::FieldDefinition,
+        _scoped_type: TypeDefinitionReference<'a, S::TypeDefinition>,
         included: bool,
     ) {
         if included {
@@ -116,7 +118,7 @@ mod tests {
             variables,
             &cache,
         )
-        .expect("");
+        .unwrap();
 
         assert_eq!(depth, expected_depth);
     }

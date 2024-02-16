@@ -19,6 +19,12 @@ pub trait OperationDefinitionValueEvaluationExt: OperationDefinition {
         variable: &V,
         variable_values: &VV,
     ) -> Option<bool>;
+
+    fn evaluate_int<V: Variable, VV: VariableValues>(
+        &self,
+        variable: &V,
+        variable_values: &VV,
+    ) -> Option<i32>;
 }
 
 impl<T: OperationDefinition> OperationDefinitionValueEvaluationExt for T {
@@ -47,6 +53,34 @@ impl<T: OperationDefinition> OperationDefinitionValueEvaluationExt for T {
             variable_definition
                 .default_value()
                 .and_then(|value| value.as_ref().as_boolean().copied())
+        }
+    }
+
+    fn evaluate_int<V: Variable, VV: VariableValues>(
+        &self,
+        variable: &V,
+        variable_values: &VV,
+    ) -> Option<i32> {
+        let variable_definitions = self.as_ref().variable_definitions()?;
+        let variable_definition = variable_definitions.iter().find(|variable_definition| {
+            variable_definition.variable() == variable.name()
+                && matches!(
+                    variable_definition.r#type().as_ref(),
+                    VariableTypeReference::Named(type_name, _) if type_name == BuiltinScalarDefinition::Int.as_ref()
+                )
+        })?;
+
+        let value = variable_values
+            .iter()
+            .find(|(key, _)| key.as_ref() == variable.name())
+            .map(|(_, value)| value);
+
+        if let Some(value) = value {
+            value.as_ref().as_integer().copied()
+        } else {
+            variable_definition
+                .default_value()
+                .and_then(|value| value.as_ref().as_integer().copied())
         }
     }
 }

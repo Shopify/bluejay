@@ -136,6 +136,10 @@ impl<'a, T: TypeDefinition> TypeDefinitionReference<'a, T> {
         matches!(self, Self::Object(_) | Self::Union(_) | Self::Interface(_))
     }
 
+    pub fn is_abstract(&self) -> bool {
+        matches!(self, Self::Interface(_) | Self::Union(_))
+    }
+
     pub fn is_input(&self) -> bool {
         matches!(
             self,
