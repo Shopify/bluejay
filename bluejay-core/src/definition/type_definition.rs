@@ -1,7 +1,7 @@
 use crate::definition::{
-    BaseInputTypeReference, BaseOutputTypeReference, EnumTypeDefinition, InputObjectTypeDefinition,
-    InputType, InterfaceTypeDefinition, ObjectTypeDefinition, OutputType, ScalarTypeDefinition,
-    UnionTypeDefinition,
+    BaseInputTypeReference, BaseOutputTypeReference, EnumTypeDefinition, HasDirectives,
+    InputObjectTypeDefinition, InputType, InterfaceTypeDefinition, ObjectTypeDefinition,
+    OutputType, ScalarTypeDefinition, UnionTypeDefinition,
 };
 use crate::BuiltinScalarDefinition;
 use enum_as_inner::EnumAsInner;
@@ -63,14 +63,22 @@ impl<
 
 pub trait TypeDefinition: Sized {
     type CustomScalarTypeDefinition: ScalarTypeDefinition;
-    type ObjectTypeDefinition: ObjectTypeDefinition;
-    type InputObjectTypeDefinition: InputObjectTypeDefinition;
-    type EnumTypeDefinition: EnumTypeDefinition;
+    type ObjectTypeDefinition: ObjectTypeDefinition<
+        Directives = <Self::CustomScalarTypeDefinition as HasDirectives>::Directives,
+    >;
+    type InputObjectTypeDefinition: InputObjectTypeDefinition<
+        Directives = <Self::CustomScalarTypeDefinition as HasDirectives>::Directives,
+    >;
+    type EnumTypeDefinition: EnumTypeDefinition<
+        Directives = <Self::CustomScalarTypeDefinition as HasDirectives>::Directives,
+    >;
     type UnionTypeDefinition: UnionTypeDefinition<
         FieldsDefinition = <Self::ObjectTypeDefinition as ObjectTypeDefinition>::FieldsDefinition,
+        Directives = <Self::CustomScalarTypeDefinition as HasDirectives>::Directives,
     >;
     type InterfaceTypeDefinition: InterfaceTypeDefinition<
         FieldsDefinition = <Self::ObjectTypeDefinition as ObjectTypeDefinition>::FieldsDefinition,
+        Directives = <Self::CustomScalarTypeDefinition as HasDirectives>::Directives,
     >;
 
     fn as_ref(&self) -> TypeDefinitionReference<'_, Self>;
@@ -158,6 +166,22 @@ impl<'a, T: TypeDefinition> TypeDefinitionReference<'a, T> {
             | Self::CustomScalar(_)
             | Self::Enum(_)
             | Self::InputObject(_) => None,
+        }
+    }
+}
+
+impl<'a, T: TypeDefinition> HasDirectives for TypeDefinitionReference<'a, T> {
+    type Directives = <T::CustomScalarTypeDefinition as HasDirectives>::Directives;
+
+    fn directives(&self) -> Option<&'a Self::Directives> {
+        match self {
+            Self::BuiltinScalar(_) => None,
+            Self::CustomScalar(cstd) => cstd.directives(),
+            Self::Object(otd) => otd.directives(),
+            Self::InputObject(iotd) => iotd.directives(),
+            Self::Enum(etd) => etd.directives(),
+            Self::Union(utd) => utd.directives(),
+            Self::Interface(itd) => itd.directives(),
         }
     }
 }
