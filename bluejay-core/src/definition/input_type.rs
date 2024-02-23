@@ -1,6 +1,6 @@
 use crate::definition::{
-    EnumTypeDefinition, InputObjectTypeDefinition, ScalarTypeDefinition, SchemaDefinition,
-    TypeDefinition, TypeDefinitionReference,
+    EnumTypeDefinition, HasDirectives, InputObjectTypeDefinition, ScalarTypeDefinition,
+    SchemaDefinition, TypeDefinition, TypeDefinitionReference,
 };
 use crate::BuiltinScalarDefinition;
 
@@ -144,8 +144,12 @@ impl<'a, I: InputType> PartialEq for ShallowInputTypeReference<'a, I> {
 
 pub trait InputType: Sized {
     type CustomScalarTypeDefinition: ScalarTypeDefinition;
-    type InputObjectTypeDefinition: InputObjectTypeDefinition;
-    type EnumTypeDefinition: EnumTypeDefinition;
+    type InputObjectTypeDefinition: InputObjectTypeDefinition<
+        Directives = <Self::CustomScalarTypeDefinition as HasDirectives>::Directives,
+    >;
+    type EnumTypeDefinition: EnumTypeDefinition<
+        Directives = <Self::CustomScalarTypeDefinition as HasDirectives>::Directives,
+    >;
 
     fn as_ref<
         'a,
@@ -205,6 +209,19 @@ impl<
             TypeDefinitionReference::Interface(_)
             | TypeDefinitionReference::Object(_)
             | TypeDefinitionReference::Union(_) => Err(()),
+        }
+    }
+}
+
+impl<'a, I: InputType> HasDirectives for BaseInputTypeReference<'a, I> {
+    type Directives = <I::CustomScalarTypeDefinition as HasDirectives>::Directives;
+
+    fn directives(&self) -> Option<&'a Self::Directives> {
+        match self {
+            Self::BuiltinScalar(_) => None,
+            Self::CustomScalar(cstd) => cstd.directives(),
+            Self::Enum(etd) => etd.directives(),
+            Self::InputObject(iotd) => iotd.directives(),
         }
     }
 }

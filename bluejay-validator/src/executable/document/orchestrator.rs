@@ -1,5 +1,5 @@
 use crate::executable::{
-    document::{BuiltinRules, Path, PathRoot, Rule, Visitor},
+    document::{Analyzer, BuiltinRules, Path, PathRoot, Rule, Visitor},
     Cache,
 };
 use bluejay_core::definition::{
@@ -336,5 +336,38 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, V: Visitor<'a, E, S>>
         let mut instance = Self::new(executable_document, schema_definition, cache);
         instance.visit();
         instance.visitor.into_errors()
+    }
+
+    pub fn analyze(
+        executable_document: &'a E,
+        schema_definition: &'a S,
+        cache: &'a Cache<'a, E, S>,
+    ) -> <V as Analyzer<'a, E, S>>::Output
+    where
+        V: Analyzer<'a, E, S>,
+    {
+        let mut instance = Self::new(executable_document, schema_definition, cache);
+        instance.visit();
+        instance.visitor.into_output()
+    }
+}
+
+impl<'a, E: ExecutableDocument, S: SchemaDefinition, R: Rule<'a, E, S>, A: Analyzer<'a, E, S>>
+    Orchestrator<'a, E, S, (R, A)>
+{
+    pub fn validate_and_analyze(
+        executable_document: &'a E,
+        schema_definition: &'a S,
+        cache: &'a Cache<'a, E, S>,
+    ) -> (
+        <R as Rule<'a, E, S>>::Errors,
+        <A as Analyzer<'a, E, S>>::Output,
+    ) {
+        let mut instance = Self::new(executable_document, schema_definition, cache);
+        instance.visit();
+        (
+            instance.visitor.0.into_errors(),
+            instance.visitor.1.into_output(),
+        )
     }
 }

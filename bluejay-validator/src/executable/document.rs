@@ -1,3 +1,4 @@
+mod analyzer;
 mod error;
 mod orchestrator;
 mod path;
@@ -6,6 +7,7 @@ pub mod rules;
 mod variable_definition_input_type;
 mod visitor;
 
+pub use analyzer::Analyzer;
 pub use error::{ArgumentError, DirectiveError, Error};
 pub use orchestrator::{BuiltinRulesValidator, Orchestrator};
 pub use path::{Path, PathRoot};
