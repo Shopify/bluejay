@@ -4,9 +4,9 @@ use crate::ast::executable::{
     VariableDefinition, VariableDefinitions, VariableType,
 };
 use crate::ast::{
-    Argument, Arguments, Directive, Directives, ParseError, ScannerTokens, TryFromTokens, Value,
+    Argument, Arguments, Directive, Directives, LexerTokens, ParseError, TryFromTokens, Value,
 };
-use crate::scanner::LogosScanner;
+use crate::lexer::LogosLexer;
 use crate::Error;
 
 #[derive(Debug)]
@@ -35,8 +35,8 @@ impl<'a> ExecutableDocument<'a> {
     }
 
     pub fn parse(s: &'a str) -> Result<Self, Vec<Error>> {
-        let scanner = LogosScanner::new(s);
-        let mut tokens = ScannerTokens::new(scanner);
+        let lexer = LogosLexer::new(s);
+        let mut tokens = LexerTokens::new(lexer);
 
         let mut instance: Self = Self::new(Vec::new(), Vec::new());
         let mut errors = Vec::new();

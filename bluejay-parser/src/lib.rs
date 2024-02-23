@@ -1,7 +1,7 @@
 pub mod ast;
 pub mod error;
+mod lexer;
 mod lexical_token;
-mod scanner;
 mod span;
 
 pub use error::Error;
