@@ -1,5 +1,5 @@
-use crate::ast::{FromTokens, ScannerTokens};
-use crate::scanner::LogosScanner;
+use crate::ast::{FromTokens, LexerTokens};
+use crate::lexer::LogosLexer;
 use crate::Error;
 
 pub trait Parse<'a>: FromTokens<'a> {
@@ -8,8 +8,8 @@ pub trait Parse<'a>: FromTokens<'a> {
 
 impl<'a, T: FromTokens<'a>> Parse<'a> for T {
     fn parse(s: &'a str) -> Result<Self, Vec<Error>> {
-        let scanner = LogosScanner::new(s);
-        let mut tokens = ScannerTokens::new(scanner);
+        let lexer = LogosLexer::new(s);
+        let mut tokens = LexerTokens::new(lexer);
 
         let result = T::from_tokens(&mut tokens);
 

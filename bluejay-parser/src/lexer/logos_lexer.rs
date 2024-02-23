@@ -1,15 +1,15 @@
 use std::num::{ParseFloatError, ParseIntError};
 
+use crate::lexer::{LexError, Lexer};
 use crate::lexical_token::{
     FloatValue, IntValue, LexicalToken, Name, Punctuator, PunctuatorType, StringValue,
 };
-use crate::scanner::{ScanError, Scanner};
 use crate::Span;
-use logos::{Lexer, Logos};
+use logos::Logos;
 use std::borrow::Cow;
 
-mod block_string_scanner;
-mod string_scanner;
+mod block_string_lexer;
+mod string_lexer;
 
 #[derive(Logos, Debug, PartialEq)]
 #[logos(subpattern intpart = r"-?(?:0|[1-9]\d*)")]
@@ -73,8 +73,8 @@ pub enum Token<'a> {
     BlockStringValue(Cow<'a, str>),
 }
 
-fn parse_block_string<'a>(lexer: &mut Lexer<'a, Token<'a>>) -> Option<Cow<'a, str>> {
-    match block_string_scanner::Token::parse(lexer.remainder()) {
+fn parse_block_string<'a>(lexer: &mut logos::Lexer<'a, Token<'a>>) -> Option<Cow<'a, str>> {
+    match block_string_lexer::Token::parse(lexer.remainder()) {
         Ok((s, bytes_consumed)) => {
             lexer.bump(bytes_consumed);
             Some(s)
@@ -86,11 +86,11 @@ fn parse_block_string<'a>(lexer: &mut Lexer<'a, Token<'a>>) -> Option<Cow<'a, st
     }
 }
 
-fn parse_string<'a>(lexer: &mut Lexer<'a, Token<'a>>) -> Result<Cow<'a, str>, Vec<Span>> {
-    string_scanner::Token::parse(lexer.slice(), lexer.span().start)
+fn parse_string<'a>(lexer: &mut logos::Lexer<'a, Token<'a>>) -> Result<Cow<'a, str>, Vec<Span>> {
+    string_lexer::Token::parse(lexer.slice(), lexer.span().start)
 }
 
-fn validate_number<'a>(lexer: &mut Lexer<'a, Token<'a>>) -> bool {
+fn validate_number<'a>(lexer: &mut logos::Lexer<'a, Token<'a>>) -> bool {
     let invalid_trail_bytes = lexer
         .remainder()
         .chars()
@@ -102,19 +102,23 @@ fn validate_number<'a>(lexer: &mut Lexer<'a, Token<'a>>) -> bool {
     invalid_trail_bytes == 0
 }
 
-fn parse_integer<'a>(lexer: &mut Lexer<'a, Token<'a>>) -> Option<Result<i32, ParseIntError>> {
+fn parse_integer<'a>(
+    lexer: &mut logos::Lexer<'a, Token<'a>>,
+) -> Option<Result<i32, ParseIntError>> {
     validate_number(lexer).then(|| lexer.slice().parse())
 }
 
-fn parse_float<'a>(lexer: &mut Lexer<'a, Token<'a>>) -> Option<Result<f64, ParseFloatError>> {
+fn parse_float<'a>(
+    lexer: &mut logos::Lexer<'a, Token<'a>>,
+) -> Option<Result<f64, ParseFloatError>> {
     validate_number(lexer).then(|| lexer.slice().parse())
 }
 
 #[repr(transparent)]
-pub struct LogosScanner<'a>(Lexer<'a, Token<'a>>);
+pub struct LogosLexer<'a>(logos::Lexer<'a, Token<'a>>);
 
-impl<'a> Iterator for LogosScanner<'a> {
-    type Item = Result<LexicalToken<'a>, ScanError>;
+impl<'a> Iterator for LogosLexer<'a> {
+    type Item = Result<LexicalToken<'a>, LexError>;
 
     fn next(&mut self) -> Option<Self::Item> {
         self.0.next().map(|result| {
@@ -140,38 +144,38 @@ impl<'a> Iterator for LogosScanner<'a> {
                     Token::Name(s) => Ok(LexicalToken::Name(Name::new(s, span))),
                     Token::IntValue(res) => match res {
                         Ok(val) => Ok(LexicalToken::IntValue(IntValue::new(val, span))),
-                        Err(_) => Err(ScanError::IntegerValueTooLarge(span)),
+                        Err(_) => Err(LexError::IntegerValueTooLarge(span)),
                     },
                     Token::FloatValue(res) => match res {
                         Ok(val) => Ok(LexicalToken::FloatValue(FloatValue::new(val, span))),
-                        Err(_) => Err(ScanError::FloatValueTooLarge(span)),
+                        Err(_) => Err(LexError::FloatValueTooLarge(span)),
                     },
                     Token::StringValue(res) => res
                         .map(|s| LexicalToken::StringValue(StringValue::new(s, span)))
-                        .map_err(ScanError::StringWithInvalidEscapedUnicode),
+                        .map_err(LexError::StringWithInvalidEscapedUnicode),
                     Token::BlockStringValue(s) => {
                         Ok(LexicalToken::StringValue(StringValue::new(s, span)))
                     }
                 }
             } else {
-                Err(ScanError::UnrecognizedTokenError(span))
+                Err(LexError::UnrecognizedTokenError(span))
             }
         })
     }
 }
 
-fn punctuator<'a>(pt: PunctuatorType, span: Span) -> Result<LexicalToken<'a>, ScanError> {
+fn punctuator<'a>(pt: PunctuatorType, span: Span) -> Result<LexicalToken<'a>, LexError> {
     Ok(LexicalToken::Punctuator(Punctuator::new(pt, span)))
 }
 
-impl<'a> Scanner<'a> for LogosScanner<'a> {
+impl<'a> Lexer<'a> for LogosLexer<'a> {
     fn empty_span(&self) -> Span {
         let n = self.0.span().start;
         Span::new(n..n)
     }
 }
 
-impl<'a> LogosScanner<'a> {
+impl<'a> LogosLexer<'a> {
     pub fn new(s: &'a <Token<'a> as Logos<'a>>::Source) -> Self {
         Self(Token::lexer(s))
     }

@@ -1,6 +1,6 @@
 use crate::ast::parse_error::ParseError;
+use crate::lexer::{LexError, Lexer};
 use crate::lexical_token::{FloatValue, IntValue, LexicalToken, Name, PunctuatorType, StringValue};
-use crate::scanner::{ScanError, Scanner};
 use crate::{HasSpan, Span};
 use std::collections::VecDeque;
 
@@ -22,16 +22,16 @@ pub trait Tokens<'a>: Iterator<Item = LexicalToken<'a>> {
     fn peek_punctuator_matches(&mut self, n: usize, punctuator_type: PunctuatorType) -> bool;
 }
 
-pub struct ScannerTokens<'a, T: Scanner<'a>> {
-    scanner: T,
-    pub errors: Vec<ScanError>,
+pub struct LexerTokens<'a, T: Lexer<'a>> {
+    lexer: T,
+    pub errors: Vec<LexError>,
     buffer: VecDeque<LexicalToken<'a>>,
 }
 
-impl<'a, T: Scanner<'a>> ScannerTokens<'a, T> {
-    pub fn new(scanner: T) -> Self {
+impl<'a, T: Lexer<'a>> LexerTokens<'a, T> {
+    pub fn new(lexer: T) -> Self {
         Self {
-            scanner,
+            lexer,
             errors: Vec::new(),
             buffer: VecDeque::new(),
         }
@@ -48,7 +48,7 @@ impl<'a, T: Scanner<'a>> ScannerTokens<'a, T> {
 
     fn compute_up_to(&mut self, idx: usize) {
         while idx >= self.buffer.len() {
-            match self.scanner.next() {
+            match self.lexer.next() {
                 Some(res) => match res {
                     Ok(val) => self.buffer.push_back(val),
                     Err(err) => self.errors.push(err),
@@ -93,7 +93,7 @@ impl<'a, T: Scanner<'a>> ScannerTokens<'a, T> {
 
     pub fn unexpected_eof(&self) -> ParseError {
         ParseError::UnexpectedEOF {
-            span: self.scanner.empty_span(),
+            span: self.lexer.empty_span(),
         }
     }
 
@@ -162,7 +162,7 @@ impl<'a, T: Scanner<'a>> ScannerTokens<'a, T> {
     }
 }
 
-impl<'a, T: Scanner<'a>> Iterator for ScannerTokens<'a, T> {
+impl<'a, T: Lexer<'a>> Iterator for LexerTokens<'a, T> {
     type Item = LexicalToken<'a>;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -171,13 +171,13 @@ impl<'a, T: Scanner<'a>> Iterator for ScannerTokens<'a, T> {
     }
 }
 
-impl<'a, T: Scanner<'a>> From<ScannerTokens<'a, T>> for Vec<ScanError> {
-    fn from(val: ScannerTokens<'a, T>) -> Self {
+impl<'a, T: Lexer<'a>> From<LexerTokens<'a, T>> for Vec<LexError> {
+    fn from(val: LexerTokens<'a, T>) -> Self {
         val.errors
     }
 }
 
-impl<'a, T: Scanner<'a>> Tokens<'a> for ScannerTokens<'a, T> {
+impl<'a, T: Lexer<'a>> Tokens<'a> for LexerTokens<'a, T> {
     fn expect_name(&mut self) -> Result<Name<'a>, ParseError> {
         self.expect_name()
     }

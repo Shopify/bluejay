@@ -5,8 +5,8 @@ use crate::ast::definition::{
     InputValueDefinition, InterfaceImplementations, InterfaceTypeDefinition, ObjectTypeDefinition,
     SchemaDefinition, TypeDefinition, UnionTypeDefinition,
 };
-use crate::ast::{FromTokens, ParseError, ScannerTokens, Tokens};
-use crate::scanner::LogosScanner;
+use crate::ast::{FromTokens, LexerTokens, ParseError, Tokens};
+use crate::lexer::LogosLexer;
 use crate::Error;
 use bluejay_core::definition::{prelude::*, HasDirectives};
 use bluejay_core::{
@@ -78,8 +78,8 @@ impl<'a, C: Context> DefinitionDocument<'a, C> {
     }
 
     pub fn parse(s: &'a str) -> Result<Self, Vec<Error>> {
-        let scanner = LogosScanner::new(s);
-        let mut tokens = ScannerTokens::new(scanner);
+        let lexer = LogosLexer::new(s);
+        let mut tokens = LexerTokens::new(lexer);
 
         let mut instance: Self = Self::new();
         let mut errors = Vec::new();

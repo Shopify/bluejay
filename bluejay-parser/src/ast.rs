@@ -23,7 +23,7 @@ use is_match::IsMatch;
 use operation_type::OperationType;
 pub use parse::Parse;
 use parse_error::ParseError;
-use tokens::{ScannerTokens, Tokens};
+use tokens::{LexerTokens, Tokens};
 use try_from_tokens::TryFromTokens;
 pub use value::{ConstValue, Value, VariableValue};
 use variable::Variable;
