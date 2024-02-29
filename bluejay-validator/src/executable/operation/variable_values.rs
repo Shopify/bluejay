@@ -11,6 +11,10 @@ pub trait VariableValues {
         Self: 'a;
 
     fn iter(&self) -> Self::Iterator<'_>;
+
+    fn get(&self, key: &str) -> Option<&Self::Value> {
+        self.iter().find(|(k, _)| k.as_ref() == key).map(|(_, v)| v)
+    }
 }
 
 pub trait OperationDefinitionValueEvaluationExt: OperationDefinition {
