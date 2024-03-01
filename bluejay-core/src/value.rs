@@ -41,7 +41,7 @@ pub trait VariableValue: Value<false> {}
 impl<T: Value<true>> ConstValue for T {}
 impl<T: Value<false>> VariableValue for T {}
 
-#[derive(Debug, strum::Display, EnumAsInner)]
+#[derive(Debug, strum::IntoStaticStr, EnumAsInner)]
 #[strum(serialize_all = "lowercase")]
 pub enum ValueReference<'a, const CONST: bool, V: Value<CONST>> {
     Variable(&'a V::Variable),
@@ -53,6 +53,12 @@ pub enum ValueReference<'a, const CONST: bool, V: Value<CONST>> {
     Enum(&'a str),
     List(&'a V::List),
     Object(&'a V::Object),
+}
+
+impl<'a, const CONST: bool, V: Value<CONST>> ValueReference<'a, CONST, V> {
+    pub fn variant(&self) -> &'static str {
+        self.into()
+    }
 }
 
 impl<'a, const CONST: bool, V: Value<CONST>> Clone for ValueReference<'a, CONST, V> {
