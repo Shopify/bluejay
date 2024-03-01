@@ -115,6 +115,35 @@ pub enum VariableValueError<'a, E: ExecutableDocument, VV: VariableValues> {
     },
 }
 
+impl<'a, E: ExecutableDocument, VV: VariableValues> VariableValueError<'a, E, VV> {
+    pub fn message(&self) -> String {
+        match self {
+            Self::MissingValue {
+                variable_definition,
+            } => format!(
+                "Missing value for required variable ${}",
+                variable_definition.variable()
+            ),
+            Self::InvalidValue {
+                variable_definition,
+                errors,
+                ..
+            } => format!(
+                "Invalid value for variable ${}:\n- {}",
+                variable_definition.variable(),
+                errors
+                    .iter()
+                    .map(|error| error.message())
+                    .collect::<Vec<_>>()
+                    .join("\n- ")
+            ),
+            Self::UnusedValue { key, .. } => {
+                format!("No variable definition for provided key `{}`", key.as_ref())
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::executable::{operation::Orchestrator, Cache};
@@ -124,9 +153,7 @@ mod tests {
     };
     use once_cell::sync::Lazy;
 
-    use super::{CoerceInputError, VariableValueError, VariableValuesAreValid};
-
-    type JsonValues = serde_json::Map<String, serde_json::Value>;
+    use super::VariableValuesAreValid;
 
     const TEST_SCHEMA_SDL: &str = r#"
         type Query {
@@ -146,7 +173,7 @@ mod tests {
         source: &str,
         operation_name: Option<&str>,
         variable_values: &serde_json::Value,
-        f: fn(Vec<VariableValueError<ExecutableDocument, JsonValues>>),
+        f: fn(Vec<String>),
     ) {
         let executable_document = ExecutableDocument::parse(source).unwrap();
         let cache = Cache::new(&executable_document, &*TEST_SCHEMA_DEFINITION);
@@ -160,7 +187,10 @@ mod tests {
                     .expect("Variables must be an object"),
                 &cache,
             )
-            .unwrap(),
+            .unwrap()
+            .into_iter()
+            .map(|err| err.message())
+            .collect(),
         );
     }
 
@@ -191,10 +221,9 @@ mod tests {
             None,
             &serde_json::json!({ "foo": "bar" }),
             |errors| {
-                assert!(
-                    matches!(errors.as_slice(), [VariableValueError::UnusedValue { key, value }] if *key == "foo" && *value == "bar"),
-                    "Expected errors to be empty: {:?}",
+                assert_eq!(
                     errors,
+                    vec!["No variable definition for provided key `foo`"],
                 )
             },
         );
@@ -259,17 +288,9 @@ mod tests {
             None,
             &serde_json::json!({ "arg": 1 }),
             |errors| {
-                assert!(
-                    matches!(
-                    errors.as_slice(),
-                    [VariableValueError::InvalidValue { errors, .. }]
-                        if matches!(
-                            errors.as_slice(),
-                            [CoerceInputError::NoImplicitConversion { value, input_type_name, .. }]
-                                if value.as_i64() == Some(1) && input_type_name == "String")
-                        ),
-                    "Expected no implicit conversion error, got: {:?}",
-                    errors
+                assert_eq!(
+                    errors,
+                    vec!["Invalid value for variable $arg:\n- No implicit conversion of integer to String"],
                 )
             },
         );
@@ -302,17 +323,9 @@ mod tests {
             None,
             &serde_json::json!({ "arg": null }),
             |errors| {
-                assert!(
-                    matches!(
-                    errors.as_slice(),
-                    [VariableValueError::InvalidValue { errors, .. }]
-                        if matches!(
-                            errors.as_slice(),
-                            [CoerceInputError::NullValueForRequiredType { value, input_type_name, .. }]
-                                if value.is_null() && input_type_name == "String!")
-                        ),
-                    "Expected null value for required type error, got: {:?}",
-                    errors
+                assert_eq!(
+                    errors,
+                    vec!["Invalid value for variable $arg:\n- Got null when non-null value of type String! was expected"],
                 )
             },
         );
@@ -324,16 +337,7 @@ mod tests {
             "#,
             None,
             &serde_json::json!({}),
-            |errors| {
-                assert!(
-                    matches!(
-                    errors.as_slice(),
-                    [VariableValueError::MissingValue { variable_definition }]
-                        if variable_definition.variable().name() == "arg"),
-                    "Expected missing value error, got: {:?}",
-                    errors
-                )
-            },
+            |errors| assert_eq!(errors, vec!["Missing value for required variable $arg"],),
         );
     }
 
@@ -396,17 +400,9 @@ mod tests {
             None,
             &serde_json::json!({ "arg": 1 }),
             |errors| {
-                assert!(
-                    matches!(
-                    errors.as_slice(),
-                    [VariableValueError::InvalidValue { errors, .. }]
-                        if matches!(
-                            errors.as_slice(),
-                            [CoerceInputError::NoImplicitConversion { value, input_type_name, .. }]
-                                if value.as_i64() == Some(1) && input_type_name == "String")
-                        ),
-                    "Expected no implicit conversion error, got: {:?}",
-                    errors
+                assert_eq!(
+                    errors,
+                    vec!["Invalid value for variable $arg:\n- No implicit conversion of integer to String"],
                 )
             },
         );
