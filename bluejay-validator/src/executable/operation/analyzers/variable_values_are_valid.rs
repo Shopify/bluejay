@@ -8,7 +8,7 @@ use crate::{
     },
     value::input_coercion::{CoerceInput, Error as CoerceInputError},
 };
-use bluejay_core::definition::{prelude::*, SchemaDefinition};
+use bluejay_core::definition::SchemaDefinition;
 use bluejay_core::executable::{ExecutableDocument, VariableDefinition};
 
 pub struct VariableValuesAreValid<
@@ -73,7 +73,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, VV: VariableValues> Visitor
                 }
             }
             None => {
-                if variable_definition_input_type.is_required() {
+                if variable_definition.is_required() {
                     self.errors.push(VariableValueError::MissingValue {
                         variable_definition,
                     });
@@ -346,6 +346,22 @@ mod tests {
         validate_variable_values(
             r#"
                 query($arg: String = "default") {
+                    optionalArg(arg: $arg)
+                }
+            "#,
+            None,
+            &serde_json::json!({}),
+            |errors| {
+                assert!(
+                    errors.is_empty(),
+                    "Expected errors to be empty: {:?}",
+                    errors
+                )
+            },
+        );
+        validate_variable_values(
+            r#"
+                query($arg: String! = "default") {
                     optionalArg(arg: $arg)
                 }
             "#,
