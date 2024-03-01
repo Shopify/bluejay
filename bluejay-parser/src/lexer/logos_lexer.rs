@@ -1,6 +1,6 @@
 use std::num::{ParseFloatError, ParseIntError};
 
-use crate::lexer::{LexError, Lexer};
+use crate::lexer::{LexError, Lexer, StringValueLexError};
 use crate::lexical_token::{
     FloatValue, IntValue, LexicalToken, Name, Punctuator, PunctuatorType, StringValue,
 };
@@ -66,28 +66,25 @@ pub enum Token<'a> {
     FloatValue(Result<f64, ParseFloatError>),
 
     // StringValue
-    #[regex(r#""(?:[^\\"\n\r]|(?&fixedunicode)|\\u\{(?&hexdigit)+\}|\\["\\/bfnrt])*""#r, parse_string)]
-    StringValue(Result<Cow<'a, str>, Vec<Span>>),
+    #[token("\"", parse_string)]
+    StringValue(Result<Cow<'a, str>, Vec<StringValueLexError>>),
 
     #[token("\"\"\"", parse_block_string)]
     BlockStringValue(Cow<'a, str>),
 }
 
 fn parse_block_string<'a>(lexer: &mut logos::Lexer<'a, Token<'a>>) -> Option<Cow<'a, str>> {
-    match block_string_lexer::Token::parse(lexer.remainder()) {
-        Ok((s, bytes_consumed)) => {
-            lexer.bump(bytes_consumed);
-            Some(s)
-        }
-        Err(_) => {
-            lexer.bump(lexer.remainder().len());
-            None
-        }
-    }
+    let (result, to_bump) = block_string_lexer::Token::parse(lexer.remainder());
+    lexer.bump(to_bump);
+    result
 }
 
-fn parse_string<'a>(lexer: &mut logos::Lexer<'a, Token<'a>>) -> Result<Cow<'a, str>, Vec<Span>> {
-    string_lexer::Token::parse(lexer.slice(), lexer.span().start)
+fn parse_string<'a>(
+    lexer: &mut logos::Lexer<'a, Token<'a>>,
+) -> Option<Result<Cow<'a, str>, Vec<StringValueLexError>>> {
+    let (result, to_bump) = string_lexer::Token::parse(lexer.remainder(), lexer.span().end);
+    lexer.bump(to_bump);
+    result
 }
 
 fn validate_number<'a>(lexer: &mut logos::Lexer<'a, Token<'a>>) -> bool {
@@ -152,13 +149,13 @@ impl<'a> Iterator for LogosLexer<'a> {
                     },
                     Token::StringValue(res) => res
                         .map(|s| LexicalToken::StringValue(StringValue::new(s, span)))
-                        .map_err(LexError::StringWithInvalidEscapedUnicode),
+                        .map_err(LexError::StringValueInvalid),
                     Token::BlockStringValue(s) => {
                         Ok(LexicalToken::StringValue(StringValue::new(s, span)))
                     }
                 }
             } else {
-                Err(LexError::UnrecognizedTokenError(span))
+                Err(LexError::UnrecognizedToken(span))
             }
         })
     }
@@ -183,7 +180,7 @@ impl<'a> LogosLexer<'a> {
 
 #[cfg(test)]
 mod tests {
-    use super::{Logos, Span, Token};
+    use super::{Logos, Span, StringValueLexError, Token};
 
     #[test]
     fn block_string_test() {
@@ -241,7 +238,9 @@ mod tests {
             Token::lexer("\"This is a string with escaped characters and unicode: 🥳\\uABCD\\u{10FFFF}!\\n\"").next(),
         );
         assert_eq!(
-            Some(Err(())),
+            Some(Ok(Token::StringValue(Err(vec![
+                StringValueLexError::InvalidText(Span::from(33..34))
+            ])))),
             Token::lexer("\"This is a string with a newline \n Not allowed!\"").next(),
         );
         assert_eq!(
@@ -249,11 +248,15 @@ mod tests {
             Token::lexer(r#" "Testing span" "#).spanned().next(),
         );
         assert_eq!(
-            Some(Ok(Token::StringValue(Err(vec![Span::from(2..8)])))),
+            Some(Ok(Token::StringValue(Err(vec![
+                StringValueLexError::InvalidUnicodeEscapeSequence(Span::from(2..8))
+            ])))),
             Token::lexer(r#" "\uD800" "#).next(),
         );
         assert_eq!(
-            Some(Ok(Token::StringValue(Err(vec![Span::from(2..12)])))),
+            Some(Ok(Token::StringValue(Err(vec![
+                StringValueLexError::InvalidUnicodeEscapeSequence(Span::from(2..12))
+            ])))),
             Token::lexer(r#" "\u{00D800}" "#).next(),
         );
         assert_eq!(
@@ -265,11 +268,15 @@ mod tests {
             Token::lexer(r#" "\u1234\uABCD" "#).next(),
         );
         assert_eq!(
-            Some(Ok(Token::StringValue(Err(vec![Span::from(2..8)])))),
+            Some(Ok(Token::StringValue(Err(vec![
+                StringValueLexError::InvalidUnicodeEscapeSequence(Span::from(2..8))
+            ])))),
             Token::lexer(r#" "\uDEAD\uDEAD" "#).next(),
         );
         assert_eq!(
-            Some(Ok(Token::StringValue(Err(vec![Span::from(8..14)])))),
+            Some(Ok(Token::StringValue(Err(vec![
+                StringValueLexError::InvalidUnicodeEscapeSequence(Span::from(8..14))
+            ])))),
             Token::lexer(r#" "\uD800\uD800" "#).next(),
         );
         assert_eq!(
@@ -277,7 +284,9 @@ mod tests {
             Token::lexer(r#" "This is a string that doesn't end "#).next(),
         );
         assert_eq!(
-            Some(Ok(Token::StringValue(Err(vec![Span::from(2..15)])))),
+            Some(Ok(Token::StringValue(Err(vec![
+                StringValueLexError::InvalidUnicodeEscapeSequence(Span::from(2..15))
+            ])))),
             Token::lexer(r#" "\u{100000000}" "#).next(),
         );
     }

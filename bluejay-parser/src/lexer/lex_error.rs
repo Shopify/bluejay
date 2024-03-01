@@ -3,16 +3,22 @@ use crate::Span;
 
 #[derive(Debug)]
 pub enum LexError {
-    UnrecognizedTokenError(Span),
+    UnrecognizedToken(Span),
     IntegerValueTooLarge(Span),
     FloatValueTooLarge(Span),
-    StringWithInvalidEscapedUnicode(Vec<Span>),
+    StringValueInvalid(Vec<StringValueLexError>),
+}
+
+#[derive(Debug, PartialEq)]
+pub enum StringValueLexError {
+    InvalidUnicodeEscapeSequence(Span),
+    InvalidText(Span),
 }
 
 impl From<LexError> for Error {
     fn from(val: LexError) -> Self {
         match val {
-            LexError::UnrecognizedTokenError(span) => Self::new(
+            LexError::UnrecognizedToken(span) => Self::new(
                 "Unrecognized token",
                 Some(Annotation::new("Unable to parse", span)),
                 Vec::new(),
@@ -27,12 +33,20 @@ impl From<LexError> for Error {
                 Some(Annotation::new("Float too large", span)),
                 Vec::new(),
             ),
-            LexError::StringWithInvalidEscapedUnicode(spans) => Self::new(
-                "Escaped unicode invalid",
+            LexError::StringValueInvalid(errors) => Self::new(
+                "String value invalid",
                 None,
-                spans
+                errors
                     .into_iter()
-                    .map(|span| Annotation::new("Escaped unicode invalid", span))
+                    .map(|error| {
+                        let (message, span) = match error {
+                            StringValueLexError::InvalidUnicodeEscapeSequence(span) => {
+                                ("Invalid unicode escape sequence", span)
+                            }
+                            StringValueLexError::InvalidText(span) => ("Invalid text", span),
+                        };
+                        Annotation::new(message, span)
+                    })
                     .collect(),
             ),
         }
