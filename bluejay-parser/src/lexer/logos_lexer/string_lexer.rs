@@ -1,4 +1,7 @@
-use crate::{lexer::StringValueLexError, Span};
+use crate::{
+    lexer::{LexError, StringValueLexError},
+    Span,
+};
 use logos::{Lexer, Logos};
 use std::borrow::Cow;
 
@@ -90,17 +93,14 @@ fn parse_surrogate_pair_escaped_unicode<'a>(
     }
 }
 
-type ParseResult<'a> = Result<Cow<'a, str>, Vec<StringValueLexError>>;
-
 impl<'a> Token<'a> {
     /// Returns a two-tuple
-    /// - The first element is `Some(Ok(formatted_string))` if the string was successfully parsed,
-    ///  `Some(Err(errors))` if there were errors, and `None` if the string was never closed.
+    /// - The first element is a result indicating if the string was parsed successfully.
     /// - The second element is how much the outer lexer should bump by.
     pub(super) fn parse(
         s: &'a <Self as Logos<'a>>::Source,
         span_offset: usize,
-    ) -> (Option<ParseResult<'a>>, usize) {
+    ) -> (Result<Cow<'a, str>, LexError>, usize) {
         let lexer = Self::lexer(s);
 
         // starting Quote should already have been parsed
@@ -141,9 +141,9 @@ impl<'a> Token<'a> {
                     Self::Quote => {
                         return (
                             if errors.is_empty() {
-                                Some(Ok(formatted))
+                                Ok(formatted)
                             } else {
-                                Some(Err(errors))
+                                Err(LexError::StringValueInvalid(errors))
                             },
                             span.end,
                         )
@@ -157,6 +157,6 @@ impl<'a> Token<'a> {
             }
         }
 
-        (None, s.len())
+        (Err(LexError::UnrecognizedToken), s.len())
     }
 }

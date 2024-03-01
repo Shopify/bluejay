@@ -27,8 +27,7 @@ pub(super) enum Token<'a> {
 
 impl<'a> Token<'a> {
     /// Returns a two-tuple
-    /// - The first element is `Some(formatted_string)` if the string was successfully parsed,
-    ///   and `None` if the string was never closed.
+    /// - The first element is a result indicating if the string was parsed correctly.
     /// - The second element is how much the outer lexer should bump by.
     pub(super) fn parse(s: &'a <Self as Logos<'a>>::Source) -> (Option<Cow<'a, str>>, usize) {
         let mut lexer = Self::lexer(s);
