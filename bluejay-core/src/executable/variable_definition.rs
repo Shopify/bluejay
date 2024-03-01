@@ -10,6 +10,10 @@ pub trait VariableDefinition {
     fn r#type(&self) -> &Self::VariableType;
     fn directives(&self) -> &Self::Directives;
     fn default_value(&self) -> Option<&Self::Value>;
+
+    fn is_required(&self) -> bool {
+        self.default_value().is_none() && self.r#type().as_ref().is_required()
+    }
 }
 
 pub trait VariableDefinitions: AsIter<Item = Self::VariableDefinition> {
