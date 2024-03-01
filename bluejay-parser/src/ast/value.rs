@@ -6,8 +6,7 @@ use bluejay_core::{
     ValueReference,
 };
 
-#[derive(Debug, strum::Display)]
-#[strum(serialize_all = "lowercase")]
+#[derive(Debug)]
 pub enum Value<'a, const CONST: bool> {
     Variable(Variable<'a>),
     Integer(IntValue),

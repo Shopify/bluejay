@@ -458,7 +458,10 @@ mod tests {
                                 }
                             })
                     } else {
-                        Err(Cow::Owned(format!("Cannot coerce {value} to Decimal")))
+                        Err(Cow::Owned(format!(
+                            "Cannot coerce {} to Decimal",
+                            value.variant()
+                        )))
                     }
                 }
                 _ => Ok(()),
