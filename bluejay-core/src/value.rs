@@ -5,7 +5,7 @@ use std::collections::HashMap;
 #[cfg(feature = "serde_json")]
 mod serde_json;
 
-pub trait ObjectValue<const CONST: bool> {
+pub trait ObjectValue<const CONST: bool>: std::fmt::Debug {
     type Key: AsRef<str> + PartialEq + std::fmt::Debug;
     type Value: Value<CONST, Object = Self>;
     type Iterator<'a>: Iterator<Item = (&'a Self::Key, &'a Self::Value)>
@@ -15,7 +15,7 @@ pub trait ObjectValue<const CONST: bool> {
     fn iter(&self) -> Self::Iterator<'_>;
 }
 
-pub trait ListValue<const CONST: bool>: AsIter<Item = Self::Value> {
+pub trait ListValue<const CONST: bool>: AsIter<Item = Self::Value> + std::fmt::Debug {
     type Value: Value<CONST, List = Self>;
 }
 

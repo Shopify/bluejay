@@ -39,11 +39,18 @@ pub trait Visitor<'a, E: ExecutableDocument, S: SchemaDefinition, V: VariableVal
         included: bool,
     ) {
     }
+
+    /// Visits the variable definition.
+    /// # Variables
+    /// - `variable_definition` is the variable definition being visited
+    #[allow(unused_variables)]
+    fn visit_variable_definition(&mut self, variable_definition: &'a E::VariableDefinition) {}
 }
 
 macro_rules! impl_visitor {
     ($n:literal) => {
         seq_macro::seq!(N in 0..$n {
+            #[warn(clippy::missing_trait_methods)]
             impl<'a, E: ExecutableDocument, S: SchemaDefinition, V: VariableValues, #(T~N: Visitor<'a, E, S, V>,)*> Visitor<'a, E, S, V> for (#(T~N,)*) {
                 fn new(
                     operation_definition: &'a E::OperationDefinition,
@@ -79,6 +86,10 @@ macro_rules! impl_visitor {
                     included: bool,
                 ) {
                     #(self.N.leave_field(field, field_definition, owner_type, included);)*
+                }
+
+                fn visit_variable_definition(&mut self, variable_definition: &'a E::VariableDefinition) {
+                    #(self.N.visit_variable_definition(variable_definition);)*
                 }
             }
         });

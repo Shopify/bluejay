@@ -98,6 +98,12 @@ impl<
                 true,
             );
         }
+
+        if let Some(variable_definitions) = operation_definition.as_ref().variable_definitions() {
+            variable_definitions.iter().for_each(|variable_definition| {
+                self.visitor.visit_variable_definition(variable_definition)
+            });
+        }
     }
 
     fn visit_selection_set(
