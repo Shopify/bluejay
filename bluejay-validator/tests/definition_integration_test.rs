@@ -1,5 +1,8 @@
 use bluejay_parser::{
-    ast::definition::{DefinitionDocument, SchemaDefinition},
+    ast::{
+        definition::{DefinitionDocument, SchemaDefinition},
+        Parse,
+    },
     Error,
 };
 use bluejay_validator::definition::BuiltinRulesValidator;

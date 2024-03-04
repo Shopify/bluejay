@@ -339,9 +339,10 @@ impl<'a, T: TypeDefinition, F> ComplexityScope<'a, T, F> {
 mod tests {
     use super::*;
     use crate::executable::{operation::Orchestrator, Cache};
-    use bluejay_parser::{
-        ast::definition::{DefaultContext, DefinitionDocument, SchemaDefinition},
-        ast::executable::ExecutableDocument,
+    use bluejay_parser::ast::{
+        definition::{DefaultContext, DefinitionDocument, SchemaDefinition},
+        executable::ExecutableDocument,
+        Parse,
     };
     use serde_json::Value as JsonValue;
 

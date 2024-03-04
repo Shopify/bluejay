@@ -1,4 +1,7 @@
-use bluejay_parser::{ast::executable::ExecutableDocument, Error};
+use bluejay_parser::{
+    ast::{executable::ExecutableDocument, Parse},
+    Error,
+};
 
 #[test]
 fn test_error() {

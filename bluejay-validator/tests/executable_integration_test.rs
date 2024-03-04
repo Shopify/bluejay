@@ -1,6 +1,9 @@
 use bluejay_parser::{
-    ast::definition::{DefinitionDocument, SchemaDefinition},
-    ast::executable::ExecutableDocument,
+    ast::{
+        definition::{DefinitionDocument, SchemaDefinition},
+        executable::ExecutableDocument,
+        Parse,
+    },
     Error,
 };
 use bluejay_validator::executable::{document::BuiltinRulesValidator, Cache};

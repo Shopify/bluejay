@@ -1,7 +1,11 @@
 use bluejay_core::{definition::prelude::*, AsIter, Directive as _};
 use bluejay_parser::{
-    ast::definition::{
-        DefaultContext, DefinitionDocument, Directives, SchemaDefinition as ParserSchemaDefinition,
+    ast::{
+        definition::{
+            DefaultContext, DefinitionDocument, Directives,
+            SchemaDefinition as ParserSchemaDefinition,
+        },
+        Parse,
     },
     Error,
 };

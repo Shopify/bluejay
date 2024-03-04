@@ -1,6 +1,7 @@
-use bluejay_parser::{
-    ast::definition::{DefinitionDocument, SchemaDefinition},
-    ast::executable::ExecutableDocument,
+use bluejay_parser::ast::{
+    definition::{DefinitionDocument, SchemaDefinition},
+    executable::ExecutableDocument,
+    Parse,
 };
 use bluejay_validator::executable::document::rules::FieldSelectionMerging;
 use bluejay_validator::executable::{document::Orchestrator, Cache};

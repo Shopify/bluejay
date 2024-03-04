@@ -16,7 +16,7 @@ use bluejay_core::{
     },
     OperationType,
 };
-use bluejay_parser::ast::executable::ExecutableDocument;
+use bluejay_parser::ast::{executable::ExecutableDocument, Parse as _};
 use bluejay_validator::executable::{
     document::{BuiltinRulesValidator, Orchestrator},
     Cache,

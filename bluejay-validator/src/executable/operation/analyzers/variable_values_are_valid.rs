@@ -150,6 +150,7 @@ mod tests {
     use bluejay_parser::ast::{
         definition::{DefinitionDocument, SchemaDefinition},
         executable::ExecutableDocument,
+        Parse,
     };
     use once_cell::sync::Lazy;
 
