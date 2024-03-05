@@ -252,7 +252,7 @@ mod tests {
         );
         assert_eq!(
             Some(Err(LexError::StringValueInvalid(vec![
-                StringValueLexError::InvalidText(Span::from(33..34))
+                StringValueLexError::InvalidCharacters(Span::from(33..34))
             ]))),
             Token::lexer("\"This is a string with a newline \n Not allowed!\"").next(),
         );

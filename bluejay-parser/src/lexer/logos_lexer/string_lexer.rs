@@ -150,7 +150,7 @@ impl<'a> Token<'a> {
                     }
                 },
                 Err(()) => {
-                    errors.push(StringValueLexError::InvalidText(
+                    errors.push(StringValueLexError::InvalidCharacters(
                         Span::from(span) + span_offset,
                     ));
                 }

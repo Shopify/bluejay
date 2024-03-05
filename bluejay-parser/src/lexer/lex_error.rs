@@ -19,7 +19,7 @@ impl From<Vec<StringValueLexError>> for LexError {
 #[derive(Debug, PartialEq, Clone)]
 pub enum StringValueLexError {
     InvalidUnicodeEscapeSequence(Span),
-    InvalidText(Span),
+    InvalidCharacters(Span),
 }
 
 impl From<(LexError, Span)> for Error {
@@ -50,7 +50,9 @@ impl From<(LexError, Span)> for Error {
                             StringValueLexError::InvalidUnicodeEscapeSequence(span) => {
                                 ("Invalid unicode escape sequence", span)
                             }
-                            StringValueLexError::InvalidText(span) => ("Invalid text", span),
+                            StringValueLexError::InvalidCharacters(span) => {
+                                ("Invalid characters", span)
+                            }
                         };
                         Annotation::new(message, span)
                     })
