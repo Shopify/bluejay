@@ -1,5 +1,8 @@
-use crate::Span;
-use logos::{Lexer, Logos, Source};
+use crate::{
+    lexer::{LexError, StringValueLexError},
+    Span,
+};
+use logos::{Lexer, Logos};
 use std::borrow::Cow;
 
 #[derive(Logos, Debug)]
@@ -44,6 +47,9 @@ pub(super) enum Token<'a> {
 
     #[token("\\t")]
     EscapedTab,
+
+    #[token("\"")]
+    Quote,
 }
 
 fn parse_escaped_unicode<'a>(lexer: &mut Lexer<'a, Token<'a>>) -> Option<char> {
@@ -88,51 +94,69 @@ fn parse_surrogate_pair_escaped_unicode<'a>(
 }
 
 impl<'a> Token<'a> {
+    /// Returns a two-tuple
+    /// - The first element is a result indicating if the string was parsed successfully.
+    /// - The second element is how much the outer lexer should bump by.
     pub(super) fn parse(
         s: &'a <Self as Logos<'a>>::Source,
         span_offset: usize,
-    ) -> Result<Cow<'a, str>, Vec<Span>> {
-        let lexer = Self::lexer(s.slice(1..(s.len() - 1)).unwrap());
+    ) -> (Result<Cow<'a, str>, LexError>, usize) {
+        let lexer = Self::lexer(s);
+
+        // starting Quote should already have been parsed
 
         let mut formatted = Cow::Borrowed("");
         let mut errors = Vec::new();
 
         for (result, span) in lexer.spanned() {
-            match result.expect("Unexpected error") {
-                Self::SourceCharacters(s) => {
-                    formatted += s;
-                }
-                Self::EscapedUnicode(c) => match c {
-                    Some(c) => formatted.to_mut().push(c),
-                    None => errors.push(Span::from(span) + span_offset + 1),
-                },
-                Self::FixedWidthEscapedUnicode(c) => match c {
-                    Some(c) => formatted.to_mut().push(c),
-                    None => errors.push(Span::from(span) + span_offset + 1),
-                },
-                Self::SurrogatePairEscapedUnicode(chars) => match chars {
-                    Ok((c, None)) => formatted.to_mut().push(c),
-                    Ok((leading, Some(trailing))) => {
-                        formatted.to_mut().push(leading);
-                        formatted.to_mut().push(trailing);
+            match result {
+                Ok(token) => match token {
+                    Self::SourceCharacters(s) => {
+                        formatted += s;
                     }
-                    Err(span) => errors.push(span + span_offset + 1),
+                    Self::EscapedUnicode(c) | Self::FixedWidthEscapedUnicode(c) => match c {
+                        Some(c) => formatted.to_mut().push(c),
+                        None => errors.push(StringValueLexError::InvalidUnicodeEscapeSequence(
+                            Span::from(span) + span_offset,
+                        )),
+                    },
+                    Self::SurrogatePairEscapedUnicode(chars) => match chars {
+                        Ok((c, None)) => formatted.to_mut().push(c),
+                        Ok((leading, Some(trailing))) => {
+                            formatted.to_mut().push(leading);
+                            formatted.to_mut().push(trailing);
+                        }
+                        Err(span) => errors.push(
+                            StringValueLexError::InvalidUnicodeEscapeSequence(span + span_offset),
+                        ),
+                    },
+                    Self::EscapedQuote => formatted.to_mut().push('\"'),
+                    Self::EscapedBackslash => formatted.to_mut().push('\\'),
+                    Self::EscapedSlash => formatted.to_mut().push('/'),
+                    Self::EscapedBackspace => formatted.to_mut().push('\u{0008}'),
+                    Self::EscapedFormFeed => formatted.to_mut().push('\u{000C}'),
+                    Self::EscapedNewline => formatted.to_mut().push('\n'),
+                    Self::EscapedCarriageReturn => formatted.to_mut().push('\r'),
+                    Self::EscapedTab => formatted.to_mut().push('\t'),
+                    Self::Quote => {
+                        return (
+                            if errors.is_empty() {
+                                Ok(formatted)
+                            } else {
+                                Err(LexError::StringValueInvalid(errors))
+                            },
+                            span.end,
+                        )
+                    }
                 },
-                Self::EscapedQuote => formatted.to_mut().push('\"'),
-                Self::EscapedBackslash => formatted.to_mut().push('\\'),
-                Self::EscapedSlash => formatted.to_mut().push('/'),
-                Self::EscapedBackspace => formatted.to_mut().push('\u{0008}'),
-                Self::EscapedFormFeed => formatted.to_mut().push('\u{000C}'),
-                Self::EscapedNewline => formatted.to_mut().push('\n'),
-                Self::EscapedCarriageReturn => formatted.to_mut().push('\r'),
-                Self::EscapedTab => formatted.to_mut().push('\t'),
+                Err(()) => {
+                    errors.push(StringValueLexError::InvalidCharacters(
+                        Span::from(span) + span_offset,
+                    ));
+                }
             }
         }
 
-        if errors.is_empty() {
-            Ok(formatted)
-        } else {
-            Err(errors)
-        }
+        (Err(LexError::UnrecognizedToken), s.len())
     }
 }

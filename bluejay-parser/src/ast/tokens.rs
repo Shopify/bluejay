@@ -24,7 +24,7 @@ pub trait Tokens<'a>: Iterator<Item = LexicalToken<'a>> {
 
 pub struct LexerTokens<'a, T: Lexer<'a>> {
     lexer: T,
-    pub errors: Vec<LexError>,
+    pub errors: Vec<(LexError, Span)>,
     buffer: VecDeque<LexicalToken<'a>>,
 }
 
@@ -171,7 +171,7 @@ impl<'a, T: Lexer<'a>> Iterator for LexerTokens<'a, T> {
     }
 }
 
-impl<'a, T: Lexer<'a>> From<LexerTokens<'a, T>> for Vec<LexError> {
+impl<'a, T: Lexer<'a>> From<LexerTokens<'a, T>> for Vec<(LexError, Span)> {
     fn from(val: LexerTokens<'a, T>) -> Self {
         val.errors
     }
