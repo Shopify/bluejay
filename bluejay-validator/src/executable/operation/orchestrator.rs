@@ -1,5 +1,3 @@
-use std::collections::HashSet;
-
 use crate::executable::{
     operation::{Analyzer, OperationDefinitionValueEvaluationExt, VariableValues, Visitor},
     Cache,
@@ -16,6 +14,8 @@ use bluejay_core::{
     ValueReference,
 };
 use bluejay_core::{Argument, AsIter, Directive, OperationType, Value};
+use std::borrow::Cow;
+use std::collections::HashSet;
 
 pub struct Orchestrator<
     'a,
@@ -242,13 +242,13 @@ impl<
             })
     }
 
-    pub fn analyze(
+    pub fn analyze<'b>(
         executable_document: &'a E,
         schema_definition: &'a S,
-        operation_name: Option<&str>,
+        operation_name: Option<&'b str>,
         variable_values: &'a VV,
         cache: &'a Cache<'a, E, S>,
-    ) -> Result<<V as Analyzer<'a, E, S, VV>>::Output, OperationResolutionError>
+    ) -> Result<<V as Analyzer<'a, E, S, VV>>::Output, OperationResolutionError<'b>>
     where
         V: Analyzer<'a, E, S, VV>,
     {
@@ -262,7 +262,9 @@ impl<
                         .name()
                         .map_or(false, |name| name == operation_name)
                 })
-                .ok_or(OperationResolutionError::NoOperationWithName)?,
+                .ok_or(OperationResolutionError::NoOperationWithName {
+                    name: operation_name,
+                })?,
             None => {
                 let [operation_definition]: [&'a E::OperationDefinition; 1] = executable_document
                     .operation_definitions()
@@ -286,7 +288,16 @@ impl<
 }
 
 #[derive(Debug)]
-pub enum OperationResolutionError {
-    NoOperationWithName,
+pub enum OperationResolutionError<'a> {
+    NoOperationWithName { name: &'a str },
     AnonymousNotEligible,
+}
+
+impl<'a> OperationResolutionError<'a> {
+    pub fn message(&self) -> Cow<'static, str> {
+        match self {
+            Self::NoOperationWithName { name } => format!("No operation defined with name {}", name).into(),
+            Self::AnonymousNotEligible => "Anonymous operation can only be used when the document contains exactly one operation definition".into(),
+        }
+    }
 }
