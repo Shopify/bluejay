@@ -4,9 +4,8 @@ use crate::ast::executable::{
     VariableDefinition, VariableDefinitions, VariableType,
 };
 use crate::ast::{
-    Argument, Arguments, Directive, Directives, LexerTokens, ParseError, TryFromTokens, Value,
+    Argument, Arguments, Directive, Directives, Parse, ParseError, Tokens, TryFromTokens, Value,
 };
-use crate::lexer::LogosLexer;
 use crate::Error;
 
 #[derive(Debug)]
@@ -34,10 +33,13 @@ impl<'a> ExecutableDocument<'a> {
         &self.fragment_definitions
     }
 
-    pub fn parse(s: &'a str) -> Result<Self, Vec<Error>> {
-        let lexer = LogosLexer::new(s);
-        let mut tokens = LexerTokens::new(lexer);
+    fn is_empty(&self) -> bool {
+        self.operation_definitions.is_empty() && self.fragment_definitions.is_empty()
+    }
+}
 
+impl<'a> Parse<'a> for ExecutableDocument<'a> {
+    fn parse_from_tokens(mut tokens: impl Tokens<'a>) -> Result<Self, Vec<Error>> {
         let mut instance: Self = Self::new(Vec::new(), Vec::new());
         let mut errors = Vec::new();
         let mut last_pass_had_error = false;
@@ -71,14 +73,16 @@ impl<'a> ExecutableDocument<'a> {
                 }
         }
 
-        let errors = if tokens.errors.is_empty() {
+        let lex_errors = tokens.into_errors();
+
+        let errors = if lex_errors.is_empty() {
             if errors.is_empty() && instance.is_empty() {
                 vec![ParseError::EmptyDocument.into()]
             } else {
                 errors.into_iter().map(Into::into).collect()
             }
         } else {
-            tokens.errors.into_iter().map(Into::into).collect()
+            lex_errors.into_iter().map(Into::into).collect()
         };
 
         if errors.is_empty() {
@@ -86,10 +90,6 @@ impl<'a> ExecutableDocument<'a> {
         } else {
             Err(errors)
         }
-    }
-
-    fn is_empty(&self) -> bool {
-        self.operation_definitions.is_empty() && self.fragment_definitions.is_empty()
     }
 }
 
@@ -123,7 +123,7 @@ impl<'a> bluejay_core::executable::ExecutableDocument for ExecutableDocument<'a>
 
 #[cfg(test)]
 mod tests {
-    use super::ExecutableDocument;
+    use super::{ExecutableDocument, Parse};
 
     #[test]
     fn test_success() {

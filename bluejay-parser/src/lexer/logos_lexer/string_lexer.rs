@@ -1,3 +1,4 @@
+use super::Token as OuterToken;
 use crate::{
     lexer::{LexError, StringValueLexError},
     Span,
@@ -50,6 +51,9 @@ pub(super) enum Token<'a> {
 
     #[token("\"")]
     Quote,
+
+    #[token("\n")]
+    Newline,
 }
 
 fn parse_escaped_unicode<'a>(lexer: &mut Lexer<'a, Token<'a>>) -> Option<char> {
@@ -94,13 +98,13 @@ fn parse_surrogate_pair_escaped_unicode<'a>(
 }
 
 impl<'a> Token<'a> {
-    /// Returns a two-tuple
-    /// - The first element is a result indicating if the string was parsed successfully.
-    /// - The second element is how much the outer lexer should bump by.
+    /// Returns a result indicating if the string was parsed successfully.
+    /// Also bumps the outer lexer by the number of characters parsed.
     pub(super) fn parse(
-        s: &'a <Self as Logos<'a>>::Source,
-        span_offset: usize,
-    ) -> (Result<Cow<'a, str>, LexError>, usize) {
+        outer_lexer: &mut Lexer<'a, OuterToken<'a>>,
+    ) -> Result<Cow<'a, str>, LexError> {
+        let s = outer_lexer.remainder();
+        let span_offset = outer_lexer.span().end;
         let lexer = Self::lexer(s);
 
         // starting Quote should already have been parsed
@@ -139,14 +143,21 @@ impl<'a> Token<'a> {
                     Self::EscapedCarriageReturn => formatted.to_mut().push('\r'),
                     Self::EscapedTab => formatted.to_mut().push('\t'),
                     Self::Quote => {
-                        return (
-                            if errors.is_empty() {
-                                Ok(formatted)
-                            } else {
-                                Err(LexError::StringValueInvalid(errors))
-                            },
-                            span.end,
-                        )
+                        outer_lexer.bump(span.end);
+                        return if errors.is_empty() {
+                            Ok(formatted)
+                        } else {
+                            Err(LexError::StringValueInvalid(errors))
+                        };
+                    }
+                    Self::Newline => {
+                        if outer_lexer.extras.graphql_ruby_compatibility {
+                            formatted.to_mut().push('\n');
+                        } else {
+                            errors.push(StringValueLexError::InvalidCharacters(
+                                Span::from(span) + span_offset,
+                            ));
+                        }
                     }
                 },
                 Err(()) => {
@@ -157,6 +168,7 @@ impl<'a> Token<'a> {
             }
         }
 
-        (Err(LexError::UnrecognizedToken), s.len())
+        outer_lexer.bump(s.len());
+        Err(LexError::UnrecognizedToken)
     }
 }

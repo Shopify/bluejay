@@ -5,8 +5,7 @@ use crate::ast::definition::{
     InputValueDefinition, InterfaceImplementations, InterfaceTypeDefinition, ObjectTypeDefinition,
     SchemaDefinition, TypeDefinition, UnionTypeDefinition,
 };
-use crate::ast::{FromTokens, LexerTokens, ParseError, Tokens};
-use crate::lexer::LogosLexer;
+use crate::ast::{FromTokens, Parse, ParseError, Tokens};
 use crate::Error;
 use bluejay_core::definition::{prelude::*, HasDirectives};
 use bluejay_core::{
@@ -39,48 +38,8 @@ type ExplicitSchemaDefinitionWithRootTypes<'a, C> = (
     Option<&'a ObjectTypeDefinition<'a, C>>,
 );
 
-impl<'a, C: Context> DefinitionDocument<'a, C> {
-    fn new() -> Self {
-        Self {
-            schema_definitions: Vec::new(),
-            directive_definitions: Vec::new(),
-            type_definitions: vec![
-                ObjectTypeDefinition::__schema().into(),
-                ObjectTypeDefinition::__type().into(),
-                ObjectTypeDefinition::__field().into(),
-                ObjectTypeDefinition::__input_value().into(),
-                ObjectTypeDefinition::__enum_value().into(),
-                ObjectTypeDefinition::__directive().into(),
-                EnumTypeDefinition::__type_kind().into(),
-                EnumTypeDefinition::__directive_location().into(),
-            ],
-        }
-    }
-
-    fn parse_definition<'b, S, T: FromTokens<'b> + Into<S>>(
-        definitions: &mut Vec<S>,
-        tokens: &mut impl Tokens<'b>,
-        errors: &mut Vec<ParseError>,
-        last_pass_had_error: &mut bool,
-    ) {
-        match T::from_tokens(tokens) {
-            Ok(definition) => {
-                definitions.push(definition.into());
-                *last_pass_had_error = false;
-            }
-            Err(err) => {
-                if !*last_pass_had_error {
-                    errors.push(err);
-                    *last_pass_had_error = true;
-                }
-            }
-        }
-    }
-
-    pub fn parse(s: &'a str) -> Result<Self, Vec<Error>> {
-        let lexer = LogosLexer::new(s);
-        let mut tokens = LexerTokens::new(lexer);
-
+impl<'a, C: Context> Parse<'a> for DefinitionDocument<'a, C> {
+    fn parse_from_tokens(mut tokens: impl Tokens<'a>) -> Result<Self, Vec<Error>> {
         let mut instance: Self = Self::new();
         let mut errors = Vec::new();
         let mut last_pass_had_error = false;
@@ -164,14 +123,16 @@ impl<'a, C: Context> DefinitionDocument<'a, C> {
             }
         }
 
-        let errors = if tokens.errors.is_empty() {
+        let lex_errors = tokens.into_errors();
+
+        let errors = if lex_errors.is_empty() {
             if errors.is_empty() && instance.is_empty() {
                 vec![ParseError::EmptyDocument.into()]
             } else {
                 errors.into_iter().map(Into::into).collect()
             }
         } else {
-            tokens.errors.into_iter().map(Into::into).collect()
+            lex_errors.into_iter().map(Into::into).collect()
         };
 
         if errors.is_empty() {
@@ -181,6 +142,45 @@ impl<'a, C: Context> DefinitionDocument<'a, C> {
             Ok(instance)
         } else {
             Err(errors)
+        }
+    }
+}
+
+impl<'a, C: Context> DefinitionDocument<'a, C> {
+    fn new() -> Self {
+        Self {
+            schema_definitions: Vec::new(),
+            directive_definitions: Vec::new(),
+            type_definitions: vec![
+                ObjectTypeDefinition::__schema().into(),
+                ObjectTypeDefinition::__type().into(),
+                ObjectTypeDefinition::__field().into(),
+                ObjectTypeDefinition::__input_value().into(),
+                ObjectTypeDefinition::__enum_value().into(),
+                ObjectTypeDefinition::__directive().into(),
+                EnumTypeDefinition::__type_kind().into(),
+                EnumTypeDefinition::__directive_location().into(),
+            ],
+        }
+    }
+
+    fn parse_definition<'b, S, T: FromTokens<'b> + Into<S>>(
+        definitions: &mut Vec<S>,
+        tokens: &mut impl Tokens<'b>,
+        errors: &mut Vec<ParseError>,
+        last_pass_had_error: &mut bool,
+    ) {
+        match T::from_tokens(tokens) {
+            Ok(definition) => {
+                definitions.push(definition.into());
+                *last_pass_had_error = false;
+            }
+            Err(err) => {
+                if !*last_pass_had_error {
+                    errors.push(err);
+                    *last_pass_had_error = true;
+                }
+            }
         }
     }
 
@@ -762,7 +762,7 @@ mod tests {
         AsIter,
     };
 
-    use super::{DefinitionDocument, SchemaDefinition};
+    use super::{DefinitionDocument, Parse, SchemaDefinition};
 
     #[test]
     fn test_can_be_used_owned_with_self_cell() {

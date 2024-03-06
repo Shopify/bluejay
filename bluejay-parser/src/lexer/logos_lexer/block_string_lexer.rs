@@ -1,4 +1,6 @@
-use logos::Logos;
+use super::Token as OuterToken;
+use crate::lexer::LexError;
+use logos::{Lexer, Logos};
 use std::borrow::Cow;
 use std::cmp::min;
 
@@ -26,11 +28,12 @@ pub(super) enum Token<'a> {
 }
 
 impl<'a> Token<'a> {
-    /// Returns a two-tuple
-    /// - The first element is a result indicating if the string was parsed correctly.
-    /// - The second element is how much the outer lexer should bump by.
-    pub(super) fn parse(s: &'a <Self as Logos<'a>>::Source) -> (Option<Cow<'a, str>>, usize) {
-        let mut lexer = Self::lexer(s);
+    /// Returns a result indicating if the string was parsed correctly.
+    /// Also bumps the outer lexer by the number of characters parsed.
+    pub(super) fn parse(
+        outer_lexer: &mut Lexer<'a, OuterToken<'a>>,
+    ) -> Result<Cow<'a, str>, LexError> {
+        let mut lexer = Self::lexer(outer_lexer.remainder());
 
         // starting BlockQuote should already have been parsed
 
@@ -39,8 +42,8 @@ impl<'a> Token<'a> {
         while let Some(Ok(token)) = lexer.next() {
             match token {
                 Self::BlockQuote => {
-                    let consumed = s.len() - lexer.remainder().len();
-                    return (Some(Self::block_string_value(lines)), consumed);
+                    outer_lexer.bump(lexer.span().end);
+                    return Ok(Self::block_string_value(lines));
                 }
                 Self::BlockStringCharacters(_) | Self::EscapedBlockQuote | Self::Whitespace(_) => {
                     lines.last_mut().unwrap().push(token)
@@ -49,7 +52,8 @@ impl<'a> Token<'a> {
             }
         }
 
-        (None, s.len())
+        outer_lexer.bump(lexer.span().end);
+        Err(LexError::UnrecognizedToken)
     }
 
     fn block_string_value(lines: Vec<Vec<Token<'a>>>) -> Cow<'a, str> {

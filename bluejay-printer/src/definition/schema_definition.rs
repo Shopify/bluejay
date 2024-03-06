@@ -141,7 +141,10 @@ impl<'a, S: SchemaDefinition> Display for SchemaDefinitionPrinter<'a, S> {
 #[cfg(test)]
 mod tests {
     use super::SchemaDefinitionPrinter;
-    use bluejay_parser::ast::definition::{DefinitionDocument, SchemaDefinition};
+    use bluejay_parser::ast::{
+        definition::{DefinitionDocument, SchemaDefinition},
+        Parse,
+    };
 
     #[test]
     fn test_schema_dump() {

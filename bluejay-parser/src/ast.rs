@@ -21,7 +21,7 @@ pub use directives::{ConstDirectives, Directives, VariableDirectives};
 use from_tokens::FromTokens;
 use is_match::IsMatch;
 use operation_type::OperationType;
-pub use parse::Parse;
+pub use parse::{Parse, ParseOptions};
 use parse_error::ParseError;
 use tokens::{LexerTokens, Tokens};
 use try_from_tokens::TryFromTokens;

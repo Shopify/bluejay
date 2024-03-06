@@ -9,6 +9,11 @@ use std::borrow::Cow;
 mod block_string_lexer;
 mod string_lexer;
 
+#[derive(Default)]
+pub(crate) struct Extras {
+    graphql_ruby_compatibility: bool,
+}
+
 #[derive(Logos, Debug, PartialEq)]
 #[logos(subpattern intpart = r"-?(?:0|[1-9]\d*)")]
 #[logos(subpattern decimalpart = r"\.\d+")]
@@ -18,7 +23,8 @@ mod string_lexer;
 #[logos(error = LexError)]
 #[logos(skip r"[\uFEFF\t \n\r,]+")]
 #[logos(skip r"#[^\n\r]*")] // comments
-pub enum Token<'a> {
+#[logos(extras = Extras)]
+pub(crate) enum Token<'a> {
     // Punctuators
     #[token("!")]
     Bang,
@@ -65,28 +71,20 @@ pub enum Token<'a> {
     FloatValue(f64),
 
     // StringValue
-    #[token("\"", parse_string)]
+    #[token("\"", string_lexer::Token::parse)]
     StringValue(Cow<'a, str>),
 
-    #[token("\"\"\"", parse_block_string)]
+    #[token("\"\"\"", block_string_lexer::Token::parse)]
     BlockStringValue(Cow<'a, str>),
-}
-
-fn parse_block_string<'a>(lexer: &mut logos::Lexer<'a, Token<'a>>) -> Option<Cow<'a, str>> {
-    let (result, to_bump) = block_string_lexer::Token::parse(lexer.remainder());
-    lexer.bump(to_bump);
-    result
-}
-
-fn parse_string<'a>(lexer: &mut logos::Lexer<'a, Token<'a>>) -> Result<Cow<'a, str>, LexError> {
-    let (result, to_bump) = string_lexer::Token::parse(lexer.remainder(), lexer.span().end);
-    lexer.bump(to_bump);
-    result
 }
 
 fn validate_number_no_trailing_name_start<'a>(
     lexer: &mut logos::Lexer<'a, Token<'a>>,
 ) -> Result<(), LexError> {
+    if lexer.extras.graphql_ruby_compatibility {
+        return Ok(());
+    }
+
     let invalid_trail_bytes = lexer
         .remainder()
         .chars()
@@ -187,11 +185,16 @@ impl<'a> LogosLexer<'a> {
     pub fn new(s: &'a <Token<'a> as Logos<'a>>::Source) -> Self {
         Self(Token::lexer(s))
     }
+
+    pub fn with_graphql_ruby_compatibility(mut self, enabled: bool) -> Self {
+        self.0.extras.graphql_ruby_compatibility = enabled;
+        self
+    }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::Token;
+    use super::{Extras, Token};
     use crate::lexer::{LexError, Span, StringValueLexError};
     use logos::Logos;
 
@@ -404,6 +407,33 @@ mod tests {
         assert_eq!(
             Some(Ok(Token::Ampersand)),
             Token::lexer("# this is a comment\n# this is another comment\r&").next(),
+        );
+    }
+
+    #[test]
+    fn graphql_ruby_compatibility_test() {
+        assert_eq!(
+            Some(Ok(Token::StringValue(
+                "This is a string with a newline \n Not allowed!".into()
+            ))),
+            Token::lexer_with_extras(
+                "\"This is a string with a newline \n Not allowed!\"",
+                Extras {
+                    graphql_ruby_compatibility: true
+                },
+            )
+            .next(),
+        );
+        assert_eq!(
+            vec![Ok(Token::IntValue(123)), Ok(Token::Name("A"))],
+            Token::lexer_with_extras(
+                "123A",
+                Extras {
+                    graphql_ruby_compatibility: true
+                },
+            )
+            .take(2)
+            .collect::<Vec<_>>(),
         );
     }
 }

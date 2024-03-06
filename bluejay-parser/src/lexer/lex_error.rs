@@ -42,7 +42,7 @@ impl From<(LexError, Span)> for Error {
             ),
             LexError::StringValueInvalid(errors) => Self::new(
                 "String value invalid",
-                None,
+                Some(Annotation::new("String value", span)),
                 errors
                     .into_iter()
                     .map(|error| {

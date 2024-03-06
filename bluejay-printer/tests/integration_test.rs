@@ -1,4 +1,7 @@
-use bluejay_parser::ast::definition::{DefinitionDocument, SchemaDefinition};
+use bluejay_parser::ast::{
+    definition::{DefinitionDocument, SchemaDefinition},
+    Parse,
+};
 use bluejay_printer::definition::SchemaDefinitionPrinter;
 
 #[test]

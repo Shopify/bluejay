@@ -1,6 +1,9 @@
 use bluejay_core::definition::{ScalarTypeDefinition, SchemaDefinition, TypeDefinitionReference};
 use bluejay_parser::{
-    ast::definition::{DefinitionDocument, SchemaDefinition as ParserSchemaDefinition},
+    ast::{
+        definition::{DefinitionDocument, SchemaDefinition as ParserSchemaDefinition},
+        Parse,
+    },
     Error as ParserError,
 };
 use bluejay_validator::definition::BuiltinRulesValidator;

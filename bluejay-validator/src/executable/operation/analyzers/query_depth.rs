@@ -61,11 +61,12 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, VV: VariableValues> Analyze
 mod tests {
     use super::QueryDepth;
     use crate::executable::{operation::Orchestrator, Cache};
-    use bluejay_parser::{
-        ast::definition::{
+    use bluejay_parser::ast::{
+        definition::{
             DefaultContext, DefinitionDocument, SchemaDefinition as ParserSchemaDefinition,
         },
-        ast::executable::ExecutableDocument as ParserExecutableDocument,
+        executable::ExecutableDocument as ParserExecutableDocument,
+        Parse,
     };
     use serde_json::{Map as JsonMap, Value as JsonValue};
 

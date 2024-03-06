@@ -428,9 +428,12 @@ mod tests {
         ObjectTypeDefinition, ScalarTypeDefinition, SchemaDefinition,
     };
     use bluejay_core::{Value, ValueReference};
-    use bluejay_parser::ast::definition::{
-        Context, CustomScalarTypeDefinition, DefinitionDocument, InputType as ParserInputType,
-        SchemaDefinition as ParserSchemaDefinition,
+    use bluejay_parser::ast::{
+        definition::{
+            Context, CustomScalarTypeDefinition, DefinitionDocument, InputType as ParserInputType,
+            SchemaDefinition as ParserSchemaDefinition,
+        },
+        Parse,
     };
     use once_cell::sync::Lazy;
     use serde_json::json;

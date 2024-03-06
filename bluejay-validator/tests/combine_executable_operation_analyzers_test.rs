@@ -1,6 +1,7 @@
 use bluejay_parser::ast::{
     definition::{DefinitionDocument, SchemaDefinition},
     executable::ExecutableDocument,
+    Parse,
 };
 use bluejay_validator::executable::{
     operation::{

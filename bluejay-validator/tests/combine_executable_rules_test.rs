@@ -2,6 +2,7 @@ use bluejay_parser::{
     ast::{
         definition::{DefinitionDocument, SchemaDefinition},
         executable::ExecutableDocument,
+        Parse,
     },
     Error,
 };

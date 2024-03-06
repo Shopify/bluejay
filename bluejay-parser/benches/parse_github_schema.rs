@@ -1,4 +1,7 @@
-use bluejay_parser::ast::definition::{DefaultContext, DefinitionDocument};
+use bluejay_parser::ast::{
+    definition::{DefaultContext, DefinitionDocument},
+    Parse,
+};
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 
 fn parse_github_schema(c: &mut Criterion) {
