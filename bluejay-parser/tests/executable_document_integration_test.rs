@@ -1,5 +1,5 @@
 use bluejay_parser::{
-    ast::{executable::ExecutableDocument, Parse},
+    ast::{executable::ExecutableDocument, Parse, ParseOptions},
     Error,
 };
 
@@ -25,4 +25,21 @@ fn test_valid() {
         let executable_document = ExecutableDocument::parse(input.as_str());
         assert!(executable_document.is_ok(), "Document had errors");
     });
+}
+
+#[test]
+fn test_graphql_ruby_valid() {
+    insta::glob!(
+        "test_data/executable_document/graphql_ruby_valid/*.graphql",
+        |path| {
+            let input = std::fs::read_to_string(path).unwrap();
+            let executable_document = ExecutableDocument::parse_with_options(
+                input.as_str(),
+                ParseOptions {
+                    graphql_ruby_compatibility: true,
+                },
+            );
+            assert!(executable_document.is_ok(), "Document had errors");
+        }
+    );
 }
