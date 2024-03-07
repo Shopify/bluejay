@@ -5,6 +5,6 @@ mod variable_values;
 mod visitor;
 
 pub use analyzer::Analyzer;
-pub use orchestrator::Orchestrator;
+pub use orchestrator::{OperationResolutionError, Orchestrator};
 pub use variable_values::{OperationDefinitionValueEvaluationExt, VariableValues};
 pub use visitor::Visitor;
