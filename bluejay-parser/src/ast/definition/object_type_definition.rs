@@ -61,7 +61,7 @@ impl<'a, C: Context> ObjectTypeDefinition<'a, C> {
         # must be non-null for ENUM, otherwise null.
         enumValues(includeDeprecated: Boolean = false): [__EnumValue!]
         # must be non-null for INPUT_OBJECT, otherwise null.
-        inputFields: [__InputValue!]
+        inputFields(includeDeprecated: Boolean = false): [__InputValue!]
         # must be non-null for NON_NULL and LIST, otherwise null.
         ofType: __Type
         # may be non-null for custom SCALAR, otherwise null.
@@ -70,7 +70,7 @@ impl<'a, C: Context> ObjectTypeDefinition<'a, C> {
     const __FIELD_DEFINITION: &'static str = "type __Field {
         name: String!
         description: String
-        args: [__InputValue!]!
+        args(includeDeprecated: Boolean = false): [__InputValue!]!
         type: __Type!
         isDeprecated: Boolean!
         deprecationReason: String
@@ -91,7 +91,7 @@ impl<'a, C: Context> ObjectTypeDefinition<'a, C> {
         name: String!
         description: String
         locations: [__DirectiveLocation!]!
-        args: [__InputValue!]!
+        args(includeDeprecated: Boolean = false): [__InputValue!]!
         isRepeatable: Boolean!
     }";
 
