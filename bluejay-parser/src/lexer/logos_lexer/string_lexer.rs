@@ -54,6 +54,9 @@ pub(super) enum Token<'a> {
 
     #[token("\n")]
     Newline,
+
+    #[token("\r")]
+    CarriageReturn,
 }
 
 fn parse_escaped_unicode<'a>(lexer: &mut Lexer<'a, Token<'a>>) -> Option<char> {
@@ -153,6 +156,15 @@ impl<'a> Token<'a> {
                     Self::Newline => {
                         if outer_lexer.extras.graphql_ruby_compatibility {
                             formatted.to_mut().push('\n');
+                        } else {
+                            errors.push(StringValueLexError::InvalidCharacters(
+                                Span::from(span) + span_offset,
+                            ));
+                        }
+                    }
+                    Self::CarriageReturn => {
+                        if outer_lexer.extras.graphql_ruby_compatibility {
+                            formatted.to_mut().push('\r');
                         } else {
                             errors.push(StringValueLexError::InvalidCharacters(
                                 Span::from(span) + span_offset,

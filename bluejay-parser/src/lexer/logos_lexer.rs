@@ -425,6 +425,18 @@ mod tests {
             .next(),
         );
         assert_eq!(
+            Some(Ok(Token::StringValue(
+                "This is a string with a carriage return \r Not allowed!".into()
+            ))),
+            Token::lexer_with_extras(
+                "\"This is a string with a carriage return \r Not allowed!\"",
+                Extras {
+                    graphql_ruby_compatibility: true
+                },
+            )
+            .next(),
+        );
+        assert_eq!(
             vec![Ok(Token::IntValue(123)), Ok(Token::Name("A"))],
             Token::lexer_with_extras(
                 "123A",
