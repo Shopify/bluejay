@@ -4,6 +4,7 @@ use bluejay_core::definition::{self, HasDirectives, SchemaDefinition};
 pub struct ScalarTypeDefinition<'a, S: SchemaDefinition, W: Warden<SchemaDefinition = S>> {
     inner: &'a S::CustomScalarTypeDefinition,
     directives: Option<Directives<'a, S, W>>,
+    cache: &'a Cache<'a, S, W>,
 }
 
 impl<'a, S: SchemaDefinition, W: Warden<SchemaDefinition = S>> ScalarTypeDefinition<'a, S, W> {
@@ -14,6 +15,7 @@ impl<'a, S: SchemaDefinition, W: Warden<SchemaDefinition = S>> ScalarTypeDefinit
         Self {
             inner,
             directives: inner.directives().map(|d| Directives::new(d, cache)),
+            cache,
         }
     }
 
@@ -37,7 +39,9 @@ impl<'a, S: SchemaDefinition, W: Warden<SchemaDefinition = S>> definition::Scala
         &self,
         value: &impl bluejay_core::Value<CONST>,
     ) -> Result<(), std::borrow::Cow<'static, str>> {
-        self.inner.coerce_input(value)
+        self.cache
+            .warden()
+            .custom_scalar_definition_coerce_input(self.inner, value)
     }
 }
 

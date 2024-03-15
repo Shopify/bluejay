@@ -1,5 +1,5 @@
 use bluejay_core::{
-    definition::{InputValueDefinition, SchemaDefinition},
+    definition::{InputValueDefinition, ScalarTypeDefinition, SchemaDefinition},
     Directive,
 };
 use std::marker::PhantomData;
@@ -81,6 +81,14 @@ pub trait Warden: Sized {
         &'a <<Self::SchemaDefinition as SchemaDefinition>::Directive as Directive<true>>::Arguments,
     > {
         scoped_directive.inner().arguments()
+    }
+
+    fn custom_scalar_definition_coerce_input<const CONST: bool>(
+        &self,
+        custom_scalar_type_definition: &<Self::SchemaDefinition as SchemaDefinition>::CustomScalarTypeDefinition,
+        value: &impl bluejay_core::Value<CONST>,
+    ) -> Result<(), std::borrow::Cow<'static, str>> {
+        custom_scalar_type_definition.coerce_input(value)
     }
 }
 
