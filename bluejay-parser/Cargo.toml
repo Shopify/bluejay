@@ -14,7 +14,7 @@ logos = { version = "0.14" }
 enum-as-inner = "0.6"
 ariadne = { version = "0.4", optional = true }
 bluejay-core = { version = "0.1.0-alpha.5", path = "../bluejay-core" }
-strum = { version = "0.24", features = ["derive"] }
+strum = { version = "0.26", features = ["derive"] }
 
 [dev-dependencies]
 criterion = "0.5"
