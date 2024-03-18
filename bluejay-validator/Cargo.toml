@@ -13,7 +13,7 @@ description = "A GraphQL validator"
 bluejay-core = { version = "0.1.0-alpha.5", path = "../bluejay-core" }
 bluejay-parser = { version = "0.1.0-alpha.5", path = "../bluejay-parser", optional = true, features = ["format-errors"] }
 paste = "1.0"
-itertools = "0.10.5"
+itertools = "0.12.1"
 serde_json = { version = "1.0", optional = true }
 seq-macro = "0.3.5"
 
