@@ -17,7 +17,7 @@ bluejay-core = { version = "0.1.0-alpha.5", path = "../bluejay-core" }
 strum = { version = "0.24", features = ["derive"] }
 
 [dev-dependencies]
-criterion = "0.4"
+criterion = "0.5"
 insta = { version = "1.28", features = ["glob"] }
 self_cell = "1.0.3"
 
