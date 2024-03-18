@@ -1,9 +1,9 @@
-use strum::{AsRefStr, Display, EnumIter, EnumString, EnumVariantNames, IntoStaticStr};
+use strum::{AsRefStr, Display, EnumIter, EnumString, IntoStaticStr, VariantNames};
 
 #[derive(
     IntoStaticStr,
     AsRefStr,
-    EnumVariantNames,
+    VariantNames,
     EnumString,
     EnumIter,
     Display,
