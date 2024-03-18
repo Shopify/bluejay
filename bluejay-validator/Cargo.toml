@@ -19,7 +19,7 @@ seq-macro = "0.3.5"
 
 [dev-dependencies]
 bluejay-core = { path = "../bluejay-core", features = ["serde_json"] }
-criterion = "0.4"
+criterion = "0.5"
 insta = { version = "1.28", features = ["glob"] }
 once_cell = "1.17"
 serde_json = { version = "1.0" }
