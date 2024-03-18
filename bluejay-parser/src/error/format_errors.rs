@@ -51,7 +51,7 @@ impl<'a> ByteIndexToCharIndex<'a> {
 
 pub struct SpanToLocation<'a> {
     byte_idx_to_char_idx: ByteIndexToCharIndex<'a>,
-    source: Source,
+    source: Source<&'a str>,
 }
 
 impl<'a> SpanToLocation<'a> {
