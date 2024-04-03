@@ -44,39 +44,26 @@ impl<'a, S: definition::SchemaDefinition, W: Warden<SchemaDefinition = S>>
             query: cache
                 .get_or_create_type_definition(TypeDefinitionReference::Object(inner.query()))
                 .ok_or(SchemaDefinitionError::QueryRootNotVisible)
-                .and_then(|td| {
-                    td.as_object().ok_or_else(|| {
-                        SchemaDefinitionError::NonUniqueTypeDefinitionName(inner.query().name())
-                    })
+                .map(|td| {
+                    td.as_object()
+                        .expect("Error with internal handling of non-unique type names")
                 })?,
-            mutation: inner
-                .mutation()
-                .and_then(|mutation| {
-                    cache
-                        .get_or_create_type_definition(TypeDefinitionReference::Object(mutation))
-                        .map(|td| {
-                            td.as_object().ok_or_else(|| {
-                                SchemaDefinitionError::NonUniqueTypeDefinitionName(mutation.name())
-                            })
-                        })
-                })
-                .transpose()?,
-            subscription: inner
-                .subscription()
-                .and_then(|subscription| {
-                    cache
-                        .get_or_create_type_definition(TypeDefinitionReference::Object(
-                            subscription,
-                        ))
-                        .map(|td| {
-                            td.as_object().ok_or_else(|| {
-                                SchemaDefinitionError::NonUniqueTypeDefinitionName(
-                                    subscription.name(),
-                                )
-                            })
-                        })
-                })
-                .transpose()?,
+            mutation: inner.mutation().and_then(|mutation| {
+                cache
+                    .get_or_create_type_definition(TypeDefinitionReference::Object(mutation))
+                    .map(|td| {
+                        td.as_object()
+                            .expect("Error with internal handling of non-unique type names")
+                    })
+            }),
+            subscription: inner.subscription().and_then(|subscription| {
+                cache
+                    .get_or_create_type_definition(TypeDefinitionReference::Object(subscription))
+                    .map(|td| {
+                        td.as_object()
+                            .expect("Error with internal handling of non-unique type names")
+                    })
+            }),
             interface_implementors: FrozenMap::new(),
             type_definitions_and_directive_definitions: OnceCell::new(),
             directives: inner.directives().map(|d| Directives::new(d, cache)),
@@ -207,9 +194,10 @@ impl<'a, S: definition::SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>>
         self.cache
             .get_type_definition(name)
             .or_else(|| {
-                self.inner()
-                    .get_type_definition(name)
-                    .and_then(|tdr| self.cache.get_or_create_type_definition(tdr))
+                self.cache
+                    .warden()
+                    .type_definitions_for_name(self.inner(), name)
+                    .find_map(|tdr| self.cache.get_or_create_type_definition(tdr))
             })
             .map(TypeDefinition::as_ref)
     }

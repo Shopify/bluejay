@@ -1,4 +1,7 @@
-use bluejay_core::{definition::prelude::*, AsIter, Directive as _};
+use bluejay_core::{
+    definition::{prelude::*, SchemaDefinition as CoreSchemaDefinition, TypeDefinitionReference},
+    AsIter, Directive as _,
+};
 use bluejay_parser::{
     ast::{
         definition::{
@@ -28,6 +31,13 @@ impl<'a> DirectiveWarden<'a> {
 
 impl<'a> Warden for DirectiveWarden<'a> {
     type SchemaDefinition = ParserSchemaDefinition<'a>;
+    type Id<'b> = &'b str;
+    type TypeDefinitionsForName<'b> = std::option::IntoIter<
+        TypeDefinitionReference<
+            'b,
+            <Self::SchemaDefinition as CoreSchemaDefinition>::TypeDefinition,
+        >,
+    > where Self: 'b;
 
     fn is_enum_value_definition_visible(
         &self,
@@ -111,6 +121,56 @@ impl<'a> Warden for DirectiveWarden<'a> {
         union_type_definition: &<Self::SchemaDefinition as bluejay_core::definition::SchemaDefinition>::UnionTypeDefinition,
     ) -> bool {
         Self::has_visible_directive(union_type_definition.directives())
+    }
+
+    fn object_type_definition_id<'b>(
+        &self,
+        object_type_definition: &'b <Self::SchemaDefinition as bluejay_core::definition::SchemaDefinition>::ObjectTypeDefinition,
+    ) -> Self::Id<'b> {
+        object_type_definition.name()
+    }
+
+    fn scalar_type_definition_id<'b>(
+        &self,
+        scalar_type_definition: &'b <Self::SchemaDefinition as bluejay_core::definition::SchemaDefinition>::CustomScalarTypeDefinition,
+    ) -> Self::Id<'b> {
+        scalar_type_definition.name()
+    }
+
+    fn enum_type_definition_id<'b>(
+        &self,
+        enum_type_definition: &'b <Self::SchemaDefinition as bluejay_core::definition::SchemaDefinition>::EnumTypeDefinition,
+    ) -> Self::Id<'b> {
+        enum_type_definition.name()
+    }
+
+    fn input_object_type_definition_id<'b>(
+        &self,
+        input_object_type_definition: &'b <Self::SchemaDefinition as bluejay_core::definition::SchemaDefinition>::InputObjectTypeDefinition,
+    ) -> Self::Id<'b> {
+        input_object_type_definition.name()
+    }
+
+    fn interface_type_definition_id<'b>(
+        &self,
+        interface_type_definition: &'b <Self::SchemaDefinition as bluejay_core::definition::SchemaDefinition>::InterfaceTypeDefinition,
+    ) -> Self::Id<'b> {
+        interface_type_definition.name()
+    }
+
+    fn union_type_definition_id<'b>(
+        &self,
+        union_type_definition: &'b <Self::SchemaDefinition as bluejay_core::definition::SchemaDefinition>::UnionTypeDefinition,
+    ) -> Self::Id<'b> {
+        union_type_definition.name()
+    }
+
+    fn type_definitions_for_name<'b>(
+        &self,
+        schema_definition: &'b Self::SchemaDefinition,
+        type_name: &str,
+    ) -> Self::TypeDefinitionsForName<'b> {
+        schema_definition.get_type_definition(type_name).into_iter()
     }
 }
 

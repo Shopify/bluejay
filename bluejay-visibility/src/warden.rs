@@ -1,11 +1,23 @@
 use bluejay_core::{
-    definition::{InputValueDefinition, ScalarTypeDefinition, SchemaDefinition},
+    definition::{
+        prelude::*, InputValueDefinition, ScalarTypeDefinition, SchemaDefinition,
+        TypeDefinitionReference,
+    },
     Directive,
 };
 use std::marker::PhantomData;
 
 pub trait Warden: Sized {
     type SchemaDefinition: SchemaDefinition;
+    type Id<'a>: Eq;
+    type TypeDefinitionsForName<'a>: Iterator<
+            Item = TypeDefinitionReference<
+                'a,
+                <Self::SchemaDefinition as SchemaDefinition>::TypeDefinition,
+            >,
+        > + 'a
+    where
+        Self: 'a;
 
     fn is_field_definition_visible(
         &self,
@@ -67,6 +79,9 @@ pub trait Warden: Sized {
         union_type_definition: &<Self::SchemaDefinition as SchemaDefinition>::UnionTypeDefinition,
     ) -> bool;
 
+    // Each of the following methods is a sign that we should have more specific traits than the `bluejay-core::definition`
+    // ones. The more we add, the greater the argument that we should create dedicated traits instead of using the core ones.
+
     fn input_value_definition_default_value<'a>(
         &self,
         scoped_input_value_definition: &crate::InputValueDefinition<'a, Self::SchemaDefinition, Self>,
@@ -90,6 +105,42 @@ pub trait Warden: Sized {
     ) -> Result<(), std::borrow::Cow<'static, str>> {
         custom_scalar_type_definition.coerce_input(value)
     }
+
+    fn type_definitions_for_name<'a>(
+        &self,
+        schema_definition: &'a Self::SchemaDefinition,
+        type_name: &str,
+    ) -> Self::TypeDefinitionsForName<'a>;
+
+    fn object_type_definition_id<'a>(
+        &self,
+        object_type_definition: &'a <Self::SchemaDefinition as SchemaDefinition>::ObjectTypeDefinition,
+    ) -> Self::Id<'a>;
+
+    fn scalar_type_definition_id<'a>(
+        &self,
+        scalar_type_definition: &'a <Self::SchemaDefinition as SchemaDefinition>::CustomScalarTypeDefinition,
+    ) -> Self::Id<'a>;
+
+    fn enum_type_definition_id<'a>(
+        &self,
+        enum_type_definition: &'a <Self::SchemaDefinition as SchemaDefinition>::EnumTypeDefinition,
+    ) -> Self::Id<'a>;
+
+    fn input_object_type_definition_id<'a>(
+        &self,
+        input_object_type_definition: &'a <Self::SchemaDefinition as SchemaDefinition>::InputObjectTypeDefinition,
+    ) -> Self::Id<'a>;
+
+    fn interface_type_definition_id<'a>(
+        &self,
+        interface_type_definition: &'a <Self::SchemaDefinition as SchemaDefinition>::InterfaceTypeDefinition,
+    ) -> Self::Id<'a>;
+
+    fn union_type_definition_id<'a>(
+        &self,
+        union_type_definition: &'a <Self::SchemaDefinition as SchemaDefinition>::UnionTypeDefinition,
+    ) -> Self::Id<'a>;
 }
 
 pub struct NullWarden<S: SchemaDefinition>(PhantomData<S>);
@@ -102,6 +153,9 @@ impl<S: SchemaDefinition> Default for NullWarden<S> {
 
 impl<S: SchemaDefinition> Warden for NullWarden<S> {
     type SchemaDefinition = S;
+    type Id<'a> = &'a str;
+    type TypeDefinitionsForName<'a> =
+        std::option::IntoIter<TypeDefinitionReference<'a, S::TypeDefinition>> where Self: 'a;
 
     fn is_field_definition_visible(
         &self,
@@ -185,5 +239,55 @@ impl<S: SchemaDefinition> Warden for NullWarden<S> {
         _: &<Self::SchemaDefinition as SchemaDefinition>::UnionTypeDefinition,
     ) -> bool {
         true
+    }
+
+    fn object_type_definition_id<'a>(
+        &self,
+        object_type_definition: &'a <Self::SchemaDefinition as SchemaDefinition>::ObjectTypeDefinition,
+    ) -> Self::Id<'a> {
+        object_type_definition.name()
+    }
+
+    fn scalar_type_definition_id<'a>(
+        &self,
+        scalar_type_definition: &'a <Self::SchemaDefinition as SchemaDefinition>::CustomScalarTypeDefinition,
+    ) -> Self::Id<'a> {
+        scalar_type_definition.name()
+    }
+
+    fn enum_type_definition_id<'a>(
+        &self,
+        enum_type_definition: &'a <Self::SchemaDefinition as SchemaDefinition>::EnumTypeDefinition,
+    ) -> Self::Id<'a> {
+        enum_type_definition.name()
+    }
+
+    fn input_object_type_definition_id<'a>(
+        &self,
+        input_object_type_definition: &'a <Self::SchemaDefinition as SchemaDefinition>::InputObjectTypeDefinition,
+    ) -> Self::Id<'a> {
+        input_object_type_definition.name()
+    }
+
+    fn interface_type_definition_id<'a>(
+        &self,
+        interface_type_definition: &'a <Self::SchemaDefinition as SchemaDefinition>::InterfaceTypeDefinition,
+    ) -> Self::Id<'a> {
+        interface_type_definition.name()
+    }
+
+    fn union_type_definition_id<'a>(
+        &self,
+        union_type_definition: &'a <Self::SchemaDefinition as SchemaDefinition>::UnionTypeDefinition,
+    ) -> Self::Id<'a> {
+        union_type_definition.name()
+    }
+
+    fn type_definitions_for_name<'a>(
+        &self,
+        schema_definition: &'a Self::SchemaDefinition,
+        type_name: &str,
+    ) -> Self::TypeDefinitionsForName<'a> {
+        schema_definition.get_type_definition(type_name).into_iter()
     }
 }

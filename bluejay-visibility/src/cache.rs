@@ -31,14 +31,15 @@ impl<'a, S: SchemaDefinition, W: Warden<SchemaDefinition = S>> Cache<'a, S, W> {
         &'a self,
         type_definition: TypeDefinitionReference<'a, S::TypeDefinition>,
     ) -> Option<&'a TypeDefinition<'a, S, W>> {
-        self.type_definitions
-            .get(type_definition.name())
-            .or_else(|| {
-                TypeDefinition::new(type_definition, self).map(|td| {
-                    self.type_definitions
-                        .insert(type_definition.name(), Box::new(td))
-                })
-            })
+        match self.type_definitions.get(type_definition.name()) {
+            Some(existing_type_definition) => self
+                .type_definitions_equal(existing_type_definition.inner(), type_definition)
+                .then_some(existing_type_definition),
+            None => TypeDefinition::new(type_definition, self).map(|td| {
+                self.type_definitions
+                    .insert(type_definition.name(), Box::new(td))
+            }),
+        }
     }
 
     pub(crate) fn get_type_definition(
@@ -67,5 +68,52 @@ impl<'a, S: SchemaDefinition, W: Warden<SchemaDefinition = S>> Cache<'a, S, W> {
         name: &str,
     ) -> Option<&'a DirectiveDefinition<'a, S, W>> {
         self.directive_definitions.get(name)
+    }
+
+    fn type_definitions_equal(
+        &self,
+        left: TypeDefinitionReference<'a, S::TypeDefinition>,
+        right: TypeDefinitionReference<'a, S::TypeDefinition>,
+    ) -> bool {
+        match (left, right) {
+            (
+                TypeDefinitionReference::BuiltinScalar(left),
+                TypeDefinitionReference::BuiltinScalar(right),
+            ) => left == right,
+            (
+                TypeDefinitionReference::CustomScalar(left),
+                TypeDefinitionReference::CustomScalar(right),
+            ) => {
+                self.warden.scalar_type_definition_id(left)
+                    == self.warden.scalar_type_definition_id(right)
+            }
+            (TypeDefinitionReference::Enum(left), TypeDefinitionReference::Enum(right)) => {
+                self.warden.enum_type_definition_id(left)
+                    == self.warden.enum_type_definition_id(right)
+            }
+            (
+                TypeDefinitionReference::InputObject(left),
+                TypeDefinitionReference::InputObject(right),
+            ) => {
+                self.warden.input_object_type_definition_id(left)
+                    == self.warden.input_object_type_definition_id(right)
+            }
+            (
+                TypeDefinitionReference::Interface(left),
+                TypeDefinitionReference::Interface(right),
+            ) => {
+                self.warden.interface_type_definition_id(left)
+                    == self.warden.interface_type_definition_id(right)
+            }
+            (TypeDefinitionReference::Object(left), TypeDefinitionReference::Object(right)) => {
+                self.warden.object_type_definition_id(left)
+                    == self.warden.object_type_definition_id(right)
+            }
+            (TypeDefinitionReference::Union(left), TypeDefinitionReference::Union(right)) => {
+                self.warden.union_type_definition_id(left)
+                    == self.warden.union_type_definition_id(right)
+            }
+            _ => false,
+        }
     }
 }
