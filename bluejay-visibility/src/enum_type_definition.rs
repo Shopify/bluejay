@@ -18,6 +18,10 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> EnumTypeDefi
             directives: inner.directives().map(|d| Directives::new(d, cache)),
         }
     }
+
+    pub(crate) fn inner(&self) -> &'a S::EnumTypeDefinition {
+        self.inner
+    }
 }
 
 impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> definition::EnumTypeDefinition

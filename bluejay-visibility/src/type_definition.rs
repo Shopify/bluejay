@@ -45,6 +45,18 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> TypeDefiniti
                 .then(|| Self::Union(UnionTypeDefinition::new(utd, cache))),
         }
     }
+
+    pub(crate) fn inner(&self) -> TypeDefinitionReference<'_, S::TypeDefinition> {
+        match self {
+            Self::BuiltinScalar(bstd) => TypeDefinitionReference::BuiltinScalar(*bstd),
+            Self::CustomScalar(cstd) => TypeDefinitionReference::CustomScalar(cstd.inner()),
+            Self::Object(otd) => TypeDefinitionReference::Object(otd.inner()),
+            Self::Interface(itd) => TypeDefinitionReference::Interface(itd.inner()),
+            Self::InputObject(iotd) => TypeDefinitionReference::InputObject(iotd.inner()),
+            Self::Enum(etd) => TypeDefinitionReference::Enum(etd.inner()),
+            Self::Union(utd) => TypeDefinitionReference::Union(utd.inner()),
+        }
+    }
 }
 
 impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> definition::TypeDefinition

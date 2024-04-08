@@ -1,4 +1,7 @@
-use bluejay_core::{definition::prelude::*, AsIter, Directive as _};
+use bluejay_core::{
+    definition::{prelude::*, SchemaDefinition as CoreSchemaDefinition, TypeDefinitionReference},
+    AsIter, Directive as _,
+};
 use bluejay_parser::{
     ast::{
         definition::{
@@ -28,6 +31,12 @@ impl<'a> DirectiveWarden<'a> {
 
 impl<'a> Warden for DirectiveWarden<'a> {
     type SchemaDefinition = ParserSchemaDefinition<'a>;
+    type TypeDefinitionsForName<'b> = std::option::IntoIter<
+        TypeDefinitionReference<
+            'b,
+            <Self::SchemaDefinition as CoreSchemaDefinition>::TypeDefinition,
+        >,
+    > where Self: 'b;
 
     fn is_enum_value_definition_visible(
         &self,
@@ -111,6 +120,14 @@ impl<'a> Warden for DirectiveWarden<'a> {
         union_type_definition: &<Self::SchemaDefinition as bluejay_core::definition::SchemaDefinition>::UnionTypeDefinition,
     ) -> bool {
         Self::has_visible_directive(union_type_definition.directives())
+    }
+
+    fn type_definitions_for_name<'b>(
+        &self,
+        schema_definition: &'b Self::SchemaDefinition,
+        type_name: &str,
+    ) -> Self::TypeDefinitionsForName<'b> {
+        schema_definition.get_type_definition(type_name).into_iter()
     }
 }
 
