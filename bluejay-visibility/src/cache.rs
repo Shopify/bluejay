@@ -83,35 +83,23 @@ impl<'a, S: SchemaDefinition, W: Warden<SchemaDefinition = S>> Cache<'a, S, W> {
             (
                 TypeDefinitionReference::CustomScalar(left),
                 TypeDefinitionReference::CustomScalar(right),
-            ) => {
-                self.warden.scalar_type_definition_id(left)
-                    == self.warden.scalar_type_definition_id(right)
-            }
+            ) => self.warden.scalar_type_definitions_equal(left, right),
             (TypeDefinitionReference::Enum(left), TypeDefinitionReference::Enum(right)) => {
-                self.warden.enum_type_definition_id(left)
-                    == self.warden.enum_type_definition_id(right)
+                self.warden.enum_type_definitions_equal(left, right)
             }
             (
                 TypeDefinitionReference::InputObject(left),
                 TypeDefinitionReference::InputObject(right),
-            ) => {
-                self.warden.input_object_type_definition_id(left)
-                    == self.warden.input_object_type_definition_id(right)
-            }
+            ) => self.warden.input_object_type_definitions_equal(left, right),
             (
                 TypeDefinitionReference::Interface(left),
                 TypeDefinitionReference::Interface(right),
-            ) => {
-                self.warden.interface_type_definition_id(left)
-                    == self.warden.interface_type_definition_id(right)
-            }
+            ) => self.warden.interface_type_definitions_equal(left, right),
             (TypeDefinitionReference::Object(left), TypeDefinitionReference::Object(right)) => {
-                self.warden.object_type_definition_id(left)
-                    == self.warden.object_type_definition_id(right)
+                self.warden.object_type_definitions_equal(left, right)
             }
             (TypeDefinitionReference::Union(left), TypeDefinitionReference::Union(right)) => {
-                self.warden.union_type_definition_id(left)
-                    == self.warden.union_type_definition_id(right)
+                self.warden.union_type_definitions_equal(left, right)
             }
             _ => false,
         }

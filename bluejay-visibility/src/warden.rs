@@ -9,7 +9,6 @@ use std::marker::PhantomData;
 
 pub trait Warden: Sized {
     type SchemaDefinition: SchemaDefinition;
-    type Id<'a>: Eq;
     type TypeDefinitionsForName<'a>: Iterator<
             Item = TypeDefinitionReference<
                 'a,
@@ -112,35 +111,53 @@ pub trait Warden: Sized {
         type_name: &str,
     ) -> Self::TypeDefinitionsForName<'a>;
 
-    fn object_type_definition_id<'a>(
+    fn object_type_definitions_equal(
         &self,
-        object_type_definition: &'a <Self::SchemaDefinition as SchemaDefinition>::ObjectTypeDefinition,
-    ) -> Self::Id<'a>;
+        first: &<Self::SchemaDefinition as SchemaDefinition>::ObjectTypeDefinition,
+        second: &<Self::SchemaDefinition as SchemaDefinition>::ObjectTypeDefinition,
+    ) -> bool {
+        first.name() == second.name()
+    }
 
-    fn scalar_type_definition_id<'a>(
+    fn scalar_type_definitions_equal(
         &self,
-        scalar_type_definition: &'a <Self::SchemaDefinition as SchemaDefinition>::CustomScalarTypeDefinition,
-    ) -> Self::Id<'a>;
+        first: &<Self::SchemaDefinition as SchemaDefinition>::CustomScalarTypeDefinition,
+        second: &<Self::SchemaDefinition as SchemaDefinition>::CustomScalarTypeDefinition,
+    ) -> bool {
+        first.name() == second.name()
+    }
 
-    fn enum_type_definition_id<'a>(
+    fn enum_type_definitions_equal(
         &self,
-        enum_type_definition: &'a <Self::SchemaDefinition as SchemaDefinition>::EnumTypeDefinition,
-    ) -> Self::Id<'a>;
+        first: &<Self::SchemaDefinition as SchemaDefinition>::EnumTypeDefinition,
+        second: &<Self::SchemaDefinition as SchemaDefinition>::EnumTypeDefinition,
+    ) -> bool {
+        first.name() == second.name()
+    }
 
-    fn input_object_type_definition_id<'a>(
+    fn input_object_type_definitions_equal(
         &self,
-        input_object_type_definition: &'a <Self::SchemaDefinition as SchemaDefinition>::InputObjectTypeDefinition,
-    ) -> Self::Id<'a>;
+        first: &<Self::SchemaDefinition as SchemaDefinition>::InputObjectTypeDefinition,
+        second: &<Self::SchemaDefinition as SchemaDefinition>::InputObjectTypeDefinition,
+    ) -> bool {
+        first.name() == second.name()
+    }
 
-    fn interface_type_definition_id<'a>(
+    fn interface_type_definitions_equal(
         &self,
-        interface_type_definition: &'a <Self::SchemaDefinition as SchemaDefinition>::InterfaceTypeDefinition,
-    ) -> Self::Id<'a>;
+        first: &<Self::SchemaDefinition as SchemaDefinition>::InterfaceTypeDefinition,
+        second: &<Self::SchemaDefinition as SchemaDefinition>::InterfaceTypeDefinition,
+    ) -> bool {
+        first.name() == second.name()
+    }
 
-    fn union_type_definition_id<'a>(
+    fn union_type_definitions_equal(
         &self,
-        union_type_definition: &'a <Self::SchemaDefinition as SchemaDefinition>::UnionTypeDefinition,
-    ) -> Self::Id<'a>;
+        first: &<Self::SchemaDefinition as SchemaDefinition>::UnionTypeDefinition,
+        second: &<Self::SchemaDefinition as SchemaDefinition>::UnionTypeDefinition,
+    ) -> bool {
+        first.name() == second.name()
+    }
 }
 
 pub struct NullWarden<S: SchemaDefinition>(PhantomData<S>);
@@ -153,7 +170,6 @@ impl<S: SchemaDefinition> Default for NullWarden<S> {
 
 impl<S: SchemaDefinition> Warden for NullWarden<S> {
     type SchemaDefinition = S;
-    type Id<'a> = &'a str;
     type TypeDefinitionsForName<'a> =
         std::option::IntoIter<TypeDefinitionReference<'a, S::TypeDefinition>> where Self: 'a;
 
@@ -239,48 +255,6 @@ impl<S: SchemaDefinition> Warden for NullWarden<S> {
         _: &<Self::SchemaDefinition as SchemaDefinition>::UnionTypeDefinition,
     ) -> bool {
         true
-    }
-
-    fn object_type_definition_id<'a>(
-        &self,
-        object_type_definition: &'a <Self::SchemaDefinition as SchemaDefinition>::ObjectTypeDefinition,
-    ) -> Self::Id<'a> {
-        object_type_definition.name()
-    }
-
-    fn scalar_type_definition_id<'a>(
-        &self,
-        scalar_type_definition: &'a <Self::SchemaDefinition as SchemaDefinition>::CustomScalarTypeDefinition,
-    ) -> Self::Id<'a> {
-        scalar_type_definition.name()
-    }
-
-    fn enum_type_definition_id<'a>(
-        &self,
-        enum_type_definition: &'a <Self::SchemaDefinition as SchemaDefinition>::EnumTypeDefinition,
-    ) -> Self::Id<'a> {
-        enum_type_definition.name()
-    }
-
-    fn input_object_type_definition_id<'a>(
-        &self,
-        input_object_type_definition: &'a <Self::SchemaDefinition as SchemaDefinition>::InputObjectTypeDefinition,
-    ) -> Self::Id<'a> {
-        input_object_type_definition.name()
-    }
-
-    fn interface_type_definition_id<'a>(
-        &self,
-        interface_type_definition: &'a <Self::SchemaDefinition as SchemaDefinition>::InterfaceTypeDefinition,
-    ) -> Self::Id<'a> {
-        interface_type_definition.name()
-    }
-
-    fn union_type_definition_id<'a>(
-        &self,
-        union_type_definition: &'a <Self::SchemaDefinition as SchemaDefinition>::UnionTypeDefinition,
-    ) -> Self::Id<'a> {
-        union_type_definition.name()
     }
 
     fn type_definitions_for_name<'a>(
