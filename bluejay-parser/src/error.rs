@@ -1,5 +1,5 @@
 #[cfg(feature = "format-errors")]
-use ariadne::{Config, Label, Report, ReportKind, Source};
+use ariadne::{Config, IndexType, Label, Report, ReportKind, Source};
 use std::borrow::Cow;
 
 mod annotation;
@@ -36,7 +36,6 @@ impl Error {
         errors: impl IntoIterator<Item = E>,
     ) -> String {
         let mut file_cache = Source::from(document);
-        let mut byte_idx_to_char_idx = format_errors::ByteIndexToCharIndex::new(document);
 
         let mut buf: Vec<u8> = Vec::new();
 
@@ -54,20 +53,27 @@ impl Error {
                     error
                         .primary_annotation
                         .as_ref()
-                        .map(|a| byte_idx_to_char_idx.convert_span(a.span()).start)
+                        .map(|a| a.span().byte_range().start)
                         .unwrap_or(0),
                 )
-                .with_config(Config::default().with_color(false))
+                .with_config(
+                    Config::default()
+                        .with_color(false)
+                        .with_index_type(IndexType::Byte),
+                )
                 .with_message(error.message)
-                .with_labels(error.primary_annotation.map(|annotation| {
-                    Label::new(byte_idx_to_char_idx.convert_span(annotation.span()))
-                        .with_message(annotation.message())
-                        .with_priority(1)
-                }))
-                .with_labels(error.secondary_annotations.into_iter().map(|annotation| {
-                    Label::new(byte_idx_to_char_idx.convert_span(annotation.span()))
-                        .with_message(annotation.message())
-                }))
+                .with_labels(
+                    error
+                        .primary_annotation
+                        .map(|Annotation { message, span }| {
+                            Label::new(span)
+                                .with_message(message.as_ref())
+                                .with_priority(1)
+                        }),
+                )
+                .with_labels(error.secondary_annotations.into_iter().map(
+                    |Annotation { message, span }| Label::new(span).with_message(message.as_ref()),
+                ))
                 .finish()
                 .write(&mut file_cache, &mut buf)
             })
