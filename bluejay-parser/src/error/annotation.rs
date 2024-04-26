@@ -3,8 +3,8 @@ use std::borrow::Cow;
 
 #[derive(Debug, PartialEq)]
 pub struct Annotation {
-    message: Cow<'static, str>,
-    span: Span,
+    pub(crate) message: Cow<'static, str>,
+    pub(crate) span: Span,
 }
 
 impl Annotation {

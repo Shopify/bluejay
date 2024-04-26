@@ -42,11 +42,6 @@ impl<'a> ByteIndexToCharIndex<'a> {
             }
         }
     }
-
-    pub(crate) fn convert_span(&mut self, span: &crate::Span) -> std::ops::Range<usize> {
-        let span = span.byte_range();
-        self.convert(span.start)..self.convert(span.end)
-    }
 }
 
 pub struct SpanToLocation<'a> {

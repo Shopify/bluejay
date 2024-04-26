@@ -20,6 +20,23 @@ impl Span {
     }
 }
 
+#[cfg(feature = "format-errors")]
+impl ariadne::Span for Span {
+    type SourceId = ();
+
+    fn source(&self) -> &Self::SourceId {
+        &()
+    }
+
+    fn start(&self) -> usize {
+        self.0.start
+    }
+
+    fn end(&self) -> usize {
+        self.0.end
+    }
+}
+
 impl From<logos::Span> for Span {
     fn from(value: logos::Span) -> Self {
         Self(value)
