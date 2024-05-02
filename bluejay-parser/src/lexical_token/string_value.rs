@@ -18,12 +18,6 @@ impl<'a> StringValue<'a> {
     }
 }
 
-impl<'a> ToString for StringValue<'a> {
-    fn to_string(&self) -> String {
-        self.contents.to_string()
-    }
-}
-
 impl<'a> HasSpan for StringValue<'a> {
     fn span(&self) -> &Span {
         &self.span
