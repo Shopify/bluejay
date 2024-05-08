@@ -1,0 +1,16 @@
+error: Error: Referenced type `Bar` does not exist
+          ╭─[<unknown>:1:19]
+          │
+        1 │ type Query { foo: Bar }
+          │                   ─┬─
+          │                    ╰─── No definition for referenced type
+       ───╯
+ --> tests/validation_cases/error/invalid_schema.rs:1:28
+  |
+1 |   #[bluejay_typegen::typegen([
+  |  ____________________________^
+2 | |     type Query {
+3 | |         foo: Bar
+4 | |     }
+5 | | ])]
+  | |_^

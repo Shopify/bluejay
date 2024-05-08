@@ -1,0 +1,5 @@
+error: Is a directory (os error 21)
+ --> tests/validation_cases/error/invalid_schema_path.rs:1:28
+  |
+1 | #[bluejay_typegen::typegen("")]
+  |                            ^^

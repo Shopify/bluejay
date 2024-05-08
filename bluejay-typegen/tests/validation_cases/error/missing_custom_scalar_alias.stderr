@@ -1,0 +1,5 @@
+error: Missing type alias for custom scalar Foo
+ --> tests/validation_cases/error/missing_custom_scalar_alias.rs:8:1
+  |
+8 | mod schema {}
+  | ^^^
