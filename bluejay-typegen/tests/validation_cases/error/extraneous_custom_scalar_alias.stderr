@@ -1,0 +1,5 @@
+error: No custom scalar definition named Foo
+ --> tests/validation_cases/error/extraneous_custom_scalar_alias.rs:7:10
+  |
+7 |     type Foo = String;
+  |          ^^^

@@ -1,0 +1,18 @@
+error: Error: bluejay_typegen requires unaliased selection of `__typename` on union types to properly deserialize
+          ╭─[<unknown>:1:7]
+          │
+        1 │ { foo { ...on Bar { bar } ...on Baz { baz } } }
+          │       ───────────────────┬───────────────────
+          │                          ╰───────────────────── Selection set does not contain an unaliased `__typename` selection
+       ───╯
+  --> tests/validation_cases/error/invalid_query_missing_typename_on_union.rs:17:13
+   |
+17 |       #[query([
+   |  _____________^
+18 | |         {
+19 | |             foo {
+20 | |                 ...on Bar { bar }
+...  |
+23 | |         }
+24 | |     ])]
+   | |_____^
