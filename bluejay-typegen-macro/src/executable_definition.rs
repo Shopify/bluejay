@@ -1,5 +1,4 @@
-use crate::validation::SelectionsAreValid;
-use crate::{map_parser_errors, Config, DocumentInput};
+use crate::{map_parser_errors, validation, Config, DocumentInput};
 use bluejay_core::definition::SchemaDefinition;
 use bluejay_parser::ast::{executable::ExecutableDocument, Parse as _};
 use bluejay_validator::executable::{
@@ -56,7 +55,7 @@ pub(crate) fn generate_executable_definition<S: SchemaDefinition>(
     if !validation_errors.is_empty() {
         return Err(map_parser_errors(&query, &contents, validation_errors));
     }
-    let validation_errors: Vec<_> = Orchestrator::<_, _, SelectionsAreValid<_, _>>::validate(
+    let validation_errors: Vec<_> = Orchestrator::<_, _, validation::Rule<_, _>>::validate(
         &executable_document,
         config.schema_definition(),
         &validation_cache,
