@@ -11,8 +11,14 @@ description = "A GraphQL type generator"
 
 [dependencies]
 bluejay-typegen-macro = { version = "0.1.0-alpha.5", path = "../bluejay-typegen-macro" }
-serde = { version = "1.0", features = ["derive"] }
+serde = { version = "1.0", features = ["derive"], optional = true }
+miniserde = { version = "0.1.39", optional = true }
 
 [dev-dependencies]
 serde_json = "1.0"
 trybuild = "1.0"
+
+[features]
+default = ["serde"]
+serde = ["dep:serde", "bluejay-typegen-macro/serde"]
+miniserde = ["dep:miniserde", "bluejay-typegen-macro/miniserde"]

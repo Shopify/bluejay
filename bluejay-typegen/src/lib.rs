@@ -115,4 +115,9 @@
 //! - If the type is a fragment definition, the path is `schema_module::query_module::FragmentName`, with all nested types following the same pattern as operation types, e.g. at `schema_module::query_module::fragment_name::TypeName`.
 
 pub use bluejay_typegen_macro::typegen;
+
+#[cfg(feature = "serde")]
 pub use serde;
+
+#[cfg(feature = "miniserde")]
+pub use miniserde;

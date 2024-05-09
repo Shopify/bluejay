@@ -24,13 +24,14 @@ mod validation;
 use attributes::doc_string;
 use enum_type_definition::generate_enum_type_definition;
 use executable_definition::generate_executable_definition;
-use input::{DocumentInput, Input};
+use input::{Codec, DocumentInput, Input};
 use input_object_type_definition::generate_input_object_type_definition;
 
 pub(crate) struct Config<'a, S: SchemaDefinition> {
     borrow: bool,
     schema_definition: &'a S,
     custom_scalar_borrows: HashMap<String, bool>,
+    codec: Codec,
 }
 
 impl<'a, S: SchemaDefinition> Config<'a, S> {
@@ -48,10 +49,25 @@ impl<'a, S: SchemaDefinition> Config<'a, S> {
             .get(&names::type_name(cstd.name()))
             .expect("No type alias for custom scalar")
     }
+
+    pub(crate) fn codec(&self) -> Codec {
+        self.codec
+    }
 }
 
 fn generate_schema(input: Input, module: &mut syn::ItemMod) -> syn::Result<()> {
-    let Input { ref schema, borrow } = input;
+    let Input {
+        ref schema,
+        borrow,
+        codec,
+    } = input;
+
+    if borrow && codec == Codec::Miniserde {
+        return Err(syn::Error::new(
+            module.span(),
+            "Cannot borrow with miniserde codec",
+        ));
+    }
 
     let schema_contents = schema.read_to_string()?;
 
@@ -70,6 +86,7 @@ fn generate_schema(input: Input, module: &mut syn::ItemMod) -> syn::Result<()> {
         schema_definition: &schema_definition,
         borrow,
         custom_scalar_borrows,
+        codec,
     };
 
     if let Some((_, items)) = module.content.take() {

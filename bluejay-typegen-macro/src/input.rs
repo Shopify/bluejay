@@ -3,6 +3,25 @@ use syn::parse::Parse;
 
 mod kw {
     syn::custom_keyword!(borrow);
+    syn::custom_keyword!(codec);
+}
+
+#[derive(Default, Clone, Copy, PartialEq)]
+pub(crate) enum Codec {
+    #[default]
+    Serde,
+    Miniserde,
+}
+
+impl Parse for Codec {
+    fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
+        let codec = input.parse::<syn::LitStr>()?;
+        match codec.value().as_str() {
+            "serde" if cfg!(feature = "serde") => Ok(Self::Serde),
+            "miniserde" if cfg!(feature = "miniserde") => Ok(Self::Miniserde),
+            _ => Err(syn::Error::new(codec.span(), "Invalid codec")),
+        }
+    }
 }
 
 pub(crate) enum DocumentInput {
@@ -61,6 +80,7 @@ impl DocumentInput {
 pub(crate) struct Input {
     pub(crate) schema: DocumentInput,
     pub(crate) borrow: bool,
+    pub(crate) codec: Codec,
 }
 
 impl Parse for Input {
@@ -68,20 +88,28 @@ impl Parse for Input {
         let schema: DocumentInput = input.parse()?;
 
         let mut borrow: Option<syn::LitBool> = None;
+        let mut codec: Option<Codec> = None;
 
         while !input.is_empty() {
             input.parse::<syn::Token![,]>()?;
             let lookahead = input.lookahead1();
             if lookahead.peek(kw::borrow) {
                 Self::parse_key_value(&input, &mut borrow)?;
+            } else if lookahead.peek(kw::codec) {
+                Self::parse_key_value(&input, &mut codec)?;
             } else {
                 return Err(lookahead.error());
             }
         }
 
         let borrow = borrow.map_or(false, |borrow| borrow.value);
+        let codec = codec.unwrap_or_default();
 
-        Ok(Self { schema, borrow })
+        Ok(Self {
+            schema,
+            borrow,
+            codec,
+        })
     }
 }
 

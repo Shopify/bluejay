@@ -22,3 +22,7 @@ convert_case = "0.6"
 
 [lib]
 proc-macro = true
+
+[features]
+serde = []
+miniserde = []
