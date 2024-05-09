@@ -1,9 +1,13 @@
 use crate::validation::Error;
 use bluejay_core::{
     definition::{
-        SchemaDefinition, TypeDefinitionReference, UnionMemberTypes, UnionTypeDefinition,
+        InterfaceImplementation, InterfaceTypeDefinition, SchemaDefinition,
+        TypeDefinitionReference, UnionMemberTypes, UnionTypeDefinition,
     },
-    executable::{ExecutableDocument, Field, InlineFragment, Selection, SelectionReference},
+    executable::{
+        ExecutableDocument, Field, FragmentDefinition, FragmentSpread, InlineFragment, Selection,
+        SelectionReference,
+    },
     AsIter,
 };
 use bluejay_validator::executable::{
@@ -14,13 +18,17 @@ use itertools::{Either, Itertools};
 
 pub(crate) struct SelectionsAreValid<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> {
     errors: Vec<Error<'a, E, S>>,
+    cache: &'a Cache<'a, E, S>,
 }
 
 impl<'a, E: ExecutableDocument, S: SchemaDefinition> Visitor<'a, E, S>
     for SelectionsAreValid<'a, E, S>
 {
-    fn new(_: &'a E, _: &'a S, _: &'a Cache<'a, E, S>) -> Self {
-        Self { errors: Vec::new() }
+    fn new(_: &'a E, _: &'a S, cache: &'a Cache<'a, E, S>) -> Self {
+        Self {
+            errors: Vec::new(),
+            cache,
+        }
     }
 
     fn visit_selection_set(
@@ -33,8 +41,8 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> Visitor<'a, E, S>
             TypeDefinitionReference::Union(utd) => {
                 self.visit_union_selection_set(selection_set, utd)
             }
-            TypeDefinitionReference::Interface(_) => {
-                self.visit_interface_selection_set(selection_set)
+            TypeDefinitionReference::Interface(itd) => {
+                self.visit_interface_selection_set(selection_set, itd)
             }
             _ => {}
         }
@@ -43,7 +51,10 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> Visitor<'a, E, S>
 
 impl<'a, E: ExecutableDocument, S: SchemaDefinition> SelectionsAreValid<'a, E, S> {
     fn visit_object_selection_set(&mut self, selection_set: &'a E::SelectionSet) {
-        self.validate_fragment_spreads(selection_set);
+        match self.isolated_fragment_spread(selection_set) {
+            Ok(_) => {} // any fragment spread on an object type that is valid by the builtin rules will always be present so is valid
+            Err(e) => self.errors.push(e),
+        }
 
         self.errors.extend(
             selection_set
@@ -57,8 +68,67 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> SelectionsAreValid<'a, E, S
         );
     }
 
-    fn visit_interface_selection_set(&mut self, selection_set: &'a E::SelectionSet) {
-        self.validate_fragment_spreads(selection_set);
+    fn visit_interface_selection_set(
+        &mut self,
+        selection_set: &'a E::SelectionSet,
+        interface_type_definition: &'a S::InterfaceTypeDefinition,
+    ) {
+        match self.isolated_fragment_spread(selection_set) {
+            Ok(Some(fragment_spread)) => {
+                // Currently, the generated type assumes that the fragment spread is always present.
+                // Therefore, we need to ensure that the target type of the fragment spread is either
+                // the interface, or one of the interfaces that it implements. Otherwise, there is a chance
+                // that the generated type will not be able to deserialize the fragment spread because the
+                // fields are not present. For example, if the fragment spread targets one of several types
+                // that implement the interface:
+                // Schema:
+                // ```graphql
+                // interface Node { id: ID! }
+                // type User implements Node { id: ID!, name: String! }
+                // type Post implements Node { id: ID!, title: String! }
+                // type Query { node: Node }
+                // ```
+                // Query:
+                // ```graphql
+                // query {
+                //   node {
+                //     ...UserFragment
+                //   }
+                // }
+                // fragment UserFragment on User {
+                //   id
+                //   name
+                // }
+                // ```
+                // A perfectly valid response would be the `Post` case, but we'd be unable to deserialize it:
+                // ```json
+                // {
+                //   "node": {}
+                // }
+                // ```
+                let fragment_definition = self
+                    .cache
+                    .fragment_definition(fragment_spread.name())
+                    .unwrap();
+                let type_condition = fragment_definition.type_condition();
+                let mut allowed_types_iter = interface_type_definition
+                    .interface_implementations()
+                    .map(|interface_implementations| {
+                        interface_implementations
+                            .iter()
+                            .map(InterfaceImplementation::name)
+                    })
+                    .into_iter()
+                    .flatten()
+                    .chain(std::iter::once(interface_type_definition.name()));
+                if !allowed_types_iter.any(|allowed_type| allowed_type == type_condition) {
+                    self.errors
+                        .push(Error::FragmentSpreadOnInterfaceInvalidTarget { fragment_spread });
+                }
+            }
+            Ok(None) => {}
+            Err(e) => self.errors.push(e),
+        }
 
         self.errors.extend(
             selection_set
@@ -77,8 +147,12 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> SelectionsAreValid<'a, E, S
         selection_set: &'a E::SelectionSet,
         union_type_definition: &'a S::UnionTypeDefinition,
     ) {
-        if self.validate_fragment_spreads(selection_set) {
-            return;
+        match self.isolated_fragment_spread(selection_set) {
+            Ok(Some(_)) => {
+                return;
+            }
+            Ok(None) => {}
+            Err(e) => self.errors.push(e),
         }
 
         let (typename_first_selection, other_field_selections) =
@@ -165,9 +239,12 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> SelectionsAreValid<'a, E, S
         (typename.first().copied(), other)
     }
 
-    /// Produces error if a fragment spread is present and not the only selection.
-    /// Returns a boolean indicating if a fragment spread is present.
-    fn validate_fragment_spreads(&mut self, selection_set: &'a E::SelectionSet) -> bool {
+    /// Returns an error if the selection set contains a fragment spread that is not the only selection is the set.
+    /// Otherwise returns an option of the fragment spread, if present.
+    fn isolated_fragment_spread(
+        &self,
+        selection_set: &'a E::SelectionSet,
+    ) -> Result<Option<&'a E::FragmentSpread>, Error<'a, E, S>> {
         let fragment_spread = selection_set
             .iter()
             .find_map(|selection| match selection.as_ref() {
@@ -177,15 +254,13 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> SelectionsAreValid<'a, E, S
 
         match fragment_spread {
             Some(fragment_spread) if selection_set.len() != 1 => {
-                self.errors.push(Error::FragmentSpreadNotIsolated {
+                Err(Error::FragmentSpreadNotIsolated {
                     selection_set,
                     fragment_spread,
-                });
+                })
             }
-            _ => {}
+            fs => Ok(fs),
         }
-
-        fragment_spread.is_some()
     }
 }
 

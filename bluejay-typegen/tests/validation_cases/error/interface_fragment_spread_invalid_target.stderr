@@ -1,0 +1,18 @@
+error: Error: bluejay_typegen requires fragment spreads on interfaces to target either the interface or one of the interfaces it implements
+          ╭─[<unknown>:1:17]
+          │
+        1 │ { myInterface { ...MyFragment } } fragment MyFragment on MyObject { field }
+          │                 ──────┬──────
+          │                       ╰──────── Fragment spread on interface type
+       ───╯
+  --> tests/validation_cases/error/interface_fragment_spread_invalid_target.rs:15:13
+   |
+15 |       #[query([
+   |  _____________^
+16 | |         {
+17 | |             myInterface {
+18 | |                 ...MyFragment
+...  |
+24 | |         }
+25 | |     ])]
+   | |_____^
