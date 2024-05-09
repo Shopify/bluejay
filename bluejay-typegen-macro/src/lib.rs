@@ -22,7 +22,7 @@ mod types;
 mod validation;
 
 use attributes::doc_string;
-use enum_type_definition::generate_enum_type_definition;
+use enum_type_definition::EnumTypeDefinitionBuilder;
 use executable_definition::generate_executable_definition;
 use input::{Codec, DocumentInput, Input};
 use input_object_type_definition::generate_input_object_type_definition;
@@ -206,7 +206,9 @@ fn process_module_items<S: SchemaDefinition>(
         .schema_definition
         .type_definitions()
         .filter_map(|type_definition| match type_definition {
-            TypeDefinitionReference::Enum(etd) => Some(generate_enum_type_definition(etd)),
+            TypeDefinitionReference::Enum(etd) => {
+                Some(EnumTypeDefinitionBuilder::build(etd, config))
+            }
             TypeDefinitionReference::InputObject(iotd) => {
                 Some(generate_input_object_type_definition(iotd, config))
             }
