@@ -1,0 +1,22 @@
+error: Error: bluejay_typegen requires the inline fragments in a selection set have unique type conditions
+          ╭─[<unknown>:1:7]
+          │
+        1 │ { foo { __typename ...on Bar { bar } ...on Bar { bar } } }
+          │       ─────────────────────┬───┬─────────────┬──────────
+          │                            ╰────────────────────────────── Inline fragment targeting Bar
+          │                                │             │
+          │                                ╰────────────────────────── Selection set contains multiple inline fragments targeting Bar
+          │                                              │
+          │                                              ╰──────────── Inline fragment targeting Bar
+       ───╯
+  --> tests/validation_cases/error/union_multiple_inline_fragments_for_same_type.rs:17:13
+   |
+17 |       #[query([
+   |  _____________^
+18 | |         {
+19 | |             foo {
+20 | |                 __typename
+...  |
+24 | |         }
+25 | |     ])]
+   | |_____^
