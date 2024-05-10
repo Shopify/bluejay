@@ -25,7 +25,7 @@ use attributes::doc_string;
 use enum_type_definition::EnumTypeDefinitionBuilder;
 use executable_definition::generate_executable_definition;
 use input::{Codec, DocumentInput, Input};
-use input_object_type_definition::generate_input_object_type_definition;
+use input_object_type_definition::InputObjectTypeDefinitionBuilder;
 
 pub(crate) struct Config<'a, S: SchemaDefinition> {
     borrow: bool,
@@ -210,7 +210,7 @@ fn process_module_items<S: SchemaDefinition>(
                 Some(EnumTypeDefinitionBuilder::build(etd, config))
             }
             TypeDefinitionReference::InputObject(iotd) => {
-                Some(generate_input_object_type_definition(iotd, config))
+                Some(InputObjectTypeDefinitionBuilder::build(iotd, config))
             }
             _ => None,
         })

@@ -23,6 +23,10 @@ use miniserde::json;
         myString: String
         myInt: Int
     }
+    input MyInput {
+        myField: String
+        myCircularField: MyInput
+    }
 ], codec = "miniserde")]
 mod schema {
     #[query([
@@ -57,11 +61,28 @@ fn test_enum_serialization() {
     assert_eq!("\"VARIANT_1\"", dumped);
 }
 
-// #[test]
-// fn test_one_of_input_object() {
-//     let value = schema::MyOneOfInput::MyInt(1);
-//     assert_eq!("{\"myInt\":1}", json::to_string(&value));
-// }
+#[test]
+fn test_one_of_input_object() {
+    let value = schema::MyOneOfInput::MyInt(1);
+    assert_eq!("{\"myInt\":1}", json::to_string(&value));
+    let value = schema::MyOneOfInput::MyString("hello".into());
+    assert_eq!("{\"myString\":\"hello\"}", json::to_string(&value));
+}
+
+#[test]
+fn test_input_object() {
+    let value = schema::MyInput {
+        my_field: Some("hello".into()),
+        my_circular_field: Some(Box::new(schema::MyInput {
+            my_field: Some("world".into()),
+            my_circular_field: None,
+        })),
+    };
+    assert_eq!(
+        "{\"myField\":\"hello\",\"myCircularField\":{\"myField\":\"world\",\"myCircularField\":null}}",
+        json::to_string(&value)
+    );
+}
 
 // #[test]
 // fn test_deserialize_union() {
