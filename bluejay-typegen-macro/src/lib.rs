@@ -1,4 +1,7 @@
-use bluejay_core::definition::{ScalarTypeDefinition, SchemaDefinition, TypeDefinitionReference};
+use bluejay_core::{
+    definition::{ScalarTypeDefinition, SchemaDefinition, TypeDefinitionReference},
+    BuiltinScalarDefinition,
+};
 use bluejay_parser::{
     ast::{
         definition::{DefinitionDocument, SchemaDefinition as ParserSchemaDefinition},
@@ -43,11 +46,15 @@ impl<'a, S: SchemaDefinition> Config<'a, S> {
         self.borrow
     }
 
-    pub(crate) fn custom_scalar_borrows(&self, cstd: &impl ScalarTypeDefinition) -> bool {
+    pub(crate) fn custom_scalar_borrows(&self, cstd: &S::CustomScalarTypeDefinition) -> bool {
         *self
             .custom_scalar_borrows
             .get(&names::type_name(cstd.name()))
             .expect("No type alias for custom scalar")
+    }
+
+    pub(crate) fn builtin_scalar_borrows(&self, bstd: BuiltinScalarDefinition) -> bool {
+        self.borrow && builtin_scalar::scalar_is_reference(bstd)
     }
 
     pub(crate) fn codec(&self) -> Codec {
