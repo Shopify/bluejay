@@ -48,15 +48,31 @@ impl<'a, S: SchemaDefinition> ExecutableFieldBuilder<'a, S> {
         }
     }
 
+    pub(crate) fn new(
+        executable_field: &'a ExecutableField<'a>,
+        config: &'a Config<'a, S>,
+        depth: usize,
+        composite_type_name: &'a str,
+        enum_variant_name: Option<&'a str>,
+    ) -> Self {
+        Self {
+            config,
+            executable_field,
+            depth,
+            composite_type_name,
+            enum_variant_name,
+        }
+    }
+
     fn for_struct(&self) -> bool {
         self.enum_variant_name.is_none()
     }
 
-    fn name_ident(&self) -> syn::Ident {
+    pub(crate) fn name_ident(&self) -> syn::Ident {
         field_ident(self.executable_field.graphql_name)
     }
 
-    fn serialized_as(&self) -> syn::LitStr {
+    pub(crate) fn serialized_as(&self) -> syn::LitStr {
         syn::LitStr::new(self.executable_field.graphql_name, Span::call_site())
     }
 
@@ -78,7 +94,7 @@ impl<'a, S: SchemaDefinition> ExecutableFieldBuilder<'a, S> {
         attributes
     }
 
-    fn type_path(&self) -> syn::TypePath {
+    pub(crate) fn type_path(&self) -> syn::TypePath {
         self.compute_type_path(&self.executable_field.r#type)
     }
 

@@ -34,15 +34,6 @@ mod schema {
             myNestedField {
                 myField
             }
-            myUnion {
-                __typename
-                ... on MyType {
-                    myField
-                }
-                ... on MyOtherType {
-                    myOtherField
-                }
-            }
         }
     ])]
     pub mod query {}
@@ -81,6 +72,20 @@ fn test_input_object() {
     assert_eq!(
         "{\"myField\":\"hello\",\"myCircularField\":{\"myField\":\"world\",\"myCircularField\":null}}",
         json::to_string(&value)
+    );
+}
+
+#[test]
+fn test_deserialize_object() {
+    let raw =
+        json::from_str("{\"myNestedField\":{\"myField\":\"hello\"}}").expect("Error parsing value");
+    assert_eq!(
+        schema::query::Root {
+            my_nested_field: Some(schema::query::root::MyNestedField {
+                my_field: "hello".into()
+            }),
+        },
+        raw
     );
 }
 
