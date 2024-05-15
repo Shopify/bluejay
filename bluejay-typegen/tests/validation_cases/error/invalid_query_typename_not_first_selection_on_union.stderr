@@ -1,0 +1,26 @@
+error: Error: bluejay_typegen requires unaliased selection of `__typename` on union types to properly deserialize, and for that to be the first in the selection set
+          ╭─[<unknown>:1:7]
+          │
+        1 │ { foo { ...on Bar { bar } __typename ...on Baz { baz } } }
+          │       ─────────────────────────┬────────────────────────
+          │                                ╰────────────────────────── Selection set does not contain an unaliased `__typename` selection as the first selection
+       ───╯
+
+       Error: bluejay_typegen does not allow field selections directly on union types, with the exception of unaliased `__typename` as the first selection in the set
+          ╭─[<unknown>:1:27]
+          │
+        1 │ { foo { ...on Bar { bar } __typename ...on Baz { baz } } }
+          │                           ─────┬────
+          │                                ╰────── Field selection on union type
+       ───╯
+  --> tests/validation_cases/error/invalid_query_typename_not_first_selection_on_union.rs:17:13
+   |
+17 |       #[query([
+   |  _____________^
+18 | |         {
+19 | |             foo {
+20 | |                 ...on Bar { bar }
+...  |
+24 | |         }
+25 | |     ])]
+   | |_____^

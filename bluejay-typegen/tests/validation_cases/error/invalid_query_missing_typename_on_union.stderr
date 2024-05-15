@@ -1,9 +1,9 @@
-error: Error: bluejay_typegen requires unaliased selection of `__typename` on union types to properly deserialize
+error: Error: bluejay_typegen requires unaliased selection of `__typename` on union types to properly deserialize, and for that to be the first in the selection set
           ╭─[<unknown>:1:7]
           │
         1 │ { foo { ...on Bar { bar } ...on Baz { baz } } }
           │       ───────────────────┬───────────────────
-          │                          ╰───────────────────── Selection set does not contain an unaliased `__typename` selection
+          │                          ╰───────────────────── Selection set does not contain an unaliased `__typename` selection as the first selection
        ───╯
   --> tests/validation_cases/error/invalid_query_missing_typename_on_union.rs:17:13
    |
