@@ -89,7 +89,7 @@ fn test_object_query_deserialization() {
 }
 
 #[test]
-fn test_union_query_deserialization() {
+fn test_exhaustive_union_query_deserialization() {
     let value = serde_json::json!({
         "player": {
             "__typename": "Skater",
@@ -105,16 +105,39 @@ fn test_union_query_deserialization() {
     })
     .to_string();
 
-    let result: schema::query::Player = serde_json::from_str(&value).expect("Error parsing value");
+    let result: schema::query::PlayerExhaustive =
+        serde_json::from_str(&value).expect("Error parsing value");
 
     assert_eq!(
-        schema::query::Player {
-            player: schema::query::player::Player::Skater {
+        schema::query::PlayerExhaustive {
+            player: schema::query::player_exhaustive::Player::Skater {
                 name: "Auston Matthews".into(),
                 age: 25,
                 position: schema::Position::Centre,
-                stats: vec![schema::query::player::player::skater::Stats { goals: 60 }],
+                stats: vec![schema::query::player_exhaustive::player::skater::Stats { goals: 60 }],
             },
+        },
+        result,
+    );
+}
+
+#[test]
+fn test_non_exhaustive_union_query_deserialization() {
+    // __typename of `Unknown` is not defined in the schema, but it is a potentially
+    // valid and non-breaking change that could happen to the schema in the future.
+    let value = serde_json::json!({
+        "player": {
+            "__typename": "Unknown",
+        },
+    })
+    .to_string();
+
+    let result: schema::query::PlayerNonExhaustive =
+        serde_json::from_str(&value).expect("Error parsing value");
+
+    assert_eq!(
+        schema::query::PlayerNonExhaustive {
+            player: schema::query::player_non_exhaustive::Player::Other,
         },
         result,
     );
