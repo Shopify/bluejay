@@ -12,7 +12,7 @@ use miniserde::json;
         myField: String!
     }
     type MyOtherType {
-        myOtherField: Int!
+        myOtherField: MyScalar!
     }
     union MyUnion = MyType | MyOtherType
     enum MyEnum {
@@ -27,12 +27,36 @@ use miniserde::json;
         myField: String
         myCircularField: MyInput
     }
+    scalar MyScalar
 ], codec = "miniserde")]
 mod schema {
+    type MyScalar = String;
+
     #[query([
-        {
+        query Object {
             myNestedField {
                 myField
+            }
+        }
+
+        query UnionExhaustive {
+            myUnion {
+                __typename
+                ...on MyType {
+                    myField
+                }
+                ...on MyOtherType {
+                    myOtherField
+                }
+            }
+        }
+
+        query UnionNonExhaustive {
+            myUnion {
+                __typename
+                ...on MyType {
+                    myField
+                }
             }
         }
     ])]
@@ -80,8 +104,8 @@ fn test_deserialize_object() {
     let raw =
         json::from_str("{\"myNestedField\":{\"myField\":\"hello\"}}").expect("Error parsing value");
     assert_eq!(
-        schema::query::Root {
-            my_nested_field: Some(schema::query::root::MyNestedField {
+        schema::query::Object {
+            my_nested_field: Some(schema::query::object::MyNestedField {
                 my_field: "hello".into()
             }),
         },
@@ -89,14 +113,30 @@ fn test_deserialize_object() {
     );
 }
 
-// #[test]
-// fn test_deserialize_union() {
-//     let raw = json::from_str("{\"__typename\":\"MyType\",\"myField\":\"hello\"}")
-//         .expect("Error parsing value");
-//     assert_eq!(
-//         schema::query::root::MyUnion::MyType {
-//             my_field: "hello".into()
-//         },
-//         raw
-//     );
-// }
+#[test]
+fn test_deserialize_union_exhaustive() {
+    let raw = json::from_str("{\"myUnion\":{\"__typename\":\"MyType\",\"myField\":\"hello\"}}")
+        .expect("Error parsing value");
+    assert_eq!(
+        schema::query::UnionExhaustive {
+            my_union: Some(schema::query::union_exhaustive::MyUnion::MyType {
+                my_field: "hello".into()
+            }),
+        },
+        raw
+    );
+}
+
+#[test]
+fn test_deserialize_union_non_exhaustive() {
+    // __typename of `Unknown` is not defined in the schema, but it is a potentially
+    // valid and non-breaking change that could happen to the schema in the future.
+    let raw =
+        json::from_str("{\"myUnion\":{\"__typename\":\"Unknown\"}}").expect("Error parsing value");
+    assert_eq!(
+        schema::query::UnionNonExhaustive {
+            my_union: Some(schema::query::union_non_exhaustive::MyUnion::Other),
+        },
+        raw
+    );
+}

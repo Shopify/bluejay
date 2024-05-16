@@ -37,6 +37,20 @@ impl<'a, S: SchemaDefinition> ExecutableEnumVariantBuilder<'a, S> {
         }
     }
 
+    pub(crate) fn new(
+        config: &'a Config<'a, S>,
+        executable_enum_variant: &'a ExecutableEnumVariant<'a>,
+        depth: usize,
+        composite_type_name: &'a str,
+    ) -> Self {
+        Self {
+            config,
+            executable_enum_variant,
+            depth,
+            composite_type_name,
+        }
+    }
+
     pub(crate) fn build_other_variant(config: &'a Config<'a, S>) -> syn::Variant {
         let serde_other_attribute: Option<syn::Attribute> =
             (config.codec() == Codec::Serde).then(|| parse_quote! { #[serde(other)] });
@@ -47,11 +61,11 @@ impl<'a, S: SchemaDefinition> ExecutableEnumVariantBuilder<'a, S> {
         }
     }
 
-    fn name_ident(&self) -> syn::Ident {
+    pub(crate) fn name_ident(&self) -> syn::Ident {
         type_ident(self.executable_enum_variant.name)
     }
 
-    fn serialized_as(&self) -> syn::LitStr {
+    pub(crate) fn serialized_as(&self) -> syn::LitStr {
         syn::LitStr::new(self.executable_enum_variant.name, Span::call_site())
     }
 
@@ -68,6 +82,22 @@ impl<'a, S: SchemaDefinition> ExecutableEnumVariantBuilder<'a, S> {
         }
 
         attributes
+    }
+
+    pub(crate) fn field_builders(&self) -> Vec<ExecutableFieldBuilder<'a, S>> {
+        self.executable_enum_variant
+            .fields
+            .iter()
+            .map(|field| {
+                ExecutableFieldBuilder::new(
+                    field,
+                    self.config,
+                    self.depth,
+                    self.composite_type_name,
+                    Some(self.executable_enum_variant.name),
+                )
+            })
+            .collect()
     }
 
     fn fields(&self) -> syn::FieldsNamed {
