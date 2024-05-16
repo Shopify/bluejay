@@ -107,7 +107,7 @@ impl<'a, S: SchemaDefinition> InputObjectTypeDefinitionBuilder<'a, S> {
                 .description()
                 .map(doc_string),
         );
-        attributes.push(parse_quote! { #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::cmp::Eq, ::std::fmt::Debug)] });
+        attributes.push(parse_quote! { #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::fmt::Debug)] });
 
         match self.config.codec() {
             Codec::Serde => {
