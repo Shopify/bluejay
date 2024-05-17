@@ -1,7 +1,7 @@
 #![cfg(feature = "miniserde")]
 
 use bluejay_typegen::typegen;
-use miniserde::json;
+use mnsrd::json;
 
 #[typegen([
     type Query {

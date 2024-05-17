@@ -117,7 +117,7 @@
 pub use bluejay_typegen_macro::typegen;
 
 #[cfg(feature = "serde")]
-pub use serde;
+pub use srd as serde;
 
 #[cfg(feature = "miniserde")]
-pub use miniserde;
+pub use mnsrd as miniserde;

@@ -186,7 +186,7 @@ impl<'a, S: SchemaDefinition> ExecutableEnumBuilder<'a, S> {
                     }
                 }).chain(std::iter::once(if self.executable_enum.is_exhaustive {
                     parse_quote! {
-                        _ => ::std::result::Result::Err(::miniserde::Error)
+                        _ => ::std::result::Result::Err(::bluejay_typegen::miniserde::Error)
                     }
                 } else {
                     parse_quote! {
@@ -215,15 +215,15 @@ impl<'a, S: SchemaDefinition> ExecutableEnumBuilder<'a, S> {
                     parse_quote! {
                         #builder_state_ident::#variant_ident { #(#field_idents,)* } => {
                             match k {
-                                #(#field_serialized_as => ::std::result::Result::Ok(::miniserde::de::Deserialize::begin(#field_idents)),)*
-                                _ => ::std::result::Result::Err(::miniserde::Error)
+                                #(#field_serialized_as => ::std::result::Result::Ok(::bluejay_typegen::miniserde::de::Deserialize::begin(#field_idents)),)*
+                                _ => ::std::result::Result::Err(::bluejay_typegen::miniserde::Error)
                             }
                         }
                     }
                 })
                 .chain(self.executable_enum.is_exhaustive.not().then(||{
                     parse_quote! {
-                        #builder_state_ident::Other => ::std::result::Result::Err(::miniserde::Error)
+                        #builder_state_ident::Other => ::std::result::Result::Err(::bluejay_typegen::miniserde::Error)
                     }
                 }))
                 .collect::<Vec<syn::Arm>>();
@@ -239,7 +239,7 @@ impl<'a, S: SchemaDefinition> ExecutableEnumBuilder<'a, S> {
 
                     parse_quote! {
                         #builder_state_ident::#variant_ident { #(mut #field_idents,)* } => {
-                            #name_ident::#variant_ident { #(#field_idents: #field_idents.take().ok_or(::miniserde::Error)?,)* }
+                            #name_ident::#variant_ident { #(#field_idents: #field_idents.take().ok_or(::bluejay_typegen::miniserde::Error)?,)* }
                         }
                     }
                 })

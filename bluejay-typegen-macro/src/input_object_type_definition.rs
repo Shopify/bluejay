@@ -366,8 +366,8 @@ impl<'a, S: SchemaDefinition> InputObjectTypeDefinitionBuilder<'a, S> {
                         visited: ::std::primitive::bool,
                     }
 
-                    impl<'a> ::miniserde::ser::Map for #stream_ident<'a> {
-                        fn next(&mut self) -> ::std::option::Option<(::std::borrow::Cow<::std::primitive::str>, &dyn ::miniserde::ser::Serialize)> {
+                    impl<'a> ::bluejay_typegen::miniserde::ser::Map for #stream_ident<'a> {
+                        fn next(&mut self) -> ::std::option::Option<(::std::borrow::Cow<::std::primitive::str>, &dyn ::bluejay_typegen::miniserde::ser::Serialize)> {
                             if self.visited {
                                 return ::std::option::Option::None;
                             }
@@ -384,9 +384,9 @@ impl<'a, S: SchemaDefinition> InputObjectTypeDefinitionBuilder<'a, S> {
                         }
                     }
 
-                    impl ::miniserde::ser::Serialize for #name_ident {
-                        fn begin(&self) -> ::miniserde::ser::Fragment {
-                            ::miniserde::ser::Fragment::Map(::std::boxed::Box::new(#stream_ident {
+                    impl ::bluejay_typegen::miniserde::ser::Serialize for #name_ident {
+                        fn begin(&self) -> ::bluejay_typegen::miniserde::ser::Fragment {
+                            ::bluejay_typegen::miniserde::ser::Fragment::Map(::std::boxed::Box::new(#stream_ident {
                                 data: self,
                                 visited: false,
                             }))
@@ -412,8 +412,8 @@ impl<'a, S: SchemaDefinition> InputObjectTypeDefinitionBuilder<'a, S> {
                         state: ::std::primitive::usize,
                     }
 
-                    impl<'a> ::miniserde::ser::Map for #stream_ident<'a> {
-                        fn next(&mut self) -> ::std::option::Option<(::std::borrow::Cow<::std::primitive::str>, &dyn ::miniserde::ser::Serialize)> {
+                    impl<'a> ::bluejay_typegen::miniserde::ser::Map for #stream_ident<'a> {
+                        fn next(&mut self) -> ::std::option::Option<(::std::borrow::Cow<::std::primitive::str>, &dyn ::bluejay_typegen::miniserde::ser::Serialize)> {
                             let state = self.state;
                             self.state += 1;
                             match state {
@@ -428,9 +428,9 @@ impl<'a, S: SchemaDefinition> InputObjectTypeDefinitionBuilder<'a, S> {
                         }
                     }
 
-                    impl ::miniserde::ser::Serialize for #name_ident {
-                        fn begin(&self) -> ::miniserde::ser::Fragment {
-                            ::miniserde::ser::Fragment::Map(::std::boxed::Box::new(#stream_ident {
+                    impl ::bluejay_typegen::miniserde::ser::Serialize for #name_ident {
+                        fn begin(&self) -> ::bluejay_typegen::miniserde::ser::Fragment {
+                            ::bluejay_typegen::miniserde::ser::Fragment::Map(::std::boxed::Box::new(#stream_ident {
                                 data: self,
                                 state: 0,
                             }))
