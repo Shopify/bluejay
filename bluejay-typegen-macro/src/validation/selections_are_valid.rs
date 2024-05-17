@@ -10,6 +10,7 @@ use bluejay_validator::executable::{
     document::{Rule, Visitor},
     Cache,
 };
+use itertools::{Either, Itertools};
 
 pub(crate) struct SelectionsAreValid<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> {
     errors: Vec<Error<'a, E, S>>,
@@ -80,9 +81,10 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> SelectionsAreValid<'a, E, S
             return;
         }
 
-        let (typename_selection, other_field_selections) = self.typename_selection(selection_set);
+        let (typename_first_selection, other_field_selections) =
+            self.typename_first_selection(selection_set);
 
-        if typename_selection.is_none() {
+        if typename_first_selection.is_none() {
             self.errors
                 .push(Error::NoTypenameSelectionOnUnion { selection_set });
         }
@@ -136,19 +138,29 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> SelectionsAreValid<'a, E, S
         );
     }
 
-    fn typename_selection(
+    /// Returns a 2-tuple
+    /// - first element: an option including a field if that field is the first selection in the set and is named `__typename` without an alias
+    /// - second element: a vector of all other fields in the selection set
+    fn typename_first_selection(
         &self,
         selection_set: &'a E::SelectionSet,
     ) -> (Option<&'a E::Field>, Vec<&'a E::Field>) {
         let (typename, other): (Vec<_>, Vec<_>) = selection_set
             .iter()
-            .filter_map(|selection| match selection.as_ref() {
-                SelectionReference::Field(f) => Some(f),
+            .enumerate()
+            .filter_map(|(idx, selection)| match selection.as_ref() {
+                SelectionReference::Field(f) => Some((idx, f)),
                 SelectionReference::InlineFragment(_) | SelectionReference::FragmentSpread(_) => {
                     None
                 }
             })
-            .partition(|f| f.alias().is_none() && f.name() == "__typename");
+            .partition_map(|(idx, f)| {
+                if idx == 0 && f.alias().is_none() && f.name() == "__typename" {
+                    Either::Left(f)
+                } else {
+                    Either::Right(f)
+                }
+            });
 
         (typename.first().copied(), other)
     }

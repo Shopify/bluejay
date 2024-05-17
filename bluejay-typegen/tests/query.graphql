@@ -13,7 +13,7 @@ fragment MyType on MyType {
   myField
 }
 
-query Player {
+query PlayerExhaustive {
   player {
     __typename
     ...on Skater {
@@ -26,6 +26,18 @@ query Player {
       name
       age
       stats { wins }
+    }
+  }
+}
+
+query PlayerNonExhaustive {
+  player {
+    __typename
+    ...on Skater {
+      name
+      age
+      position
+      stats { goals }
     }
   }
 }

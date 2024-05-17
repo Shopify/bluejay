@@ -74,9 +74,9 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                 Vec::new(),
             ),
             Error::NoTypenameSelectionOnUnion { selection_set } => Self::new(
-                format!("{CRATE_NAME} requires unaliased selection of `__typename` on union types to properly deserialize"),
+                format!("{CRATE_NAME} requires unaliased selection of `__typename` on union types to properly deserialize, and for that to be the first in the selection set"),
                 Some(Annotation::new(
-                    "Selection set does not contain an unaliased `__typename` selection",
+                    "Selection set does not contain an unaliased `__typename` selection as the first selection",
                     selection_set.span().clone(),
                 )),
                 Vec::new(),
@@ -105,7 +105,7 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                 )).collect(),
             ),
             Error::FieldSelectionOnUnion { field } => Self::new(
-                format!("{CRATE_NAME} does not allow field selections directly on union types, with the exception of unaliased __typename"),
+                format!("{CRATE_NAME} does not allow field selections directly on union types, with the exception of unaliased `__typename` as the first selection in the set"),
                 Some(Annotation::new(
                     "Field selection on union type",
                     field.name().span().clone(),
