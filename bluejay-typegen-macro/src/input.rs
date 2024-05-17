@@ -6,12 +6,28 @@ mod kw {
     syn::custom_keyword!(codec);
 }
 
-#[derive(Default, Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, PartialEq)]
 pub(crate) enum Codec {
-    #[default]
     Serde,
     Miniserde,
 }
+
+#[cfg(feature = "serde")]
+impl Default for Codec {
+    fn default() -> Self {
+        Self::Serde
+    }
+}
+
+#[cfg(not(feature = "serde"))]
+impl Default for Codec {
+    fn default() -> Self {
+        Self::Miniserde
+    }
+}
+
+#[cfg(all(not(feature = "serde"), not(feature = "miniserde")))]
+compile_error!("At least one of the features `serde` or `miniserde` must be enabled");
 
 impl Parse for Codec {
     fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
