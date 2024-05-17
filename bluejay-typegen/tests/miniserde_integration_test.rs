@@ -39,7 +39,7 @@ mod schema {
             }
         }
 
-        query UnionExhaustive {
+        query Union {
             myUnion {
                 __typename
                 ...on MyType {
@@ -47,15 +47,6 @@ mod schema {
                 }
                 ...on MyOtherType {
                     myOtherField
-                }
-            }
-        }
-
-        query UnionNonExhaustive {
-            myUnion {
-                __typename
-                ...on MyType {
-                    myField
                 }
             }
         }
@@ -119,12 +110,12 @@ fn test_deserialize_object() {
 }
 
 #[test]
-fn test_deserialize_union_exhaustive() {
+fn test_deserialize_union() {
     let raw = json::from_str("{\"myUnion\":{\"__typename\":\"MyType\",\"myField\":\"hello\"}}")
         .expect("Error parsing value");
     assert_eq!(
-        schema::query::UnionExhaustive {
-            my_union: Some(schema::query::union_exhaustive::MyUnion::MyType {
+        schema::query::Union {
+            my_union: Some(schema::query::r#union::MyUnion::MyType {
                 my_field: "hello".into()
             }),
         },
@@ -133,14 +124,14 @@ fn test_deserialize_union_exhaustive() {
 }
 
 #[test]
-fn test_deserialize_union_non_exhaustive() {
+fn test_deserialize_union_other() {
     // __typename of `Unknown` is not defined in the schema, but it is a potentially
     // valid and non-breaking change that could happen to the schema in the future.
     let raw =
         json::from_str("{\"myUnion\":{\"__typename\":\"Unknown\"}}").expect("Error parsing value");
     assert_eq!(
-        schema::query::UnionNonExhaustive {
-            my_union: Some(schema::query::union_non_exhaustive::MyUnion::Other),
+        schema::query::Union {
+            my_union: Some(schema::query::r#union::MyUnion::Other),
         },
         raw
     );

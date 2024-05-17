@@ -87,12 +87,9 @@ impl<'a, S: SchemaDefinition> ExecutableEnumBuilder<'a, S> {
                     self.executable_enum.parent_name,
                 )
             })
-            .chain(
-                self.executable_enum
-                    .is_exhaustive
-                    .not()
-                    .then(|| ExecutableEnumVariantBuilder::build_other_variant(self.config)),
-            )
+            .chain(std::iter::once(
+                ExecutableEnumVariantBuilder::build_other_variant(self.config),
+            ))
             .collect()
     }
 
@@ -161,10 +158,7 @@ impl<'a, S: SchemaDefinition> ExecutableEnumBuilder<'a, S> {
                     }
                 })
                 .chain(
-                    self.executable_enum
-                        .is_exhaustive
-                        .not()
-                        .then(|| parse_quote! { Other }),
+                    std::iter::once(parse_quote! { Other }),
                 )
                 .collect::<Vec<syn::Variant>>();
 
@@ -184,18 +178,14 @@ impl<'a, S: SchemaDefinition> ExecutableEnumBuilder<'a, S> {
                             ::std::result::Result::Ok(())
                         }
                     }
-                }).chain(std::iter::once(if self.executable_enum.is_exhaustive {
-                    parse_quote! {
-                        _ => ::std::result::Result::Err(::bluejay_typegen::miniserde::Error)
-                    }
-                } else {
+                }).chain(std::iter::once(
                     parse_quote! {
                         _ => {
                             self.out = ::std::option::Option::Some(#builder_state_ident::Other);
                             ::std::result::Result::Ok(())
                         }
                     }
-                }))
+                ))
                 .collect::<Vec<syn::Arm>>();
 
             let state_key_arm = variant_builders
@@ -221,11 +211,11 @@ impl<'a, S: SchemaDefinition> ExecutableEnumBuilder<'a, S> {
                         }
                     }
                 })
-                .chain(self.executable_enum.is_exhaustive.not().then(||{
+                .chain(std::iter::once(
                     parse_quote! {
                         #builder_state_ident::Other => ::std::result::Result::Err(::bluejay_typegen::miniserde::Error)
                     }
-                }))
+                ))
                 .collect::<Vec<syn::Arm>>();
 
             let state_finish_arm = variant_builders
@@ -243,11 +233,11 @@ impl<'a, S: SchemaDefinition> ExecutableEnumBuilder<'a, S> {
                         }
                     }
                 })
-                .chain(self.executable_enum.is_exhaustive.not().then(|| {
+                .chain(std::iter::once(
                     parse_quote! {
                         #builder_state_ident::Other => #name_ident::Other
                     }
-                }))
+                ))
                 .collect::<Vec<syn::Arm>>();
 
             parse_quote! {
