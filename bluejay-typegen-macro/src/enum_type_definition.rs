@@ -27,6 +27,7 @@ impl<'a, S: SchemaDefinition> EnumTypeDefinitionBuilder<'a, S> {
         let variant_serde_rename_attributes = instance.variant_serde_rename_attributes();
         let variant_idents = instance.variant_idents();
         let attributes = instance.attributes();
+        let other_variant = instance.other_variant();
 
         let mut items = vec![parse_quote! {
             #(#attributes)*
@@ -34,8 +35,9 @@ impl<'a, S: SchemaDefinition> EnumTypeDefinitionBuilder<'a, S> {
                 #(
                     #variant_description_attributes
                     #variant_serde_rename_attributes
-                    #variant_idents
-                ),*
+                    #variant_idents,
+                )*
+                #other_variant,
             }
         }];
 
@@ -113,6 +115,7 @@ impl<'a, S: SchemaDefinition> EnumTypeDefinitionBuilder<'a, S> {
                                 #(
                                     #name_ident::#variant_idents => #variant_serialized_as,
                                 )*
+                                #name_ident::Other => ::std::panic!("Cannot serialize Other variant"),
                             }))
                         }
                     }
@@ -146,12 +149,27 @@ impl<'a, S: SchemaDefinition> EnumTypeDefinitionBuilder<'a, S> {
                                         ::std::result::Result::Ok(())
                                     },
                                 )*
-                                _ => ::std::result::Result::Err(::bluejay_typegen::miniserde::Error),
+                                _ => {
+                                    self.out = ::std::option::Option::Some(#name_ident::Other);
+                                    ::std::result::Result::Ok(())
+                                },
                             }
                         }
                     }
                 };
             }
         })
+    }
+
+    fn other_variant(&self) -> syn::Variant {
+        let attributes: Vec<syn::Attribute> = match self.config.codec() {
+            Codec::Serde => vec![parse_quote!(#[serde(other)])],
+            Codec::Miniserde => Vec::new(),
+        };
+
+        parse_quote! {
+            #(#attributes)*
+            Other
+        }
     }
 }

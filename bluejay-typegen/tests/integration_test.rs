@@ -14,6 +14,12 @@ fn test_enum_deserialization() {
     let raw = serde_json::json!("VARIANT_2");
     let parsed = serde_json::from_value(raw).expect("Error parsing value");
     assert_eq!(schema::MyEnum::Variant2, parsed);
+
+    // Value `UNKNOWN` is not defined in the schema, but it is a potentially
+    // valid and non-breaking change that could happen to the schema in the future.
+    let raw = serde_json::json!("UNKNOWN");
+    let parsed = serde_json::from_value(raw).expect("Error parsing value");
+    assert_eq!(schema::MyEnum::Other, parsed);
 }
 
 #[test]

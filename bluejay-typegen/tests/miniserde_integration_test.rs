@@ -67,6 +67,11 @@ mod schema {
 fn test_enum_deserialization() {
     let raw = json::from_str("\"VARIANT_2\"").expect("Error parsing value");
     assert_eq!(schema::MyEnum::Variant2, raw);
+
+    // Value `UNKNOWN` is not defined in the schema, but it is a potentially
+    // valid and non-breaking change that could happen to the schema in the future.
+    let raw = json::from_str("\"UNKNOWN\"").expect("Error parsing value");
+    assert_eq!(schema::MyEnum::Other, raw);
 }
 
 #[test]
