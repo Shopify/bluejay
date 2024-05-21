@@ -1,5 +1,26 @@
 //! `bluejay-typegen` is a crate for generating Rust types from GraphQL schemas and queries.
 //!
+//! ### Usage
+//! The [`typegen`] macro generates Rust types from a GraphQL schema and any number of queries.
+//! The macro must decorate a module, and the module must contain a type alias for each custom scalar defined in the schema.
+//! All shared types for the schema (input object, enums) are generated within the module.
+//!
+//! #### Arguments
+//! The macro takes one positional argument, followed by a series of optional named arguments.
+//! The positional argument can be either a string literal pointing to a file containing the schema in SDL format (path relative to the `Cargo.toml` of the crate where the macro is used),
+//! or DSL code defining the schema directly in the macro invocation, enclosed within square brackets.
+//! The optional named arguments are:
+//! - `borrow`: A boolean indicating whether the generated types should borrow strings from the input JSON value instead of owning them. Defaults to `false`.
+//! - `codec`: A string literal specifying the codec to use for serializing and deserializing values.
+//!   Must be one of `"serde"` or `"miniserde"`. Defaults to `"serde"` when the `serde` feature is enabled, otherwise `"miniserde"` when the `miniserde` feature is enabled.
+//!   When `"miniserde"` is used, `borrow` must be `false` as `miniserde` does not support borrowing strings.
+//!
+//! #### Queries
+//! Within the module defining the schema definition, a submodule can be defined for any number of executable documents.
+//! This can be done by decorating the submodule with `#[query(...)]` where the argument follows the same convention as the positional argument of the macro.
+//! For each operation and fragment definition in the query document, a corresponding Rust type is generated. If an anonymous operation is defined, the type is named `Root`.
+//! See [type path pattern](#type-path-pattern) for more information on how the path for a given type is determined.
+//!
 //! ### Example
 //! ```
 //! #[bluejay_typegen::typegen([
@@ -101,7 +122,7 @@
 //!     - Contain at least one field selection, or
 //!     - Contain exactly one fragment spread, where the target type of the fragment spread is either the interface type itself or an interface that the interface type implements
 //! - Within the scope of a union type, the selection set must:
-//!     - Contain an unaliased field selection of `__typename`, and no other field selections, and
+//!     - Contain an unaliased field selection of `__typename` as the first selection in the set, and no other field selections, and
 //!     - Not contain any fragment spreads, and
 //!     - Not contain multiple inline fragments targeting any object type in the union type, and
 //!     - Not contain any inline fragments targeting types that are not a member of the union type
