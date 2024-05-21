@@ -105,7 +105,6 @@ pub(crate) struct ExecutableEnum<'a> {
     /// name of either the operation, fragment, or field that owns the selection set that this struct represents
     pub(crate) parent_name: &'a str,
     pub(crate) variants: Vec<ExecutableEnumVariant<'a>>,
-    pub(crate) is_exhaustive: bool,
 }
 
 impl<'a> ExecutableEnum<'a> {
@@ -443,8 +442,6 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> ExecutableDocumentToExecuta
                 let selection_set = selection_set.expect("No selections for union type");
                 match self.inline_fragments_or_fragment_spread(selection_set) {
                     Either::Left(inline_fragments) => {
-                        let is_exhaustive =
-                            utd.union_member_types().len() == inline_fragments.len();
                         ExecutableType::Enum(ExecutableEnum {
                             description: utd.description(),
                             parent_name,
@@ -478,7 +475,6 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> ExecutableDocumentToExecuta
                                         }).collect()
                                 }
                             }).collect(),
-                            is_exhaustive,
                         })
                     }
                     Either::Right(fragment_spread) => ExecutableType::FragmentDefinitionReference {
