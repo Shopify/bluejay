@@ -2,6 +2,8 @@ use convert_case::{Case, Casing};
 use proc_macro2::Ident;
 use quote::format_ident;
 
+pub(crate) const ANONYMOUS_OPERATION_STRUCT_NAME: &str = "Root";
+
 pub(crate) fn type_name(graphql_name: &str) -> String {
     graphql_name.to_case(Case::Pascal)
 }

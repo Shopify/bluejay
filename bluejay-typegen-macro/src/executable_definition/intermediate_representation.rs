@@ -2,7 +2,7 @@
 //! data structures that have baked into them many of the assumptions that are validated by the validator. This allows the type
 //! generation to be simpler because we don't need to do so much coercion of the AST while generating the types.
 
-use crate::Config;
+use crate::{names::ANONYMOUS_OPERATION_STRUCT_NAME, Config};
 use bluejay_core::{
     definition::{prelude::*, BaseOutputTypeReference, OutputTypeReference, SchemaDefinition},
     executable::{
@@ -229,7 +229,10 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> ExecutableDocumentToExecuta
                 .expect("Unsupported operation type used"),
         };
         self.build_base_type(
-            operation_definition.as_ref().name().unwrap_or("Root"),
+            operation_definition
+                .as_ref()
+                .name()
+                .unwrap_or(ANONYMOUS_OPERATION_STRUCT_NAME),
             Some(operation_definition.as_ref().selection_set()),
             BaseOutputTypeReference::Object(object_type_definition),
         )

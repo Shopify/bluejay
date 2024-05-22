@@ -37,6 +37,10 @@ pub(crate) enum Error<'a, E: ExecutableDocument, S: SchemaDefinition> {
     FragmentSpreadOnInterfaceInvalidTarget {
         fragment_spread: &'a E::FragmentSpread,
     },
+    FragmentAndOperationNamesClash {
+        operation_definition: &'a E::OperationDefinition,
+        fragment_definition: &'a E::FragmentDefinition,
+    },
 }
 
 const CRATE_NAME: &str = "bluejay_typegen";
@@ -122,6 +126,19 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                     fragment_spread.span().clone(),
                 )),
                 Vec::new(),
+            ),
+            Error::FragmentAndOperationNamesClash { operation_definition, fragment_definition } => Self::new(
+                format!("{CRATE_NAME} requires fragment and operation names to be unique, but encountered a clash with name `{}`", fragment_definition.name().as_ref()),
+                Some(Annotation::new(
+                    "Fragment definition name collides with operation definition name",
+                    fragment_definition.span().clone(),
+                )),
+                vec![
+                    Annotation::new(
+                        "Operation definition",
+                        operation_definition.span().clone(),
+                    ),
+                ],
             ),
         }
     }

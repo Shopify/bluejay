@@ -1,0 +1,20 @@
+error: Error: bluejay_typegen requires fragment and operation names to be unique, but encountered a clash with name `Foo`
+          ╭─[<unknown>:1:33]
+          │
+        1 │ query Foo { myType { ...Foo } } fragment Foo on MyType { field }
+          │ ───────────────┬─────────────── ────────────────┬───────────────
+          │                ╰────────────────────────────────────────────────── Operation definition
+          │                                                 │
+          │                                                 ╰───────────────── Fragment definition name collides with operation definition name
+       ───╯
+  --> tests/validation_cases/error/fragment_and_operation_name_clash.rs:11:13
+   |
+11 |       #[query([
+   |  _____________^
+12 | |         query Foo {
+13 | |             myType {
+14 | |                 ...Foo
+...  |
+20 | |         }
+21 | |     ])]
+   | |_____^
