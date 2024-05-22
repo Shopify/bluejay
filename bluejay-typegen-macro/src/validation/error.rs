@@ -34,6 +34,9 @@ pub(crate) enum Error<'a, E: ExecutableDocument, S: SchemaDefinition> {
     FieldSelectionOnUnion {
         field: &'a E::Field,
     },
+    FragmentSpreadOnInterfaceInvalidTarget {
+        fragment_spread: &'a E::FragmentSpread,
+    },
 }
 
 const CRATE_NAME: &str = "bluejay_typegen";
@@ -109,6 +112,14 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                 Some(Annotation::new(
                     "Field selection on union type",
                     field.name().span().clone(),
+                )),
+                Vec::new(),
+            ),
+            Error::FragmentSpreadOnInterfaceInvalidTarget { fragment_spread } => Self::new(
+                format!("{CRATE_NAME} requires fragment spreads on interfaces to target either the interface or one of the interfaces it implements"),
+                Some(Annotation::new(
+                    "Fragment spread on interface type",
+                    fragment_spread.span().clone(),
                 )),
                 Vec::new(),
             ),
