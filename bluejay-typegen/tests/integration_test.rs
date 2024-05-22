@@ -54,6 +54,27 @@ fn test_one_of_input_object() {
 }
 
 #[test]
+fn test_builtin_scalars_input_object() {
+    let value = schema::BuiltinScalarsInput {
+        int: 1,
+        float: 1.2,
+        string: "hello".into(),
+        boolean: true,
+        id: "1".into(),
+    };
+    assert_eq!(
+        serde_json::json!({
+            "int": 1,
+            "float": 1.2,
+            "string": "hello",
+            "boolean": true,
+            "id": "1",
+        }),
+        serde_json::to_value(value).expect("Error serializing value"),
+    );
+}
+
+#[test]
 fn test_object_query_deserialization() {
     let value = serde_json::json!({
         "myField": "hello",
@@ -79,7 +100,7 @@ fn test_object_query_deserialization() {
                 my_field: Some("hello".into())
             }),
             my_required_field: "hello".into(),
-            my_nested_field_with_fragment: Some(schema::query::MyType {
+            my_nested_field_with_fragment: Some(schema::query::MyFragment {
                 my_field: Some("hello".into())
             }),
             r#type: Some("hello".into()),
@@ -144,5 +165,32 @@ fn test_union_query_deserialization_other() {
             player: schema::query::player::Player::Other,
         },
         result,
+    );
+}
+
+#[test]
+fn test_builtin_scalars_deserialization() {
+    let value = serde_json::json!({
+        "builtinScalars": {
+            "id": "1.2",
+            "int": 42,
+            "float": 1.2,
+            "string": "hello",
+            "boolean": true,
+        },
+    });
+    let raw = value.to_string();
+    let parsed = serde_json::from_str(&raw).expect("Error parsing value");
+    assert_eq!(
+        schema::query::BuiltinScalars {
+            builtin_scalars: schema::query::builtin_scalars::BuiltinScalars {
+                id: "1.2".into(),
+                int: 42,
+                float: 1.2,
+                string: "hello".into(),
+                boolean: true,
+            },
+        },
+        parsed,
     );
 }
