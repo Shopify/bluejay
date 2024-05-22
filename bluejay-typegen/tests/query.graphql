@@ -3,14 +3,10 @@ query MyQuery {
   myAliasedField: myField
   myNestedField { myField }
   myRequiredField
-  myNestedFieldWithFragment: myNestedField { ...MyType }
+  myNestedFieldWithFragment: myNestedField { ...MyFragment }
   type: myField
   myEnum
   myDecimals
-}
-
-fragment MyType on MyType {
-  myField
 }
 
 query Player {
@@ -28,4 +24,18 @@ query Player {
       stats { wins }
     }
   }
+}
+
+query BuiltinScalars {
+  builtinScalars {
+    id
+    int
+    float
+    string
+    boolean
+  }
+}
+
+fragment MyFragment on MyInterface {
+  myField
 }

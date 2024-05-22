@@ -32,9 +32,14 @@ type Query {
   player: Player!
   myEnum: MyEnum!
   myDecimals: [Decimal!]!
+  builtinScalars: BuiltinScalars!
 }
 
-type MyType {
+interface MyInterface {
+  myField: String
+}
+
+type MyType implements MyInterface {
   myField: String
 }
 
@@ -66,3 +71,19 @@ union Stat = SkaterStat | GoalieStat
 scalar Decimal
 
 scalar UnsignedInt
+
+type BuiltinScalars {
+  int: Int!
+  float: Float!
+  string: String!
+  boolean: Boolean!
+  id: ID!
+}
+
+input BuiltinScalarsInput {
+  int: Int!
+  float: Float!
+  string: String!
+  boolean: Boolean!
+  id: ID!
+}
