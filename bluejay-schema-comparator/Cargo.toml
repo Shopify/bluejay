@@ -1,6 +1,6 @@
 [package]
 name = "bluejay-schema-comparator"
-version = "0.1.0-alpha.5"
+version = "0.1.0"
 edition = "2021"
 license = "MIT"
 repository = "https://github.com/adampetro/bluejay"
@@ -11,8 +11,8 @@ description = "A GraphQL schema comparator"
 
 [dependencies]
 strum = { version = "0.26", features = ["derive"] }
-bluejay-core = { version = "0.1.0-alpha.5", path = "../bluejay-core" }
-bluejay-printer = { version = "0.1.0-alpha.5", path = "../bluejay-printer" }
+bluejay-core = { version = "0.1.0", path = "../bluejay-core" }
+bluejay-printer = { version = "0.1.0", path = "../bluejay-printer" }
 
 [dev-dependencies]
 bluejay-parser = { path = "../bluejay-parser" }

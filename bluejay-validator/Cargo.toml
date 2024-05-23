@@ -1,6 +1,6 @@
 [package]
 name = "bluejay-validator"
-version = "0.1.0-alpha.5"
+version = "0.1.0"
 edition = "2021"
 license = "MIT"
 repository = "https://github.com/adampetro/bluejay"
@@ -10,8 +10,8 @@ exclude = [".gitignore", "tests/**/*"]
 description = "A GraphQL validator"
 
 [dependencies]
-bluejay-core = { version = "0.1.0-alpha.5", path = "../bluejay-core" }
-bluejay-parser = { version = "0.1.0-alpha.5", path = "../bluejay-parser", optional = true, features = ["format-errors"] }
+bluejay-core = { version = "0.1.0", path = "../bluejay-core" }
+bluejay-parser = { version = "0.1.0", path = "../bluejay-parser", optional = true, features = ["format-errors"] }
 paste = "1.0"
 itertools = "0.13.0"
 serde_json = { version = "1.0", optional = true }
