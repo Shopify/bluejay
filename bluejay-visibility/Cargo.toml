@@ -1,6 +1,6 @@
 [package]
 name = "bluejay-visibility"
-version = "0.1.0-alpha.5"
+version = "0.1.0"
 edition = "2021"
 license = "MIT"
 repository = "https://github.com/adampetro/bluejay"
@@ -13,7 +13,7 @@ description = "A GraphQL schema wrapper for enforcing visibility"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bluejay-core = { version = "0.1.0-alpha.5", path = "../bluejay-core" }
+bluejay-core = { version = "0.1.0", path = "../bluejay-core" }
 elsa = "1.8.1"
 once_cell = "1.17"
 enum-as-inner = "0.6"

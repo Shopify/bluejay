@@ -1,6 +1,6 @@
 [package]
 name = "bluejay-parser"
-version = "0.1.0-alpha.5"
+version = "0.1.0"
 edition = "2021"
 license = "MIT"
 repository = "https://github.com/adampetro/bluejay"
@@ -13,7 +13,7 @@ description = "A GraphQL parser"
 logos = { version = "0.14" }
 enum-as-inner = "0.6"
 ariadne = { version = "0.4.1", optional = true }
-bluejay-core = { version = "0.1.0-alpha.5", path = "../bluejay-core" }
+bluejay-core = { version = "0.1.0", path = "../bluejay-core" }
 strum = { version = "0.26", features = ["derive"] }
 
 [dev-dependencies]

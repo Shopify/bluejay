@@ -1,6 +1,6 @@
 [package]
 name = "bluejay-typegen"
-version = "0.1.0-alpha.5"
+version = "0.1.0"
 edition = "2021"
 license = "MIT"
 repository = "https://github.com/adampetro/bluejay"
@@ -10,7 +10,7 @@ exclude = [".gitignore", "tests/**/*"]
 description = "A GraphQL type generator"
 
 [dependencies]
-bluejay-typegen-macro = { version = "0.1.0-alpha.5", path = "../bluejay-typegen-macro" }
+bluejay-typegen-macro = { version = "0.1.0", path = "../bluejay-typegen-macro" }
 # rename these packages to prevent the tests from passing if the macro generates code
 # referencing them directly instead of the re-exports
 srd = { package = "serde", version = "1.0", features = ["derive"], optional = true }
