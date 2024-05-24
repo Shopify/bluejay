@@ -13,3 +13,9 @@ resolver = "2"
 
 [workspace.lints.clippy]
 wildcard_imports = "deny"
+
+[profile.shopify-function]
+inherits = "release"
+lto = true
+opt-level = 's'
+strip = true
