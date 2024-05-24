@@ -27,3 +27,6 @@ proc-macro = true
 [features]
 serde = []
 miniserde = []
+
+[lints]
+workspace = true

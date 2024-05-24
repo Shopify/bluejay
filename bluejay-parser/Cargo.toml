@@ -27,3 +27,6 @@ harness = false
 
 [features]
 format-errors = ["dep:ariadne"]
+
+[lints]
+workspace = true

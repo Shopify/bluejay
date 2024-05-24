@@ -24,3 +24,6 @@ trybuild = "1.0"
 default = ["serde"]
 serde = ["dep:srd", "bluejay-typegen-macro/serde"]
 miniserde = ["dep:mnsrd", "bluejay-typegen-macro/miniserde"]
+
+[lints]
+workspace = true

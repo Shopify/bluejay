@@ -16,3 +16,6 @@ bluejay-printer = { version = "0.1.0", path = "../bluejay-printer" }
 
 [dev-dependencies]
 bluejay-parser = { path = "../bluejay-parser" }
+
+[lints]
+workspace = true

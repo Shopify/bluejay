@@ -1,4 +1,0 @@
-[target.'cfg(all())']
-rustflags = [
-    "-Wclippy::wildcard_imports",
-]
