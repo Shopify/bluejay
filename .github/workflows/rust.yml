@@ -19,11 +19,13 @@ jobs:
       - name: Run cargo fmt
         run: cargo fmt --check
       - name: Run clippy
-        run: cargo clippy -- -D warnings
+        run: cargo clippy --all-features -- -D warnings
       - name: Run clippy (tests)
-        run: cargo clippy --tests
+        run: cargo clippy --tests --all-features
       - name: Run clippy (benches)
-        run: cargo clippy --benches
+        run: cargo clippy --benches --all-features
+      - name: Run clipping (examples)
+        run: cargo clippy --examples --all-features
 
   test:
     runs-on: ubuntu-latest
@@ -37,4 +39,6 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Build
-        run: cargo build --release
+        run: cargo build --release --all-features
+      - name: Build (examples)
+        run: cargo build --release --examples --all-features

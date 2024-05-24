@@ -27,3 +27,8 @@ miniserde = ["dep:mnsrd", "bluejay-typegen-macro/miniserde"]
 
 [lints]
 workspace = true
+
+[[example]]
+name = "shopify_function_miniserde"
+path = "examples/shopify_function_miniserde.rs"
+required-features = ["miniserde"]
