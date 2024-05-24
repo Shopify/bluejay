@@ -33,3 +33,6 @@ serde_json = ["dep:serde_json", "bluejay-core/serde_json"]
 [[bench]]
 name = "field_selection_merging"
 harness = false
+
+[lints]
+workspace = true

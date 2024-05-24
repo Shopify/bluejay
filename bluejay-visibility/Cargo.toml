@@ -22,3 +22,6 @@ enum-as-inner = "0.6"
 insta = { version = "1.28" }
 bluejay-parser = { path = "../bluejay-parser" }
 bluejay-printer = { path = "../bluejay-printer" }
+
+[lints]
+workspace = true

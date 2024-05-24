@@ -10,3 +10,6 @@ members = [
     "bluejay-visibility",
 ]
 resolver = "2"
+
+[workspace.lints.clippy]
+wildcard_imports = "deny"

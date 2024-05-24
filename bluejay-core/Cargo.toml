@@ -17,3 +17,6 @@ enum-as-inner = "0.6"
 
 [features]
 serde_json = ["dep:serde_json"]
+
+[lints]
+workspace = true
