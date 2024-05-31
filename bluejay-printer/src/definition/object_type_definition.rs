@@ -6,7 +6,7 @@ use crate::{
     directive::DirectivesPrinter,
     string_value::BlockStringValuePrinter,
 };
-use bluejay_core::{definition::ObjectTypeDefinition, AsIter};
+use bluejay_core::definition::ObjectTypeDefinition;
 use std::fmt::{Display, Formatter, Result};
 
 pub(crate) struct ObjectTypeDefinitionPrinter<'a, O: ObjectTypeDefinition>(&'a O);
@@ -24,7 +24,7 @@ impl<'a, O: ObjectTypeDefinition> Display for ObjectTypeDefinitionPrinter<'a, O>
             write!(f, "{}", BlockStringValuePrinter::new(description, 0))?;
         }
 
-        write!(f, "type {} ", object_type_definition.name())?;
+        write!(f, "type {}", object_type_definition.name())?;
 
         if let Some(interface_implementations) = object_type_definition.interface_implementations()
         {
@@ -36,14 +36,12 @@ impl<'a, O: ObjectTypeDefinition> Display for ObjectTypeDefinitionPrinter<'a, O>
         }
 
         if let Some(directives) = object_type_definition.directives() {
-            if !directives.is_empty() {
-                write!(f, "{} ", DirectivesPrinter::new(directives))?;
-            }
+            write!(f, "{}", DirectivesPrinter::new(directives))?;
         }
 
         write!(
             f,
-            "{}",
+            " {}",
             FieldsDefinitionPrinter::new(object_type_definition.fields_definition(), 0)
         )
     }

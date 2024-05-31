@@ -2,10 +2,7 @@ use crate::{
     definition::arguments_definition::ArgumentsDefinitionPrinter, directive::DirectivesPrinter,
     string_value::BlockStringValuePrinter, write_indent, INDENTATION_SIZE,
 };
-use bluejay_core::{
-    definition::{FieldDefinition, FieldsDefinition, OutputType},
-    AsIter,
-};
+use bluejay_core::definition::{FieldDefinition, FieldsDefinition, OutputType};
 use std::fmt::{Display, Formatter, Result};
 
 pub(crate) struct FieldDefinitionPrinter<'a, F: FieldDefinition> {
@@ -50,9 +47,7 @@ impl<'a, F: FieldDefinition> Display for FieldDefinitionPrinter<'a, F> {
         write!(f, ": {}", field_definition.r#type().display_name())?;
 
         if let Some(directives) = field_definition.directives() {
-            if !directives.is_empty() {
-                write!(f, " {}", DirectivesPrinter::new(directives))?;
-            }
+            write!(f, "{}", DirectivesPrinter::new(directives))?;
         }
 
         writeln!(f)

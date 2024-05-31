@@ -1,0 +1,7 @@
+query MyQuery($x: Boolean! = true @foo, $y: Boolean! @bar) @foo @bar {
+  foo @include(if: $x) {
+    bar @skip(if: $y) {
+      baz
+    }
+  }
+}

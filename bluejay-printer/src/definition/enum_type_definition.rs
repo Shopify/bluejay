@@ -23,15 +23,13 @@ impl<'a, E: EnumTypeDefinition> Display for EnumTypeDefinitionPrinter<'a, E> {
             write!(f, "{}", BlockStringValuePrinter::new(description, 0))?;
         }
 
-        write!(f, "enum {} ", enum_type_definition.name())?;
+        write!(f, "enum {}", enum_type_definition.name())?;
 
         if let Some(directives) = enum_type_definition.directives() {
-            if !directives.is_empty() {
-                write!(f, "{} ", DirectivesPrinter::new(directives))?;
-            }
+            write!(f, "{}", DirectivesPrinter::new(directives))?;
         }
 
-        writeln!(f, "{{")?;
+        writeln!(f, " {{")?;
 
         enum_type_definition
             .enum_value_definitions()
@@ -54,9 +52,7 @@ impl<'a, E: EnumTypeDefinition> Display for EnumTypeDefinitionPrinter<'a, E> {
                 write!(f, "{}", evd.name())?;
 
                 if let Some(directives) = evd.directives() {
-                    if !directives.is_empty() {
-                        write!(f, " {}", DirectivesPrinter::new(directives))?;
-                    }
+                    write!(f, "{}", DirectivesPrinter::new(directives))?;
                 }
 
                 writeln!(f)

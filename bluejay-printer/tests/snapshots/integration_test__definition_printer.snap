@@ -49672,4 +49672,3 @@ type WorkflowRun implements Node {
 A valid x509 certificate string
 """
 scalar X509Certificate
-

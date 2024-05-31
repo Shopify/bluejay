@@ -6,7 +6,7 @@ use crate::{
     directive::DirectivesPrinter,
     string_value::BlockStringValuePrinter,
 };
-use bluejay_core::{definition::InterfaceTypeDefinition, AsIter};
+use bluejay_core::definition::InterfaceTypeDefinition;
 use std::fmt::{Display, Formatter, Result};
 
 pub(crate) struct InterfaceTypeDefinitionPrinter<'a, I: InterfaceTypeDefinition>(&'a I);
@@ -24,7 +24,7 @@ impl<'a, I: InterfaceTypeDefinition> Display for InterfaceTypeDefinitionPrinter<
             write!(f, "{}", BlockStringValuePrinter::new(description, 0))?;
         }
 
-        write!(f, "interface {} ", interface_type_definition.name())?;
+        write!(f, "interface {}", interface_type_definition.name())?;
 
         if let Some(interface_implementations) =
             interface_type_definition.interface_implementations()
@@ -37,14 +37,12 @@ impl<'a, I: InterfaceTypeDefinition> Display for InterfaceTypeDefinitionPrinter<
         }
 
         if let Some(directives) = interface_type_definition.directives() {
-            if !directives.is_empty() {
-                write!(f, "{} ", DirectivesPrinter::new(directives))?;
-            }
+            write!(f, "{}", DirectivesPrinter::new(directives))?;
         }
 
         write!(
             f,
-            "{}",
+            " {}",
             FieldsDefinitionPrinter::new(interface_type_definition.fields_definition(), 0)
         )
     }

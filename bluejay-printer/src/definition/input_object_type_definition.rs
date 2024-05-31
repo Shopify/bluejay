@@ -23,9 +23,7 @@ impl<'a, I: InputObjectTypeDefinition> Display for InputObjectTypeDefinitionPrin
         write!(f, "input {}", input_object_type_definition.name())?;
 
         if let Some(directives) = input_object_type_definition.directives() {
-            if !directives.is_empty() {
-                write!(f, " {}", DirectivesPrinter::new(directives))?;
-            }
+            write!(f, "{}", DirectivesPrinter::new(directives))?;
         }
 
         writeln!(f, " {{")?;

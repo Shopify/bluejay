@@ -1,0 +1,11 @@
+query MyQuery {
+  foo {
+    ...MyFragment
+  }
+}
+
+fragment MyFragment on Foo {
+  bar {
+    baz
+  }
+}
