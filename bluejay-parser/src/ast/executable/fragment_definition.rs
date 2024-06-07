@@ -2,8 +2,6 @@ use crate::ast::executable::{SelectionSet, TypeCondition};
 use crate::ast::{FromTokens, IsMatch, ParseError, Tokens, VariableDirectives};
 use crate::lexical_token::Name;
 use crate::{HasSpan, Span};
-use std::cmp::{Eq, Ord, Ordering, PartialEq, PartialOrd};
-use std::hash::{Hash, Hasher};
 
 #[derive(Debug)]
 pub struct FragmentDefinition<'a> {
@@ -56,6 +54,14 @@ impl<'a> FragmentDefinition<'a> {
     }
 }
 
+impl<'a> bluejay_core::Indexable for FragmentDefinition<'a> {
+    type Id = Span;
+
+    fn id(&self) -> &Self::Id {
+        &self.span
+    }
+}
+
 impl<'a> bluejay_core::executable::FragmentDefinition for FragmentDefinition<'a> {
     type Directives = VariableDirectives<'a>;
     type SelectionSet = SelectionSet<'a>;
@@ -80,31 +86,5 @@ impl<'a> bluejay_core::executable::FragmentDefinition for FragmentDefinition<'a>
 impl<'a> HasSpan for FragmentDefinition<'a> {
     fn span(&self) -> &Span {
         &self.span
-    }
-}
-
-impl<'a> Hash for FragmentDefinition<'a> {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.span().hash(state);
-    }
-}
-
-impl<'a> PartialEq for FragmentDefinition<'a> {
-    fn eq(&self, other: &Self) -> bool {
-        self.span() == other.span()
-    }
-}
-
-impl<'a> Eq for FragmentDefinition<'a> {}
-
-impl<'a> Ord for FragmentDefinition<'a> {
-    fn cmp(&self, other: &Self) -> Ordering {
-        self.span().cmp(other.span())
-    }
-}
-
-impl<'a> PartialOrd for FragmentDefinition<'a> {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
     }
 }

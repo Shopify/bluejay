@@ -1,7 +1,6 @@
-use std::cmp::{Eq, Ord};
-use std::hash::Hash;
+use crate::Indexable;
 
-pub trait VariableType: Sized + Hash + Eq + Ord {
+pub trait VariableType: Sized + Indexable {
     fn as_ref(&self) -> VariableTypeReference<'_, Self>;
 }
 

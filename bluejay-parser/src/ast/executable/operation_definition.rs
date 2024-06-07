@@ -4,11 +4,10 @@ use crate::ast::{
 };
 use crate::lexical_token::Name;
 use crate::{HasSpan, Span};
-use bluejay_core::executable::{
-    OperationDefinition as CoreOperationDefinition, OperationDefinitionReference,
+use bluejay_core::{
+    executable::{OperationDefinition as CoreOperationDefinition, OperationDefinitionReference},
+    Indexable,
 };
-use std::cmp::{Eq, Ord, Ordering, PartialEq, PartialOrd};
-use std::hash::{Hash, Hasher};
 
 #[derive(Debug)]
 pub enum OperationDefinition<'a> {
@@ -22,6 +21,14 @@ impl<'a> OperationDefinition<'a> {
             Self::Explicit(e) => &e.selection_set,
             Self::Implicit(i) => &i.selection_set,
         }
+    }
+}
+
+impl<'a> Indexable for OperationDefinition<'a> {
+    type Id = Span;
+
+    fn id(&self) -> &Self::Id {
+        self.span()
     }
 }
 
@@ -75,32 +82,6 @@ impl<'a> HasSpan for OperationDefinition<'a> {
             Self::Explicit(e) => e.span(),
             Self::Implicit(i) => i.span(),
         }
-    }
-}
-
-impl<'a> Hash for OperationDefinition<'a> {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.span().hash(state);
-    }
-}
-
-impl<'a> PartialEq for OperationDefinition<'a> {
-    fn eq(&self, other: &Self) -> bool {
-        self.span() == other.span()
-    }
-}
-
-impl<'a> Eq for OperationDefinition<'a> {}
-
-impl<'a> Ord for OperationDefinition<'a> {
-    fn cmp(&self, other: &Self) -> Ordering {
-        self.span().cmp(other.span())
-    }
-}
-
-impl<'a> PartialOrd for OperationDefinition<'a> {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
     }
 }
 

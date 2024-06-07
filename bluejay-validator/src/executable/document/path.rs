@@ -1,4 +1,4 @@
-use bluejay_core::executable::ExecutableDocument;
+use bluejay_core::{executable::ExecutableDocument, Indexable};
 use std::cmp::{Eq, Ord, Ordering, PartialEq, PartialOrd};
 use std::hash::{Hash, Hasher};
 
@@ -51,8 +51,8 @@ impl<'a, E: ExecutableDocument> Copy for PathRoot<'a, E> {}
 impl<'a, E: ExecutableDocument> Hash for PathRoot<'a, E> {
     fn hash<H: Hasher>(&self, state: &mut H) {
         match self {
-            Self::Operation(o) => o.hash(state),
-            Self::Fragment(f) => f.hash(state),
+            Self::Operation(o) => o.id().hash(state),
+            Self::Fragment(f) => f.id().hash(state),
         }
     }
 }
@@ -60,8 +60,8 @@ impl<'a, E: ExecutableDocument> Hash for PathRoot<'a, E> {
 impl<'a, E: ExecutableDocument> PartialEq for PathRoot<'a, E> {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
-            (Self::Operation(l), Self::Operation(r)) if l == r => true,
-            (Self::Fragment(l), Self::Fragment(r)) if l == r => true,
+            (Self::Operation(l), Self::Operation(r)) => l.id() == r.id(),
+            (Self::Fragment(l), Self::Fragment(r)) => l.id() == r.id(),
             _ => false,
         }
     }
@@ -72,10 +72,10 @@ impl<'a, E: ExecutableDocument> Eq for PathRoot<'a, E> {}
 impl<'a, E: ExecutableDocument> Ord for PathRoot<'a, E> {
     fn cmp(&self, other: &Self) -> Ordering {
         match (self, other) {
-            (Self::Fragment(l), Self::Fragment(r)) => l.cmp(r),
+            (Self::Fragment(l), Self::Fragment(r)) => l.id().cmp(r.id()),
             (Self::Fragment(_), Self::Operation(_)) => Ordering::Greater,
             (Self::Operation(_), Self::Fragment(_)) => Ordering::Less,
-            (Self::Operation(l), Self::Operation(r)) => l.cmp(r),
+            (Self::Operation(l), Self::Operation(r)) => l.id().cmp(r.id()),
         }
     }
 }

@@ -3,12 +3,12 @@ use bluejay_core::definition::SchemaDefinition;
 use bluejay_core::executable::{
     ExecutableDocument, FragmentDefinition, OperationDefinition, VariableDefinition,
 };
-use bluejay_core::AsIter;
+use bluejay_core::{AsIter, Indexed};
 use std::collections::HashMap;
 
 pub struct Cache<'a, E: ExecutableDocument, S: SchemaDefinition> {
     variable_definition_input_types:
-        HashMap<&'a E::VariableType, VariableDefinitionInputType<'a, S::InputType>>,
+        HashMap<Indexed<'a, E::VariableType>, VariableDefinitionInputType<'a, S::InputType>>,
     indexed_fragment_definitions: HashMap<&'a str, &'a E::FragmentDefinition>,
 }
 
@@ -34,7 +34,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> Cache<'a, E, S> {
                                 variable_type,
                             ))
                             .ok()
-                            .map(|vdit| (variable_type, vdit))
+                            .map(|vdit| (Indexed(variable_type), vdit))
                         })
                 },
             ));
@@ -53,9 +53,10 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> Cache<'a, E, S> {
 
     pub fn variable_definition_input_type(
         &self,
-        variable_type: &E::VariableType,
+        variable_type: &'a E::VariableType,
     ) -> Option<&VariableDefinitionInputType<'a, S::InputType>> {
-        self.variable_definition_input_types.get(variable_type)
+        self.variable_definition_input_types
+            .get(&Indexed(variable_type))
     }
 
     pub fn fragment_definition(&self, name: &str) -> Option<&'a E::FragmentDefinition> {

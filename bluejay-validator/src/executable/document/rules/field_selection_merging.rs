@@ -10,14 +10,14 @@ use bluejay_core::executable::{
     ExecutableDocument, Field, FragmentDefinition, FragmentSpread, InlineFragment, Selection,
     SelectionReference,
 };
-use bluejay_core::{Argument, AsIter, Value};
+use bluejay_core::{Argument, AsIter, Indexed, Value};
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::ops::Not;
 
 pub struct FieldSelectionMerging<'a, E: ExecutableDocument, S: SchemaDefinition> {
     cache: &'a Cache<'a, E, S>,
     schema_definition: &'a S,
-    cached_errors: BTreeMap<&'a E::SelectionSet, Vec<Error<'a, E, S>>>,
+    cached_errors: BTreeMap<Indexed<'a, E::SelectionSet>, Vec<Error<'a, E, S>>>,
 }
 
 impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition> Visitor<'a, E, S>
@@ -46,10 +46,11 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> FieldSelectionMer
         selection_set: &'a E::SelectionSet,
         parent_type: TypeDefinitionReference<'a, S::TypeDefinition>,
     ) -> bool {
-        if let Some(errors) = self.cached_errors.get(selection_set) {
+        if let Some(errors) = self.cached_errors.get(&Indexed(selection_set)) {
             errors.is_empty()
         } else {
-            self.cached_errors.insert(selection_set, Vec::new());
+            self.cached_errors
+                .insert(Indexed(selection_set), Vec::new());
 
             let grouped_fields = self.selection_set_contained_fields(selection_set, parent_type);
 
@@ -57,7 +58,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> FieldSelectionMer
 
             let is_valid = errors.is_empty();
 
-            self.cached_errors.insert(selection_set, errors);
+            self.cached_errors.insert(Indexed(selection_set), errors);
 
             is_valid
         }
@@ -389,7 +390,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Rule<'a, E, S>
 {
     type Error = Error<'a, E, S>;
     type Errors = std::iter::Flatten<
-        std::collections::btree_map::IntoValues<&'a E::SelectionSet, Vec<Error<'a, E, S>>>,
+        std::collections::btree_map::IntoValues<Indexed<'a, E::SelectionSet>, Vec<Error<'a, E, S>>>,
     >;
 
     fn into_errors(self) -> Self::Errors {

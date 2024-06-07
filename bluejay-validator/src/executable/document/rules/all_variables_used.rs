@@ -6,12 +6,12 @@ use bluejay_core::definition::{SchemaDefinition, TypeDefinitionReference};
 use bluejay_core::executable::{
     ExecutableDocument, FragmentSpread, OperationDefinition, VariableDefinition,
 };
-use bluejay_core::{Argument, AsIter, ObjectValue, Value, ValueReference, Variable};
+use bluejay_core::{Argument, AsIter, Indexed, ObjectValue, Value, ValueReference, Variable};
 use std::collections::{HashMap, HashSet};
 use std::ops::Not;
 
 pub struct AllVariablesUsed<'a, E: ExecutableDocument, S: SchemaDefinition> {
-    fragment_references: HashMap<PathRoot<'a, E>, HashSet<&'a E::FragmentDefinition>>,
+    fragment_references: HashMap<PathRoot<'a, E>, HashSet<Indexed<'a, E::FragmentDefinition>>>,
     variable_usages: HashMap<PathRoot<'a, E>, HashSet<&'a str>>,
     cache: &'a Cache<'a, E, S>,
     executable_document: &'a E,
@@ -48,7 +48,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Visitor<'a, E, S>
             self.fragment_references
                 .entry(*path.root())
                 .or_default()
-                .insert(fragment_definition);
+                .insert(Indexed(fragment_definition));
         }
     }
 }
@@ -80,20 +80,24 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> AllVariablesUsed<'a, E, S> 
     ) -> impl Iterator<Item = &'a E::FragmentDefinition> {
         let mut references = HashSet::new();
         self.visit_fragment_references(&PathRoot::Operation(operation_definition), &mut references);
-        references.into_iter()
+        references
+            .into_iter()
+            .map(|Indexed(fragment_definition)| fragment_definition)
     }
 
     fn visit_fragment_references(
         &self,
         executable_definition: &PathRoot<'a, E>,
-        visited: &mut HashSet<&'a E::FragmentDefinition>,
+        visited: &mut HashSet<Indexed<'a, E::FragmentDefinition>>,
     ) {
         if let Some(references) = self.fragment_references.get(executable_definition) {
-            references.iter().for_each(|&reference| {
-                if visited.insert(reference) {
-                    self.visit_fragment_references(&PathRoot::Fragment(reference), visited);
-                }
-            });
+            references.iter().for_each(
+                |Indexed(reference): &Indexed<'a, E::FragmentDefinition>| {
+                    if visited.insert(Indexed(reference)) {
+                        self.visit_fragment_references(&PathRoot::Fragment(*reference), visited);
+                    }
+                },
+            );
         }
     }
 }

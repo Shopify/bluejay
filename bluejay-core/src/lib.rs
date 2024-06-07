@@ -4,6 +4,7 @@ mod builtin_scalar_definition;
 pub mod definition;
 mod directive;
 pub mod executable;
+mod indexable;
 mod operation_type;
 mod value;
 
@@ -15,6 +16,7 @@ pub use builtin_scalar_definition::BuiltinScalarDefinition;
 pub use directive::{
     ConstDirective, ConstDirectives, Directive, Directives, VariableDirective, VariableDirectives,
 };
+pub use indexable::{Indexable, Indexed};
 pub use operation_type::OperationType;
 pub use strum::IntoEnumIterator;
 pub use value::{
