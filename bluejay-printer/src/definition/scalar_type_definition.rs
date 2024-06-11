@@ -1,5 +1,5 @@
 use crate::{directive::DirectivesPrinter, string_value::BlockStringValuePrinter};
-use bluejay_core::{definition::ScalarTypeDefinition, AsIter};
+use bluejay_core::definition::ScalarTypeDefinition;
 use std::fmt::{Display, Formatter, Result};
 
 pub(crate) struct ScalarTypeDefinitionPrinter<'a, S: ScalarTypeDefinition>(&'a S);
@@ -20,9 +20,7 @@ impl<'a, S: ScalarTypeDefinition> Display for ScalarTypeDefinitionPrinter<'a, S>
         write!(f, "scalar {}", scalar_type_definition.name())?;
 
         if let Some(directives) = scalar_type_definition.directives() {
-            if !directives.is_empty() {
-                write!(f, " {}", DirectivesPrinter::new(directives))?;
-            }
+            write!(f, "{}", DirectivesPrinter::new(directives))?;
         }
 
         writeln!(f)

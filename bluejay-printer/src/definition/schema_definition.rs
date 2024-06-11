@@ -55,9 +55,7 @@ impl<'a, S: SchemaDefinition> SchemaDefinitionPrinter<'a, S> {
         write!(f, "schema")?;
 
         if let Some(directives) = schema_definition.directives() {
-            if !directives.is_empty() {
-                write!(f, " {}", DirectivesPrinter::new(directives))?;
-            }
+            write!(f, "{}", DirectivesPrinter::new(directives))?;
         }
 
         writeln!(f, " {{\n  query: {}", schema_definition.query().name())?;

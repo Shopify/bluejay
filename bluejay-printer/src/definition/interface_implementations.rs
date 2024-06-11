@@ -13,7 +13,7 @@ impl<'a, I: InterfaceImplementations> Display for InterfaceImplementationsPrinte
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         let Self(interface_implementations) = *self;
         if !interface_implementations.is_empty() {
-            write!(f, "implements ")?;
+            write!(f, " implements ")?;
             interface_implementations
                 .iter()
                 .enumerate()
@@ -22,8 +22,7 @@ impl<'a, I: InterfaceImplementations> Display for InterfaceImplementationsPrinte
                         write!(f, " & ")?;
                     }
                     write!(f, "{}", ii.name())
-                })?;
-            write!(f, " ")
+                })
         } else {
             Ok(())
         }

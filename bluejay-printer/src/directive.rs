@@ -34,13 +34,7 @@ impl<'a, const CONST: bool, T: Directives<CONST>> Display for DirectivesPrinter<
         let Self(directives) = *self;
         directives
             .iter()
-            .enumerate()
-            .try_for_each(|(idx, directive)| {
-                if idx != 0 {
-                    write!(f, " ")?;
-                }
-                write!(f, "{}", DirectivePrinter::new(directive))
-            })
+            .try_for_each(|directive| write!(f, " {}", DirectivePrinter::new(directive)))
     }
 }
 
@@ -51,7 +45,7 @@ mod tests {
 
     #[test]
     fn test_directives() {
-        let s = "@foo(a: 1, b: 2) @bar";
+        let s = " @foo(a: 1, b: 2) @bar";
         let parsed = Directives::<false>::parse(s).unwrap();
         assert_eq!(s, DirectivesPrinter::new(&parsed).to_string());
     }

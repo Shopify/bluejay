@@ -2,10 +2,7 @@ use crate::{
     directive::DirectivesPrinter, string_value::BlockStringValuePrinter, value::ValuePrinter,
     write_indent,
 };
-use bluejay_core::{
-    definition::{InputType, InputValueDefinition},
-    AsIter,
-};
+use bluejay_core::definition::{InputType, InputValueDefinition};
 use std::fmt::{Display, Formatter, Result};
 
 pub(crate) struct InputValueDefinitionPrinter<'a, T: InputValueDefinition> {
@@ -49,9 +46,7 @@ impl<'a, T: InputValueDefinition> Display for InputValueDefinitionPrinter<'a, T>
         }
 
         if let Some(directives) = input_value_definition.directives() {
-            if !directives.is_empty() {
-                write!(f, " {}", DirectivesPrinter::new(directives))?;
-            }
+            write!(f, "{}", DirectivesPrinter::new(directives))?;
         }
 
         writeln!(f)

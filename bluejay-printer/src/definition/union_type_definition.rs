@@ -23,9 +23,7 @@ impl<'a, U: UnionTypeDefinition> Display for UnionTypeDefinitionPrinter<'a, U> {
         write!(f, "union {}", union_type_definition.name())?;
 
         if let Some(directives) = union_type_definition.directives() {
-            if !directives.is_empty() {
-                write!(f, " {}", DirectivesPrinter::new(directives))?;
-            }
+            write!(f, "{}", DirectivesPrinter::new(directives))?;
         }
 
         write!(f, " = ")?;
