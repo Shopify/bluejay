@@ -53,28 +53,28 @@ impl Error {
             .into_iter()
             .flat_map(|err| {
                 let err: Error = err.into();
-                if let Some(ref primary_annotation) = err.primary_annotation {
+                if let Some(primary_annotation) = err.primary_annotation {
                     let (line, col) = converter
                         .convert(primary_annotation.span())
                         .unwrap_or((0, 0));
-                    return vec![GraphQLError {
-                        message: primary_annotation.message.clone(),
+                    vec![GraphQLError {
+                        message: primary_annotation.message,
                         locations: vec![Location { line, col }],
-                    }];
+                    }]
+                } else {
+                    err.secondary_annotations
+                        .into_iter()
+                        .map(|secondary_annotation| {
+                            let (line, col) = converter
+                                .convert(secondary_annotation.span())
+                                .unwrap_or((0, 0));
+                            GraphQLError {
+                                message: secondary_annotation.message,
+                                locations: vec![Location { line, col }],
+                            }
+                        })
+                        .collect()
                 }
-
-                err.secondary_annotations
-                    .iter()
-                    .map(|secondary_annotation| {
-                        let (line, col) = converter
-                            .convert(secondary_annotation.span())
-                            .unwrap_or((0, 0));
-                        GraphQLError {
-                            message: secondary_annotation.message.clone(),
-                            locations: vec![Location { line, col }],
-                        }
-                    })
-                    .collect()
             })
             .collect()
     }
