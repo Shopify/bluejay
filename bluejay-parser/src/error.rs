@@ -17,6 +17,18 @@ pub struct Error {
     secondary_annotations: Vec<Annotation>,
 }
 
+#[derive(Debug)]
+pub struct Location {
+    pub line: usize,
+    pub col: usize,
+}
+
+/// A [spec compliant GraphQL Error](https://spec.graphql.org/draft/#sec-Errors.Error-Result-Format)
+pub struct GraphQLError {
+    message: String,
+    locations: Vec<Location>,
+}
+
 impl Error {
     pub fn new(
         message: impl Into<Cow<'static, str>>,
@@ -28,6 +40,32 @@ impl Error {
             primary_annotation,
             secondary_annotations,
         }
+    }
+
+    pub fn into_graphql_error<E: Into<Error>>(document: &str, errors: impl IntoIterator<Item = E>) -> Vec<GraphQLError> {
+        let mut converter = SpanToLocation::new(document);
+        errors.into_iter().map(|err| {
+            let err: Error = err.into();
+            if let Some(ref primary_annotation) = err.primary_annotation {
+                let (line, col) = converter.convert(primary_annotation.span()).unwrap_or((0, 0));
+                return GraphQLError {
+                    message: err.message().to_owned(),
+                    locations: vec![Location { line, col }]
+                }
+            }
+
+            let locations = err.secondary_annotations.iter().map(|secondary_annotation| {
+                let (line, col) = converter.convert(secondary_annotation.span()).unwrap_or((0, 0));
+                return Location {
+                    line,
+                    col,
+                }
+            }).collect();
+            return GraphQLError {
+                message: err.message().to_owned(),
+                locations
+            }
+        }).collect()
     }
 
     #[cfg(feature = "format-errors")]
