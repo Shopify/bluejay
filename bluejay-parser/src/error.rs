@@ -1,5 +1,6 @@
-#[cfg(feature = "format-errors")]
 use ariadne::{Config, IndexType, Label, Report, ReportKind, Source};
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 
 mod annotation;
@@ -16,6 +17,7 @@ pub struct Error {
 }
 
 #[derive(Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 pub struct Location {
     pub line: usize,
     pub col: usize,
@@ -23,6 +25,7 @@ pub struct Location {
 
 /// A [spec compliant GraphQL Error](https://spec.graphql.org/draft/#sec-Errors.Error-Result-Format)
 #[derive(Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 pub struct GraphQLError {
     pub message: Cow<'static, str>,
     pub locations: Vec<Location>,
