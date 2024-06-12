@@ -1,6 +1,7 @@
 [workspace]
 members = [
     "bluejay-core",
+    "bluejay-operation-merger",
     "bluejay-parser",
     "bluejay-printer",
     "bluejay-schema-comparator",

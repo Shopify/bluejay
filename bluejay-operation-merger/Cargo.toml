@@ -1,0 +1,23 @@
+[package]
+name = "bluejay-operation-merger"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+repository = "https://github.com/Shopify/bluejay"
+homepage = "https://github.com/Shopify/bluejay"
+keywords = ["graphql"]
+exclude = [".gitignore"]
+description = "GraphQL executable operation merger"
+
+[dependencies]
+bluejay-core = { version = "0.1.0", path = "../bluejay-core" }
+indexmap = "2.2.6"
+strum = { version = "0.26", features = ["derive"] }
+
+[dev-dependencies]
+bluejay-parser = { version = "0.1.0", path = "../bluejay-parser" }
+bluejay-printer = { version = "0.1.0", path = "../bluejay-printer" }
+similar-asserts = { version = "1.4" }
+
+[lints]
+workspace = true

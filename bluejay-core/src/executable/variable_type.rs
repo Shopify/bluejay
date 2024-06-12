@@ -55,3 +55,17 @@ impl<'a, T: VariableType> VariableTypeReference<'a, T> {
         }
     }
 }
+
+impl<'a, T: VariableType> PartialEq for VariableTypeReference<'a, T> {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Self::Named(name, required), Self::Named(other_name, other_required)) => {
+                name == other_name && required == other_required
+            }
+            (Self::List(inner, required), Self::List(other_inner, other_required)) => {
+                inner.as_ref() == other_inner.as_ref() && required == other_required
+            }
+            _ => false,
+        }
+    }
+}
