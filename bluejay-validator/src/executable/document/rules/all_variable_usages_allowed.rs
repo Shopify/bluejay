@@ -10,13 +10,13 @@ use bluejay_core::executable::{
     ExecutableDocument, FragmentSpread, OperationDefinition, VariableDefinition, VariableType,
     VariableTypeReference,
 };
-use bluejay_core::{Argument, AsIter, ObjectValue, Value, ValueReference, Variable};
+use bluejay_core::{Argument, AsIter, Indexed, ObjectValue, Value, ValueReference, Variable};
 use itertools::Either;
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::ops::Not;
 
 pub struct AllVariableUsagesAllowed<'a, E: ExecutableDocument, S: SchemaDefinition> {
-    fragment_references: HashMap<&'a E::FragmentDefinition, BTreeSet<PathRoot<'a, E>>>,
+    fragment_references: HashMap<Indexed<'a, E::FragmentDefinition>, BTreeSet<PathRoot<'a, E>>>,
     variable_usages: BTreeMap<PathRoot<'a, E>, Vec<VariableUsage<'a, E, S>>>,
     cache: &'a Cache<'a, E, S>,
     schema_definition: &'a S,
@@ -55,7 +55,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Visitor<'a, E, S>
     ) {
         if let Some(fragment_definition) = self.cache.fragment_definition(fragment_spread.name()) {
             self.fragment_references
-                .entry(fragment_definition)
+                .entry(Indexed(fragment_definition))
                 .or_default()
                 .insert(*path.root());
         }
@@ -117,7 +117,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> AllVariableUsagesAllowed<'a
         fragment_definition: &'a E::FragmentDefinition,
         visited: &mut BTreeSet<PathRoot<'a, E>>,
     ) {
-        if let Some(references) = self.fragment_references.get(fragment_definition) {
+        if let Some(references) = self.fragment_references.get(&Indexed(fragment_definition)) {
             references.iter().for_each(|reference| {
                 if visited.insert(*reference) {
                     if let PathRoot::Fragment(f) = reference {

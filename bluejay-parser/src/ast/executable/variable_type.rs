@@ -1,9 +1,10 @@
 use crate::ast::{FromTokens, ParseError, Tokens};
 use crate::lexical_token::{Name, PunctuatorType};
 use crate::{HasSpan, Span};
-use bluejay_core::executable::{VariableType as CoreVariableType, VariableTypeReference};
-use std::cmp::{Eq, Ord, Ordering, PartialEq, PartialOrd};
-use std::hash::{Hash, Hasher};
+use bluejay_core::{
+    executable::{VariableType as CoreVariableType, VariableTypeReference},
+    Indexable,
+};
 
 #[derive(Debug)]
 pub enum VariableType<'a> {
@@ -17,6 +18,14 @@ pub enum VariableType<'a> {
         is_required: bool,
         span: Span,
     },
+}
+
+impl<'a> Indexable for VariableType<'a> {
+    type Id = Span;
+
+    fn id(&self) -> &Self::Id {
+        self.span()
+    }
 }
 
 impl<'a> CoreVariableType for VariableType<'a> {
@@ -69,31 +78,5 @@ impl<'a> HasSpan for VariableType<'a> {
             Self::Named { span, .. } => span,
             Self::List { span, .. } => span,
         }
-    }
-}
-
-impl<'a> Hash for VariableType<'a> {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.span().hash(state);
-    }
-}
-
-impl<'a> PartialEq for VariableType<'a> {
-    fn eq(&self, other: &Self) -> bool {
-        self.span() == other.span()
-    }
-}
-
-impl<'a> Eq for VariableType<'a> {}
-
-impl<'a> Ord for VariableType<'a> {
-    fn cmp(&self, other: &Self) -> Ordering {
-        self.span().cmp(other.span())
-    }
-}
-
-impl<'a> PartialOrd for VariableType<'a> {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
     }
 }

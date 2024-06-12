@@ -1,7 +1,5 @@
 use crate::executable::{SelectionSet, VariableDefinitions};
-use crate::{OperationType, VariableDirectives};
-use std::cmp::{Eq, Ord};
-use std::hash::Hash;
+use crate::{Indexable, OperationType, VariableDirectives};
 
 #[derive(Debug)]
 pub enum OperationDefinitionReference<'a, O: OperationDefinition> {
@@ -46,7 +44,7 @@ impl<'a, O: OperationDefinition> OperationDefinitionReference<'a, O> {
     }
 }
 
-pub trait OperationDefinition: Eq + Hash + Ord + Sized {
+pub trait OperationDefinition: Sized + Indexable {
     type ExplicitOperationDefinition: ExplicitOperationDefinition;
     type ImplicitOperationDefinition: ImplicitOperationDefinition<SelectionSet=<Self::ExplicitOperationDefinition as ExplicitOperationDefinition>::SelectionSet>;
 

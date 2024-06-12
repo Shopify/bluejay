@@ -3,8 +3,6 @@ use crate::ast::{FromTokens, IsMatch, ParseError, Tokens};
 use crate::lexical_token::PunctuatorType;
 use crate::{HasSpan, Span};
 use bluejay_core::AsIter;
-use std::cmp::{Eq, Ord, Ordering, PartialEq, PartialOrd};
-use std::hash::{Hash, Hasher};
 
 #[derive(Debug)]
 pub struct SelectionSet<'a> {
@@ -33,6 +31,14 @@ impl<'a> IsMatch<'a> for SelectionSet<'a> {
     }
 }
 
+impl<'a> bluejay_core::Indexable for SelectionSet<'a> {
+    type Id = Span;
+
+    fn id(&self) -> &Self::Id {
+        &self.span
+    }
+}
+
 impl<'a> bluejay_core::executable::SelectionSet for SelectionSet<'a> {
     type Selection = Selection<'a>;
 }
@@ -53,31 +59,5 @@ impl<'a> AsIter for SelectionSet<'a> {
 impl<'a> HasSpan for SelectionSet<'a> {
     fn span(&self) -> &Span {
         &self.span
-    }
-}
-
-impl<'a> Hash for SelectionSet<'a> {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.span.hash(state);
-    }
-}
-
-impl<'a> PartialEq for SelectionSet<'a> {
-    fn eq(&self, other: &Self) -> bool {
-        self.span == other.span
-    }
-}
-
-impl<'a> Eq for SelectionSet<'a> {}
-
-impl<'a> Ord for SelectionSet<'a> {
-    fn cmp(&self, other: &Self) -> Ordering {
-        self.span.cmp(&other.span)
-    }
-}
-
-impl<'a> PartialOrd for SelectionSet<'a> {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
     }
 }
