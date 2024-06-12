@@ -18,7 +18,6 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> Visitor<'a, E, S>
             unused_fragment_definitions: BTreeMap::from_iter(
                 executable_document
                     .fragment_definitions()
-                    .iter()
                     .map(|fd| (fd.name(), fd)),
             ),
         }

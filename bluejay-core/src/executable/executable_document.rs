@@ -48,7 +48,13 @@ pub trait ExecutableDocument {
         Directives = Self::Directives<false>,
         SelectionSet = Self::SelectionSet,
     >;
+    type OperationDefinitions<'a>: Iterator<Item = &'a Self::OperationDefinition>
+    where
+        Self: 'a;
+    type FragmentDefinitions<'a>: Iterator<Item = &'a Self::FragmentDefinition>
+    where
+        Self: 'a;
 
-    fn operation_definitions(&self) -> &[Self::OperationDefinition];
-    fn fragment_definitions(&self) -> &[Self::FragmentDefinition];
+    fn operation_definitions(&self) -> Self::OperationDefinitions<'_>;
+    fn fragment_definitions(&self) -> Self::FragmentDefinitions<'_>;
 }

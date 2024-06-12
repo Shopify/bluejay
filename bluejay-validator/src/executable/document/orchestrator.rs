@@ -38,13 +38,11 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, V: Visitor<'a, E, S>>
     fn visit(&mut self) {
         self.executable_document
             .operation_definitions()
-            .iter()
             .for_each(|operation_definition| {
                 self.visit_operation_definition(operation_definition);
             });
         self.executable_document
             .fragment_definitions()
-            .iter()
             .for_each(|fragment_definition| {
                 self.visit_fragment_definition(fragment_definition);
             });

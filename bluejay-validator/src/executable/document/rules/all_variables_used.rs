@@ -111,7 +111,6 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Rule<'a, E, S>
     fn into_errors(self) -> Self::Errors {
         self.executable_document
             .operation_definitions()
-            .iter()
             .filter(|operation_definition| {
                 operation_definition
                     .as_ref()

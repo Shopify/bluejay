@@ -34,7 +34,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Rule<'a, E, S>
     type Errors = <Option<Error<'a, E, S>> as IntoIterator>::IntoIter;
 
     fn into_errors(self) -> Self::Errors {
-        (self.executable_document.operation_definitions().len() != 1
+        (self.executable_document.operation_definitions().count() != 1
             && !self.anonymous_operations.is_empty())
         .then_some(Error::NotLoneAnonymousOperation {
             anonymous_operations: self.anonymous_operations,

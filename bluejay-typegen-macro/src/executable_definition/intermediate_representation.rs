@@ -156,6 +156,7 @@ impl<'a> ExecutableEnumVariant<'a> {
             .any(|field| field.r#type.base().borrows())
     }
 }
+
 struct ExecutableDocumentToExecutableTypes<'a, E: ExecutableDocument, S: SchemaDefinition> {
     executable_document_type: PhantomData<&'a E>,
     config: &'a Config<'a, S>,
@@ -170,7 +171,6 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> ExecutableDocumentToExecuta
 
         let named_fragment_definition_types = executable_document
             .fragment_definitions()
-            .iter()
             .map(|fragment_definition| {
                 (
                     fragment_definition.name(),
@@ -196,7 +196,6 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> ExecutableDocumentToExecuta
 
         let mut types = executable_document
             .operation_definitions()
-            .iter()
             .map(|operation_definition| instance.build_operation_definition(operation_definition))
             .chain(named_fragment_definition_types.into_values())
             .collect::<Vec<ExecutableType<'a>>>();

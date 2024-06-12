@@ -58,7 +58,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> Visitor<'a, E, S>
         let spreads_by_fragment_definition: BTreeMap<
             &'a str,
             (&'a E::FragmentDefinition, Vec<&'a E::FragmentSpread>),
-        > = BTreeMap::from_iter(executable_document.fragment_definitions().iter().map(
+        > = BTreeMap::from_iter(executable_document.fragment_definitions().map(
             |fragment_definition| {
                 (
                     fragment_definition.name(),

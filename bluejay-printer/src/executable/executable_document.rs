@@ -25,7 +25,6 @@ impl<'a, T: ExecutableDocument> Display for ExecutableDocumentPrinter<'a, T> {
         } = *self;
         executable_document
             .operation_definitions()
-            .iter()
             .enumerate()
             .try_for_each(|(idx, operation_definition)| {
                 if idx != 0 {
@@ -40,7 +39,6 @@ impl<'a, T: ExecutableDocument> Display for ExecutableDocumentPrinter<'a, T> {
 
         executable_document
             .fragment_definitions()
-            .iter()
             .try_for_each(|fragment_definition| {
                 writeln!(f)?;
                 writeln!(f, "{}", FragmentDefinitionPrinter::new(fragment_definition))
