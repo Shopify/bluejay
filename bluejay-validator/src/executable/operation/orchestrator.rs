@@ -255,7 +255,6 @@ impl<
         let operation_definition = match operation_name {
             Some(operation_name) => executable_document
                 .operation_definitions()
-                .iter()
                 .find(|operation_definition| {
                     operation_definition
                         .as_ref()
@@ -268,7 +267,6 @@ impl<
             None => {
                 let [operation_definition]: [&'a E::OperationDefinition; 1] = executable_document
                     .operation_definitions()
-                    .iter()
                     .collect::<Vec<_>>()
                     .as_slice()
                     .try_into()

@@ -43,7 +43,6 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> Visitor<'a, E, S>
                     let fragment_definition = self
                         .executable_document
                         .fragment_definitions()
-                        .iter()
                         .find(|fd| fd.name() == fs.name());
                     fragment_definition.map(|fd| fd.selection_set().len())
                 }

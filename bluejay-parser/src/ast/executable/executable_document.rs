@@ -111,13 +111,15 @@ impl<'a> bluejay_core::executable::ExecutableDocument for ExecutableDocument<'a>
     type ImplicitOperationDefinition = ImplicitOperationDefinition<'a>;
     type OperationDefinition = OperationDefinition<'a>;
     type FragmentDefinition = FragmentDefinition<'a>;
+    type FragmentDefinitions<'b> = std::slice::Iter<'b, Self::FragmentDefinition> where Self: 'b;
+    type OperationDefinitions<'b> = std::slice::Iter<'b, Self::OperationDefinition> where Self: 'b;
 
-    fn operation_definitions(&self) -> &[Self::OperationDefinition] {
-        &self.operation_definitions
+    fn operation_definitions(&self) -> Self::OperationDefinitions<'_> {
+        self.operation_definitions.iter()
     }
 
-    fn fragment_definitions(&self) -> &[Self::FragmentDefinition] {
-        &self.fragment_definitions
+    fn fragment_definitions(&self) -> Self::FragmentDefinitions<'_> {
+        self.fragment_definitions.iter()
     }
 }
 

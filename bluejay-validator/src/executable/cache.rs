@@ -15,7 +15,7 @@ pub struct Cache<'a, E: ExecutableDocument, S: SchemaDefinition> {
 impl<'a, E: ExecutableDocument, S: SchemaDefinition> Cache<'a, E, S> {
     pub fn new(executable_document: &'a E, schema_definition: &'a S) -> Self {
         let variable_definition_input_types =
-            HashMap::from_iter(executable_document.operation_definitions().iter().flat_map(
+            HashMap::from_iter(executable_document.operation_definitions().flat_map(
                 |operation_definition: &'a E::OperationDefinition| {
                     let variable_definitions_iterator = operation_definition
                         .as_ref()
@@ -41,8 +41,6 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> Cache<'a, E, S> {
         let indexed_fragment_definitions = HashMap::from_iter(
             executable_document
                 .fragment_definitions()
-                .as_ref()
-                .iter()
                 .map(|fragment_definition| (fragment_definition.name(), fragment_definition)),
         );
         Self {

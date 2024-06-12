@@ -20,7 +20,6 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> Visitor<'a, E, S>
             fragment_definition_names: HashSet::from_iter(
                 executable_document
                     .fragment_definitions()
-                    .iter()
                     .map(FragmentDefinition::name),
             ),
         }
