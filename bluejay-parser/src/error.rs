@@ -24,7 +24,7 @@ pub struct Location {
 /// A [spec compliant GraphQL Error](https://spec.graphql.org/draft/#sec-Errors.Error-Result-Format)
 #[derive(Debug, PartialEq, Eq)]
 pub struct GraphQLError {
-    pub message: String,
+    pub message: Cow<'static, str>,
     pub locations: Vec<Location>,
 }
 
@@ -41,39 +41,37 @@ impl Error {
         }
     }
 
-    pub fn into_graphql_error<E: Into<Error>>(
+    pub fn into_graphql_errors<E: Into<Error>>(
         document: &str,
         errors: impl IntoIterator<Item = E>,
     ) -> Vec<GraphQLError> {
         let mut converter = SpanToLocation::new(document);
         errors
             .into_iter()
-            .map(|err| {
+            .flat_map(|err| {
                 let err: Error = err.into();
                 if let Some(ref primary_annotation) = err.primary_annotation {
                     let (line, col) = converter
                         .convert(primary_annotation.span())
                         .unwrap_or((0, 0));
-                    return GraphQLError {
-                        message: err.message().to_owned(),
+                    return vec![GraphQLError {
+                        message: primary_annotation.message.clone(),
                         locations: vec![Location { line, col }],
-                    };
+                    }];
                 }
 
-                let locations = err
-                    .secondary_annotations
+                err.secondary_annotations
                     .iter()
                     .map(|secondary_annotation| {
                         let (line, col) = converter
                             .convert(secondary_annotation.span())
                             .unwrap_or((0, 0));
-                        Location { line, col }
+                        GraphQLError {
+                            message: secondary_annotation.message.clone(),
+                            locations: vec![Location { line, col }],
+                        }
                     })
-                    .collect();
-                GraphQLError {
-                    message: err.message().to_owned(),
-                    locations,
-                }
+                    .collect()
             })
             .collect()
     }
