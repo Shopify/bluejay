@@ -3,11 +3,9 @@ use ariadne::{Config, IndexType, Label, Report, ReportKind, Source};
 use std::borrow::Cow;
 
 mod annotation;
-#[cfg(feature = "format-errors")]
 mod format_errors;
 
 pub use annotation::Annotation;
-#[cfg(feature = "format-errors")]
 pub use format_errors::SpanToLocation;
 
 #[derive(Debug, PartialEq)]
@@ -17,16 +15,17 @@ pub struct Error {
     secondary_annotations: Vec<Annotation>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Location {
     pub line: usize,
     pub col: usize,
 }
 
 /// A [spec compliant GraphQL Error](https://spec.graphql.org/draft/#sec-Errors.Error-Result-Format)
+#[derive(Debug, PartialEq, Eq)]
 pub struct GraphQLError {
-    message: String,
-    locations: Vec<Location>,
+    pub message: String,
+    pub locations: Vec<Location>,
 }
 
 impl Error {
@@ -42,30 +41,41 @@ impl Error {
         }
     }
 
-    pub fn into_graphql_error<E: Into<Error>>(document: &str, errors: impl IntoIterator<Item = E>) -> Vec<GraphQLError> {
+    pub fn into_graphql_error<E: Into<Error>>(
+        document: &str,
+        errors: impl IntoIterator<Item = E>,
+    ) -> Vec<GraphQLError> {
         let mut converter = SpanToLocation::new(document);
-        errors.into_iter().map(|err| {
-            let err: Error = err.into();
-            if let Some(ref primary_annotation) = err.primary_annotation {
-                let (line, col) = converter.convert(primary_annotation.span()).unwrap_or((0, 0));
-                return GraphQLError {
-                    message: err.message().to_owned(),
-                    locations: vec![Location { line, col }]
+        errors
+            .into_iter()
+            .map(|err| {
+                let err: Error = err.into();
+                if let Some(ref primary_annotation) = err.primary_annotation {
+                    let (line, col) = converter
+                        .convert(primary_annotation.span())
+                        .unwrap_or((0, 0));
+                    return GraphQLError {
+                        message: err.message().to_owned(),
+                        locations: vec![Location { line, col }],
+                    };
                 }
-            }
 
-            let locations = err.secondary_annotations.iter().map(|secondary_annotation| {
-                let (line, col) = converter.convert(secondary_annotation.span()).unwrap_or((0, 0));
-                return Location {
-                    line,
-                    col,
+                let locations = err
+                    .secondary_annotations
+                    .iter()
+                    .map(|secondary_annotation| {
+                        let (line, col) = converter
+                            .convert(secondary_annotation.span())
+                            .unwrap_or((0, 0));
+                        Location { line, col }
+                    })
+                    .collect();
+                GraphQLError {
+                    message: err.message().to_owned(),
+                    locations,
                 }
-            }).collect();
-            return GraphQLError {
-                message: err.message().to_owned(),
-                locations
-            }
-        }).collect()
+            })
+            .collect()
     }
 
     #[cfg(feature = "format-errors")]
