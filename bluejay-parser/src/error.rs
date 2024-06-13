@@ -1,13 +1,12 @@
-#[cfg(feature = "format-errors")]
 use ariadne::{Config, IndexType, Label, Report, ReportKind, Source};
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 
 mod annotation;
-#[cfg(feature = "format-errors")]
 mod format_errors;
 
 pub use annotation::Annotation;
-#[cfg(feature = "format-errors")]
 pub use format_errors::SpanToLocation;
 
 #[derive(Debug, PartialEq)]
@@ -15,6 +14,21 @@ pub struct Error {
     message: Cow<'static, str>,
     primary_annotation: Option<Annotation>,
     secondary_annotations: Vec<Annotation>,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
+pub struct Location {
+    pub line: usize,
+    pub col: usize,
+}
+
+/// A [spec compliant GraphQL Error](https://spec.graphql.org/draft/#sec-Errors.Error-Result-Format)
+#[derive(Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
+pub struct GraphQLError {
+    pub message: Cow<'static, str>,
+    pub locations: Vec<Location>,
 }
 
 impl Error {
@@ -28,6 +42,41 @@ impl Error {
             primary_annotation,
             secondary_annotations,
         }
+    }
+
+    pub fn into_graphql_errors<E: Into<Error>>(
+        document: &str,
+        errors: impl IntoIterator<Item = E>,
+    ) -> Vec<GraphQLError> {
+        let mut converter = SpanToLocation::new(document);
+        errors
+            .into_iter()
+            .flat_map(|err| {
+                let err: Error = err.into();
+                if let Some(primary_annotation) = err.primary_annotation {
+                    let (line, col) = converter
+                        .convert(primary_annotation.span())
+                        .unwrap_or((0, 0));
+                    vec![GraphQLError {
+                        message: primary_annotation.message,
+                        locations: vec![Location { line, col }],
+                    }]
+                } else {
+                    err.secondary_annotations
+                        .into_iter()
+                        .map(|secondary_annotation| {
+                            let (line, col) = converter
+                                .convert(secondary_annotation.span())
+                                .unwrap_or((0, 0));
+                            GraphQLError {
+                                message: secondary_annotation.message,
+                                locations: vec![Location { line, col }],
+                            }
+                        })
+                        .collect()
+                }
+            })
+            .collect()
     }
 
     #[cfg(feature = "format-errors")]
