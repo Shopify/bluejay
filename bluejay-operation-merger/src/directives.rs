@@ -1,31 +1,43 @@
-use crate::Error;
-use bluejay_core::{executable::ExecutableDocument, AsIter, Directives};
+use crate::{Error, MergedDirective};
+use bluejay_core::{
+    definition::DirectiveLocation, executable::ExecutableDocument, AsIter, Directive, Directives,
+};
 use std::marker::PhantomData;
 
-pub struct EmptyDirectives<const CONST: bool, E: ExecutableDocument> {
-    directive_type: PhantomData<E>,
+pub struct EmptyDirectives<'a> {
+    lifetime: PhantomData<&'a ()>,
 }
 
-impl<const CONST: bool, E: ExecutableDocument> Directives<CONST> for EmptyDirectives<CONST, E> {
-    type Directive = E::Directive<CONST>;
+impl<'a, const CONST: bool> Directives<CONST> for EmptyDirectives<'a> {
+    type Directive = MergedDirective<'a>;
 }
 
-impl<const CONST: bool, E: ExecutableDocument> AsIter for EmptyDirectives<CONST, E> {
-    type Item = E::Directive<CONST>;
-    type Iterator<'a> = std::iter::Empty<&'a Self::Item> where E: 'a;
+impl<'a> AsIter for EmptyDirectives<'a> {
+    type Item = MergedDirective<'a>;
+    type Iterator<'b> = std::iter::Empty<&'b Self::Item> where Self: 'b;
 
     fn iter(&self) -> Self::Iterator<'_> {
         std::iter::empty()
     }
 }
 
-impl<const CONST: bool, E: ExecutableDocument> EmptyDirectives<CONST, E> {
+impl<'a> EmptyDirectives<'a> {
     pub(crate) const DEFAULT: Self = Self {
-        directive_type: PhantomData,
+        lifetime: PhantomData,
     };
 
-    pub(crate) fn ensure_empty(directives: &E::Directives<CONST>) -> Result<(), Vec<Error<'_, E>>> {
-        if directives.iter().next().is_some() {
+    pub(crate) fn ensure_empty<const CONST: bool, E: ExecutableDocument>(
+        directives: &E::Directives<CONST>,
+        location: DirectiveLocation,
+    ) -> Result<(), Vec<Error<'_>>> {
+        if directives.iter().any(|directive| match directive.name() {
+            "suffixOnMerge" => {
+                location != DirectiveLocation::Field
+                    && location != DirectiveLocation::VariableDefinition
+            }
+            "replaceOnMerge" => location != DirectiveLocation::VariableDefinition,
+            _ => true,
+        }) {
             Err(vec![Error::DirectivesNotSupported])
         } else {
             Ok(())

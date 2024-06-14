@@ -1,22 +1,19 @@
 use crate::{EmptyDirectives, MergedSelectionSet, Never};
-use bluejay_core::{
-    executable::{ExecutableDocument, FragmentDefinition},
-    Indexable,
-};
+use bluejay_core::{executable::FragmentDefinition, Indexable};
 
 /// This is never instantiated because we will always inline fragment definitions in the merged document.
 /// But to conform to the core traits, we need to provide a type that implements `FragmentDefinition`.
-pub struct MergedFragmentDefinition<'a, E: ExecutableDocument> {
+pub struct MergedFragmentDefinition<'a> {
     name: &'a str,
     type_condition: &'a str,
-    selection_set: MergedSelectionSet<'a, E>,
+    selection_set: MergedSelectionSet<'a>,
     /// This field is never used, but its presence ensures this will never be instantiated
     _never: Never,
 }
 
-impl<'a, E: ExecutableDocument> FragmentDefinition for MergedFragmentDefinition<'a, E> {
-    type SelectionSet = MergedSelectionSet<'a, E>;
-    type Directives = EmptyDirectives<false, E>;
+impl<'a> FragmentDefinition for MergedFragmentDefinition<'a> {
+    type SelectionSet = MergedSelectionSet<'a>;
+    type Directives = EmptyDirectives<'a>;
 
     fn name(&self) -> &str {
         self.name
@@ -35,7 +32,7 @@ impl<'a, E: ExecutableDocument> FragmentDefinition for MergedFragmentDefinition<
     }
 }
 
-impl<'a, E: ExecutableDocument> Indexable for MergedFragmentDefinition<'a, E> {
+impl<'a> Indexable for MergedFragmentDefinition<'a> {
     type Id = &'a str;
 
     fn id(&self) -> &Self::Id {

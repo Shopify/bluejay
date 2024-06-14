@@ -1,21 +1,23 @@
 use crate::{
-    Context, EmptyDirectives, Error, Id, MergedField, MergedInlineFragment, MergedSelection,
+    Context, EmptyDirectives, Error, Id, MergedArguments, MergedField, MergedInlineFragment,
+    MergedSelection,
 };
 use bluejay_core::{
     executable::{
         ExecutableDocument, Field, FragmentDefinition, FragmentSpread, InlineFragment, Selection,
         SelectionReference, SelectionSet,
     },
-    Arguments, AsIter, Indexable,
+    Argument, Arguments, AsIter, Directive, Indexable, Value,
 };
+use std::borrow::Cow;
 
-pub struct MergedSelectionSet<'a, E: ExecutableDocument + 'a> {
-    selections: Vec<MergedSelection<'a, E>>,
+pub struct MergedSelectionSet<'a> {
+    selections: Vec<MergedSelection<'a>>,
     id: Id,
 }
 
-impl<'a, E: ExecutableDocument> AsIter for MergedSelectionSet<'a, E> {
-    type Item = MergedSelection<'a, E>;
+impl<'a> AsIter for MergedSelectionSet<'a> {
+    type Item = MergedSelection<'a>;
     type Iterator<'b> = std::slice::Iter<'b, Self::Item> where 'a: 'b;
 
     fn iter(&self) -> Self::Iterator<'_> {
@@ -23,11 +25,11 @@ impl<'a, E: ExecutableDocument> AsIter for MergedSelectionSet<'a, E> {
     }
 }
 
-impl<'a, E: ExecutableDocument> SelectionSet for MergedSelectionSet<'a, E> {
-    type Selection = MergedSelection<'a, E>;
+impl<'a> SelectionSet for MergedSelectionSet<'a> {
+    type Selection = MergedSelection<'a>;
 }
 
-impl<'a, E: ExecutableDocument> Indexable for MergedSelectionSet<'a, E> {
+impl<'a> Indexable for MergedSelectionSet<'a> {
     type Id = Id;
 
     fn id(&self) -> &Self::Id {
@@ -35,27 +37,32 @@ impl<'a, E: ExecutableDocument> Indexable for MergedSelectionSet<'a, E> {
     }
 }
 
-impl<'a, E: ExecutableDocument> MergedSelectionSet<'a, E> {
-    pub(crate) fn new(context: &Context<'a, E>) -> Self {
+impl<'a> MergedSelectionSet<'a> {
+    pub(crate) fn new<E: ExecutableDocument>(context: &Context<'a, E>) -> Self {
         Self {
             selections: Vec::new(),
             id: context.next_id(),
         }
     }
 
-    pub(crate) fn merge(
+    pub(crate) fn merge<E: ExecutableDocument>(
         &mut self,
         selection_set: &'a E::SelectionSet,
         context: &Context<'a, E>,
-    ) -> Result<(), Vec<Error<'a, E>>> {
+    ) -> Result<(), Vec<Error<'a>>> {
         selection_set.iter().try_for_each(|selection| {
             let selection_reference = selection.as_ref();
-            EmptyDirectives::ensure_empty(selection_reference.directives())?;
+            EmptyDirectives::ensure_empty::<false, E>(
+                selection_reference.directives(),
+                selection_reference.associated_directive_location(),
+            )?;
             match selection_reference {
                 SelectionReference::Field(field) => {
+                    let response_name = self.response_name_for_field(field, context);
+
                     let existing_idx = self.selections.iter().enumerate().find_map(|(idx, s)| {
                         if let MergedSelection::Field(existing) = s {
-                            (existing.response_name() == field.response_name()).then_some(idx)
+                            (existing.response_name() == response_name).then_some(idx)
                         } else {
                             None
                         }
@@ -64,11 +71,14 @@ impl<'a, E: ExecutableDocument> MergedSelectionSet<'a, E> {
                     let existing = if let Some(idx) = existing_idx {
                         self.selections[idx].try_as_field_mut().unwrap()
                     } else {
+                        let alias = (field.name() != response_name).then_some(response_name);
+
                         self.selections
                             .push(MergedSelection::Field(MergedField::new(
                                 field.name(),
-                                field.alias(),
+                                alias,
                                 field.arguments(),
+                                context,
                             )));
                         self.selections
                             .last_mut()
@@ -82,14 +92,16 @@ impl<'a, E: ExecutableDocument> MergedSelectionSet<'a, E> {
                             response_name: field.response_name(),
                         }]);
                     }
-                    if !<E::Arguments<false> as Arguments<false>>::equivalent(
+
+                    let new_arguments = field
+                        .arguments()
+                        .map(|arguments| MergedArguments::new(arguments, context));
+
+                    if !MergedArguments::<false>::equivalent(
                         existing.arguments(),
-                        field.arguments(),
+                        new_arguments.as_ref(),
                     ) {
-                        return Err(vec![Error::ArgumentsNotCompatible {
-                            first: existing.arguments(),
-                            second: field.arguments(),
-                        }]);
+                        return Err(vec![Error::ArgumentsNotCompatible]);
                     }
 
                     if let Some(selection_set) = field.selection_set() {
@@ -136,11 +148,11 @@ impl<'a, E: ExecutableDocument> MergedSelectionSet<'a, E> {
         })
     }
 
-    fn merged_inline_fragment(
+    fn merged_inline_fragment<E: ExecutableDocument>(
         &mut self,
         type_condition: &'a str,
         context: &Context<'a, E>,
-    ) -> &mut MergedInlineFragment<'a, E> {
+    ) -> &mut MergedInlineFragment<'a> {
         let existing_idx = self.selections.iter().enumerate().find_map(|(idx, s)| {
             if let MergedSelection::InlineFragment(existing) = s {
                 (existing.type_condition() == Some(type_condition)).then_some(idx)
@@ -162,6 +174,38 @@ impl<'a, E: ExecutableDocument> MergedSelectionSet<'a, E> {
                 .unwrap()
                 .try_as_inline_fragment_mut()
                 .unwrap()
+        }
+    }
+
+    fn response_name_for_field<E: ExecutableDocument>(
+        &self,
+        field: &'a E::Field,
+        context: &Context<'a, E>,
+    ) -> Cow<'a, str> {
+        let suffix_on_merge = field.directives().iter().find_map(|directive| {
+            if directive.name() == "suffixOnMerge" {
+                directive.arguments().and_then(|arguments| {
+                    arguments.iter().find_map(|arg| {
+                        if arg.name() == "contextKey" {
+                            if let Some(context_key) = arg.value().as_ref().as_string() {
+                                context.user_provided_context_for_key(context_key)
+                            } else {
+                                None
+                            }
+                        } else {
+                            None
+                        }
+                    })
+                })
+            } else {
+                None
+            }
+        });
+
+        if let Some(suffix) = suffix_on_merge {
+            format!("{}{}", field.response_name(), suffix).into()
+        } else {
+            field.response_name().into()
         }
     }
 }

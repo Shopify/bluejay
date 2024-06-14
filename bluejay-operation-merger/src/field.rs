@@ -1,20 +1,21 @@
-use crate::{EmptyDirectives, MergedSelectionSet};
+use crate::{Context, EmptyDirectives, MergedArguments, MergedSelectionSet};
 use bluejay_core::executable::{ExecutableDocument, Field};
+use std::borrow::Cow;
 
-pub struct MergedField<'a, E: ExecutableDocument> {
+pub struct MergedField<'a> {
     name: &'a str,
-    alias: Option<&'a str>,
-    arguments: Option<&'a E::Arguments<false>>,
-    selection_set: Option<MergedSelectionSet<'a, E>>,
+    alias: Option<Cow<'a, str>>,
+    arguments: Option<MergedArguments<'a, false>>,
+    selection_set: Option<MergedSelectionSet<'a>>,
 }
 
-impl<'a, E: ExecutableDocument> Field for MergedField<'a, E> {
-    type Arguments = E::Arguments<false>;
-    type Directives = EmptyDirectives<false, E>;
-    type SelectionSet = MergedSelectionSet<'a, E>;
+impl<'a> Field for MergedField<'a> {
+    type Arguments = MergedArguments<'a, false>;
+    type Directives = EmptyDirectives<'a>;
+    type SelectionSet = MergedSelectionSet<'a>;
 
     fn alias(&self) -> Option<&str> {
-        self.alias
+        self.alias.as_deref()
     }
 
     fn name(&self) -> &str {
@@ -22,7 +23,7 @@ impl<'a, E: ExecutableDocument> Field for MergedField<'a, E> {
     }
 
     fn arguments(&self) -> Option<&Self::Arguments> {
-        self.arguments
+        self.arguments.as_ref()
     }
 
     fn directives(&self) -> &Self::Directives {
@@ -34,27 +35,28 @@ impl<'a, E: ExecutableDocument> Field for MergedField<'a, E> {
     }
 }
 
-impl<'a, E: ExecutableDocument> MergedField<'a, E> {
-    pub(crate) fn new(
+impl<'a> MergedField<'a> {
+    pub(crate) fn new<E: ExecutableDocument>(
         name: &'a str,
-        alias: Option<&'a str>,
+        alias: Option<Cow<'a, str>>,
         arguments: Option<&'a E::Arguments<false>>,
+        context: &Context<'a, E>,
     ) -> Self {
         Self {
             name,
             alias,
-            arguments,
+            arguments: arguments.map(|arguments| MergedArguments::new(arguments, context)),
             selection_set: None,
         }
     }
 
-    pub(crate) fn selection_set_mut(&mut self) -> &mut Option<MergedSelectionSet<'a, E>> {
+    pub(crate) fn selection_set_mut(&mut self) -> &mut Option<MergedSelectionSet<'a>> {
         &mut self.selection_set
     }
 
     /// This method is added in addition to the `bluejay_core::executable::Field` method
     /// of the same name to allow getting a reference with lifetime `'a`.
-    pub(crate) fn arguments(&self) -> Option<&'a E::Arguments<false>> {
-        self.arguments
+    pub(crate) fn arguments(&self) -> Option<&MergedArguments<'a, false>> {
+        self.arguments.as_ref()
     }
 }

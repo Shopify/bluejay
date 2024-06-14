@@ -1,14 +1,12 @@
 use crate::EmptyDirectives;
-use bluejay_core::executable::{ExecutableDocument, FragmentSpread};
-use std::marker::PhantomData;
+use bluejay_core::executable::FragmentSpread;
 
-pub struct MergedFragmentSpread<'a, E: ExecutableDocument> {
+pub struct MergedFragmentSpread<'a> {
     name: &'a str,
-    executable_document_type: PhantomData<E>,
 }
 
-impl<'a, E: ExecutableDocument> FragmentSpread for MergedFragmentSpread<'a, E> {
-    type Directives = EmptyDirectives<false, E>;
+impl<'a> FragmentSpread for MergedFragmentSpread<'a> {
+    type Directives = EmptyDirectives<'a>;
 
     fn name(&self) -> &str {
         self.name

@@ -1,14 +1,14 @@
 use crate::{Context, EmptyDirectives, MergedSelectionSet};
 use bluejay_core::executable::{ExecutableDocument, InlineFragment};
 
-pub struct MergedInlineFragment<'a, E: ExecutableDocument> {
+pub struct MergedInlineFragment<'a> {
     pub type_condition: &'a str,
-    pub selection_set: MergedSelectionSet<'a, E>,
+    pub selection_set: MergedSelectionSet<'a>,
 }
 
-impl<'a, E: ExecutableDocument> InlineFragment for MergedInlineFragment<'a, E> {
-    type Directives = EmptyDirectives<false, E>;
-    type SelectionSet = MergedSelectionSet<'a, E>;
+impl<'a> InlineFragment for MergedInlineFragment<'a> {
+    type Directives = EmptyDirectives<'a>;
+    type SelectionSet = MergedSelectionSet<'a>;
 
     fn type_condition(&self) -> Option<&str> {
         Some(self.type_condition)
@@ -23,15 +23,18 @@ impl<'a, E: ExecutableDocument> InlineFragment for MergedInlineFragment<'a, E> {
     }
 }
 
-impl<'a, E: ExecutableDocument> MergedInlineFragment<'a, E> {
-    pub(crate) fn new(type_condition: &'a str, context: &Context<'a, E>) -> Self {
+impl<'a> MergedInlineFragment<'a> {
+    pub(crate) fn new<E: ExecutableDocument>(
+        type_condition: &'a str,
+        context: &Context<'a, E>,
+    ) -> Self {
         Self {
             type_condition,
             selection_set: MergedSelectionSet::new(context),
         }
     }
 
-    pub(crate) fn selection_set_mut(&mut self) -> &mut MergedSelectionSet<'a, E> {
+    pub(crate) fn selection_set_mut(&mut self) -> &mut MergedSelectionSet<'a> {
         &mut self.selection_set
     }
 }

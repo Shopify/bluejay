@@ -1,20 +1,20 @@
+use crate::{EmptyDirectives, MergedValue};
 use bluejay_core::executable::{ExecutableDocument, VariableDefinition};
-
-use crate::directives::EmptyDirectives;
+use std::borrow::Cow;
 
 pub struct MergedVariableDefinition<'a, E: ExecutableDocument> {
-    name: &'a str,
+    name: Cow<'a, str>,
     r#type: &'a E::VariableType,
-    default_value: Option<&'a E::Value<true>>,
+    default_value: Option<MergedValue<'a, true>>,
 }
 
 impl<'a, E: ExecutableDocument> VariableDefinition for MergedVariableDefinition<'a, E> {
-    type Value = E::Value<true>;
+    type Value = MergedValue<'a, true>;
     type VariableType = E::VariableType;
-    type Directives = EmptyDirectives<true, E>;
+    type Directives = EmptyDirectives<'a>;
 
     fn variable(&self) -> &str {
-        self.name
+        self.name.as_ref()
     }
 
     fn r#type(&self) -> &Self::VariableType {
@@ -22,7 +22,7 @@ impl<'a, E: ExecutableDocument> VariableDefinition for MergedVariableDefinition<
     }
 
     fn default_value(&self) -> Option<&Self::Value> {
-        self.default_value
+        self.default_value.as_ref()
     }
 
     fn directives(&self) -> &Self::Directives {
@@ -32,9 +32,9 @@ impl<'a, E: ExecutableDocument> VariableDefinition for MergedVariableDefinition<
 
 impl<'a, E: ExecutableDocument> MergedVariableDefinition<'a, E> {
     pub(crate) fn new(
-        name: &'a str,
+        name: Cow<'a, str>,
         r#type: &'a E::VariableType,
-        default_value: Option<&'a E::Value<true>>,
+        default_value: Option<MergedValue<'a, true>>,
     ) -> Self {
         Self {
             name,
@@ -45,7 +45,7 @@ impl<'a, E: ExecutableDocument> MergedVariableDefinition<'a, E> {
 
     /// This method is added in addition to the `bluejay_core::executable::VariableDefinition` method
     /// of the same name to allow getting a reference with lifetime `'a`.
-    pub(crate) fn default_value(&self) -> Option<&'a E::Value<true>> {
-        self.default_value
+    pub(crate) fn default_value(&self) -> Option<&MergedValue<'a, true>> {
+        self.default_value.as_ref()
     }
 }

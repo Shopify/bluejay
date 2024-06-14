@@ -10,14 +10,14 @@ use bluejay_core::{
 pub struct MergedOperationDefinition<'a, E: ExecutableDocument> {
     operation_type: OperationType,
     name: Option<&'a str>,
-    selection_set: MergedSelectionSet<'a, E>,
+    selection_set: MergedSelectionSet<'a>,
     variable_definitions: Option<MergedVariableDefinitions<'a, E>>,
     id: Id,
 }
 
 impl<'a, E: ExecutableDocument> OperationDefinition for MergedOperationDefinition<'a, E> {
     type ExplicitOperationDefinition = Self;
-    type ImplicitOperationDefinition = ImplicitMergedOperationDefinition<'a, E>;
+    type ImplicitOperationDefinition = ImplicitMergedOperationDefinition<'a>;
 
     fn as_ref(&self) -> OperationDefinitionReference<'_, Self> {
         OperationDefinitionReference::Explicit(self)
@@ -33,8 +33,8 @@ impl<'a, E: ExecutableDocument> Indexable for MergedOperationDefinition<'a, E> {
 }
 
 impl<'a, E: ExecutableDocument> ExplicitOperationDefinition for MergedOperationDefinition<'a, E> {
-    type Directives = EmptyDirectives<false, E>;
-    type SelectionSet = MergedSelectionSet<'a, E>;
+    type Directives = EmptyDirectives<'a>;
+    type SelectionSet = MergedSelectionSet<'a>;
     type VariableDefinitions = MergedVariableDefinitions<'a, E>;
 
     fn directives(&self) -> &Self::Directives {
@@ -73,7 +73,7 @@ impl<'a, E: ExecutableDocument> MergedOperationDefinition<'a, E> {
         }
     }
 
-    pub(crate) fn selection_set_mut(&mut self) -> &mut MergedSelectionSet<'a, E> {
+    pub(crate) fn selection_set_mut(&mut self) -> &mut MergedSelectionSet<'a> {
         &mut self.selection_set
     }
 
@@ -86,16 +86,14 @@ impl<'a, E: ExecutableDocument> MergedOperationDefinition<'a, E> {
 
 /// This is never instantiated because we will always use explicit operation definitions in the merged document.
 /// But to conform to the core traits, we need to provide a type that implements `ImplicitOperationDefinition`.
-pub struct ImplicitMergedOperationDefinition<'a, E: ExecutableDocument> {
-    selection_set: MergedSelectionSet<'a, E>,
+pub struct ImplicitMergedOperationDefinition<'a> {
+    selection_set: MergedSelectionSet<'a>,
     /// This field is never used, but its presence ensures this will never be instantiated
     _never: Never,
 }
 
-impl<'a, E: ExecutableDocument> ImplicitOperationDefinition
-    for ImplicitMergedOperationDefinition<'a, E>
-{
-    type SelectionSet = MergedSelectionSet<'a, E>;
+impl<'a> ImplicitOperationDefinition for ImplicitMergedOperationDefinition<'a> {
+    type SelectionSet = MergedSelectionSet<'a>;
 
     fn selection_set(&self) -> &Self::SelectionSet {
         &self.selection_set

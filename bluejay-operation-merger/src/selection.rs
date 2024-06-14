@@ -1,18 +1,18 @@
 use crate::{fragment_spread::MergedFragmentSpread, MergedField, MergedInlineFragment};
-use bluejay_core::executable::{ExecutableDocument, Selection, SelectionReference};
+use bluejay_core::executable::{Selection, SelectionReference};
 use strum::EnumTryAs;
 
 #[derive(EnumTryAs)]
-pub enum MergedSelection<'a, E: ExecutableDocument> {
-    Field(MergedField<'a, E>),
-    InlineFragment(MergedInlineFragment<'a, E>),
-    FragmentSpread(MergedFragmentSpread<'a, E>),
+pub enum MergedSelection<'a> {
+    Field(MergedField<'a>),
+    InlineFragment(MergedInlineFragment<'a>),
+    FragmentSpread(MergedFragmentSpread<'a>),
 }
 
-impl<'a, E: ExecutableDocument + 'a> Selection for MergedSelection<'a, E> {
-    type Field = MergedField<'a, E>;
-    type InlineFragment = MergedInlineFragment<'a, E>;
-    type FragmentSpread = MergedFragmentSpread<'a, E>;
+impl<'a> Selection for MergedSelection<'a> {
+    type Field = MergedField<'a>;
+    type InlineFragment = MergedInlineFragment<'a>;
+    type FragmentSpread = MergedFragmentSpread<'a>;
 
     fn as_ref(&self) -> SelectionReference<'_, Self> {
         match self {
