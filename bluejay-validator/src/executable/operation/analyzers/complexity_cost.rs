@@ -156,6 +156,7 @@ impl<
     }
 }
 
+const MINIMUM_QUERY_COMPLEXITY: usize = 1;
 impl<
         'a,
         E: ExecutableDocument,
@@ -167,7 +168,7 @@ impl<
     type Output = usize;
 
     fn into_output(mut self) -> Self::Output {
-        self.result()
+        self.result().max(MINIMUM_QUERY_COMPLEXITY)
     }
 }
 
@@ -508,8 +509,8 @@ mod tests {
 
     #[test]
     fn basic_cost_metrics() {
-        check_complexity(r#"{ zeroScalar }"#, 0);
-        check_complexity(r#"{ zeroEnum }"#, 0);
+        check_complexity(r#"{ zeroScalar }"#, 1);
+        check_complexity(r#"{ zeroEnum }"#, 1);
         check_complexity(r#"{ oneObject { zeroScalar } }"#, 1);
         check_complexity(r#"{ oneInterface { zeroScalar } }"#, 1);
         check_complexity(r#"{ oneUnion { ...on BasicObject { zeroScalar } } }"#, 1);
@@ -517,8 +518,8 @@ mod tests {
 
     #[test]
     fn basic_list_cost_metrics() {
-        check_complexity(r#"{ zeroScalarList }"#, 0);
-        check_complexity(r#"{ zeroEnumList }"#, 0);
+        check_complexity(r#"{ zeroScalarList }"#, 1);
+        check_complexity(r#"{ zeroEnumList }"#, 1);
         check_complexity(r#"{ oneObjectList { zeroScalar } }"#, 1);
         check_complexity(r#"{ fiveObjectList { zeroScalar } }"#, 5);
     }
