@@ -1,7 +1,9 @@
 use ariadne::{Config, IndexType, Label, Report, ReportKind, Source};
+use itertools::Either;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
+use std::cell::RefCell;
 
 mod annotation;
 mod format_errors;
@@ -48,32 +50,33 @@ impl Error {
         document: &str,
         errors: impl IntoIterator<Item = E>,
     ) -> Vec<GraphQLError> {
-        let mut converter = SpanToLocation::new(document);
+        let converter = RefCell::new(SpanToLocation::new(document));
         errors
             .into_iter()
             .flat_map(|err| {
                 let err: Error = err.into();
                 if let Some(primary_annotation) = err.primary_annotation {
                     let (line, col) = converter
+                        .borrow_mut()
                         .convert(primary_annotation.span())
                         .unwrap_or((0, 0));
-                    vec![GraphQLError {
+                    Either::Left(std::iter::once(GraphQLError {
                         message: primary_annotation.message,
                         locations: vec![Location { line, col }],
-                    }]
+                    }))
                 } else {
-                    err.secondary_annotations
-                        .into_iter()
-                        .map(|secondary_annotation| {
+                    Either::Right(err.secondary_annotations.into_iter().map(
+                        |secondary_annotation| {
                             let (line, col) = converter
+                                .borrow_mut()
                                 .convert(secondary_annotation.span())
                                 .unwrap_or((0, 0));
                             GraphQLError {
                                 message: secondary_annotation.message,
                                 locations: vec![Location { line, col }],
                             }
-                        })
-                        .collect()
+                        },
+                    ))
                 }
             })
             .collect()
