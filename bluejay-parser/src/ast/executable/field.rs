@@ -1,3 +1,5 @@
+use bluejay_core::AsIter;
+
 use crate::ast::executable::SelectionSet;
 use crate::ast::{
     FromTokens, IsMatch, ParseError, Tokens, TryFromTokens, VariableArguments, VariableDirectives,
@@ -12,7 +14,7 @@ pub struct Field<'a> {
     alias: Option<Name<'a>>,
     name: Name<'a>,
     arguments: Option<VariableArguments<'a>>,
-    directives: VariableDirectives<'a>,
+    directives: Option<VariableDirectives<'a>>,
     selection_set: Option<SelectionSet<'a>>,
     span: Span,
 }
@@ -46,7 +48,7 @@ impl<'a> FromTokens<'a> for Field<'a> {
             alias,
             name,
             arguments,
-            directives,
+            directives: if directives.len() > 0 { Some(directives) } else { None },
             selection_set,
             span,
         })
@@ -98,8 +100,8 @@ impl<'a> bluejay_core::executable::Field for Field<'a> {
         self.arguments.as_ref()
     }
 
-    fn directives(&self) -> &Self::Directives {
-        &self.directives
+    fn directives(&self) -> Option<&Self::Directives> {
+        self.directives.as_ref()
     }
 
     fn selection_set(&self) -> Option<&Self::SelectionSet> {

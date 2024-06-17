@@ -38,7 +38,7 @@ impl<'a, O: OperationDefinition> OperationDefinitionReference<'a, O> {
 
     pub fn directives(&self) -> Option<&'a <<O as OperationDefinition>::ExplicitOperationDefinition as ExplicitOperationDefinition>::Directives>{
         match self {
-            Self::Explicit(eod) => Some(eod.directives()),
+            Self::Explicit(eod) => eod.directives(),
             Self::Implicit(_) => None,
         }
     }
@@ -59,7 +59,7 @@ pub trait ExplicitOperationDefinition {
     fn operation_type(&self) -> OperationType;
     fn name(&self) -> Option<&str>;
     fn variable_definitions(&self) -> Option<&Self::VariableDefinitions>;
-    fn directives(&self) -> &Self::Directives;
+    fn directives(&self) -> Option<&Self::Directives>;
     fn selection_set(&self) -> &Self::SelectionSet;
 }
 

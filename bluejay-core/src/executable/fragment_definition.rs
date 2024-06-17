@@ -7,6 +7,6 @@ pub trait FragmentDefinition: Indexable {
 
     fn name(&self) -> &str;
     fn type_condition(&self) -> &str;
-    fn directives(&self) -> &Self::Directives;
+    fn directives(&self) -> Option<&Self::Directives>;
     fn selection_set(&self) -> &Self::SelectionSet;
 }

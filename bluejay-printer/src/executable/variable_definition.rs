@@ -29,11 +29,15 @@ impl<'a, T: VariableDefinition> Display for VariableDefinitionPrinter<'a, T> {
         if let Some(default_value) = variable_definition.default_value() {
             write!(f, " = {}", ValuePrinter::new(default_value))?;
         }
-        write!(
-            f,
-            "{}",
-            DirectivesPrinter::new(variable_definition.directives())
-        )
+
+        if let Some(directives) =  variable_definition.directives() {
+            write!(
+                f,
+                "{}",
+                DirectivesPrinter::new(directives)
+            )?;
+        };
+        Ok(())
     }
 }
 

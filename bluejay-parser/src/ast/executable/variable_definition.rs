@@ -1,3 +1,5 @@
+use bluejay_core::AsIter;
+
 use crate::ast::{
     executable::VariableType, ConstDirectives, ConstValue, FromTokens, ParseError, Tokens, Variable,
 };
@@ -8,7 +10,7 @@ pub struct VariableDefinition<'a> {
     variable: Variable<'a>,
     r#type: VariableType<'a>,
     default_value: Option<ConstValue<'a>>,
-    directives: ConstDirectives<'a>,
+    directives: Option<ConstDirectives<'a>>,
 }
 
 impl<'a> FromTokens<'a> for VariableDefinition<'a> {
@@ -27,7 +29,7 @@ impl<'a> FromTokens<'a> for VariableDefinition<'a> {
             variable,
             r#type,
             default_value,
-            directives,
+            directives: if directives.len() > 0 { Some(directives) } else { None },
         })
     }
 }
@@ -59,8 +61,8 @@ impl<'a> bluejay_core::executable::VariableDefinition for VariableDefinition<'a>
         &self.r#type
     }
 
-    fn directives(&self) -> &Self::Directives {
-        &self.directives
+    fn directives(&self) -> Option<&Self::Directives> {
+        self.directives.as_ref()
     }
 
     fn default_value(&self) -> Option<&Self::Value> {

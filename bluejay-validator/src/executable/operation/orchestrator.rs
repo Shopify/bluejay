@@ -138,7 +138,10 @@ impl<
         owner_type: TypeDefinitionReference<'a, S::TypeDefinition>,
         included: bool,
     ) {
-        let included = included && self.evaluate_selection_inclusion(field.directives());
+        let mut included = included;
+        if let Some(directives) = field.directives() {
+            included = included && self.evaluate_selection_inclusion(directives);
+        }
 
         self.visitor
             .visit_field(field, field_definition, owner_type, included);
@@ -162,7 +165,10 @@ impl<
         scoped_type: TypeDefinitionReference<'a, S::TypeDefinition>,
         included: bool,
     ) {
-        let included = included && self.evaluate_selection_inclusion(inline_fragment.directives());
+        let mut included = included;
+        if let Some(directives) = inline_fragment.directives() {
+            included = included && self.evaluate_selection_inclusion(directives);
+        }
 
         let fragment_type = if let Some(type_condition) = inline_fragment.type_condition() {
             self.schema_definition.get_type_definition(type_condition)
@@ -176,7 +182,10 @@ impl<
     }
 
     fn visit_fragment_spread(&mut self, fragment_spread: &'a E::FragmentSpread, included: bool) {
-        let included = included && self.evaluate_selection_inclusion(fragment_spread.directives());
+        let mut included = included;
+        if let Some(directives) = fragment_spread.directives() {
+            included = included && self.evaluate_selection_inclusion(directives);
+        }
         if self
             .currently_spread_fragments
             .insert(fragment_spread.name())

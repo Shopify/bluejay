@@ -4,6 +4,7 @@ use crate::ast::{
 };
 use crate::lexical_token::Name;
 use crate::{HasSpan, Span};
+use bluejay_core::AsIter;
 use bluejay_core::{
     executable::{OperationDefinition as CoreOperationDefinition, OperationDefinitionReference},
     Indexable,
@@ -56,7 +57,7 @@ impl<'a> FromTokens<'a> for OperationDefinition<'a> {
                 operation_type,
                 name,
                 variable_definitions,
-                directives,
+                directives: if directives.len() > 0 { Some(directives) } else { None },
                 selection_set,
                 span,
             }))
@@ -90,7 +91,7 @@ pub struct ExplicitOperationDefinition<'a> {
     operation_type: OperationType,
     name: Option<Name<'a>>,
     variable_definitions: Option<VariableDefinitions<'a>>,
-    directives: VariableDirectives<'a>,
+    directives: Option<VariableDirectives<'a>>,
     selection_set: SelectionSet<'a>,
     span: Span,
 }
@@ -112,8 +113,8 @@ impl<'a> bluejay_core::executable::ExplicitOperationDefinition for ExplicitOpera
         self.variable_definitions.as_ref()
     }
 
-    fn directives(&self) -> &Self::Directives {
-        &self.directives
+    fn directives(&self) -> Option<&Self::Directives> {
+        self.directives.as_ref()
     }
 
     fn selection_set(&self) -> &Self::SelectionSet {

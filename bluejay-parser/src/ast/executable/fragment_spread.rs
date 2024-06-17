@@ -2,11 +2,12 @@ use crate::ast::executable::TypeCondition;
 use crate::ast::{FromTokens, IsMatch, ParseError, Tokens, VariableDirectives};
 use crate::lexical_token::{Name, PunctuatorType};
 use crate::{HasSpan, Span};
+use bluejay_core::AsIter;
 
 #[derive(Debug)]
 pub struct FragmentSpread<'a> {
     name: Name<'a>,
-    directives: VariableDirectives<'a>,
+    directives: Option<VariableDirectives<'a>>,
     span: Span,
 }
 
@@ -19,7 +20,7 @@ impl<'a> FromTokens<'a> for FragmentSpread<'a> {
         let span = ellipse_span.merge(name.span());
         Ok(Self {
             name,
-            directives,
+            directives: if directives.len() > 0 { Some(directives) } else { None },
             span,
         })
     }
@@ -48,8 +49,8 @@ impl<'a> bluejay_core::executable::FragmentSpread for FragmentSpread<'a> {
         self.name.as_ref()
     }
 
-    fn directives(&self) -> &Self::Directives {
-        &self.directives
+    fn directives(&self) -> Option<&Self::Directives> {
+        self.directives.as_ref()
     }
 }
 

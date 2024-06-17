@@ -103,11 +103,14 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, V: Visitor<'a, E, S>>
         if let Some(type_condition) = type_condition {
             self.visit_selection_set(fragment_definition.selection_set(), type_condition, &path);
         }
-        self.visit_variable_directives(
-            fragment_definition.directives(),
-            DirectiveLocation::FragmentDefinition,
-            &path,
-        );
+        if let Some(directives) = fragment_definition.directives() {
+            self.visit_variable_directives(
+                directives,
+                DirectiveLocation::FragmentDefinition,
+                &path,
+            );
+        }
+
         self.visitor.visit_fragment_definition(fragment_definition);
     }
 
@@ -148,7 +151,13 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, V: Visitor<'a, E, S>>
         path: &Path<'a, E>,
     ) {
         self.visitor.visit_field(field, field_definition, path);
-        self.visit_variable_directives(field.directives(), DirectiveLocation::Field, path);
+        if let Some(directives) = field.directives() {
+            self.visit_variable_directives(
+                directives,
+                DirectiveLocation::Field,
+                &path,
+            );
+        }
 
         if let Some((arguments, arguments_definition)) = field
             .arguments()
@@ -231,11 +240,13 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, V: Visitor<'a, E, S>>
         scoped_type: TypeDefinitionReference<'a, S::TypeDefinition>,
         path: &Path<'a, E>,
     ) {
-        self.visit_variable_directives(
-            inline_fragment.directives(),
-            DirectiveLocation::InlineFragment,
-            path,
-        );
+        if let Some(directives) = inline_fragment.directives() {
+            self.visit_variable_directives(
+                directives,
+                DirectiveLocation::InlineFragment,
+                &path,
+            );
+        }
 
         let fragment_type = if let Some(type_condition) = inline_fragment.type_condition() {
             self.schema_definition.get_type_definition(type_condition)
@@ -257,11 +268,14 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, V: Visitor<'a, E, S>>
         scoped_type: TypeDefinitionReference<'a, S::TypeDefinition>,
         path: &Path<'a, E>,
     ) {
-        self.visit_variable_directives(
-            fragment_spread.directives(),
-            DirectiveLocation::FragmentSpread,
-            path,
-        );
+        if let Some(directives) = fragment_spread.directives() {
+            self.visit_variable_directives(
+                directives,
+                DirectiveLocation::FragmentSpread,
+                &path,
+            );
+        }
+
         self.visitor
             .visit_fragment_spread(fragment_spread, scoped_type, path);
         // fragment will get checked when definition is visited
@@ -271,10 +285,12 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, V: Visitor<'a, E, S>>
         self.visitor
             .visit_variable_definitions(variable_definitions);
         variable_definitions.iter().for_each(|variable_definition| {
-            self.visit_const_directives(
-                variable_definition.directives(),
-                DirectiveLocation::VariableDefinition,
-            );
+            if let Some(directives) = variable_definition.directives() {
+                self.visit_const_directives(
+                    directives,
+                    DirectiveLocation::VariableDefinition,
+                );
+            }
             self.visitor.visit_variable_definition(variable_definition);
         });
     }
