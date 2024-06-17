@@ -20,7 +20,11 @@ impl<'a> FromTokens<'a> for FragmentSpread<'a> {
         let span = ellipse_span.merge(name.span());
         Ok(Self {
             name,
-            directives: if directives.len() > 0 { Some(directives) } else { None },
+            directives: if directives.len() > 0 {
+                Some(directives)
+            } else {
+                None
+            },
             span,
         })
     }

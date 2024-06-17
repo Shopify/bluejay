@@ -48,7 +48,11 @@ impl<'a> FromTokens<'a> for Field<'a> {
             alias,
             name,
             arguments,
-            directives: if directives.len() > 0 { Some(directives) } else { None },
+            directives: if directives.len() > 0 {
+                Some(directives)
+            } else {
+                None
+            },
             selection_set,
             span,
         })

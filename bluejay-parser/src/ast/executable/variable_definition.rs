@@ -29,7 +29,11 @@ impl<'a> FromTokens<'a> for VariableDefinition<'a> {
             variable,
             r#type,
             default_value,
-            directives: if directives.len() > 0 { Some(directives) } else { None },
+            directives: if directives.len() > 0 {
+                Some(directives)
+            } else {
+                None
+            },
         })
     }
 }

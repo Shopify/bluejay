@@ -28,11 +28,7 @@ impl<'a, I: InlineFragment> Display for InlineFragmentPrinter<'a, I> {
             write!(f, "on {}", type_condition)?;
         }
         if let Some(directives) = inline_fragment.directives() {
-            write!(
-                f,
-                "{}",
-                DirectivesPrinter::new(directives)
-            )?;
+            write!(f, "{}", DirectivesPrinter::new(directives))?;
         }
 
         write!(

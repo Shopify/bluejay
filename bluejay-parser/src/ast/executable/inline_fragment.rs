@@ -21,7 +21,11 @@ impl<'a> FromTokens<'a> for InlineFragment<'a> {
         let span = ellipse_span.merge(selection_set.span());
         Ok(Self {
             type_condition,
-            directives: if directives.len() > 0 { Some(directives) } else { None },
+            directives: if directives.len() > 0 {
+                Some(directives)
+            } else {
+                None
+            },
             selection_set,
             span,
         })

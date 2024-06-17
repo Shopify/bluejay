@@ -57,7 +57,11 @@ impl<'a> FromTokens<'a> for OperationDefinition<'a> {
                 operation_type,
                 name,
                 variable_definitions,
-                directives: if directives.len() > 0 { Some(directives) } else { None },
+                directives: if directives.len() > 0 {
+                    Some(directives)
+                } else {
+                    None
+                },
                 selection_set,
                 span,
             }))

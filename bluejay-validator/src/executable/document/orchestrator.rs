@@ -152,11 +152,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, V: Visitor<'a, E, S>>
     ) {
         self.visitor.visit_field(field, field_definition, path);
         if let Some(directives) = field.directives() {
-            self.visit_variable_directives(
-                directives,
-                DirectiveLocation::Field,
-                &path,
-            );
+            self.visit_variable_directives(directives, DirectiveLocation::Field, path);
         }
 
         if let Some((arguments, arguments_definition)) = field
@@ -241,11 +237,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, V: Visitor<'a, E, S>>
         path: &Path<'a, E>,
     ) {
         if let Some(directives) = inline_fragment.directives() {
-            self.visit_variable_directives(
-                directives,
-                DirectiveLocation::InlineFragment,
-                &path,
-            );
+            self.visit_variable_directives(directives, DirectiveLocation::InlineFragment, path);
         }
 
         let fragment_type = if let Some(type_condition) = inline_fragment.type_condition() {
@@ -269,11 +261,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, V: Visitor<'a, E, S>>
         path: &Path<'a, E>,
     ) {
         if let Some(directives) = fragment_spread.directives() {
-            self.visit_variable_directives(
-                directives,
-                DirectiveLocation::FragmentSpread,
-                &path,
-            );
+            self.visit_variable_directives(directives, DirectiveLocation::FragmentSpread, path);
         }
 
         self.visitor
@@ -286,10 +274,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, V: Visitor<'a, E, S>>
             .visit_variable_definitions(variable_definitions);
         variable_definitions.iter().for_each(|variable_definition| {
             if let Some(directives) = variable_definition.directives() {
-                self.visit_const_directives(
-                    directives,
-                    DirectiveLocation::VariableDefinition,
-                );
+                self.visit_const_directives(directives, DirectiveLocation::VariableDefinition);
             }
             self.visitor.visit_variable_definition(variable_definition);
         });

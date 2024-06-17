@@ -35,7 +35,11 @@ impl<'a> FromTokens<'a> for FragmentDefinition<'a> {
         Ok(Self {
             name,
             type_condition,
-            directives: if directives.len() > 0 { Some(directives) } else { None },
+            directives: if directives.len() > 0 {
+                Some(directives)
+            } else {
+                None
+            },
             selection_set,
             span,
         })

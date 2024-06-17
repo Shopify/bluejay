@@ -30,12 +30,8 @@ impl<'a, T: VariableDefinition> Display for VariableDefinitionPrinter<'a, T> {
             write!(f, " = {}", ValuePrinter::new(default_value))?;
         }
 
-        if let Some(directives) =  variable_definition.directives() {
-            write!(
-                f,
-                "{}",
-                DirectivesPrinter::new(directives)
-            )?;
+        if let Some(directives) = variable_definition.directives() {
+            write!(f, "{}", DirectivesPrinter::new(directives))?;
         };
         Ok(())
     }

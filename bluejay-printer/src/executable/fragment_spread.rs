@@ -32,12 +32,7 @@ impl<'a, T: FragmentSpread> Display for FragmentSpreadPrinter<'a, T> {
                 DirectivesPrinter::new(directives)
             )
         } else {
-            write!(
-                f,
-                "...{}",
-                fragment_spread.name(),
-            )
+            write!(f, "...{}", fragment_spread.name(),)
         }
-    
     }
 }
