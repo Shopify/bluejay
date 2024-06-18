@@ -90,7 +90,7 @@ impl<'a, const CONST: bool, V: Value<CONST>> std::cmp::PartialEq for ValueRefere
             Self::Null => matches!(other, Self::Null),
             Self::Enum(e) => matches!(other, Self::Enum(other_e) if e == other_e),
             Self::List(l) => {
-                matches!(other, Self::List(other_l) if Vec::from_iter(l.iter().map(Value::as_ref)) == Vec::from_iter(other_l.iter().map(Value::as_ref)))
+                matches!(other, Self::List(other_l) if itertools::equal(l.iter().map(Value::as_ref), other_l.iter().map(Value::as_ref)))
             }
             Self::Object(o) => matches!(other, Self::Object(other_o) if {
                 let lhs: HashMap<&str, _> = HashMap::from_iter(o.iter().map(|(k, v)| (k.as_ref(), v.as_ref())));
