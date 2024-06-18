@@ -1,4 +1,5 @@
 use crate::ast::executable::{SelectionSet, TypeCondition};
+use crate::ast::try_from_tokens::TryFromTokens;
 use crate::ast::{FromTokens, IsMatch, ParseError, Tokens, VariableDirectives};
 use crate::lexical_token::Name;
 use crate::{HasSpan, Span};
@@ -7,7 +8,7 @@ use crate::{HasSpan, Span};
 pub struct FragmentDefinition<'a> {
     name: Name<'a>,
     type_condition: TypeCondition<'a>,
-    directives: VariableDirectives<'a>,
+    directives: Option<VariableDirectives<'a>>,
     selection_set: SelectionSet<'a>,
     span: Span,
 }
@@ -27,7 +28,7 @@ impl<'a> FromTokens<'a> for FragmentDefinition<'a> {
             return Err(ParseError::UnexpectedToken { span: name.into() });
         }
         let type_condition = TypeCondition::from_tokens(tokens)?;
-        let directives = VariableDirectives::from_tokens(tokens)?;
+        let directives = VariableDirectives::try_from_tokens(tokens).transpose()?;
         let selection_set = SelectionSet::from_tokens(tokens)?;
         let span = fragment_identifier_span.merge(selection_set.span());
         Ok(Self {
@@ -74,8 +75,8 @@ impl<'a> bluejay_core::executable::FragmentDefinition for FragmentDefinition<'a>
         self.type_condition.named_type().as_ref()
     }
 
-    fn directives(&self) -> &Self::Directives {
-        &self.directives
+    fn directives(&self) -> Option<&Self::Directives> {
+        self.directives.as_ref()
     }
 
     fn selection_set(&self) -> &Self::SelectionSet {

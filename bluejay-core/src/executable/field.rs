@@ -9,7 +9,7 @@ pub trait Field {
     fn alias(&self) -> Option<&str>;
     fn name(&self) -> &str;
     fn arguments(&self) -> Option<&Self::Arguments>;
-    fn directives(&self) -> &Self::Directives;
+    fn directives(&self) -> Option<&Self::Directives>;
     fn selection_set(&self) -> Option<&Self::SelectionSet>;
 
     fn response_name(&self) -> &str {

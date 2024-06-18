@@ -1,5 +1,5 @@
 use crate::{directive::DirectivesPrinter, executable::SelectionSetPrinter, write_indent};
-use bluejay_core::{executable::InlineFragment, AsIter};
+use bluejay_core::executable::InlineFragment;
 use std::fmt::{Display, Formatter, Result};
 
 pub(crate) struct InlineFragmentPrinter<'a, I: InlineFragment> {
@@ -27,12 +27,8 @@ impl<'a, I: InlineFragment> Display for InlineFragmentPrinter<'a, I> {
         if let Some(type_condition) = inline_fragment.type_condition() {
             write!(f, "on {}", type_condition)?;
         }
-        if !inline_fragment.directives().is_empty() {
-            write!(
-                f,
-                "{}",
-                DirectivesPrinter::new(inline_fragment.directives())
-            )?;
+        if let Some(directives) = inline_fragment.directives() {
+            write!(f, "{}", DirectivesPrinter::new(directives))?;
         }
 
         write!(

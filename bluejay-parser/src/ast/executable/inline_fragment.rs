@@ -6,7 +6,7 @@ use crate::{HasSpan, Span};
 #[derive(Debug)]
 pub struct InlineFragment<'a> {
     type_condition: Option<TypeCondition<'a>>,
-    directives: VariableDirectives<'a>,
+    directives: Option<VariableDirectives<'a>>,
     selection_set: SelectionSet<'a>,
     span: Span,
 }
@@ -15,7 +15,7 @@ impl<'a> FromTokens<'a> for InlineFragment<'a> {
     fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
         let ellipse_span = tokens.expect_punctuator(PunctuatorType::Ellipse)?;
         let type_condition = TypeCondition::try_from_tokens(tokens).transpose()?;
-        let directives = VariableDirectives::from_tokens(tokens)?;
+        let directives = VariableDirectives::try_from_tokens(tokens).transpose()?;
         let selection_set = SelectionSet::from_tokens(tokens)?;
         let span = ellipse_span.merge(selection_set.span());
         Ok(Self {
@@ -57,8 +57,8 @@ impl<'a> bluejay_core::executable::InlineFragment for InlineFragment<'a> {
             .map(|tc| tc.named_type().as_ref())
     }
 
-    fn directives(&self) -> &Self::Directives {
-        &self.directives
+    fn directives(&self) -> Option<&Self::Directives> {
+        self.directives.as_ref()
     }
 
     fn selection_set(&self) -> &Self::SelectionSet {

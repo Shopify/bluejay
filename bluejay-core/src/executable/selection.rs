@@ -16,7 +16,7 @@ pub trait Selection: Sized {
 }
 
 impl<'a, S: Selection> SelectionReference<'a, S> {
-    pub fn directives(&self) -> &'a <S::Field as Field>::Directives {
+    pub fn directives(&self) -> Option<&'a <S::Field as Field>::Directives> {
         match self {
             Self::Field(f) => f.directives(),
             Self::FragmentSpread(fs) => fs.directives(),

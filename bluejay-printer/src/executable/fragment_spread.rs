@@ -24,11 +24,10 @@ impl<'a, T: FragmentSpread> Display for FragmentSpreadPrinter<'a, T> {
             indentation,
         } = *self;
         write_indent(f, indentation)?;
-        write!(
-            f,
-            "...{}{}",
-            fragment_spread.name(),
-            DirectivesPrinter::new(fragment_spread.directives())
-        )
+        write!(f, "...{}", fragment_spread.name())?;
+        if let Some(directives) = fragment_spread.directives() {
+            write!(f, "{}", DirectivesPrinter::new(directives))?;
+        };
+        Ok(())
     }
 }

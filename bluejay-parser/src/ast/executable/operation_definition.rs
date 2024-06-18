@@ -49,7 +49,7 @@ impl<'a> FromTokens<'a> for OperationDefinition<'a> {
         if let Some(operation_type) = OperationType::try_from_tokens(tokens).transpose()? {
             let name = tokens.next_if_name();
             let variable_definitions = VariableDefinitions::try_from_tokens(tokens).transpose()?;
-            let directives = VariableDirectives::from_tokens(tokens)?;
+            let directives = VariableDirectives::try_from_tokens(tokens).transpose()?;
             let selection_set = SelectionSet::from_tokens(tokens)?;
             let span = operation_type.span().merge(selection_set.span());
             Ok(Self::Explicit(ExplicitOperationDefinition {
@@ -90,7 +90,7 @@ pub struct ExplicitOperationDefinition<'a> {
     operation_type: OperationType,
     name: Option<Name<'a>>,
     variable_definitions: Option<VariableDefinitions<'a>>,
-    directives: VariableDirectives<'a>,
+    directives: Option<VariableDirectives<'a>>,
     selection_set: SelectionSet<'a>,
     span: Span,
 }
@@ -112,8 +112,8 @@ impl<'a> bluejay_core::executable::ExplicitOperationDefinition for ExplicitOpera
         self.variable_definitions.as_ref()
     }
 
-    fn directives(&self) -> &Self::Directives {
-        &self.directives
+    fn directives(&self) -> Option<&Self::Directives> {
+        self.directives.as_ref()
     }
 
     fn selection_set(&self) -> &Self::SelectionSet {

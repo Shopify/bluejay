@@ -1,4 +1,5 @@
 use crate::ast::executable::TypeCondition;
+use crate::ast::try_from_tokens::TryFromTokens;
 use crate::ast::{FromTokens, IsMatch, ParseError, Tokens, VariableDirectives};
 use crate::lexical_token::{Name, PunctuatorType};
 use crate::{HasSpan, Span};
@@ -6,7 +7,7 @@ use crate::{HasSpan, Span};
 #[derive(Debug)]
 pub struct FragmentSpread<'a> {
     name: Name<'a>,
-    directives: VariableDirectives<'a>,
+    directives: Option<VariableDirectives<'a>>,
     span: Span,
 }
 
@@ -15,7 +16,7 @@ impl<'a> FromTokens<'a> for FragmentSpread<'a> {
         let ellipse_span = tokens.expect_punctuator(PunctuatorType::Ellipse)?;
         let name = tokens.expect_name()?;
         assert_ne!(TypeCondition::ON, name.as_ref());
-        let directives = VariableDirectives::from_tokens(tokens)?;
+        let directives = VariableDirectives::try_from_tokens(tokens).transpose()?;
         let span = ellipse_span.merge(name.span());
         Ok(Self {
             name,
@@ -48,8 +49,8 @@ impl<'a> bluejay_core::executable::FragmentSpread for FragmentSpread<'a> {
         self.name.as_ref()
     }
 
-    fn directives(&self) -> &Self::Directives {
-        &self.directives
+    fn directives(&self) -> Option<&Self::Directives> {
+        self.directives.as_ref()
     }
 }
 

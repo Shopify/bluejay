@@ -27,7 +27,9 @@ impl<'a, F: Field> Display for FieldPrinter<'a, F> {
         if let Some(arguments) = field.arguments() {
             write!(f, "{}", ArgumentsPrinter::new(arguments))?;
         }
-        write!(f, "{}", DirectivesPrinter::new(field.directives()))?;
+        if let Some(directives) = field.directives() {
+            write!(f, "{}", DirectivesPrinter::new(directives))?;
+        }
         if let Some(selection_set) = field.selection_set() {
             write!(
                 f,

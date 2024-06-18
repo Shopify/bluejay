@@ -4,5 +4,5 @@ pub trait FragmentSpread {
     type Directives: VariableDirectives;
 
     fn name(&self) -> &str;
-    fn directives(&self) -> &Self::Directives;
+    fn directives(&self) -> Option<&Self::Directives>;
 }

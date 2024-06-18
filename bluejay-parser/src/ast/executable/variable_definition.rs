@@ -1,3 +1,4 @@
+use crate::ast::try_from_tokens::TryFromTokens;
 use crate::ast::{
     executable::VariableType, ConstDirectives, ConstValue, FromTokens, ParseError, Tokens, Variable,
 };
@@ -8,7 +9,7 @@ pub struct VariableDefinition<'a> {
     variable: Variable<'a>,
     r#type: VariableType<'a>,
     default_value: Option<ConstValue<'a>>,
-    directives: ConstDirectives<'a>,
+    directives: Option<ConstDirectives<'a>>,
 }
 
 impl<'a> FromTokens<'a> for VariableDefinition<'a> {
@@ -22,7 +23,7 @@ impl<'a> FromTokens<'a> for VariableDefinition<'a> {
             } else {
                 None
             };
-        let directives = ConstDirectives::from_tokens(tokens)?;
+        let directives = ConstDirectives::try_from_tokens(tokens).transpose()?;
         Ok(Self {
             variable,
             r#type,
@@ -59,8 +60,8 @@ impl<'a> bluejay_core::executable::VariableDefinition for VariableDefinition<'a>
         &self.r#type
     }
 
-    fn directives(&self) -> &Self::Directives {
-        &self.directives
+    fn directives(&self) -> Option<&Self::Directives> {
+        self.directives.as_ref()
     }
 
     fn default_value(&self) -> Option<&Self::Value> {

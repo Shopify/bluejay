@@ -12,7 +12,7 @@ pub struct Field<'a> {
     alias: Option<Name<'a>>,
     name: Name<'a>,
     arguments: Option<VariableArguments<'a>>,
-    directives: VariableDirectives<'a>,
+    directives: Option<VariableDirectives<'a>>,
     selection_set: Option<SelectionSet<'a>>,
     span: Span,
 }
@@ -29,12 +29,13 @@ impl<'a> FromTokens<'a> for Field<'a> {
             (None, tokens.expect_name()?)
         };
         let arguments = VariableArguments::try_from_tokens(tokens).transpose()?;
-        let directives = VariableDirectives::from_tokens(tokens)?;
+        let directives = VariableDirectives::try_from_tokens(tokens).transpose()?;
         let selection_set = SelectionSet::try_from_tokens(tokens).transpose()?;
         let start_span = alias.as_ref().unwrap_or(&name).span();
+        let directives_span = directives.as_ref().and_then(|directives| directives.span());
         let end_span = if let Some(selection_set) = &selection_set {
             selection_set.span()
-        } else if let Some(directive_span) = directives.span() {
+        } else if let Some(directive_span) = directives_span {
             directive_span
         } else if let Some(arguments) = &arguments {
             arguments.span()
@@ -98,8 +99,8 @@ impl<'a> bluejay_core::executable::Field for Field<'a> {
         self.arguments.as_ref()
     }
 
-    fn directives(&self) -> &Self::Directives {
-        &self.directives
+    fn directives(&self) -> Option<&Self::Directives> {
+        self.directives.as_ref()
     }
 
     fn selection_set(&self) -> Option<&Self::SelectionSet> {

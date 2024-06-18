@@ -8,7 +8,7 @@ pub trait VariableDefinition {
 
     fn variable(&self) -> &str;
     fn r#type(&self) -> &Self::VariableType;
-    fn directives(&self) -> &Self::Directives;
+    fn directives(&self) -> Option<&Self::Directives>;
     fn default_value(&self) -> Option<&Self::Value>;
 
     fn is_required(&self) -> bool {
