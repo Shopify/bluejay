@@ -1,5 +1,4 @@
-use bluejay_core::AsIter;
-
+use crate::ast::try_from_tokens::TryFromTokens;
 use crate::ast::{
     executable::VariableType, ConstDirectives, ConstValue, FromTokens, ParseError, Tokens, Variable,
 };
@@ -24,16 +23,12 @@ impl<'a> FromTokens<'a> for VariableDefinition<'a> {
             } else {
                 None
             };
-        let directives = ConstDirectives::from_tokens(tokens)?;
+        let directives = ConstDirectives::try_from_tokens(tokens).transpose()?;
         Ok(Self {
             variable,
             r#type,
             default_value,
-            directives: if directives.len() > 0 {
-                Some(directives)
-            } else {
-                None
-            },
+            directives,
         })
     }
 }

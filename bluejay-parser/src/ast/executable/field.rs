@@ -1,5 +1,3 @@
-use bluejay_core::AsIter;
-
 use crate::ast::executable::SelectionSet;
 use crate::ast::{
     FromTokens, IsMatch, ParseError, Tokens, TryFromTokens, VariableArguments, VariableDirectives,
@@ -31,12 +29,13 @@ impl<'a> FromTokens<'a> for Field<'a> {
             (None, tokens.expect_name()?)
         };
         let arguments = VariableArguments::try_from_tokens(tokens).transpose()?;
-        let directives = VariableDirectives::from_tokens(tokens)?;
+        let directives = VariableDirectives::try_from_tokens(tokens).transpose()?;
         let selection_set = SelectionSet::try_from_tokens(tokens).transpose()?;
         let start_span = alias.as_ref().unwrap_or(&name).span();
+        let directives_span = directives.as_ref().and_then(|directives| directives.span());
         let end_span = if let Some(selection_set) = &selection_set {
             selection_set.span()
-        } else if let Some(directive_span) = directives.span() {
+        } else if let Some(directive_span) = directives_span {
             directive_span
         } else if let Some(arguments) = &arguments {
             arguments.span()
@@ -48,11 +47,7 @@ impl<'a> FromTokens<'a> for Field<'a> {
             alias,
             name,
             arguments,
-            directives: if directives.len() > 0 {
-                Some(directives)
-            } else {
-                None
-            },
+            directives,
             selection_set,
             span,
         })

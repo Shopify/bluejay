@@ -2,7 +2,6 @@ use crate::ast::executable::{SelectionSet, TypeCondition};
 use crate::ast::{FromTokens, IsMatch, ParseError, Tokens, TryFromTokens, VariableDirectives};
 use crate::lexical_token::PunctuatorType;
 use crate::{HasSpan, Span};
-use bluejay_core::AsIter;
 
 #[derive(Debug)]
 pub struct InlineFragment<'a> {
@@ -16,16 +15,12 @@ impl<'a> FromTokens<'a> for InlineFragment<'a> {
     fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
         let ellipse_span = tokens.expect_punctuator(PunctuatorType::Ellipse)?;
         let type_condition = TypeCondition::try_from_tokens(tokens).transpose()?;
-        let directives = VariableDirectives::from_tokens(tokens)?;
+        let directives = VariableDirectives::try_from_tokens(tokens).transpose()?;
         let selection_set = SelectionSet::from_tokens(tokens)?;
         let span = ellipse_span.merge(selection_set.span());
         Ok(Self {
             type_condition,
-            directives: if directives.len() > 0 {
-                Some(directives)
-            } else {
-                None
-            },
+            directives,
             selection_set,
             span,
         })

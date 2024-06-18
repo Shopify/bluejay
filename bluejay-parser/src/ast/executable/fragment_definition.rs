@@ -1,6 +1,5 @@
-use bluejay_core::AsIter;
-
 use crate::ast::executable::{SelectionSet, TypeCondition};
+use crate::ast::try_from_tokens::TryFromTokens;
 use crate::ast::{FromTokens, IsMatch, ParseError, Tokens, VariableDirectives};
 use crate::lexical_token::Name;
 use crate::{HasSpan, Span};
@@ -29,17 +28,13 @@ impl<'a> FromTokens<'a> for FragmentDefinition<'a> {
             return Err(ParseError::UnexpectedToken { span: name.into() });
         }
         let type_condition = TypeCondition::from_tokens(tokens)?;
-        let directives = VariableDirectives::from_tokens(tokens)?;
+        let directives = VariableDirectives::try_from_tokens(tokens).transpose()?;
         let selection_set = SelectionSet::from_tokens(tokens)?;
         let span = fragment_identifier_span.merge(selection_set.span());
         Ok(Self {
             name,
             type_condition,
-            directives: if directives.len() > 0 {
-                Some(directives)
-            } else {
-                None
-            },
+            directives,
             selection_set,
             span,
         })

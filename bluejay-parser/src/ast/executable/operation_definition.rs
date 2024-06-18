@@ -4,7 +4,6 @@ use crate::ast::{
 };
 use crate::lexical_token::Name;
 use crate::{HasSpan, Span};
-use bluejay_core::AsIter;
 use bluejay_core::{
     executable::{OperationDefinition as CoreOperationDefinition, OperationDefinitionReference},
     Indexable,
@@ -50,18 +49,14 @@ impl<'a> FromTokens<'a> for OperationDefinition<'a> {
         if let Some(operation_type) = OperationType::try_from_tokens(tokens).transpose()? {
             let name = tokens.next_if_name();
             let variable_definitions = VariableDefinitions::try_from_tokens(tokens).transpose()?;
-            let directives = VariableDirectives::from_tokens(tokens)?;
+            let directives = VariableDirectives::try_from_tokens(tokens).transpose()?;
             let selection_set = SelectionSet::from_tokens(tokens)?;
             let span = operation_type.span().merge(selection_set.span());
             Ok(Self::Explicit(ExplicitOperationDefinition {
                 operation_type,
                 name,
                 variable_definitions,
-                directives: if directives.len() > 0 {
-                    Some(directives)
-                } else {
-                    None
-                },
+                directives,
                 selection_set,
                 span,
             }))
