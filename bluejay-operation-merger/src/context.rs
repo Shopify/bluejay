@@ -10,6 +10,7 @@ pub(crate) struct Context<'a, E: ExecutableDocument> {
     executable_document: &'a E,
     user_provided_context: &'a HashMap<String, String>,
     variable_name_mapping: HashMap<&'a str, Cow<'a, str>>,
+    variable_replacements: HashMap<&'a str, &'a str>,
 }
 
 impl<'a, E: ExecutableDocument> Context<'a, E> {
@@ -36,11 +37,29 @@ impl<'a, E: ExecutableDocument> Context<'a, E> {
                     })
                     .collect()
             });
+        let variable_replacements = operation_definition
+            .as_ref()
+            .variable_definitions()
+            .map_or_else(HashMap::new, |variable_definitions| {
+                variable_definitions
+                    .iter()
+                    .filter_map(|variable_definition| {
+                        Self::replacement_value_for_variable_definition(
+                            variable_definition,
+                            user_provided_context).map(|replacement_value| 
+                        (
+                            variable_definition.variable(),
+                            replacement_value,
+                        ))
+                    })
+                    .collect()
+            });
         Self {
             id_generator,
             executable_document,
             user_provided_context,
             variable_name_mapping,
+            variable_replacements,
         }
     }
 
@@ -92,10 +111,42 @@ impl<'a, E: ExecutableDocument> Context<'a, E> {
         }
     }
 
+    fn replacement_value_for_variable_definition(
+        variable_definition: &'a E::VariableDefinition,
+        user_provided_context: &'a HashMap<String, String>,
+    ) -> Option<&'a str> {
+        variable_definition
+            .directives()
+            .iter()
+            .find_map(|directive| {
+                if directive.name() == "replaceOnMerge" {
+                    directive.arguments().and_then(|arguments| {
+                        arguments.iter().find_map(|arg| {
+                            if arg.name() == "contextKey" {
+                                if let Some(context_key) = arg.value().as_ref().as_string() {
+                                    user_provided_context.get(*context_key).map(String::as_str)
+                                } else {
+                                    None
+                                }
+                            } else {
+                                None
+                            }
+                        })
+                    })
+                } else {
+                    None
+                }
+            })
+    }
+
     pub(crate) fn variable_name(&self, variable: &'a str) -> Cow<'a, str> {
         self.variable_name_mapping
             .get(variable)
             .cloned()
             .unwrap_or(Cow::Borrowed(variable))
+    }
+
+    pub(crate) fn variable_replacement(&self, variable: &'a str) -> Option<&'a str> {
+        self.variable_replacements.get(variable).copied()
     }
 }

@@ -41,6 +41,12 @@ impl<'a, E: ExecutableDocument + 'a> MergedVariableDefinitions<'a, E> {
         variable_definitions
             .iter()
             .try_for_each(|variable_definition| {
+                // if variable replacement is defined, this variable definition has the `@replaceOnMerge`
+                // directive and should be ignored
+                if context.variable_replacement(variable_definition.variable()).is_some() {
+                    return Ok(());
+                }
+
                 let name = context.variable_name(variable_definition.variable());
 
                 EmptyDirectives::ensure_empty::<true, E>(

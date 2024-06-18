@@ -43,7 +43,12 @@ impl<'a, const CONST: bool> MergedValue<'a, CONST> {
         context: &Context<'a, E>,
     ) -> Self {
         match value.as_ref() {
-            ValueReference::Variable(v) => Self::Variable(context.variable_name(v.name())),
+            ValueReference::Variable(v) => {
+                context.variable_replacement(v.name()).map_or_else(
+                    || Self::Variable(context.variable_name(v.name())),
+                    Self::String,
+                )
+            },
             ValueReference::Integer(i) => Self::Integer(i),
             ValueReference::Float(f) => Self::Float(f),
             ValueReference::String(s) => Self::String(s),
