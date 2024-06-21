@@ -25,7 +25,7 @@ impl<'a, I: InlineFragment> Display for InlineFragmentPrinter<'a, I> {
         write_indent(f, indentation)?;
         write!(f, "...")?;
         if let Some(type_condition) = inline_fragment.type_condition() {
-            write!(f, "on {}", type_condition)?;
+            write!(f, " on {}", type_condition)?;
         }
         if let Some(directives) = inline_fragment.directives() {
             write!(f, "{}", DirectivesPrinter::new(directives))?;
