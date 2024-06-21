@@ -1,6 +1,6 @@
 query MyQuery {
   foo {
-    ...on Foo {
+    ... on Foo {
       bar {
         baz
       }
