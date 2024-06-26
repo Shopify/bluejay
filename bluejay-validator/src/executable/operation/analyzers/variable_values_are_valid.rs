@@ -24,15 +24,15 @@ pub struct VariableValuesAreValid<
     errors: Vec<VariableValueError<'a, E, VV>>,
 }
 
-impl<'a, E: ExecutableDocument, S: SchemaDefinition, VV: VariableValues, U> Visitor<'a, E, S, VV, U>
-    for VariableValuesAreValid<'a, E, S, VV>
+impl<'a, E: ExecutableDocument, S: SchemaDefinition, VV: VariableValues, U: Copy>
+    Visitor<'a, E, S, VV, U> for VariableValuesAreValid<'a, E, S, VV>
 {
     fn new(
         _: &'a E::OperationDefinition,
         schema_definition: &'a S,
         variable_values: &'a VV,
         cache: &'a Cache<'a, E, S>,
-        _: &'a U,
+        _: U,
     ) -> Self {
         Self {
             executable_document: PhantomData,
@@ -84,7 +84,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, VV: VariableValues, U> Visi
     }
 }
 
-impl<'a, E: ExecutableDocument, S: SchemaDefinition, VV: VariableValues, U>
+impl<'a, E: ExecutableDocument, S: SchemaDefinition, VV: VariableValues, U: Copy>
     Analyzer<'a, E, S, VV, U> for VariableValuesAreValid<'a, E, S, VV>
 {
     type Output = Vec<VariableValueError<'a, E, VV>>;
@@ -188,7 +188,7 @@ mod tests {
                     .as_object()
                     .expect("Variables must be an object"),
                 &cache,
-                &(),
+                (),
             )
             .unwrap()
             .into_iter()

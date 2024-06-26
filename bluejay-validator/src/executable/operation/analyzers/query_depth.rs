@@ -11,15 +11,15 @@ pub struct QueryDepth {
     max_depth: usize,
 }
 
-impl<'a, E: ExecutableDocument, S: SchemaDefinition, VV: VariableValues, U> Visitor<'a, E, S, VV, U>
-    for QueryDepth
+impl<'a, E: ExecutableDocument, S: SchemaDefinition, VV: VariableValues, U: Copy>
+    Visitor<'a, E, S, VV, U> for QueryDepth
 {
     fn new(
         _: &'a E::OperationDefinition,
         _s: &'a S,
         _: &'a VV,
         _: &'a Cache<'a, E, S>,
-        _: &'a U,
+        _: U,
     ) -> Self {
         Self {
             current_depth: 0,
@@ -53,7 +53,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, VV: VariableValues, U> Visi
     }
 }
 
-impl<'a, E: ExecutableDocument, S: SchemaDefinition, VV: VariableValues, U>
+impl<'a, E: ExecutableDocument, S: SchemaDefinition, VV: VariableValues, U: Copy>
     Analyzer<'a, E, S, VV, U> for QueryDepth
 {
     type Output = usize;
@@ -123,7 +123,7 @@ mod tests {
             operation_name,
             variables,
             &cache,
-            &(),
+            (),
         )
         .unwrap();
 

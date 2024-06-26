@@ -22,7 +22,7 @@ pub struct Orchestrator<
     E: ExecutableDocument,
     S: SchemaDefinition,
     VV: VariableValues,
-    U,
+    U: Copy,
     V: Visitor<'a, E, S, VV, U>,
 > {
     schema_definition: &'a S,
@@ -39,7 +39,7 @@ impl<
         E: ExecutableDocument,
         S: SchemaDefinition,
         VV: VariableValues,
-        U,
+        U: Copy,
         V: Visitor<'a, E, S, VV, U>,
     > Orchestrator<'a, E, S, VV, U, V>
 {
@@ -52,7 +52,7 @@ impl<
         schema_definition: &'a S,
         variable_values: &'a VV,
         cache: &'a Cache<'a, E, S>,
-        extra_info: &'a U,
+        extra_info: U,
     ) -> Self {
         Self {
             schema_definition,
@@ -263,7 +263,7 @@ impl<
         operation_name: Option<&'b str>,
         variable_values: &'a VV,
         cache: &'a Cache<'a, E, S>,
-        extra_info: &'a U,
+        extra_info: U,
     ) -> Result<<V as Analyzer<'a, E, S, VV, U>>::Output, OperationResolutionError<'b>>
     where
         V: Analyzer<'a, E, S, VV, U>,

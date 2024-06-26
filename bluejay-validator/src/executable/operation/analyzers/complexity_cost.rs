@@ -40,7 +40,7 @@ impl<
         S: SchemaDefinition,
         V: VariableValues,
         C: CostComputer<'a, E, S, V>,
-        U,
+        U: Copy,
     > Visitor<'a, E, S, V, U> for ComplexityCost<'a, E, S, V, C>
 {
     fn new(
@@ -48,7 +48,7 @@ impl<
         schema_definition: &'a S,
         variable_values: &'a V,
         _: &'a Cache<'a, E, S>,
-        _: &'a U,
+        _: U,
     ) -> Self {
         let mut scopes_arena = Arena::new();
         let scopes_stack = vec![Some(scopes_arena.add(ComplexityScope::default()))];
@@ -164,7 +164,7 @@ impl<
         S: SchemaDefinition,
         V: VariableValues,
         C: CostComputer<'a, E, S, V>,
-        U,
+        U: Copy,
     > Analyzer<'a, E, S, V, U> for ComplexityCost<'a, E, S, V, C>
 {
     type Output = usize;
@@ -468,7 +468,7 @@ mod tests {
             operation_name,
             variables,
             &cache,
-            &(),
+            (),
         )
         .unwrap();
 

@@ -31,7 +31,7 @@ fn test_combine_executable_rules() {
         None,
         &Map::new(),
         &cache,
-        &(),
+        (),
     )
     .unwrap();
     assert_eq!(complexity_cost, 1);

@@ -2,13 +2,13 @@ use crate::executable::{operation::VariableValues, Cache};
 use bluejay_core::definition::{SchemaDefinition, TypeDefinitionReference};
 use bluejay_core::executable::ExecutableDocument;
 
-pub trait Visitor<'a, E: ExecutableDocument, S: SchemaDefinition, V: VariableValues, U> {
+pub trait Visitor<'a, E: ExecutableDocument, S: SchemaDefinition, V: VariableValues, U: Copy> {
     fn new(
         operation_definition: &'a E::OperationDefinition,
         schema_definition: &'a S,
         variable_values: &'a V,
         cache: &'a Cache<'a, E, S>,
-        extra_info: &'a U,
+        extra_info: U,
     ) -> Self;
 
     /// Visits the field. If a field is part of a fragment definition, it will be visited
@@ -52,13 +52,13 @@ macro_rules! impl_visitor {
     ($n:literal) => {
         seq_macro::seq!(N in 0..$n {
             #[warn(clippy::missing_trait_methods)]
-            impl<'a, E: ExecutableDocument, S: SchemaDefinition, V: VariableValues, U, #(T~N: Visitor<'a, E, S, V, U>,)*> Visitor<'a, E, S, V, U> for (#(T~N,)*) {
+            impl<'a, E: ExecutableDocument, S: SchemaDefinition, V: VariableValues, U: Copy, #(T~N: Visitor<'a, E, S, V, U>,)*> Visitor<'a, E, S, V, U> for (#(T~N,)*) {
                 fn new(
                     operation_definition: &'a E::OperationDefinition,
                     schema_definition: &'a S,
                     variable_values: &'a V,
                     cache: &'a Cache<'a, E, S>,
-                    extra_info: &'a U,
+                    extra_info: U,
                 ) -> Self {
                     (
                         #(T~N::new(
