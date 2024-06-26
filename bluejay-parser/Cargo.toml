@@ -24,7 +24,7 @@ insta = { version = "1.28", features = ["glob"] }
 self_cell = "1.0.3"
 
 [[bench]]
-name = "parse_github_schema"
+name = "parse"
 harness = false
 
 [features]
