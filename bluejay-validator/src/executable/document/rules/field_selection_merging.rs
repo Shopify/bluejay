@@ -283,7 +283,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> FieldSelectionMer
                         .push(FieldContext {
                             field,
                             field_definition,
-                            parent_type: parent_type.to_owned(),
+                            parent_type,
                             parent_fragments: parent_fragments.to_owned(),
                         });
                 }
@@ -297,17 +297,18 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> FieldSelectionMer
                         if let Some(scoped_type) =
                             self.schema_definition.get_type_definition(type_condition)
                         {
-                            let mut parent_fragments = parent_fragments.clone();
-                            parent_fragments.insert(fragment_name);
                             if self.selection_set_valid(
                                 fragment_definition.selection_set(),
                                 parent_type,
                             ) {
+                                let mut new_parent_fragments = HashSet::new();
+                                new_parent_fragments.clone_from(parent_fragments);
+                                new_parent_fragments.insert(fragment_name);
                                 self.visit_selections_for_fields(
                                     fragment_definition.selection_set().iter(),
                                     fields,
                                     scoped_type,
-                                    &parent_fragments,
+                                    &new_parent_fragments,
                                 );
                             }
                         }
