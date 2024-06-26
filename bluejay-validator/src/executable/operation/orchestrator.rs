@@ -14,15 +14,16 @@ use bluejay_core::{
     ValueReference,
 };
 use bluejay_core::{Argument, AsIter, Directive, OperationType, Value};
-use std::borrow::Cow;
 use std::collections::HashSet;
+use std::{borrow::Cow, marker::PhantomData};
 
 pub struct Orchestrator<
     'a,
     E: ExecutableDocument,
     S: SchemaDefinition,
     VV: VariableValues,
-    V: Visitor<'a, E, S, VV>,
+    U,
+    V: Visitor<'a, E, S, VV, U>,
 > {
     schema_definition: &'a S,
     operation_definition: &'a E::OperationDefinition,
@@ -30,6 +31,7 @@ pub struct Orchestrator<
     visitor: V,
     cache: &'a Cache<'a, E, S>,
     currently_spread_fragments: HashSet<&'a str>,
+    extra_info: PhantomData<U>,
 }
 
 impl<
@@ -37,8 +39,9 @@ impl<
         E: ExecutableDocument,
         S: SchemaDefinition,
         VV: VariableValues,
-        V: Visitor<'a, E, S, VV>,
-    > Orchestrator<'a, E, S, VV, V>
+        U,
+        V: Visitor<'a, E, S, VV, U>,
+    > Orchestrator<'a, E, S, VV, U, V>
 {
     const SKIP_DIRECTIVE_NAME: &'static str = "skip";
     const INCLUDE_DIRECTIVE_NAME: &'static str = "include";
@@ -49,6 +52,7 @@ impl<
         schema_definition: &'a S,
         variable_values: &'a VV,
         cache: &'a Cache<'a, E, S>,
+        extra_info: &'a U,
     ) -> Self {
         Self {
             schema_definition,
@@ -59,9 +63,11 @@ impl<
                 schema_definition,
                 variable_values,
                 cache,
+                extra_info,
             ),
             cache,
             currently_spread_fragments: HashSet::new(),
+            extra_info: PhantomData,
         }
     }
 
@@ -257,9 +263,10 @@ impl<
         operation_name: Option<&'b str>,
         variable_values: &'a VV,
         cache: &'a Cache<'a, E, S>,
-    ) -> Result<<V as Analyzer<'a, E, S, VV>>::Output, OperationResolutionError<'b>>
+        extra_info: &'a U,
+    ) -> Result<<V as Analyzer<'a, E, S, VV, U>>::Output, OperationResolutionError<'b>>
     where
-        V: Analyzer<'a, E, S, VV>,
+        V: Analyzer<'a, E, S, VV, U>,
     {
         let operation_definition = match operation_name {
             Some(operation_name) => executable_document
@@ -288,6 +295,7 @@ impl<
             schema_definition,
             variable_values,
             cache,
+            extra_info,
         );
         instance.visit();
         Ok(instance.visitor.into_output())

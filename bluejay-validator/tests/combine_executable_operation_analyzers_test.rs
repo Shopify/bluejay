@@ -13,7 +13,7 @@ use bluejay_validator::executable::{
 use serde_json::Map;
 
 type CustomAnalyzer<'a, E, S, V> =
-    Orchestrator<'a, E, S, V, (ComplexityCost<'a, E, S, V>, QueryDepth)>;
+    Orchestrator<'a, E, S, V, (), (ComplexityCost<'a, E, S, V>, QueryDepth)>;
 
 #[test]
 fn test_combine_executable_rules() {
@@ -31,6 +31,7 @@ fn test_combine_executable_rules() {
         None,
         &Map::new(),
         &cache,
+        &(),
     )
     .unwrap();
     assert_eq!(complexity_cost, 1);

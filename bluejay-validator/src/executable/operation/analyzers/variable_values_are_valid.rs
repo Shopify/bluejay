@@ -24,7 +24,7 @@ pub struct VariableValuesAreValid<
     errors: Vec<VariableValueError<'a, E, VV>>,
 }
 
-impl<'a, E: ExecutableDocument, S: SchemaDefinition, VV: VariableValues> Visitor<'a, E, S, VV>
+impl<'a, E: ExecutableDocument, S: SchemaDefinition, VV: VariableValues, U> Visitor<'a, E, S, VV, U>
     for VariableValuesAreValid<'a, E, S, VV>
 {
     fn new(
@@ -32,6 +32,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, VV: VariableValues> Visitor
         schema_definition: &'a S,
         variable_values: &'a VV,
         cache: &'a Cache<'a, E, S>,
+        _: &'a U,
     ) -> Self {
         Self {
             executable_document: PhantomData,
@@ -83,8 +84,8 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, VV: VariableValues> Visitor
     }
 }
 
-impl<'a, E: ExecutableDocument, S: SchemaDefinition, VV: VariableValues> Analyzer<'a, E, S, VV>
-    for VariableValuesAreValid<'a, E, S, VV>
+impl<'a, E: ExecutableDocument, S: SchemaDefinition, VV: VariableValues, U>
+    Analyzer<'a, E, S, VV, U> for VariableValuesAreValid<'a, E, S, VV>
 {
     type Output = Vec<VariableValueError<'a, E, VV>>;
 
@@ -179,7 +180,7 @@ mod tests {
         let executable_document = ExecutableDocument::parse(source).unwrap();
         let cache = Cache::new(&executable_document, &*TEST_SCHEMA_DEFINITION);
         f(
-            Orchestrator::<_, _, _, VariableValuesAreValid<_, _, _>>::analyze(
+            Orchestrator::<_, _, _, (), VariableValuesAreValid<_, _, _>>::analyze(
                 &executable_document,
                 &*TEST_SCHEMA_DEFINITION,
                 operation_name,
@@ -187,6 +188,7 @@ mod tests {
                     .as_object()
                     .expect("Variables must be an object"),
                 &cache,
+                &(),
             )
             .unwrap()
             .into_iter()
