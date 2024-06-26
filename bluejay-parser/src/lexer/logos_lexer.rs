@@ -56,7 +56,7 @@ pub(crate) enum Token<'a> {
     Pipe,
 
     // Name
-    #[regex(r"[a-zA-Z_]\w*")]
+    #[regex(r"[_a-zA-Z][_0-9a-zA-Z]*")]
     Name(&'a str),
 
     // IntValue
