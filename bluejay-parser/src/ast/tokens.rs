@@ -1,6 +1,8 @@
 use crate::ast::parse_error::ParseError;
 use crate::lexer::{LexError, Lexer};
-use crate::lexical_token::{FloatValue, IntValue, LexicalToken, Name, PunctuatorType, StringValue};
+use crate::lexical_token::{
+    BooleanValue, FloatValue, IntValue, LexicalToken, Name, PunctuatorType, StringValue,
+};
 use crate::{HasSpan, Span};
 use std::collections::VecDeque;
 
@@ -13,6 +15,7 @@ pub trait Tokens<'a>: Iterator<Item = LexicalToken<'a>> {
     fn next_if_punctuator(&mut self, punctuator_type: PunctuatorType) -> Option<Span>;
     fn next_if_int_value(&mut self) -> Option<IntValue>;
     fn next_if_float_value(&mut self) -> Option<FloatValue>;
+    fn next_if_boolean_value(&mut self) -> Option<BooleanValue>;
     fn next_if_string_value(&mut self) -> Option<StringValue<'a>>;
     fn next_if_name(&mut self) -> Option<Name<'a>>;
     fn next_if_name_matches(&mut self, name: &str) -> Option<Span>;
@@ -132,6 +135,11 @@ impl<'a, T: Lexer<'a>> LexerTokens<'a, T> {
             .then(|| self.next().unwrap().into_float_value().unwrap())
     }
 
+    pub fn next_if_boolean_value(&mut self) -> Option<BooleanValue> {
+        matches!(self.peek_next(), Some(LexicalToken::BooleanValue(_)))
+            .then(|| self.next().unwrap().into_boolean_value().unwrap())
+    }
+
     pub fn next_if_string_value(&mut self) -> Option<StringValue<'a>> {
         matches!(self.peek_next(), Some(LexicalToken::StringValue(_)))
             .then(|| self.next().unwrap().into_string_value().unwrap())
@@ -193,6 +201,10 @@ impl<'a, T: Lexer<'a>> Tokens<'a> for LexerTokens<'a, T> {
 
     fn unexpected_eof(&self) -> ParseError {
         self.unexpected_eof()
+    }
+
+    fn next_if_boolean_value(&mut self) -> Option<BooleanValue> {
+        self.next_if_boolean_value()
     }
 
     fn unexpected_token(&mut self) -> ParseError {

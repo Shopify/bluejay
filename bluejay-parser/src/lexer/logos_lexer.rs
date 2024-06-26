@@ -1,6 +1,6 @@
 use crate::lexer::{LexError, Lexer};
 use crate::lexical_token::{
-    FloatValue, IntValue, LexicalToken, Name, Punctuator, PunctuatorType, StringValue,
+    BooleanValue, FloatValue, IntValue, LexicalToken, Name, Punctuator, PunctuatorType, StringValue,
 };
 use crate::Span;
 use logos::Logos;
@@ -59,6 +59,10 @@ pub(crate) enum Token<'a> {
     #[regex(r"[_a-zA-Z][_0-9a-zA-Z]*")]
     Name(&'a str),
 
+    // BooleanValue
+    #[regex(r"(true|false)", parse_boolean)]
+    BooleanValue(bool),
+
     // IntValue
     #[regex(r"(?&intpart)", parse_integer)]
     IntValue(i32),
@@ -98,6 +102,13 @@ fn validate_number_no_trailing_name_start<'a>(
     } else {
         Err(LexError::UnrecognizedToken)
     }
+}
+
+fn parse_boolean<'a>(lexer: &mut logos::Lexer<'a, Token<'a>>) -> Result<bool, LexError> {
+    lexer
+        .slice()
+        .parse()
+        .map_err(|_| LexError::UnrecognizedToken)
 }
 
 fn parse_integer<'a>(lexer: &mut logos::Lexer<'a, Token<'a>>) -> Result<i32, LexError> {
@@ -156,6 +167,9 @@ impl<'a> Iterator for LogosLexer<'a> {
                         Token::IntValue(val) => LexicalToken::IntValue(IntValue::new(val, span)),
                         Token::FloatValue(val) => {
                             LexicalToken::FloatValue(FloatValue::new(val, span))
+                        }
+                        Token::BooleanValue(val) => {
+                            LexicalToken::BooleanValue(BooleanValue::new(val, span))
                         }
                         Token::StringValue(val) => {
                             LexicalToken::StringValue(StringValue::new(val, span))
