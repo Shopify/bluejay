@@ -12,13 +12,13 @@ pub use int_value::IntValue;
 pub use name::Name;
 pub use punctuator::{Punctuator, PunctuatorType};
 pub use string_value::StringValue;
-pub use variable_name::VariableName;
+pub use variable_name::Variable;
 
 #[derive(PartialEq, Debug, EnumAsInner)]
 pub enum LexicalToken<'a> {
     Punctuator(Punctuator),
     Name(Name<'a>),
-    VariableName(VariableName<'a>),
+    VariableName(Variable<'a>),
     IntValue(IntValue),
     FloatValue(FloatValue),
     StringValue(StringValue<'a>),

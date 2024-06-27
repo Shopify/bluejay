@@ -1,5 +1,7 @@
-use crate::ast::{FromTokens, ParseError, Tokens, Variable};
-use crate::lexical_token::{FloatValue, IntValue, LexicalToken, Name, PunctuatorType, StringValue};
+use crate::ast::{FromTokens, ParseError, Tokens};
+use crate::lexical_token::{
+    FloatValue, IntValue, LexicalToken, Name, PunctuatorType, StringValue, Variable,
+};
 use crate::{HasSpan, Span};
 use bluejay_core::{
     AsIter, ListValue as CoreListValue, ObjectValue as CoreObjectValue, Value as CoreValue,
@@ -61,8 +63,7 @@ impl<'a, const CONST: bool> FromTokens<'a> for Value<'a, CONST> {
                 if CONST {
                     Err(ParseError::UnexpectedToken { span: name.into() })
                 } else {
-                    let span = name.span().to_owned();
-                    Ok(Self::Variable(Variable::new(name, span)))
+                    Ok(Self::Variable(name))
                 }
             }
             Some(LexicalToken::Punctuator(p))

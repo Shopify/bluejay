@@ -3,7 +3,7 @@ use crate::Span;
 use std::cmp::PartialEq;
 
 #[derive(PartialEq, Debug, Clone)]
-pub struct VariableName<'a> {
+pub struct Variable<'a> {
     /// A value representing the name of the variable
     /// stripped of the dollar sign.
     value: &'a str,
@@ -12,7 +12,11 @@ pub struct VariableName<'a> {
     span: Span,
 }
 
-impl<'a> VariableName<'a> {
+impl<'a> Variable<'a> {
+    pub fn name(&self) -> &'a str {
+        self.value
+    }
+
     pub fn as_str(&self) -> &'a str {
         self.value
     }
@@ -22,26 +26,32 @@ impl<'a> VariableName<'a> {
     }
 }
 
-impl<'a> HasSpan for VariableName<'a> {
+impl<'a> HasSpan for Variable<'a> {
     fn span(&self) -> &Span {
         &self.span
     }
 }
 
-impl<'a> From<VariableName<'a>> for Span {
-    fn from(value: VariableName<'a>) -> Self {
+impl<'a> From<Variable<'a>> for Span {
+    fn from(value: Variable<'a>) -> Self {
         value.span
     }
 }
 
-impl<'a> AsRef<str> for VariableName<'a> {
+impl<'a> AsRef<str> for Variable<'a> {
     fn as_ref(&self) -> &str {
         self.value
     }
 }
 
-impl<'a> PartialEq<str> for VariableName<'a> {
+impl<'a> PartialEq<str> for Variable<'a> {
     fn eq(&self, other: &str) -> bool {
         self.as_ref() == other
+    }
+}
+
+impl<'a> bluejay_core::Variable for Variable<'a> {
+    fn name(&self) -> &str {
+        self.value
     }
 }
