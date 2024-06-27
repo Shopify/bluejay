@@ -14,12 +14,14 @@ pub struct FragmentDefinition<'a> {
 }
 
 impl<'a> IsMatch<'a> for FragmentDefinition<'a> {
+    #[inline]
     fn is_match(tokens: &mut impl Tokens<'a>) -> bool {
         tokens.peek_name_matches(0, "fragment")
     }
 }
 
 impl<'a> FromTokens<'a> for FragmentDefinition<'a> {
+    #[inline]
     fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
         let fragment_identifier_span = tokens.expect_name_value("fragment")?;
         let name = tokens.expect_name()?;

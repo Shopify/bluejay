@@ -20,6 +20,7 @@ impl From<&OperationType> for bluejay_core::OperationType {
 }
 
 impl<'a> FromTokens<'a> for OperationType {
+    #[inline]
     fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
         tokens.expect_name().and_then(|name| {
             match bluejay_core::OperationType::try_from(name.as_str()) {
@@ -37,6 +38,7 @@ impl<'a> FromTokens<'a> for OperationType {
 }
 
 impl<'a> IsMatch<'a> for OperationType {
+    #[inline]
     fn is_match(tokens: &mut impl Tokens<'a>) -> bool {
         bluejay_core::OperationType::POSSIBLE_VALUES
             .iter()

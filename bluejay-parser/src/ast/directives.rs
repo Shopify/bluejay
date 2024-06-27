@@ -14,6 +14,7 @@ pub type ConstDirectives<'a> = Directives<'a, true>;
 pub type VariableDirectives<'a> = Directives<'a, false>;
 
 impl<'a, const CONST: bool> FromTokens<'a> for Directives<'a, CONST> {
+    #[inline]
     fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
         let mut directives: Vec<Directive<'a, CONST>> = Vec::new();
         while let Some(directive) = Directive::try_from_tokens(tokens) {
@@ -29,6 +30,7 @@ impl<'a, const CONST: bool> FromTokens<'a> for Directives<'a, CONST> {
 }
 
 impl<'a, const CONST: bool> IsMatch<'a> for Directives<'a, CONST> {
+    #[inline]
     fn is_match(tokens: &mut impl Tokens<'a>) -> bool {
         Directive::<'a, CONST>::is_match(tokens)
     }

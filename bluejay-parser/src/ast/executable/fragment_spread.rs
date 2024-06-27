@@ -12,6 +12,7 @@ pub struct FragmentSpread<'a> {
 }
 
 impl<'a> FromTokens<'a> for FragmentSpread<'a> {
+    #[inline]
     fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
         let ellipse_span = tokens.expect_punctuator(PunctuatorType::Ellipse)?;
         let name = tokens.expect_name()?;
@@ -27,6 +28,7 @@ impl<'a> FromTokens<'a> for FragmentSpread<'a> {
 }
 
 impl<'a> IsMatch<'a> for FragmentSpread<'a> {
+    #[inline]
     fn is_match(tokens: &mut impl Tokens<'a>) -> bool {
         tokens.peek_punctuator_matches(0, PunctuatorType::Ellipse)
             && tokens

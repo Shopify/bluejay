@@ -33,12 +33,14 @@ impl<'a> ExecutableDocument<'a> {
         &self.fragment_definitions
     }
 
+    #[inline]
     fn is_empty(&self) -> bool {
         self.operation_definitions.is_empty() && self.fragment_definitions.is_empty()
     }
 }
 
 impl<'a> Parse<'a> for ExecutableDocument<'a> {
+    #[inline]
     fn parse_from_tokens(mut tokens: impl Tokens<'a>) -> Result<Self, Vec<Error>> {
         let mut instance: Self = Self::new(Vec::new(), Vec::new());
         let mut errors = Vec::new();

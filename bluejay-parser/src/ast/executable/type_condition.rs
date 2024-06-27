@@ -7,6 +7,7 @@ pub struct TypeCondition<'a> {
 }
 
 impl<'a> FromTokens<'a> for TypeCondition<'a> {
+    #[inline]
     fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
         tokens.expect_name_value(Self::ON)?;
         let named_type = tokens.expect_name()?;
@@ -15,6 +16,7 @@ impl<'a> FromTokens<'a> for TypeCondition<'a> {
 }
 
 impl<'a> IsMatch<'a> for TypeCondition<'a> {
+    #[inline]
     fn is_match(tokens: &mut impl Tokens<'a>) -> bool {
         tokens.peek_name_matches(0, Self::ON)
     }

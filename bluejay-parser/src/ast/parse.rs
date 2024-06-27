@@ -8,10 +8,12 @@ pub struct ParseOptions {
 }
 
 pub trait Parse<'a>: Sized {
+    #[inline]
     fn parse(s: &'a str) -> Result<Self, Vec<Error>> {
         Self::parse_with_options(s, Default::default())
     }
 
+    #[inline]
     fn parse_with_options(s: &'a str, options: ParseOptions) -> Result<Self, Vec<Error>> {
         let lexer =
             LogosLexer::new(s).with_graphql_ruby_compatibility(options.graphql_ruby_compatibility);
@@ -24,6 +26,7 @@ pub trait Parse<'a>: Sized {
 }
 
 impl<'a, T: FromTokens<'a>> Parse<'a> for T {
+    #[inline]
     fn parse_from_tokens(mut tokens: impl Tokens<'a>) -> Result<Self, Vec<Error>> {
         let result = T::from_tokens(&mut tokens);
 

@@ -25,6 +25,7 @@ impl<'a> CoreSelection for Selection<'a> {
 }
 
 impl<'a> FromTokens<'a> for Selection<'a> {
+    #[inline]
     fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
         if Field::is_match(tokens) {
             Field::from_tokens(tokens).map(Self::Field)
@@ -39,6 +40,7 @@ impl<'a> FromTokens<'a> for Selection<'a> {
 }
 
 impl<'a> IsMatch<'a> for Selection<'a> {
+    #[inline]
     fn is_match(tokens: &mut impl Tokens<'a>) -> bool {
         Field::is_match(tokens) || tokens.peek_punctuator_matches(0, PunctuatorType::Ellipse)
     }
