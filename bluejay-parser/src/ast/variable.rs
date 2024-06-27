@@ -1,24 +1,23 @@
 use crate::ast::{FromTokens, IsMatch, ParseError, Tokens};
-use crate::lexical_token::{Name, PunctuatorType};
+use crate::lexical_token::VariableName;
 use crate::{HasSpan, Span};
 
 #[derive(Debug)]
 pub struct Variable<'a> {
-    name: Name<'a>,
+    name: VariableName<'a>,
     span: Span,
 }
 
 impl<'a> IsMatch<'a> for Variable<'a> {
     fn is_match(tokens: &mut impl Tokens<'a>) -> bool {
-        tokens.peek_punctuator_matches(0, PunctuatorType::Dollar)
+        tokens.peek_variable_name(0)
     }
 }
 
 impl<'a> FromTokens<'a> for Variable<'a> {
     fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
-        let dollar_span = tokens.expect_punctuator(PunctuatorType::Dollar)?;
-        let name = tokens.expect_name()?;
-        let span = dollar_span.merge(name.span());
+        let name = tokens.expect_variable_name()?;
+        let span = name.span().to_owned();
         Ok(Self { name, span })
     }
 }
