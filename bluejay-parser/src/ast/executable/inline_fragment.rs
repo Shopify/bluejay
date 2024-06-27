@@ -12,6 +12,7 @@ pub struct InlineFragment<'a> {
 }
 
 impl<'a> FromTokens<'a> for InlineFragment<'a> {
+    #[inline]
     fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
         let ellipse_span = tokens.expect_punctuator(PunctuatorType::Ellipse)?;
         let type_condition = TypeCondition::try_from_tokens(tokens).transpose()?;
@@ -28,6 +29,7 @@ impl<'a> FromTokens<'a> for InlineFragment<'a> {
 }
 
 impl<'a> IsMatch<'a> for InlineFragment<'a> {
+    #[inline]
     fn is_match(tokens: &mut impl Tokens<'a>) -> bool {
         tokens.peek_punctuator_matches(0, PunctuatorType::Ellipse)
             && tokens

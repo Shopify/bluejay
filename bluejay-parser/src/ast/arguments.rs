@@ -12,6 +12,7 @@ pub struct Arguments<'a, const CONST: bool> {
 pub type VariableArguments<'a> = Arguments<'a, false>;
 
 impl<'a, const CONST: bool> FromTokens<'a> for Arguments<'a, CONST> {
+    #[inline]
     fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
         let open_span = tokens.expect_punctuator(PunctuatorType::OpenRoundBracket)?;
         let mut arguments: Vec<Argument<CONST>> = Vec::new();
@@ -27,6 +28,7 @@ impl<'a, const CONST: bool> FromTokens<'a> for Arguments<'a, CONST> {
 }
 
 impl<'a, const CONST: bool> IsMatch<'a> for Arguments<'a, CONST> {
+    #[inline]
     fn is_match(tokens: &mut impl Tokens<'a>) -> bool {
         tokens.peek_punctuator_matches(0, PunctuatorType::OpenRoundBracket)
     }

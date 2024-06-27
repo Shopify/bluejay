@@ -11,6 +11,7 @@ pub struct VariableDefinitions<'a> {
 }
 
 impl<'a> FromTokens<'a> for VariableDefinitions<'a> {
+    #[inline]
     fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
         let open_span = tokens.expect_punctuator(PunctuatorType::OpenRoundBracket)?;
         let mut variable_definitions: Vec<VariableDefinition> = Vec::new();
@@ -29,6 +30,7 @@ impl<'a> FromTokens<'a> for VariableDefinitions<'a> {
 }
 
 impl<'a> IsMatch<'a> for VariableDefinitions<'a> {
+    #[inline]
     fn is_match(tokens: &mut impl Tokens<'a>) -> bool {
         tokens.peek_punctuator_matches(0, PunctuatorType::OpenRoundBracket)
     }

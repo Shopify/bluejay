@@ -11,6 +11,7 @@ pub struct SelectionSet<'a> {
 }
 
 impl<'a> FromTokens<'a> for SelectionSet<'a> {
+    #[inline]
     fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
         let open_span = tokens.expect_punctuator(PunctuatorType::OpenBrace)?;
         let mut selections: Vec<Selection> = Vec::new();
@@ -26,6 +27,7 @@ impl<'a> FromTokens<'a> for SelectionSet<'a> {
 }
 
 impl<'a> IsMatch<'a> for SelectionSet<'a> {
+    #[inline]
     fn is_match(tokens: &mut impl Tokens<'a>) -> bool {
         tokens.peek_punctuator_matches(0, PunctuatorType::OpenBrace)
     }

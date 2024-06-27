@@ -23,6 +23,7 @@ pub type ConstArgument<'a> = Argument<'a, true>;
 pub type VariableArgument<'a> = Argument<'a, false>;
 
 impl<'a, const CONST: bool> FromTokens<'a> for Argument<'a, CONST> {
+    #[inline]
     fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
         let name = tokens.expect_name()?;
         tokens.expect_punctuator(PunctuatorType::Colon)?;

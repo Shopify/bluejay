@@ -80,6 +80,7 @@ pub(crate) enum Token<'a> {
     BlockStringValue(Cow<'a, str>),
 }
 
+#[inline]
 fn validate_number_no_trailing_name_start<'a>(
     lexer: &mut logos::Lexer<'a, Token<'a>>,
 ) -> Result<(), LexError> {
@@ -102,6 +103,7 @@ fn validate_number_no_trailing_name_start<'a>(
     }
 }
 
+#[inline]
 fn parse_integer<'a>(lexer: &mut logos::Lexer<'a, Token<'a>>) -> Result<i32, LexError> {
     validate_number_no_trailing_name_start(lexer).and_then(|_| {
         lexer
@@ -111,6 +113,7 @@ fn parse_integer<'a>(lexer: &mut logos::Lexer<'a, Token<'a>>) -> Result<i32, Lex
     })
 }
 
+#[inline]
 fn parse_float<'a>(lexer: &mut logos::Lexer<'a, Token<'a>>) -> Result<f64, LexError> {
     validate_number_no_trailing_name_start(lexer).and_then(|_| {
         lexer
@@ -126,6 +129,7 @@ pub struct LogosLexer<'a>(logos::Lexer<'a, Token<'a>>);
 impl<'a> Iterator for LogosLexer<'a> {
     type Item = Result<LexicalToken<'a>, (LexError, Span)>;
 
+    #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         self.0.next().map(|result| {
             result
@@ -174,6 +178,7 @@ impl<'a> Iterator for LogosLexer<'a> {
     }
 }
 
+#[inline]
 fn punctuator<'a>(pt: PunctuatorType, span: Span) -> LexicalToken<'a> {
     LexicalToken::Punctuator(Punctuator::new(pt, span))
 }

@@ -42,6 +42,7 @@ impl<'a> CoreVariableType for VariableType<'a> {
 }
 
 impl<'a> FromTokens<'a> for VariableType<'a> {
+    #[inline]
     fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
         if let Some(open_span) = tokens.next_if_punctuator(PunctuatorType::OpenSquareBracket) {
             let inner = Box::new(VariableType::from_tokens(tokens)?);

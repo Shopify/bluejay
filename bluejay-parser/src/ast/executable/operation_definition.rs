@@ -45,6 +45,7 @@ impl<'a> CoreOperationDefinition for OperationDefinition<'a> {
 }
 
 impl<'a> FromTokens<'a> for OperationDefinition<'a> {
+    #[inline]
     fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
         if let Some(operation_type) = OperationType::try_from_tokens(tokens).transpose()? {
             let name = tokens.next_if_name();
@@ -71,6 +72,7 @@ impl<'a> FromTokens<'a> for OperationDefinition<'a> {
 }
 
 impl<'a> IsMatch<'a> for OperationDefinition<'a> {
+    #[inline]
     fn is_match(tokens: &mut impl Tokens<'a>) -> bool {
         OperationType::is_match(tokens) || SelectionSet::is_match(tokens)
     }

@@ -7,14 +7,17 @@ use std::ops::Add;
 pub struct Span(logos::Span);
 
 impl Span {
+    #[inline]
     pub(crate) fn new(s: logos::Span) -> Self {
         Self(s)
     }
 
+    #[inline]
     pub fn byte_range(&self) -> &std::ops::Range<usize> {
         &self.0
     }
 
+    #[inline]
     pub fn merge(&self, other: &Self) -> Self {
         Self(min(self.0.start, other.0.start)..max(self.0.end, other.0.end))
     }
@@ -38,6 +41,7 @@ impl ariadne::Span for Span {
 }
 
 impl From<logos::Span> for Span {
+    #[inline]
     fn from(value: logos::Span) -> Self {
         Self(value)
     }

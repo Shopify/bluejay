@@ -13,12 +13,14 @@ pub type ConstDirective<'a> = Directive<'a, true>;
 pub type VariableDirective<'a> = Directive<'a, false>;
 
 impl<'a, const CONST: bool> IsMatch<'a> for Directive<'a, CONST> {
+    #[inline]
     fn is_match(tokens: &mut impl Tokens<'a>) -> bool {
         tokens.peek_punctuator_matches(0, PunctuatorType::At)
     }
 }
 
 impl<'a, const CONST: bool> FromTokens<'a> for Directive<'a, CONST> {
+    #[inline]
     fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
         let at_span = tokens.expect_punctuator(PunctuatorType::At)?;
         let name = tokens.expect_name()?;

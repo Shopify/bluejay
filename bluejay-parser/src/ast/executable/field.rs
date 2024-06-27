@@ -18,6 +18,7 @@ pub struct Field<'a> {
 }
 
 impl<'a> FromTokens<'a> for Field<'a> {
+    #[inline]
     fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
         let has_alias = tokens.peek_punctuator_matches(1, PunctuatorType::Colon);
         let (alias, name) = if has_alias {
@@ -55,6 +56,7 @@ impl<'a> FromTokens<'a> for Field<'a> {
 }
 
 impl<'a> IsMatch<'a> for Field<'a> {
+    #[inline]
     fn is_match(tokens: &mut impl Tokens<'a>) -> bool {
         tokens.peek_name(0).is_some()
     }

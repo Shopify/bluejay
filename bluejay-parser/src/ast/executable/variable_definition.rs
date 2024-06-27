@@ -13,6 +13,7 @@ pub struct VariableDefinition<'a> {
 }
 
 impl<'a> FromTokens<'a> for VariableDefinition<'a> {
+    #[inline]
     fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
         let variable = tokens.expect_variable()?;
         tokens.expect_punctuator(PunctuatorType::Colon)?;
