@@ -60,7 +60,7 @@ impl<'a> FromTokens<'a> for VariableType<'a> {
             let is_required = bang_span.is_some();
             let span = bang_span
                 .map(|bang_span| name.span().merge(&bang_span))
-                .unwrap_or(name.span().clone());
+                .unwrap_or_else(|| name.span().clone());
             Ok(Self::Named {
                 name,
                 is_required,
