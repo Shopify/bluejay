@@ -1,6 +1,6 @@
 use crate::lexer::{LexError, Lexer};
 use crate::lexical_token::{
-    FloatValue, IntValue, LexicalToken, Name, Punctuator, PunctuatorType, StringValue,
+    FloatValue, IntValue, LexicalToken, Name, Punctuator, PunctuatorType, StringValue, VariableName,
 };
 use crate::Span;
 use logos::Logos;
@@ -28,8 +28,6 @@ pub(crate) enum Token<'a> {
     // Punctuators
     #[token("!")]
     Bang,
-    #[token("$")]
-    Dollar,
     #[token("&")]
     Ampersand,
     #[token("(")]
@@ -54,6 +52,10 @@ pub(crate) enum Token<'a> {
     CloseBrace,
     #[token("|")]
     Pipe,
+
+    // VariableName
+    #[regex(r"\$[_a-zA-Z][_0-9a-zA-Z]*", |lex| &lex.slice()[1..])]
+    VariableName(&'a str),
 
     // Name
     #[regex(r"[_a-zA-Z][_0-9a-zA-Z]*")]
@@ -131,7 +133,6 @@ impl<'a> Iterator for LogosLexer<'a> {
                     let span = Span::new(self.0.span());
                     match token {
                         Token::Bang => punctuator(PunctuatorType::Bang, span),
-                        Token::Dollar => punctuator(PunctuatorType::Dollar, span),
                         Token::Ampersand => punctuator(PunctuatorType::Ampersand, span),
                         Token::OpenRoundBracket => {
                             punctuator(PunctuatorType::OpenRoundBracket, span)
@@ -152,6 +153,9 @@ impl<'a> Iterator for LogosLexer<'a> {
                         Token::OpenBrace => punctuator(PunctuatorType::OpenBrace, span),
                         Token::CloseBrace => punctuator(PunctuatorType::CloseBrace, span),
                         Token::Pipe => punctuator(PunctuatorType::Pipe, span),
+                        Token::VariableName(s) => {
+                            LexicalToken::VariableName(VariableName::new(s, span))
+                        }
                         Token::Name(s) => LexicalToken::Name(Name::new(s, span)),
                         Token::IntValue(val) => LexicalToken::IntValue(IntValue::new(val, span)),
                         Token::FloatValue(val) => {

@@ -5,7 +5,6 @@ use std::fmt;
 #[derive(PartialEq, Debug, Clone, Copy)]
 pub enum PunctuatorType {
     Bang,
-    Dollar,
     Ampersand,
     OpenRoundBracket,
     CloseRoundBracket,
@@ -52,7 +51,6 @@ impl fmt::Display for PunctuatorType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let s = match self {
             Self::Bang => "!",
-            Self::Dollar => "$",
             Self::Ampersand => "&",
             Self::OpenRoundBracket => "(",
             Self::CloseRoundBracket => ")",
