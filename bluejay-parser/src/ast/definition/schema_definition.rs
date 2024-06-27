@@ -13,7 +13,8 @@ use bluejay_core::definition::{
     TypeDefinition as CoreTypeDefinition, TypeDefinitionReference,
 };
 use bluejay_core::AsIter;
-use std::collections::{btree_map::Values, BTreeMap, HashMap};
+use fnv::FnvHashMap;
+use std::collections::{btree_map::Values, BTreeMap};
 
 #[derive(Debug)]
 pub struct SchemaDefinition<'a, C: Context = DefaultContext> {
@@ -24,7 +25,7 @@ pub struct SchemaDefinition<'a, C: Context = DefaultContext> {
     mutation: Option<&'a ObjectTypeDefinition<'a, C>>,
     subscription: Option<&'a ObjectTypeDefinition<'a, C>>,
     directives: Option<&'a Directives<'a, C>>,
-    interface_implementors: HashMap<&'a str, Vec<&'a ObjectTypeDefinition<'a, C>>>,
+    interface_implementors: FnvHashMap<&'a str, Vec<&'a ObjectTypeDefinition<'a, C>>>,
 }
 
 impl<'a, C: Context> SchemaDefinition<'a, C> {
@@ -52,9 +53,9 @@ impl<'a, C: Context> SchemaDefinition<'a, C> {
 
     fn interface_implementors(
         type_definitions: &BTreeMap<&'a str, &'a TypeDefinition<'a, C>>,
-    ) -> HashMap<&'a str, Vec<&'a ObjectTypeDefinition<'a, C>>> {
+    ) -> FnvHashMap<&'a str, Vec<&'a ObjectTypeDefinition<'a, C>>> {
         type_definitions.values().fold(
-            HashMap::new(),
+            FnvHashMap::default(),
             |mut interface_implementors, &type_definition| {
                 if let TypeDefinition::Object(otd) = type_definition {
                     if let Some(interface_implementations) = otd.interface_implementations() {

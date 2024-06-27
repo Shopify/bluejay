@@ -17,6 +17,7 @@ serde = { version = "1.0.203", optional = true }
 bluejay-core = { version = "0.1.0", path = "../bluejay-core" }
 strum = { version = "0.26", features = ["derive"] }
 itertools = "0.13.0"
+fnv = "1.0.7"
 
 [dev-dependencies]
 criterion = "0.5"

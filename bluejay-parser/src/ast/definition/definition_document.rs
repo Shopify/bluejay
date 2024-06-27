@@ -11,8 +11,9 @@ use bluejay_core::definition::{prelude::*, HasDirectives};
 use bluejay_core::{
     AsIter, BuiltinScalarDefinition, Directive as _, IntoEnumIterator, OperationType,
 };
+use fnv::{FnvHashMap, FnvHashSet};
 use std::collections::btree_map::Entry;
-use std::collections::{BTreeMap, HashMap, HashSet};
+use std::collections::BTreeMap;
 
 mod definition_document_error;
 use definition_document_error::DefinitionDocumentError;
@@ -187,8 +188,8 @@ impl<'a, C: Context> DefinitionDocument<'a, C> {
     /// Inserts builtin scalars only for type names that have not already been parsed
     /// to allow overriding of builtin scalars
     fn insert_builtin_scalar_definitions(&mut self) {
-        let mut builtin_scalars_by_name: HashMap<&str, BuiltinScalarDefinition> =
-            HashMap::from_iter(BuiltinScalarDefinition::iter().map(|bstd| (bstd.name(), bstd)));
+        let mut builtin_scalars_by_name: FnvHashMap<&str, BuiltinScalarDefinition> =
+            FnvHashMap::from_iter(BuiltinScalarDefinition::iter().map(|bstd| (bstd.name(), bstd)));
 
         self.type_definitions.iter().for_each(|td| {
             builtin_scalars_by_name.remove(td.name());
@@ -204,11 +205,13 @@ impl<'a, C: Context> DefinitionDocument<'a, C> {
     /// Inserts builtin directive definitions only for type names that have not already been parsed
     /// to allow optional explicit definition of builtin definitions (since they are optional)
     fn insert_builtin_directive_definitions(&mut self) {
-        let mut builtin_directive_definitions_by_name: HashMap<&str, BuiltinDirectiveDefinition> =
-            HashMap::from_iter(
-                BuiltinDirectiveDefinition::iter()
-                    .map(|bdd: BuiltinDirectiveDefinition| (bdd.into(), bdd)),
-            );
+        let mut builtin_directive_definitions_by_name: FnvHashMap<
+            &str,
+            BuiltinDirectiveDefinition,
+        > = FnvHashMap::from_iter(
+            BuiltinDirectiveDefinition::iter()
+                .map(|bdd: BuiltinDirectiveDefinition| (bdd.into(), bdd)),
+        );
 
         self.directive_definitions().iter().for_each(|dd| {
             builtin_directive_definitions_by_name.remove(dd.name());
@@ -222,7 +225,7 @@ impl<'a, C: Context> DefinitionDocument<'a, C> {
     }
 
     fn add_query_root_fields(&mut self) {
-        let explicit_query_roots: HashSet<&str> = HashSet::from_iter(
+        let explicit_query_roots: FnvHashSet<&str> = FnvHashSet::from_iter(
             self.schema_definitions
                 .iter()
                 .flat_map(|schema_definition| {

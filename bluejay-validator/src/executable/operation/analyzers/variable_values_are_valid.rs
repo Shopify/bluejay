@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use fnv::FnvHashMap;
 use std::marker::PhantomData;
 
 use crate::{
@@ -19,7 +19,7 @@ pub struct VariableValuesAreValid<
 > {
     executable_document: PhantomData<E>,
     schema_definition: &'a S,
-    indexed_variable_values: HashMap<&'a str, (&'a VV::Key, &'a VV::Value)>,
+    indexed_variable_values: FnvHashMap<&'a str, (&'a VV::Key, &'a VV::Value)>,
     cache: &'a Cache<'a, E, S>,
     errors: Vec<VariableValueError<'a, E, VV>>,
 }

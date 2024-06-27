@@ -4,18 +4,18 @@ use bluejay_core::executable::{
     ExecutableDocument, FragmentDefinition, OperationDefinition, VariableDefinition,
 };
 use bluejay_core::{AsIter, Indexed};
-use std::collections::HashMap;
+use fnv::FnvHashMap;
 
 pub struct Cache<'a, E: ExecutableDocument, S: SchemaDefinition> {
     variable_definition_input_types:
-        HashMap<Indexed<'a, E::VariableType>, VariableDefinitionInputType<'a, S::InputType>>,
-    indexed_fragment_definitions: HashMap<&'a str, &'a E::FragmentDefinition>,
+        FnvHashMap<Indexed<'a, E::VariableType>, VariableDefinitionInputType<'a, S::InputType>>,
+    indexed_fragment_definitions: FnvHashMap<&'a str, &'a E::FragmentDefinition>,
 }
 
 impl<'a, E: ExecutableDocument, S: SchemaDefinition> Cache<'a, E, S> {
     pub fn new(executable_document: &'a E, schema_definition: &'a S) -> Self {
         let variable_definition_input_types =
-            HashMap::from_iter(executable_document.operation_definitions().flat_map(
+        FnvHashMap::from_iter(executable_document.operation_definitions().flat_map(
                 |operation_definition: &'a E::OperationDefinition| {
                     let variable_definitions_iterator = operation_definition
                         .as_ref()
@@ -38,7 +38,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> Cache<'a, E, S> {
                         })
                 },
             ));
-        let indexed_fragment_definitions = HashMap::from_iter(
+        let indexed_fragment_definitions = FnvHashMap::from_iter(
             executable_document
                 .fragment_definitions()
                 .map(|fragment_definition| (fragment_definition.name(), fragment_definition)),

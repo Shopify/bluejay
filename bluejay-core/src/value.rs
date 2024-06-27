@@ -1,6 +1,6 @@
 use crate::AsIter;
 use enum_as_inner::EnumAsInner;
-use std::collections::HashMap;
+use fnv::FnvHashMap;
 
 #[cfg(feature = "serde_json")]
 mod serde_json;
@@ -93,8 +93,8 @@ impl<'a, const CONST: bool, V: Value<CONST>> std::cmp::PartialEq for ValueRefere
                 matches!(other, Self::List(other_l) if itertools::equal(l.iter().map(Value::as_ref), other_l.iter().map(Value::as_ref)))
             }
             Self::Object(o) => matches!(other, Self::Object(other_o) if {
-                let lhs: HashMap<&str, _> = HashMap::from_iter(o.iter().map(|(k, v)| (k.as_ref(), v.as_ref())));
-                let rhs: HashMap<&str, _> = HashMap::from_iter(other_o.iter().map(|(k, v)| (k.as_ref(), v.as_ref())));
+                let lhs: FnvHashMap<&str, _> = FnvHashMap::from_iter(o.iter().map(|(k, v)| (k.as_ref(), v.as_ref())));
+                let rhs: FnvHashMap<&str, _> = FnvHashMap::from_iter(other_o.iter().map(|(k, v)| (k.as_ref(), v.as_ref())));
                 lhs == rhs
             }),
         }

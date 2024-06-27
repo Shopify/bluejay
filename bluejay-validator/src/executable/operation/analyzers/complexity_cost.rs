@@ -8,9 +8,9 @@ use bluejay_core::definition::{
 };
 use bluejay_core::executable::{ExecutableDocument, Field};
 use bluejay_core::AsIter;
+use fnv::FnvHashMap;
 use itertools::{Either, Itertools};
 use std::cmp::max;
-use std::collections::HashMap;
 
 mod arena;
 use arena::{Arena, NodeId};
@@ -111,7 +111,7 @@ impl<
             .entry(scoped_type.name())
             .or_insert_with(|| TypedSelection {
                 type_definition: scoped_type,
-                inner_selection: HashMap::new(),
+                inner_selection: FnvHashMap::default(),
             })
             .inner_selection
             .entry(field_key)
@@ -301,7 +301,7 @@ impl<
     }
 }
 
-type InnerSelection<'a> = HashMap<&'a str, NodeId>;
+type InnerSelection<'a> = FnvHashMap<&'a str, NodeId>;
 
 struct TypedSelection<'a, T: TypeDefinition> {
     type_definition: TypeDefinitionReference<'a, T>,
@@ -311,7 +311,7 @@ struct TypedSelection<'a, T: TypeDefinition> {
 struct ComplexityScope<'a, T: TypeDefinition, F> {
     cost: usize,
     multiplier: usize,
-    typed_selections: HashMap<&'a str, TypedSelection<'a, T>>,
+    typed_selections: FnvHashMap<&'a str, TypedSelection<'a, T>>,
     field_multipliers: F,
 }
 
@@ -320,7 +320,7 @@ impl<'a, T: TypeDefinition, F: Default> Default for ComplexityScope<'a, T, F> {
         Self {
             cost: 0,
             multiplier: 1,
-            typed_selections: HashMap::new(),
+            typed_selections: FnvHashMap::default(),
             field_multipliers: F::default(),
         }
     }

@@ -11,7 +11,8 @@ use bluejay_core::executable::{
     SelectionReference,
 };
 use bluejay_core::{Argument, AsIter, Indexed, Value};
-use std::collections::{BTreeMap, HashMap, HashSet};
+use fnv::{FnvHashMap, FnvHashSet};
+use std::collections::BTreeMap;
 use std::ops::Not;
 
 pub struct FieldSelectionMerging<'a, E: ExecutableDocument, S: SchemaDefinition> {
@@ -66,7 +67,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> FieldSelectionMer
 
     fn fields_in_set_can_merge(
         &mut self,
-        grouped_fields: HashMap<&'a str, Vec<FieldContext<'a, E, S>>>,
+        grouped_fields: FnvHashMap<&'a str, Vec<FieldContext<'a, E, S>>>,
         selection_set: &'a E::SelectionSet,
     ) -> Vec<Error<'a, E, S>> {
         let mut errors = Vec::new();
@@ -140,11 +141,11 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> FieldSelectionMer
         }
 
         type Group<'a, 'b, E, S> = Vec<&'b FieldContext<'a, E, S>>;
-        type ConcreteGroups<'a, 'b, E, S> = HashMap<&'a str, Group<'a, 'b, E, S>>;
+        type ConcreteGroups<'a, 'b, E, S> = FnvHashMap<&'a str, Group<'a, 'b, E, S>>;
 
         let (abstract_group, concrete_groups): (Group<'a, '_, E, S>, ConcreteGroups<'a, '_, E, S>) =
             fields_for_name.iter().fold(
-                (Vec::new(), HashMap::new()),
+                (Vec::new(), FnvHashMap::default()),
                 |(mut abstract_group, mut concrete_groups), field_context| {
                     match field_context.parent_type {
                         TypeDefinitionReference::Object(otd) => concrete_groups
@@ -225,13 +226,13 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> FieldSelectionMer
         &mut self,
         selection_set: &'a E::SelectionSet,
         parent_type: TypeDefinitionReference<'a, S::TypeDefinition>,
-    ) -> HashMap<&'a str, Vec<FieldContext<'a, E, S>>> {
-        let mut fields = HashMap::new();
+    ) -> FnvHashMap<&'a str, Vec<FieldContext<'a, E, S>>> {
+        let mut fields = FnvHashMap::default();
         self.visit_selections_for_fields(
             selection_set.iter(),
             &mut fields,
             parent_type,
-            &HashSet::new(),
+            &FnvHashSet::default(),
         );
         fields
     }
@@ -239,11 +240,11 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> FieldSelectionMer
     fn field_contexts_contained_fields<'b>(
         &mut self,
         field_contexts: impl Iterator<Item = &'b FieldContext<'a, E, S>>,
-    ) -> HashMap<&'a str, Vec<FieldContext<'a, E, S>>>
+    ) -> FnvHashMap<&'a str, Vec<FieldContext<'a, E, S>>>
     where
         'a: 'b,
     {
-        let mut fields = HashMap::new();
+        let mut fields = FnvHashMap::default();
         field_contexts.for_each(|field_context| {
             if let Some(selection_set) = field_context.field.selection_set() {
                 if let Some(parent_type) = self
@@ -267,9 +268,9 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> FieldSelectionMer
     fn visit_selections_for_fields(
         &mut self,
         selections: impl Iterator<Item = &'a E::Selection>,
-        fields: &mut HashMap<&'a str, Vec<FieldContext<'a, E, S>>>,
+        fields: &mut FnvHashMap<&'a str, Vec<FieldContext<'a, E, S>>>,
         parent_type: TypeDefinitionReference<'a, S::TypeDefinition>,
-        parent_fragments: &HashSet<&'a str>,
+        parent_fragments: &FnvHashSet<&'a str>,
     ) {
         selections.for_each(|selection| match selection.as_ref() {
             SelectionReference::Field(field) => {
@@ -365,17 +366,17 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> FieldSelectionMer
         args_a: Option<&'a E::Arguments<false>>,
         args_b: Option<&'a E::Arguments<false>>,
     ) -> bool {
-        let lhs: HashMap<&str, _> = args_a
+        let lhs: FnvHashMap<&str, _> = args_a
             .map(|args| {
-                HashMap::from_iter(
+                FnvHashMap::from_iter(
                     args.iter()
                         .map(|arg: &E::Argument<false>| (arg.name(), arg.value().as_ref())),
                 )
             })
             .unwrap_or_default();
-        let rhs: HashMap<&str, _> = args_b
+        let rhs: FnvHashMap<&str, _> = args_b
             .map(|args| {
-                HashMap::from_iter(
+                FnvHashMap::from_iter(
                     args.iter()
                         .map(|arg: &E::Argument<false>| (arg.name(), arg.value().as_ref())),
                 )
@@ -402,5 +403,5 @@ struct FieldContext<'a, E: ExecutableDocument, S: SchemaDefinition> {
     field: &'a E::Field,
     field_definition: &'a S::FieldDefinition,
     parent_type: TypeDefinitionReference<'a, S::TypeDefinition>,
-    parent_fragments: HashSet<&'a str>,
+    parent_fragments: FnvHashSet<&'a str>,
 }

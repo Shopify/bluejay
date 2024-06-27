@@ -7,7 +7,7 @@ use bluejay_core::definition::{
 };
 use bluejay_core::executable::{ExecutableDocument, Field};
 use bluejay_core::{Argument, AsIter, Directive};
-use std::collections::HashMap;
+use fnv::FnvHashMap;
 
 pub struct RequiredArguments<'a, E: ExecutableDocument, S: SchemaDefinition> {
     schema_definition: &'a S,
@@ -54,8 +54,8 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> RequiredArguments
             let indexed_arguments = arguments
                 .map(|arguments| {
                     arguments.iter().fold(
-                        HashMap::new(),
-                        |mut indexed_arguments: HashMap<&'a str, &'a E::Argument<CONST>>,
+                        FnvHashMap::default(),
+                        |mut indexed_arguments: FnvHashMap<&'a str, &'a E::Argument<CONST>>,
                          argument| {
                             indexed_arguments.insert(argument.name(), argument);
                             indexed_arguments

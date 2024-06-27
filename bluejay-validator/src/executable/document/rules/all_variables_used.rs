@@ -7,12 +7,13 @@ use bluejay_core::executable::{
     ExecutableDocument, FragmentSpread, OperationDefinition, VariableDefinition,
 };
 use bluejay_core::{Argument, AsIter, Indexed, ObjectValue, Value, ValueReference, Variable};
-use std::collections::{HashMap, HashSet};
+use fnv::{FnvHashMap, FnvHashSet};
 use std::ops::Not;
 
 pub struct AllVariablesUsed<'a, E: ExecutableDocument, S: SchemaDefinition> {
-    fragment_references: HashMap<PathRoot<'a, E>, HashSet<Indexed<'a, E::FragmentDefinition>>>,
-    variable_usages: HashMap<PathRoot<'a, E>, HashSet<&'a str>>,
+    fragment_references:
+        FnvHashMap<PathRoot<'a, E>, FnvHashSet<Indexed<'a, E::FragmentDefinition>>>,
+    variable_usages: FnvHashMap<PathRoot<'a, E>, FnvHashSet<&'a str>>,
     cache: &'a Cache<'a, E, S>,
     executable_document: &'a E,
 }
@@ -22,8 +23,8 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Visitor<'a, E, S>
 {
     fn new(executable_document: &'a E, _: &'a S, cache: &'a Cache<'a, E, S>) -> Self {
         Self {
-            fragment_references: HashMap::new(),
-            variable_usages: HashMap::new(),
+            fragment_references: FnvHashMap::default(),
+            variable_usages: FnvHashMap::default(),
             cache,
             executable_document,
         }
@@ -78,7 +79,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> AllVariablesUsed<'a, E, S> 
         &self,
         operation_definition: &'a E::OperationDefinition,
     ) -> impl Iterator<Item = &'a E::FragmentDefinition> {
-        let mut references = HashSet::new();
+        let mut references = FnvHashSet::default();
         self.visit_fragment_references(&PathRoot::Operation(operation_definition), &mut references);
         references
             .into_iter()
@@ -88,7 +89,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> AllVariablesUsed<'a, E, S> 
     fn visit_fragment_references(
         &self,
         executable_definition: &PathRoot<'a, E>,
-        visited: &mut HashSet<Indexed<'a, E::FragmentDefinition>>,
+        visited: &mut FnvHashSet<Indexed<'a, E::FragmentDefinition>>,
     ) {
         if let Some(references) = self.fragment_references.get(executable_definition) {
             references.iter().for_each(
@@ -120,7 +121,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Rule<'a, E, S>
                     })
             })
             .flat_map(|operation_definition| {
-                let variable_usages: HashSet<&'a str> = self
+                let variable_usages: FnvHashSet<&'a str> = self
                     .fragment_usages(operation_definition)
                     .map(PathRoot::Fragment)
                     .chain(std::iter::once(PathRoot::Operation(operation_definition)))

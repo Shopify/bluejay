@@ -11,12 +11,13 @@ use bluejay_core::executable::{
     VariableTypeReference,
 };
 use bluejay_core::{Argument, AsIter, Indexed, ObjectValue, Value, ValueReference, Variable};
+use fnv::FnvHashMap;
 use itertools::Either;
-use std::collections::{BTreeMap, BTreeSet, HashMap};
+use std::collections::{BTreeMap, BTreeSet};
 use std::ops::Not;
 
 pub struct AllVariableUsagesAllowed<'a, E: ExecutableDocument, S: SchemaDefinition> {
-    fragment_references: HashMap<Indexed<'a, E::FragmentDefinition>, BTreeSet<PathRoot<'a, E>>>,
+    fragment_references: FnvHashMap<Indexed<'a, E::FragmentDefinition>, BTreeSet<PathRoot<'a, E>>>,
     variable_usages: BTreeMap<PathRoot<'a, E>, Vec<VariableUsage<'a, E, S>>>,
     cache: &'a Cache<'a, E, S>,
     schema_definition: &'a S,
@@ -27,7 +28,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Visitor<'a, E, S>
 {
     fn new(_: &'a E, schema_definition: &'a S, cache: &'a Cache<'a, E, S>) -> Self {
         Self {
-            fragment_references: HashMap::new(),
+            fragment_references: FnvHashMap::default(),
             variable_usages: BTreeMap::new(),
             cache,
             schema_definition,
