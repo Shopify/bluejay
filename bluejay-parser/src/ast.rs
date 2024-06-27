@@ -12,7 +12,6 @@ mod parse_error;
 mod tokens;
 mod try_from_tokens;
 mod value;
-mod variable;
 
 pub use argument::{Argument, ConstArgument, VariableArgument};
 pub use arguments::{Arguments, VariableArguments};
@@ -26,4 +25,3 @@ use parse_error::ParseError;
 use tokens::{LexerTokens, Tokens};
 use try_from_tokens::TryFromTokens;
 pub use value::{ConstValue, Value, VariableValue};
-use variable::Variable;

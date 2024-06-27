@@ -1,8 +1,8 @@
 use crate::ast::try_from_tokens::TryFromTokens;
 use crate::ast::{
-    executable::VariableType, ConstDirectives, ConstValue, FromTokens, ParseError, Tokens, Variable,
+    executable::VariableType, ConstDirectives, ConstValue, FromTokens, ParseError, Tokens,
 };
-use crate::lexical_token::PunctuatorType;
+use crate::lexical_token::{PunctuatorType, Variable};
 
 #[derive(Debug)]
 pub struct VariableDefinition<'a> {
@@ -14,7 +14,7 @@ pub struct VariableDefinition<'a> {
 
 impl<'a> FromTokens<'a> for VariableDefinition<'a> {
     fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
-        let variable = Variable::from_tokens(tokens)?;
+        let variable = tokens.expect_variable()?;
         tokens.expect_punctuator(PunctuatorType::Colon)?;
         let r#type = VariableType::from_tokens(tokens)?;
         let default_value: Option<ConstValue> =
@@ -53,7 +53,7 @@ impl<'a> bluejay_core::executable::VariableDefinition for VariableDefinition<'a>
     type Directives = ConstDirectives<'a>;
 
     fn variable(&self) -> &str {
-        self.variable.name()
+        self.variable.as_str()
     }
 
     fn r#type(&self) -> &Self::VariableType {

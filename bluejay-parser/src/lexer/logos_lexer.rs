@@ -1,6 +1,6 @@
 use crate::lexer::{LexError, Lexer};
 use crate::lexical_token::{
-    FloatValue, IntValue, LexicalToken, Name, Punctuator, PunctuatorType, StringValue, VariableName,
+    FloatValue, IntValue, LexicalToken, Name, Punctuator, PunctuatorType, StringValue, Variable,
 };
 use crate::Span;
 use logos::Logos;
@@ -154,7 +154,7 @@ impl<'a> Iterator for LogosLexer<'a> {
                         Token::CloseBrace => punctuator(PunctuatorType::CloseBrace, span),
                         Token::Pipe => punctuator(PunctuatorType::Pipe, span),
                         Token::VariableName(s) => {
-                            LexicalToken::VariableName(VariableName::new(s, span))
+                            LexicalToken::VariableName(Variable::new(s, span))
                         }
                         Token::Name(s) => LexicalToken::Name(Name::new(s, span)),
                         Token::IntValue(val) => LexicalToken::IntValue(IntValue::new(val, span)),

@@ -1,13 +1,13 @@
 use crate::ast::parse_error::ParseError;
 use crate::lexer::{LexError, Lexer};
 use crate::lexical_token::{
-    FloatValue, IntValue, LexicalToken, Name, PunctuatorType, StringValue, VariableName,
+    FloatValue, IntValue, LexicalToken, Name, PunctuatorType, StringValue, Variable,
 };
 use crate::{HasSpan, Span};
 use std::collections::VecDeque;
 
 pub trait Tokens<'a>: Iterator<Item = LexicalToken<'a>> {
-    fn expect_variable_name(&mut self) -> Result<VariableName<'a>, ParseError>;
+    fn expect_variable(&mut self) -> Result<Variable<'a>, ParseError>;
     fn expect_name(&mut self) -> Result<Name<'a>, ParseError>;
     fn expect_name_value(&mut self, value: &str) -> Result<Span, ParseError>;
     fn expect_punctuator(&mut self, punctuator_type: PunctuatorType) -> Result<Span, ParseError>;
@@ -71,7 +71,7 @@ impl<'a, T: Lexer<'a>> LexerTokens<'a, T> {
         }
     }
 
-    pub fn expect_variable_name(&mut self) -> Result<VariableName<'a>, ParseError> {
+    pub fn expect_variable(&mut self) -> Result<Variable<'a>, ParseError> {
         match self.next() {
             Some(LexicalToken::VariableName(n)) => Ok(n),
             Some(lt) => Err(ParseError::ExpectedIdentifier {
@@ -198,8 +198,8 @@ impl<'a, T: Lexer<'a>> From<LexerTokens<'a, T>> for Vec<(LexError, Span)> {
 }
 
 impl<'a, T: Lexer<'a>> Tokens<'a> for LexerTokens<'a, T> {
-    fn expect_variable_name(&mut self) -> Result<VariableName<'a>, ParseError> {
-        self.expect_variable_name()
+    fn expect_variable(&mut self) -> Result<Variable<'a>, ParseError> {
+        self.expect_variable()
     }
 
     fn expect_name(&mut self) -> Result<Name<'a>, ParseError> {
