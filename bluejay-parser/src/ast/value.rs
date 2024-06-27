@@ -1,5 +1,5 @@
-use crate::ast::{FromTokens, ParseError, Tokens, TryFromTokens, Variable};
-use crate::lexical_token::{FloatValue, IntValue, Name, PunctuatorType, StringValue};
+use crate::ast::{FromTokens, ParseError, Tokens, Variable};
+use crate::lexical_token::{FloatValue, IntValue, LexicalToken, Name, PunctuatorType, StringValue};
 use crate::{HasSpan, Span};
 use bluejay_core::{
     AsIter, ListValue as CoreListValue, ObjectValue as CoreObjectValue, Value as CoreValue,
@@ -41,85 +41,72 @@ impl<'a, const CONST: bool> CoreValue<CONST> for Value<'a, CONST> {
 
 impl<'a, const CONST: bool> FromTokens<'a> for Value<'a, CONST> {
     fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
-        None.or_else(|| {
-            if CONST {
-                None
-            } else {
-                Variable::try_from_tokens(tokens).map(|res| res.map(Self::Variable))
+        match tokens.next() {
+            Some(LexicalToken::IntValue(int)) => Ok(Self::Integer(int)),
+            Some(LexicalToken::FloatValue(float)) => Ok(Self::Float(float)),
+            Some(LexicalToken::StringValue(string)) => Ok(Self::String(string)),
+            Some(LexicalToken::Name(name)) => Ok(match name.as_str() {
+                "true" => Self::Boolean(BooleanValue {
+                    value: true,
+                    span: name.into(),
+                }),
+                "false" => Self::Boolean(BooleanValue {
+                    value: false,
+                    span: name.into(),
+                }),
+                "null" => Self::Null(name),
+                _ => Self::Enum(name),
+            }),
+            Some(LexicalToken::VariableName(name)) => {
+                if CONST {
+                    Err(ParseError::UnexpectedToken { span: name.into() })
+                } else {
+                    let span = name.span().to_owned();
+                    Ok(Self::Variable(Variable::new(name, span)))
+                }
             }
-        })
-        .or_else(|| {
-            tokens
-                .next_if_int_value()
-                .map(|i| Ok(Self::Integer(i)))
-                .or_else(|| tokens.next_if_float_value().map(|f| Ok(Self::Float(f))))
-                .or_else(|| tokens.next_if_string_value().map(|s| Ok(Self::String(s))))
-                .or_else(|| {
-                    tokens.next_if_name().map(|name| {
-                        Ok(match name.as_str() {
-                            "true" => Self::Boolean(BooleanValue {
-                                value: true,
-                                span: name.into(),
-                            }),
-                            "false" => Self::Boolean(BooleanValue {
-                                value: false,
-                                span: name.into(),
-                            }),
-                            "null" => Self::Null(name),
-                            _ => Self::Enum(name),
-                        })
-                    })
-                })
-                .or_else(|| {
-                    tokens
-                        .next_if_punctuator(PunctuatorType::OpenSquareBracket)
-                        .map(|open_span| {
-                            let mut list: Vec<Self> = Vec::new();
-                            let close_span = loop {
-                                if let Some(close_span) =
-                                    tokens.next_if_punctuator(PunctuatorType::CloseSquareBracket)
-                                {
-                                    break close_span;
-                                }
-                                list.push(Self::from_tokens(tokens)?);
-                            };
-                            let span = open_span.merge(&close_span);
-                            Ok(Self::List(ListValue {
-                                elements: list,
-                                span,
-                            }))
-                        })
-                })
-                .or_else(|| {
-                    tokens
-                        .next_if_punctuator(PunctuatorType::OpenBrace)
-                        .map(|open_span| {
-                            let mut object: Vec<_> = Vec::new();
-                            let close_span = loop {
-                                if let Some(close_span) =
-                                    tokens.next_if_punctuator(PunctuatorType::CloseBrace)
-                                {
-                                    break close_span;
-                                }
-                                let name = tokens.expect_name()?;
-                                tokens.expect_punctuator(PunctuatorType::Colon)?;
-                                let value = Self::from_tokens(tokens)?;
-                                object.push((name, value));
-                            };
-                            let span = open_span.merge(&close_span);
-                            Ok(Self::Object(ObjectValue {
-                                fields: object,
-                                span,
-                            }))
-                        })
-                })
-        })
-        .unwrap_or_else(|| {
-            Err(tokens
-                .next()
+            Some(LexicalToken::Punctuator(p))
+                if p.r#type() == PunctuatorType::OpenSquareBracket =>
+            {
+                let open_span = p.span().clone();
+                let mut list: Vec<Self> = Vec::new();
+                let close_span = loop {
+                    if let Some(close_span) =
+                        tokens.next_if_punctuator(PunctuatorType::CloseSquareBracket)
+                    {
+                        break close_span;
+                    }
+                    list.push(Self::from_tokens(tokens)?);
+                };
+                let span = open_span.merge(&close_span);
+                Ok(Self::List(ListValue {
+                    elements: list,
+                    span,
+                }))
+            }
+            Some(LexicalToken::Punctuator(p)) if p.r#type() == PunctuatorType::OpenBrace => {
+                let open_span = p.span().clone();
+                let mut object: Vec<_> = Vec::new();
+                let close_span = loop {
+                    if let Some(close_span) = tokens.next_if_punctuator(PunctuatorType::CloseBrace)
+                    {
+                        break close_span;
+                    }
+                    let name = tokens.expect_name()?;
+                    tokens.expect_punctuator(PunctuatorType::Colon)?;
+                    let value = Self::from_tokens(tokens)?;
+                    object.push((name, value));
+                };
+                let span = open_span.merge(&close_span);
+                Ok(Self::Object(ObjectValue {
+                    fields: object,
+                    span,
+                }))
+            }
+            token => Err(token
                 .map(|token| ParseError::UnexpectedToken { span: token.into() })
-                .unwrap_or_else(|| tokens.unexpected_eof()))
-        })
+                .unwrap_or_else(|| tokens.unexpected_eof())),
+        }
     }
 }
 

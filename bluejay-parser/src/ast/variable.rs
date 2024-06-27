@@ -8,6 +8,12 @@ pub struct Variable<'a> {
     span: Span,
 }
 
+impl<'a> Variable<'a> {
+    pub(crate) fn new(name: VariableName<'a>, span: Span) -> Self {
+        Self { name, span }
+    }
+}
+
 impl<'a> IsMatch<'a> for Variable<'a> {
     fn is_match(tokens: &mut impl Tokens<'a>) -> bool {
         tokens.peek_variable_name(0)
