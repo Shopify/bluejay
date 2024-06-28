@@ -8,5 +8,5 @@ Error: Parse error
    │
  2 │   true
    │   ──┬─  
-   │     ╰─── true is not an allowed enum-value
+   │     ╰─── true is not an allowed enum value
 ───╯

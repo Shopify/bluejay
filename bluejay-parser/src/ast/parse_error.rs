@@ -3,7 +3,7 @@ use crate::Span;
 
 #[derive(Debug)]
 pub enum ParseError {
-    UnexpectedEnumValue {
+    InvalidEnumValue {
         span: Span,
         value: String,
     },
@@ -30,10 +30,10 @@ pub enum ParseError {
 impl From<ParseError> for Error {
     fn from(val: ParseError) -> Self {
         match val {
-            ParseError::UnexpectedEnumValue { span, value } => Self::new(
+            ParseError::InvalidEnumValue { span, value } => Self::new(
                 "Parse error",
                 Some(Annotation::new(
-                    format!("{value} is not an allowed enum-value"),
+                    format!("{value} is not an allowed enum value"),
                     span,
                 )),
                 Vec::new(),

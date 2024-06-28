@@ -36,7 +36,7 @@ impl<'a, C: Context> FromTokens<'a> for EnumValueDefinition<'a, C> {
         let description = tokens.next_if_string_value();
         let name = tokens.expect_name()?;
         if matches!(name.as_str(), "null" | "true" | "false") {
-            return Err(ParseError::UnexpectedEnumValue {
+            return Err(ParseError::InvalidEnumValue {
                 span: name.span().clone(),
                 value: name.as_str().to_string(),
             });
