@@ -3,6 +3,10 @@ use crate::Span;
 
 #[derive(Debug)]
 pub enum ParseError {
+    UnexpectedEnumValue {
+        span: Span,
+        value: String,
+    },
     ExpectedOneOf {
         span: Span,
         values: &'static [&'static str],
@@ -26,6 +30,14 @@ pub enum ParseError {
 impl From<ParseError> for Error {
     fn from(val: ParseError) -> Self {
         match val {
+            ParseError::UnexpectedEnumValue { span, value } => Self::new(
+                "Parse error",
+                Some(Annotation::new(
+                    format!("{value} is not an allowed enum-value"),
+                    span,
+                )),
+                Vec::new(),
+            ),
             ParseError::ExpectedOneOf { span, values } => Self::new(
                 "Parse error",
                 Some(Annotation::new(
