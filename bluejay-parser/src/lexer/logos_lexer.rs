@@ -92,7 +92,7 @@ fn validate_number_no_trailing_name_start<'a>(
         .remainder()
         .chars()
         .position(|c| !(c.is_ascii_alphanumeric() || matches!(c, '_' | '.')))
-        .unwrap_or(lexer.remainder().len());
+        .unwrap_or_else(|| lexer.remainder().len());
 
     lexer.bump(invalid_trail_bytes);
 

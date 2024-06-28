@@ -13,6 +13,6 @@ pub trait Field {
     fn selection_set(&self) -> Option<&Self::SelectionSet>;
 
     fn response_name(&self) -> &str {
-        self.alias().unwrap_or(self.name())
+        self.alias().unwrap_or_else(|| self.name())
     }
 }
