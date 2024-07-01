@@ -1,0 +1,7 @@
+enum Test {
+  true
+}
+
+schema {
+  query: Test
+}

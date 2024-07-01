@@ -1,0 +1,12 @@
+---
+source: bluejay-parser/tests/schema_definition_integration_test.rs
+expression: formatted_errors
+input_file: bluejay-parser/tests/test_data/schema_definition/error/reserved_keyword_enum_value.graphql
+---
+Error: Parse error
+   ╭─[<unknown>:2:3]
+   │
+ 2 │   true
+   │   ──┬─  
+   │     ╰─── true is not an allowed enum value
+───╯

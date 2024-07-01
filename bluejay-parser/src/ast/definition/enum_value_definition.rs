@@ -1,8 +1,11 @@
-use crate::ast::{
-    definition::{Context, Directives},
-    ConstDirectives, FromTokens, ParseError, Tokens, TryFromTokens,
-};
 use crate::lexical_token::{Name, StringValue};
+use crate::{
+    ast::{
+        definition::{Context, Directives},
+        ConstDirectives, FromTokens, ParseError, Tokens, TryFromTokens,
+    },
+    HasSpan,
+};
 use bluejay_core::definition::{EnumValueDefinition as CoreEnumValueDefinition, HasDirectives};
 
 #[derive(Debug)]
@@ -32,6 +35,13 @@ impl<'a, C: Context> FromTokens<'a> for EnumValueDefinition<'a, C> {
     fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
         let description = tokens.next_if_string_value();
         let name = tokens.expect_name()?;
+        if matches!(name.as_str(), "null" | "true" | "false") {
+            return Err(ParseError::InvalidEnumValue {
+                span: name.span().clone(),
+                value: name.as_str().to_string(),
+            });
+        }
+
         let directives = ConstDirectives::try_from_tokens(tokens).transpose()?;
         Ok(Self {
             description,
