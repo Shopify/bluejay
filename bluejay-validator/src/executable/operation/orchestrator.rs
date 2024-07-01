@@ -2,9 +2,12 @@ use crate::executable::{
     operation::{Analyzer, OperationDefinitionValueEvaluationExt, VariableValues, Visitor},
     Cache,
 };
-use bluejay_core::executable::{
-    ExecutableDocument, Field, FragmentDefinition, FragmentSpread, InlineFragment,
-    OperationDefinition, Selection, SelectionReference,
+use bluejay_core::{
+    definition::ArgumentsDefinition,
+    executable::{
+        ExecutableDocument, Field, FragmentDefinition, FragmentSpread, InlineFragment,
+        OperationDefinition, Selection, SelectionReference,
+    },
 };
 use bluejay_core::{
     definition::{
@@ -14,15 +17,16 @@ use bluejay_core::{
     ValueReference,
 };
 use bluejay_core::{Argument, AsIter, Directive, OperationType, Value};
-use std::borrow::Cow;
 use std::collections::HashSet;
+use std::{borrow::Cow, marker::PhantomData};
 
 pub struct Orchestrator<
     'a,
     E: ExecutableDocument,
     S: SchemaDefinition,
     VV: VariableValues,
-    V: Visitor<'a, E, S, VV>,
+    U: Copy,
+    V: Visitor<'a, E, S, VV, U>,
 > {
     schema_definition: &'a S,
     operation_definition: &'a E::OperationDefinition,
@@ -30,6 +34,7 @@ pub struct Orchestrator<
     visitor: V,
     cache: &'a Cache<'a, E, S>,
     currently_spread_fragments: HashSet<&'a str>,
+    extra_info: PhantomData<U>,
 }
 
 impl<
@@ -37,8 +42,9 @@ impl<
         E: ExecutableDocument,
         S: SchemaDefinition,
         VV: VariableValues,
-        V: Visitor<'a, E, S, VV>,
-    > Orchestrator<'a, E, S, VV, V>
+        U: Copy,
+        V: Visitor<'a, E, S, VV, U>,
+    > Orchestrator<'a, E, S, VV, U, V>
 {
     const SKIP_DIRECTIVE_NAME: &'static str = "skip";
     const INCLUDE_DIRECTIVE_NAME: &'static str = "include";
@@ -49,6 +55,7 @@ impl<
         schema_definition: &'a S,
         variable_values: &'a VV,
         cache: &'a Cache<'a, E, S>,
+        extra_info: U,
     ) -> Self {
         Self {
             schema_definition,
@@ -59,9 +66,11 @@ impl<
                 schema_definition,
                 variable_values,
                 cache,
+                extra_info,
             ),
             cache,
             currently_spread_fragments: HashSet::new(),
+            extra_info: PhantomData,
         }
     }
 
@@ -146,6 +155,16 @@ impl<
         self.visitor
             .visit_field(field, field_definition, owner_type, included);
 
+        if let Some(arguments) = field.arguments() {
+            if let Some(arguments_definition) = field_definition.arguments_definition() {
+                arguments.iter().for_each(|argument| {
+                    if let Some(ivd) = arguments_definition.get(argument.name()) {
+                        self.visit_argument(argument, ivd);
+                    }
+                })
+            }
+        }
+
         if let Some(selection_set) = field.selection_set() {
             if let Some(nested_type) = self
                 .schema_definition
@@ -157,6 +176,15 @@ impl<
 
         self.visitor
             .leave_field(field, field_definition, owner_type, included);
+    }
+
+    fn visit_argument(
+        &mut self,
+        argument: &'a E::Argument<false>,
+        input_value_definition: &'a S::InputValueDefinition,
+    ) {
+        self.visitor
+            .visit_argument(argument, input_value_definition);
     }
 
     fn visit_inline_fragment(
@@ -257,9 +285,10 @@ impl<
         operation_name: Option<&'b str>,
         variable_values: &'a VV,
         cache: &'a Cache<'a, E, S>,
-    ) -> Result<<V as Analyzer<'a, E, S, VV>>::Output, OperationResolutionError<'b>>
+        extra_info: U,
+    ) -> Result<<V as Analyzer<'a, E, S, VV, U>>::Output, OperationResolutionError<'b>>
     where
-        V: Analyzer<'a, E, S, VV>,
+        V: Analyzer<'a, E, S, VV, U>,
     {
         let operation_definition = match operation_name {
             Some(operation_name) => executable_document
@@ -288,6 +317,7 @@ impl<
             schema_definition,
             variable_values,
             cache,
+            extra_info,
         );
         instance.visit();
         Ok(instance.visitor.into_output())
