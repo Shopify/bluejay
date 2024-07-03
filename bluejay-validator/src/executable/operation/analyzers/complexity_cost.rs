@@ -40,15 +40,16 @@ impl<
         S: SchemaDefinition,
         V: VariableValues,
         C: CostComputer<'a, E, S, V>,
-        U: Copy,
-    > Visitor<'a, E, S, V, U> for ComplexityCost<'a, E, S, V, C>
+    > Visitor<'a, E, S, V> for ComplexityCost<'a, E, S, V, C>
 {
+    type ExtraInfo = ();
+
     fn new(
         operation_definition: &'a E::OperationDefinition,
         schema_definition: &'a S,
         variable_values: &'a V,
         _: &'a Cache<'a, E, S>,
-        _: U,
+        _: Self::ExtraInfo,
     ) -> Self {
         let mut scopes_arena = Arena::new();
         let scopes_stack = vec![Some(scopes_arena.add(ComplexityScope::default()))];
@@ -164,8 +165,7 @@ impl<
         S: SchemaDefinition,
         V: VariableValues,
         C: CostComputer<'a, E, S, V>,
-        U: Copy,
-    > Analyzer<'a, E, S, V, U> for ComplexityCost<'a, E, S, V, C>
+    > Analyzer<'a, E, S, V> for ComplexityCost<'a, E, S, V, C>
 {
     type Output = usize;
 
@@ -350,7 +350,7 @@ mod tests {
     use serde_json::Value as JsonValue;
 
     type ComplexityAnalyzer<'a, E, S, V> =
-        Orchestrator<'a, E, S, V, (), ComplexityCost<'a, E, S, V, RelayCostComputer<'a, E, S, V>>>;
+        Orchestrator<'a, E, S, V, ComplexityCost<'a, E, S, V, RelayCostComputer<'a, E, S, V>>>;
 
     const TEST_SCHEMA: &str = r#"
         directive @cost(weight: String!, kind: String) on FIELD_DEFINITION

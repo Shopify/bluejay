@@ -2,13 +2,15 @@ use crate::executable::{operation::VariableValues, Cache};
 use bluejay_core::definition::{SchemaDefinition, TypeDefinitionReference};
 use bluejay_core::executable::ExecutableDocument;
 
-pub trait Visitor<'a, E: ExecutableDocument, S: SchemaDefinition, V: VariableValues, U: Copy> {
+pub trait Visitor<'a, E: ExecutableDocument, S: SchemaDefinition, V: VariableValues> {
+    type ExtraInfo;
+
     fn new(
         operation_definition: &'a E::OperationDefinition,
         schema_definition: &'a S,
         variable_values: &'a V,
         cache: &'a Cache<'a, E, S>,
-        extra_info: U,
+        extra_info: Self::ExtraInfo,
     ) -> Self;
 
     #[allow(unused_variables)]
@@ -56,25 +58,44 @@ pub trait Visitor<'a, E: ExecutableDocument, S: SchemaDefinition, V: VariableVal
     fn visit_variable_definition(&mut self, variable_definition: &'a E::VariableDefinition) {}
 }
 
+pub trait VisitorExtraInfo<'a, E: ExecutableDocument, S: SchemaDefinition, V: VariableValues> {
+    type ExtraInfo;
+}
+
+impl<
+        'a,
+        E: ExecutableDocument,
+        S: SchemaDefinition,
+        V: VariableValues,
+        T: Visitor<'a, E, S, V>,
+    > VisitorExtraInfo<'a, E, S, V> for T
+{
+    type ExtraInfo = T::ExtraInfo;
+}
+
 macro_rules! impl_visitor {
     ($n:literal) => {
         seq_macro::seq!(N in 0..$n {
             #[warn(clippy::missing_trait_methods)]
-            impl<'a, E: ExecutableDocument, S: SchemaDefinition, V: VariableValues, U: Copy, #(T~N: Visitor<'a, E, S, V, U>,)*> Visitor<'a, E, S, V, U> for (#(T~N,)*) {
+            impl<'a, E: ExecutableDocument, S: SchemaDefinition, V: VariableValues, #(T~N: Visitor<'a, E, S, V>,)*> Visitor<'a, E, S, V> for (#(T~N,)*) {
+                type ExtraInfo = (#(<T~N as VisitorExtraInfo<'a, E, S, V>>::ExtraInfo,)*);
+
                 fn new(
                     operation_definition: &'a E::OperationDefinition,
                     schema_definition: &'a S,
                     variable_values: &'a V,
                     cache: &'a Cache<'a, E, S>,
-                    extra_info: U
+                    extra_info: Self::ExtraInfo,
                 ) -> Self {
+                    let ( #(extra_info~N,)* ) = extra_info;
+
                     (
                         #(T~N::new(
                             operation_definition,
                             schema_definition,
                             variable_values,
                             cache,
-                            extra_info
+                            extra_info~N
                         ),)*
                     )
                 }

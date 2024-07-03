@@ -28,9 +28,11 @@ pub struct InputSize<'a, VV: VariableValues> {
     variable_values: HashMap<&'a str, (&'a VV::Key, &'a VV::Value)>,
 }
 
-impl<'a, E: ExecutableDocument, S: SchemaDefinition, VV: VariableValues>
-    Visitor<'a, E, S, VV, usize> for InputSize<'a, VV>
+impl<'a, E: ExecutableDocument, S: SchemaDefinition, VV: VariableValues> Visitor<'a, E, S, VV>
+    for InputSize<'a, VV>
 {
+    type ExtraInfo = usize;
+
     fn new(
         _: &'a E::OperationDefinition,
         _s: &'a S,
@@ -179,8 +181,8 @@ fn find_input_size_offenders_variables<'a, E: ExecutableDocument, VV: VariableVa
     };
 }
 
-impl<'a, E: ExecutableDocument, S: SchemaDefinition, VV: VariableValues>
-    Analyzer<'a, E, S, VV, usize> for InputSize<'a, VV>
+impl<'a, E: ExecutableDocument, S: SchemaDefinition, VV: VariableValues> Analyzer<'a, E, S, VV>
+    for InputSize<'a, VV>
 {
     type Output = Vec<Offender>;
 
@@ -225,7 +227,7 @@ mod tests {
             .unwrap_or_else(|_| panic!("Document had parse errors"));
         let cache = Cache::new(&executable_document, &schema_definition);
         let variables = variables.as_object().expect("Variables must be an object");
-        Orchestrator::<_, _, JsonMap<String, JsonValue>, usize, InputSize<_>>::analyze(
+        Orchestrator::<_, _, JsonMap<String, JsonValue>, InputSize<_>>::analyze(
             &executable_document,
             &schema_definition,
             None,
