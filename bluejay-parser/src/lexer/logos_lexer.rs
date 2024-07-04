@@ -40,8 +40,6 @@ pub(crate) enum Token<'a> {
     Colon,
     #[token("=")]
     Equals,
-    #[token("@")]
-    At,
     #[token("[")]
     OpenSquareBracket,
     #[token("]")]
@@ -52,6 +50,10 @@ pub(crate) enum Token<'a> {
     CloseBrace,
     #[token("|")]
     Pipe,
+
+    // DirectiveName
+    #[regex(r"\@[_a-zA-Z][_0-9a-zA-Z]*", |lex| &lex.slice()[1..])]
+    DirectiveName(&'a str),
 
     // VariableName
     #[regex(r"\$[_a-zA-Z][_0-9a-zA-Z]*", |lex| &lex.slice()[1..])]
@@ -147,7 +149,6 @@ impl<'a> Iterator for LogosLexer<'a> {
                         Token::Ellipse => punctuator(PunctuatorType::Ellipse, span),
                         Token::Colon => punctuator(PunctuatorType::Colon, span),
                         Token::Equals => punctuator(PunctuatorType::Equals, span),
-                        Token::At => punctuator(PunctuatorType::At, span),
                         Token::OpenSquareBracket => {
                             punctuator(PunctuatorType::OpenSquareBracket, span)
                         }
@@ -157,6 +158,7 @@ impl<'a> Iterator for LogosLexer<'a> {
                         Token::OpenBrace => punctuator(PunctuatorType::OpenBrace, span),
                         Token::CloseBrace => punctuator(PunctuatorType::CloseBrace, span),
                         Token::Pipe => punctuator(PunctuatorType::Pipe, span),
+                        Token::DirectiveName(s) => LexicalToken::DirectiveName(Name::new(s, span)),
                         Token::VariableName(s) => {
                             LexicalToken::VariableName(Variable::new(s, span))
                         }

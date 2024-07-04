@@ -7,6 +7,7 @@ use crate::{HasSpan, Span};
 use std::collections::VecDeque;
 
 pub trait Tokens<'a>: Iterator<Item = LexicalToken<'a>> {
+    fn expect_directive_name(&mut self) -> Result<Name<'a>, ParseError>;
     fn expect_variable(&mut self) -> Result<Variable<'a>, ParseError>;
     fn expect_name(&mut self) -> Result<Name<'a>, ParseError>;
     fn expect_name_value(&mut self, value: &str) -> Result<Span, ParseError>;
@@ -20,6 +21,7 @@ pub trait Tokens<'a>: Iterator<Item = LexicalToken<'a>> {
     fn next_if_name(&mut self) -> Option<Name<'a>>;
     fn next_if_name_matches(&mut self, name: &str) -> Option<Span>;
     fn peek_variable_name(&mut self, n: usize) -> bool;
+    fn peek_directive_name(&mut self, n: usize) -> bool;
     fn peek_name(&mut self, n: usize) -> Option<&Name>;
     fn peek_name_matches(&mut self, n: usize, name: &str) -> bool;
     fn peek_string_value(&mut self, n: usize) -> bool;
@@ -79,6 +81,18 @@ impl<'a, T: Lexer<'a>> LexerTokens<'a, T> {
     pub fn expect_variable(&mut self) -> Result<Variable<'a>, ParseError> {
         match self.next() {
             Some(LexicalToken::VariableName(n)) => Ok(n),
+            Some(lt) => Err(ParseError::ExpectedIdentifier {
+                span: lt.into(),
+                value: String::from("$"),
+            }),
+            None => Err(self.unexpected_eof()),
+        }
+    }
+
+    #[inline]
+    pub fn expect_directive_name(&mut self) -> Result<Name<'a>, ParseError> {
+        match self.next() {
+            Some(LexicalToken::DirectiveName(n)) => Ok(n),
             Some(lt) => Err(ParseError::ExpectedIdentifier {
                 span: lt.into(),
                 value: String::from("$"),
@@ -188,6 +202,11 @@ impl<'a, T: Lexer<'a>> LexerTokens<'a, T> {
     }
 
     #[inline]
+    pub fn peek_directive_name(&mut self, n: usize) -> bool {
+        matches!(self.peek(n), Some(LexicalToken::DirectiveName(_)))
+    }
+
+    #[inline]
     pub fn peek_name_matches(&mut self, n: usize, name: &str) -> bool {
         matches!(self.peek_name(n), Some(n) if n.as_str() == name)
     }
@@ -223,6 +242,11 @@ impl<'a, T: Lexer<'a>> Tokens<'a> for LexerTokens<'a, T> {
     #[inline]
     fn expect_variable(&mut self) -> Result<Variable<'a>, ParseError> {
         self.expect_variable()
+    }
+
+    #[inline]
+    fn expect_directive_name(&mut self) -> Result<Name<'a>, ParseError> {
+        self.expect_directive_name()
     }
 
     #[inline]
@@ -288,6 +312,11 @@ impl<'a, T: Lexer<'a>> Tokens<'a> for LexerTokens<'a, T> {
     #[inline]
     fn peek_variable_name(&mut self, n: usize) -> bool {
         self.peek_variable_name(n)
+    }
+
+    #[inline]
+    fn peek_directive_name(&mut self, n: usize) -> bool {
+        self.peek_directive_name(n)
     }
 
     #[inline]

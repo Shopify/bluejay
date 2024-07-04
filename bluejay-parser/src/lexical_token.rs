@@ -19,6 +19,7 @@ pub enum LexicalToken<'a> {
     Punctuator(Punctuator),
     Name(Name<'a>),
     VariableName(Variable<'a>),
+    DirectiveName(Name<'a>),
     IntValue(IntValue),
     FloatValue(FloatValue),
     StringValue(StringValue<'a>),
@@ -27,6 +28,7 @@ pub enum LexicalToken<'a> {
 impl<'a> HasSpan for LexicalToken<'a> {
     fn span(&self) -> &Span {
         match self {
+            Self::DirectiveName(f) => f.span(),
             Self::VariableName(f) => f.span(),
             Self::FloatValue(f) => f.span(),
             Self::IntValue(i) => i.span(),
@@ -40,6 +42,7 @@ impl<'a> HasSpan for LexicalToken<'a> {
 impl<'a> From<LexicalToken<'a>> for Span {
     fn from(value: LexicalToken<'a>) -> Self {
         match value {
+            LexicalToken::DirectiveName(f) => f.into(),
             LexicalToken::VariableName(f) => f.into(),
             LexicalToken::FloatValue(f) => f.into(),
             LexicalToken::IntValue(i) => i.into(),

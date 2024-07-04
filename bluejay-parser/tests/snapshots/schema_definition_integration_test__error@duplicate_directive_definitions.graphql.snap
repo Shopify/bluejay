@@ -7,11 +7,10 @@ Error: Multiple directive definitions with name `@foo`
    ╭─[<unknown>:1:1]
    │
  1 │ directive @foo on OBJECT
-   │            ─┬─  
+   │           ──┬─  
    │             ╰─── Directive definition with name `@foo`
    │ 
  3 │ directive @foo on OBJECT
-   │            ─┬─  
+   │           ──┬─  
    │             ╰─── Directive definition with name `@foo`
 ───╯
-

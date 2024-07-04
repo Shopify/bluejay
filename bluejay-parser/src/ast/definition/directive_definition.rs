@@ -105,8 +105,7 @@ impl<'a, C: Context> FromTokens<'a> for DirectiveDefinition<'a, C> {
     fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
         let description = tokens.next_if_string_value();
         tokens.expect_name_value(Self::DIRECTIVE_IDENTIFIER)?;
-        tokens.expect_punctuator(PunctuatorType::At)?;
-        let name = tokens.expect_name()?;
+        let name = tokens.expect_directive_name()?;
         let arguments_definition = ArgumentsDefinition::try_from_tokens(tokens).transpose()?;
         let is_repeatable = tokens
             .next_if_name_matches(Self::REPEATABLE_IDENTIFIER)
