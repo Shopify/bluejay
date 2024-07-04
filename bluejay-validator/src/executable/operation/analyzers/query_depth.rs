@@ -11,15 +11,17 @@ pub struct QueryDepth {
     max_depth: usize,
 }
 
-impl<'a, E: ExecutableDocument, S: SchemaDefinition, VV: VariableValues, U: Copy>
-    Visitor<'a, E, S, VV, U> for QueryDepth
+impl<'a, E: ExecutableDocument, S: SchemaDefinition, VV: VariableValues> Visitor<'a, E, S, VV>
+    for QueryDepth
 {
+    type ExtraInfo = ();
+
     fn new(
         _: &'a E::OperationDefinition,
         _s: &'a S,
         _: &'a VV,
         _: &'a Cache<'a, E, S>,
-        _: U,
+        _: Self::ExtraInfo,
     ) -> Self {
         Self {
             current_depth: 0,
@@ -53,8 +55,8 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, VV: VariableValues, U: Copy
     }
 }
 
-impl<'a, E: ExecutableDocument, S: SchemaDefinition, VV: VariableValues, U: Copy>
-    Analyzer<'a, E, S, VV, U> for QueryDepth
+impl<'a, E: ExecutableDocument, S: SchemaDefinition, VV: VariableValues> Analyzer<'a, E, S, VV>
+    for QueryDepth
 {
     type Output = usize;
 
@@ -76,8 +78,7 @@ mod tests {
     };
     use serde_json::{Map as JsonMap, Value as JsonValue};
 
-    type DepthAnalyzer<'a, E, S> =
-        Orchestrator<'a, E, S, JsonMap<String, JsonValue>, (), QueryDepth>;
+    type DepthAnalyzer<'a, E, S> = Orchestrator<'a, E, S, JsonMap<String, JsonValue>, QueryDepth>;
 
     const TEST_SCHEMA: &str = r#"
         type Query {

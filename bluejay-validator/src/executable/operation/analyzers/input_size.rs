@@ -1,12 +1,11 @@
-use std::collections::HashMap;
-
 use crate::executable::{
     operation::{Analyzer, VariableValues, Visitor},
     Cache,
 };
 use bluejay_core::{
-    definition::SchemaDefinition, executable::ExecutableDocument, Argument, AsIter, ObjectValue,
-    Value, ValueReference, Variable,
+    definition::SchemaDefinition,
+    executable::{ExecutableDocument, OperationDefinition, VariableDefinition},
+    Argument, AsIter, ObjectValue, Value, ValueReference, Variable,
 };
 
 #[derive(Clone)]
@@ -22,41 +21,43 @@ pub struct Offender {
 /// for list-values, when it sees a list-value that exceeds the maximum
 /// allowed list-size we will add it to the list of offenders.
 /// As output we'll return an array of [Offender].
-pub struct InputSize<'a, VV: VariableValues> {
+pub struct InputSize<'a, E: ExecutableDocument, VV: VariableValues> {
     offenders: Vec<Offender>,
     max_length: usize,
-    variable_values: HashMap<&'a str, (&'a VV::Key, &'a VV::Value)>,
+    variable_values: &'a VV,
+    variable_definitions: Option<&'a E::VariableDefinitions>,
 }
 
-impl<'a, E: ExecutableDocument, S: SchemaDefinition, VV: VariableValues>
-    Visitor<'a, E, S, VV, usize> for InputSize<'a, VV>
+impl<'a, E: ExecutableDocument, S: SchemaDefinition, VV: VariableValues> Visitor<'a, E, S, VV>
+    for InputSize<'a, E, VV>
 {
+    type ExtraInfo = usize;
+
     fn new(
-        _: &'a E::OperationDefinition,
+        op: &'a E::OperationDefinition,
         _s: &'a S,
         variables: &'a VV,
         _: &'a Cache<'a, E, S>,
-        max_length: usize,
+        max_length: Self::ExtraInfo,
     ) -> Self {
         Self {
             max_length,
             offenders: vec![],
-            variable_values: variables
-                .iter()
-                .map(|(key, value)| (key.as_ref(), (key, value)))
-                .collect(),
+            variable_values: variables,
+            variable_definitions: op.as_ref().variable_definitions(),
         }
     }
 
-    fn visit_argument(
+    fn visit_variable_argument(
         &mut self,
         argument: &'a <E as ExecutableDocument>::Argument<false>,
         _input_value_definition: &'a S::InputValueDefinition,
     ) {
-        find_input_size_offenders_arguments::<E, VV>(
+        find_input_size_offenders_arguments::<E, VV, false>(
             self.max_length,
             &mut self.offenders,
-            &self.variable_values,
+            self.variable_values,
+            self.variable_definitions,
             argument.name().to_string(),
             argument.value(),
         );
@@ -68,12 +69,17 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, VV: VariableValues>
 /// allowed length we'll flag it as an offending argument, when it does not we'll traverse
 /// deeper to find potential Objects contained within the list. When we enconter an object
 /// we'll traverse deeper to find object-fields that contain lists as a value.
-fn find_input_size_offenders_arguments<'a, E: ExecutableDocument, VV: VariableValues>(
+fn find_input_size_offenders_arguments<
+    E: ExecutableDocument,
+    VV: VariableValues,
+    const CONST: bool,
+>(
     max_length: usize,
     offenders: &mut Vec<Offender>,
-    variable_values: &HashMap<&'a str, (&'a VV::Key, &'a VV::Value)>,
+    variable_values: &VV,
+    variable_definitions: Option<&E::VariableDefinitions>,
     argument_name: String,
-    argument_value: &<E as bluejay_core::executable::ExecutableDocument>::Value<false>,
+    argument_value: &<E as bluejay_core::executable::ExecutableDocument>::Value<CONST>,
 ) {
     match argument_value.as_ref() {
         ValueReference::List(list) => {
@@ -85,10 +91,11 @@ fn find_input_size_offenders_arguments<'a, E: ExecutableDocument, VV: VariableVa
                 })
             } else {
                 list.iter().enumerate().for_each(|(index, item)| {
-                    find_input_size_offenders_arguments::<E, VV>(
+                    find_input_size_offenders_arguments::<E, VV, CONST>(
                         max_length,
                         offenders,
                         variable_values,
+                        variable_definitions,
                         format!("{}.{}", argument_name, index),
                         item,
                     );
@@ -97,10 +104,11 @@ fn find_input_size_offenders_arguments<'a, E: ExecutableDocument, VV: VariableVa
         }
         ValueReference::Object(obj) => {
             obj.iter().for_each(|(key, value)| {
-                find_input_size_offenders_arguments::<E, VV>(
+                find_input_size_offenders_arguments::<E, VV, CONST>(
                     max_length,
                     offenders,
                     variable_values,
+                    variable_definitions,
                     format!("{}.{}", argument_name, key.as_ref()),
                     value,
                 );
@@ -109,14 +117,32 @@ fn find_input_size_offenders_arguments<'a, E: ExecutableDocument, VV: VariableVa
         ValueReference::Variable(var) => {
             let name = var.name();
             let variable = variable_values.get(name);
-            if let Some((_, value)) = variable {
+            if let Some(value) = variable {
                 find_input_size_offenders_variables::<E, VV>(
                     max_length,
                     offenders,
-                    variable_values,
                     argument_name,
-                    *value,
+                    value,
                 );
+            } else {
+                let variable_definition = variable_definitions.map(|variable_definitions| {
+                    variable_definitions
+                        .iter()
+                        .find(|def| def.variable() == argument_name)
+                });
+                if let Some(Some(var_def)) = variable_definition {
+                    let default_value = var_def.default_value();
+                    if let Some(default_value) = default_value {
+                        find_input_size_offenders_arguments::<E, VV, true>(
+                            max_length,
+                            offenders,
+                            variable_values,
+                            variable_definitions,
+                            argument_name,
+                            default_value,
+                        );
+                    }
+                }
             }
         }
         _ => {}
@@ -125,10 +151,9 @@ fn find_input_size_offenders_arguments<'a, E: ExecutableDocument, VV: VariableVa
 
 /// Similar to [find_input_size_offenders_arguments] however, it is specialised to traversing
 /// variable-values.
-fn find_input_size_offenders_variables<'a, E: ExecutableDocument, VV: VariableValues>(
+fn find_input_size_offenders_variables<E: ExecutableDocument, VV: VariableValues>(
     max_length: usize,
     offenders: &mut Vec<Offender>,
-    variable_values: &HashMap<&'a str, (&'a VV::Key, &'a VV::Value)>,
     argument_name: String,
     argument_value: &VV::Value,
 ) {
@@ -145,7 +170,6 @@ fn find_input_size_offenders_variables<'a, E: ExecutableDocument, VV: VariableVa
                     find_input_size_offenders_variables::<E, VV>(
                         max_length,
                         offenders,
-                        variable_values,
                         format!("{}.{}", argument_name, index),
                         item,
                     );
@@ -157,30 +181,17 @@ fn find_input_size_offenders_variables<'a, E: ExecutableDocument, VV: VariableVa
                 find_input_size_offenders_variables::<E, VV>(
                     max_length,
                     offenders,
-                    variable_values,
                     format!("{}.{}", argument_name, key.as_ref()),
                     value,
                 );
             });
         }
-        ValueReference::Variable(var) => {
-            let name = var.name();
-            if let Some((_, value)) = variable_values.get(name) {
-                find_input_size_offenders_variables::<E, VV>(
-                    max_length,
-                    offenders,
-                    variable_values,
-                    argument_name,
-                    *value,
-                );
-            }
-        }
         _ => {}
     };
 }
 
-impl<'a, E: ExecutableDocument, S: SchemaDefinition, VV: VariableValues>
-    Analyzer<'a, E, S, VV, usize> for InputSize<'a, VV>
+impl<'a, E: ExecutableDocument, S: SchemaDefinition, VV: VariableValues> Analyzer<'a, E, S, VV>
+    for InputSize<'a, E, VV>
 {
     type Output = Vec<Offender>;
 
@@ -203,6 +214,8 @@ mod tests {
     use serde_json::{Map as JsonMap, Value as JsonValue};
 
     const TEST_SCHEMA: &str = r#"
+        directive @test(y: [String]) on FIELD_DEFINITION
+
         input ObjectList {
             property: [String]
         }
@@ -216,16 +229,16 @@ mod tests {
         }
     "#;
 
-    fn get_size(query: String, variables: serde_json::Value) -> Vec<Offender> {
+    fn analyze_input_size(query: &str, variables: serde_json::Value) -> Vec<Offender> {
         let definition_document: DefinitionDocument<'_, DefaultContext> =
             DefinitionDocument::parse(TEST_SCHEMA).expect("Schema had parse errors");
         let schema_definition =
             ParserSchemaDefinition::try_from(&definition_document).expect("Schema had errors");
-        let executable_document = ParserExecutableDocument::parse(&query)
+        let executable_document = ParserExecutableDocument::parse(query)
             .unwrap_or_else(|_| panic!("Document had parse errors"));
         let cache = Cache::new(&executable_document, &schema_definition);
         let variables = variables.as_object().expect("Variables must be an object");
-        Orchestrator::<_, _, JsonMap<String, JsonValue>, usize, InputSize<_>>::analyze(
+        Orchestrator::<_, _, JsonMap<String, JsonValue>, InputSize<_, _>>::analyze(
             &executable_document,
             &schema_definition,
             None,
@@ -238,19 +251,28 @@ mod tests {
 
     #[test]
     fn simple_size() {
-        let result = get_size(
-            r#"query { simple(x: ["x", "y"])} "#.to_string(),
-            serde_json::json!({}),
-        );
+        let result =
+            analyze_input_size(r#"query { simple(x: ["x", "y"])} "#, serde_json::json!({}));
         let result = result.first().unwrap();
         assert_eq!(result.size, 2);
         assert_eq!(result.name, "x");
     }
 
     #[test]
+    fn simple_directive_size() {
+        let result = analyze_input_size(
+            r#"query { simple(x: []) @test(y: ["x", "y"])} "#,
+            serde_json::json!({}),
+        );
+        let result = result.first().unwrap();
+        assert_eq!(result.size, 2);
+        assert_eq!(result.name, "y");
+    }
+
+    #[test]
     fn simple_size_variable() {
-        let result = get_size(
-            r#"query ($x: [String]) { simple(x: $x)} "#.to_string(),
+        let result = analyze_input_size(
+            r#"query ($x: [String]) { simple(x: $x)} "#,
             serde_json::json!({ "x": ["x", "y"] }),
         );
         let result = result.first().unwrap();
@@ -259,9 +281,20 @@ mod tests {
     }
 
     #[test]
+    fn simple_size_variable_default_value() {
+        let result = analyze_input_size(
+            r#"query ($x: [String] = ["x", "y"]) { simple(x: $x)} "#,
+            serde_json::json!({}),
+        );
+        let result = result.first().unwrap();
+        assert_eq!(result.size, 2);
+        assert_eq!(result.name, "x");
+    }
+
+    #[test]
     fn object_size() {
-        let result = get_size(
-            r#"query { object(x: { property: ["x", "y"] })} "#.to_string(),
+        let result = analyze_input_size(
+            r#"query { object(x: { property: ["x", "y"] })} "#,
             serde_json::json!({}),
         );
         let result = result.first().unwrap();
@@ -271,8 +304,8 @@ mod tests {
 
     #[test]
     fn object_size_variable() {
-        let result = get_size(
-            r#"query($x: ObjectList) { object(x: $x)} "#.to_string(),
+        let result = analyze_input_size(
+            r#"query($x: ObjectList) { object(x: $x)} "#,
             serde_json::json!({ "x": { "property": ["x", "y"] } }),
         );
         let result = result.first().unwrap();
@@ -282,9 +315,8 @@ mod tests {
 
     #[test]
     fn list_object_size() {
-        let result = get_size(
-            r#"query { list_object(x: [{ property: ["x", "y"] }, { property: ["x", "y"] }])} "#
-                .to_string(),
+        let result = analyze_input_size(
+            r#"query { list_object(x: [{ property: ["x", "y"] }, { property: ["x", "y"] }])} "#,
             serde_json::json!({}),
         );
         assert_eq!(result.len(), 1);
@@ -295,8 +327,8 @@ mod tests {
 
     #[test]
     fn list_object_size_variable() {
-        let result = get_size(
-            r#"query($x: [ObjectList]) { list_object(x: $x)} "#.to_string(),
+        let result = analyze_input_size(
+            r#"query($x: [ObjectList]) { list_object(x: $x)} "#,
             serde_json::json!({ "x": [{ "property": ["x", "y"] }, { "property": ["x", "y"] }] }),
         );
         let result = result.first().unwrap();
@@ -306,8 +338,8 @@ mod tests {
 
     #[test]
     fn list_nested_object_size() {
-        let result = get_size(
-            r#"query { list_object(x: [{ property: ["x", "y"] }])} "#.to_string(),
+        let result = analyze_input_size(
+            r#"query { list_object(x: [{ property: ["x", "y"] }])} "#,
             serde_json::json!({}),
         );
         assert_eq!(result.len(), 1);
@@ -318,8 +350,8 @@ mod tests {
 
     #[test]
     fn list_nested_object_size_variable() {
-        let result = get_size(
-            r#"query($x: [ObjectList]) { list_object(x: $x)} "#.to_string(),
+        let result = analyze_input_size(
+            r#"query($x: [ObjectList]) { list_object(x: $x)} "#,
             serde_json::json!({ "x": [{ "property": ["x", "y"] }] }),
         );
         let result = result.first().unwrap();

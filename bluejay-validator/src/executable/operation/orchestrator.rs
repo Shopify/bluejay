@@ -3,7 +3,7 @@ use crate::executable::{
     Cache,
 };
 use bluejay_core::{
-    definition::ArgumentsDefinition,
+    definition::{ArgumentsDefinition, DirectiveDefinition, DirectiveLocation},
     executable::{
         ExecutableDocument, Field, FragmentDefinition, FragmentSpread, InlineFragment,
         OperationDefinition, Selection, SelectionReference,
@@ -17,16 +17,15 @@ use bluejay_core::{
     ValueReference,
 };
 use bluejay_core::{Argument, AsIter, Directive, OperationType, Value};
+use std::borrow::Cow;
 use std::collections::HashSet;
-use std::{borrow::Cow, marker::PhantomData};
 
 pub struct Orchestrator<
     'a,
     E: ExecutableDocument,
     S: SchemaDefinition,
     VV: VariableValues,
-    U: Copy,
-    V: Visitor<'a, E, S, VV, U>,
+    V: Visitor<'a, E, S, VV>,
 > {
     schema_definition: &'a S,
     operation_definition: &'a E::OperationDefinition,
@@ -34,7 +33,6 @@ pub struct Orchestrator<
     visitor: V,
     cache: &'a Cache<'a, E, S>,
     currently_spread_fragments: HashSet<&'a str>,
-    extra_info: PhantomData<U>,
 }
 
 impl<
@@ -42,9 +40,8 @@ impl<
         E: ExecutableDocument,
         S: SchemaDefinition,
         VV: VariableValues,
-        U: Copy,
-        V: Visitor<'a, E, S, VV, U>,
-    > Orchestrator<'a, E, S, VV, U, V>
+        V: Visitor<'a, E, S, VV>,
+    > Orchestrator<'a, E, S, VV, V>
 {
     const SKIP_DIRECTIVE_NAME: &'static str = "skip";
     const INCLUDE_DIRECTIVE_NAME: &'static str = "include";
@@ -55,7 +52,7 @@ impl<
         schema_definition: &'a S,
         variable_values: &'a VV,
         cache: &'a Cache<'a, E, S>,
-        extra_info: U,
+        extra_info: V::ExtraInfo,
     ) -> Self {
         Self {
             schema_definition,
@@ -70,12 +67,37 @@ impl<
             ),
             cache,
             currently_spread_fragments: HashSet::new(),
-            extra_info: PhantomData,
         }
     }
 
     fn visit(&mut self) {
         self.visit_operation_definition(self.operation_definition);
+    }
+
+    fn visit_variable_directives(
+        &mut self,
+        directives: &'a E::Directives<false>,
+        location: DirectiveLocation,
+    ) {
+        directives
+            .iter()
+            .for_each(|directive| self.visit_variable_directive(directive, location));
+    }
+
+    fn visit_variable_directive(
+        &mut self,
+        directive: &'a E::Directive<false>,
+        _location: DirectiveLocation,
+    ) {
+        if let Some(arguments) = directive.arguments() {
+            if let Some(arguments_definition) = self
+                .schema_definition
+                .get_directive_definition(directive.name())
+                .and_then(DirectiveDefinition::arguments_definition)
+            {
+                self.visit_variable_arguments(arguments, arguments_definition);
+            }
+        }
     }
 
     fn visit_operation_definition(&mut self, operation_definition: &'a E::OperationDefinition) {
@@ -92,6 +114,15 @@ impl<
                 .subscription()
                 .map(ObjectTypeDefinition::name),
         };
+
+        if let Some(directives) = core_operation_definition.directives() {
+            self.visit_variable_directives(
+                directives,
+                core_operation_definition
+                    .operation_type()
+                    .associated_directive_location(),
+            )
+        }
 
         if let Some(root_operation_type_definition_name) = root_operation_type_definition_name {
             self.visit_selection_set(
@@ -147,6 +178,9 @@ impl<
         owner_type: TypeDefinitionReference<'a, S::TypeDefinition>,
         included: bool,
     ) {
+        if let Some(directives) = field.directives() {
+            self.visit_variable_directives(directives, DirectiveLocation::Field);
+        }
         let included = included
             && field.directives().map_or(true, |directives| {
                 self.evaluate_selection_inclusion(directives)
@@ -159,7 +193,7 @@ impl<
             if let Some(arguments_definition) = field_definition.arguments_definition() {
                 arguments.iter().for_each(|argument| {
                     if let Some(ivd) = arguments_definition.get(argument.name()) {
-                        self.visit_argument(argument, ivd);
+                        self.visit_variable_argument(argument, ivd);
                     }
                 })
             }
@@ -178,13 +212,25 @@ impl<
             .leave_field(field, field_definition, owner_type, included);
     }
 
-    fn visit_argument(
+    fn visit_variable_arguments(
+        &mut self,
+        arguments: &'a E::Arguments<false>,
+        arguments_definition: &'a S::ArgumentsDefinition,
+    ) {
+        arguments.iter().for_each(|argument| {
+            if let Some(ivd) = arguments_definition.get(argument.name()) {
+                self.visit_variable_argument(argument, ivd);
+            }
+        });
+    }
+
+    fn visit_variable_argument(
         &mut self,
         argument: &'a E::Argument<false>,
         input_value_definition: &'a S::InputValueDefinition,
     ) {
         self.visitor
-            .visit_argument(argument, input_value_definition);
+            .visit_variable_argument(argument, input_value_definition);
     }
 
     fn visit_inline_fragment(
@@ -193,6 +239,10 @@ impl<
         scoped_type: TypeDefinitionReference<'a, S::TypeDefinition>,
         included: bool,
     ) {
+        if let Some(directives) = inline_fragment.directives() {
+            self.visit_variable_directives(directives, DirectiveLocation::InlineFragment);
+        }
+
         let included = included
             && inline_fragment.directives().map_or(true, |directives| {
                 self.evaluate_selection_inclusion(directives)
@@ -210,6 +260,10 @@ impl<
     }
 
     fn visit_fragment_spread(&mut self, fragment_spread: &'a E::FragmentSpread, included: bool) {
+        if let Some(directives) = fragment_spread.directives() {
+            self.visit_variable_directives(directives, DirectiveLocation::FragmentSpread);
+        }
+
         let included = included
             && fragment_spread.directives().map_or(true, |directives| {
                 self.evaluate_selection_inclusion(directives)
@@ -285,10 +339,10 @@ impl<
         operation_name: Option<&'b str>,
         variable_values: &'a VV,
         cache: &'a Cache<'a, E, S>,
-        extra_info: U,
-    ) -> Result<<V as Analyzer<'a, E, S, VV, U>>::Output, OperationResolutionError<'b>>
+        extra_info: V::ExtraInfo,
+    ) -> Result<<V as Analyzer<'a, E, S, VV>>::Output, OperationResolutionError<'b>>
     where
-        V: Analyzer<'a, E, S, VV, U>,
+        V: Analyzer<'a, E, S, VV>,
     {
         let operation_definition = match operation_name {
             Some(operation_name) => executable_document
