@@ -1,20 +1,14 @@
-use std::collections::HashMap;
-
 use crate::executable::{
     operation::{Analyzer, VariableValues, Visitor},
     Cache,
 };
 use bluejay_core::definition::{
-    BaseInputTypeReference, EnumTypeDefinition, InputType, InputTypeReference, InputValueDefinition,
+    BaseInputTypeReference, EnumTypeDefinition, EnumValueDefinition, HasDirectives,
+    InputObjectTypeDefinition, InputType, InputTypeReference, InputValueDefinition,
+    SchemaDefinition,
 };
-use bluejay_core::definition::{EnumValueDefinition, InputObjectTypeDefinition};
-use bluejay_core::executable::Field;
-use bluejay_core::ObjectValue;
-use bluejay_core::{definition::HasDirectives, Value};
-use bluejay_core::{
-    definition::SchemaDefinition, executable::ExecutableDocument, Argument, AsIter, Directive,
-    ValueReference, Variable,
-};
+use bluejay_core::executable::{ExecutableDocument, Field, VariableDefinition};
+use bluejay_core::{Argument, AsIter, Directive, ObjectValue, Value, ValueReference};
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 /// The deprecated usage we encountered.
@@ -23,47 +17,70 @@ pub enum UsageType {
     EnumValue,
     InputField,
     Field,
+    Variable,
 }
 
-#[derive(Clone, Debug)]
-pub struct Offender {
-    pub reason: String,
+#[derive(Clone, Debug, PartialEq)]
+pub struct Offender<'a> {
+    pub reason: &'a str,
     pub offense_type: UsageType,
-    pub name: String,
+    pub name: &'a str,
 }
 
-#[derive(Clone, Debug)]
 /// The [Deprecation] analyzer will go over all ast-nodes of type Field, EnumValue, Argument and InputField
 /// when it encounters one that is marked as deprecated while being used in the executable document
 /// it will be added ot the list of [Offender].
 /// This method will output the list of [Offender].
-pub struct Deprecation<'a, S: SchemaDefinition, VV: VariableValues> {
-    offenders: Vec<Offender>,
+pub struct Deprecation<'a, E: ExecutableDocument, S: SchemaDefinition, VV: VariableValues> {
+    offenders: Vec<Offender<'a>>,
     schema_definition: &'a S,
-    variable_values: HashMap<&'a str, (&'a VV::Key, &'a VV::Value)>,
+    cache: &'a Cache<'a, E, S>,
+    variable_values: &'a VV,
 }
 
 const DEPRECATED_DIRECTIVE: &str = "deprecated";
 const DEPRECATION_REASON: &str = "reason";
 
 impl<'a, E: ExecutableDocument, S: SchemaDefinition, VV: VariableValues> Visitor<'a, E, S, VV>
-    for Deprecation<'a, S, VV>
+    for Deprecation<'a, E, S, VV>
 {
     type ExtraInfo = ();
     fn new(
         _: &'a E::OperationDefinition,
         schema_definition: &'a S,
-        variables: &'a VV,
-        _: &'a Cache<'a, E, S>,
+        variable_values: &'a VV,
+        cache: &'a Cache<'a, E, S>,
         _: Self::ExtraInfo,
     ) -> Self {
         Self {
             offenders: vec![],
             schema_definition,
-            variable_values: variables
-                .iter()
-                .map(|(key, value)| (key.as_ref(), (key, value)))
-                .collect(),
+            cache,
+            variable_values,
+        }
+    }
+
+    fn visit_variable_definition(
+        &mut self,
+        variable_definition: &'a <E as ExecutableDocument>::VariableDefinition,
+    ) {
+        if let Some(input_type) = self
+            .cache
+            .variable_definition_input_type(variable_definition.r#type())
+        {
+            if let Some(value) = self
+                .variable_values
+                .get(variable_definition.variable().as_ref())
+            {
+                self.find_deprecations_for_value(input_type, value, variable_definition.variable());
+            }
+            if let Some(default_value) = variable_definition.default_value() {
+                self.find_deprecations_for_value(
+                    input_type,
+                    default_value,
+                    variable_definition.variable(),
+                );
+            }
         }
     }
 
@@ -85,7 +102,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, VV: VariableValues> Visitor
             get_deprecation_reason::<<S as SchemaDefinition>::FieldDefinition>(field_definition)
         {
             self.offenders.push(Offender {
-                name: field.name().to_string(),
+                name: field.name(),
                 offense_type: UsageType::Field,
                 reason,
             });
@@ -101,24 +118,21 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, VV: VariableValues> Visitor
             input_value_definition,
         ) {
             self.offenders.push(Offender {
-                name: argument.name().to_string(),
+                name: argument.name(),
                 offense_type: UsageType::Argument,
                 reason,
             });
         }
 
-        find_deprecations_in_arguments::<E, S, VV>(
+        self.find_deprecations_for_value(
             input_value_definition.r#type(),
-            argument.name(),
             argument.value(),
-            self.schema_definition,
-            &mut self.offenders,
-            &self.variable_values,
+            argument.name(),
         );
     }
 }
 
-fn get_deprecation_reason<N: HasDirectives>(ast_item: &N) -> Option<String> {
+fn get_deprecation_reason<N: HasDirectives>(ast_item: &N) -> Option<&str> {
     let deprecated_directive = ast_item.directives().and_then(|directives| {
         directives
             .iter()
@@ -141,269 +155,100 @@ fn get_deprecation_reason<N: HasDirectives>(ast_item: &N) -> Option<String> {
                     })
             })
             .unwrap_or("No longer supported.")
-            .to_string()
     })
 }
 
-/// This function will go through the value of an argument to find:
-///
-/// - deprecated enum-values
-/// - deprecated object-fields
-///
-/// To achieve this we need to traverse lists and objects and look at the values
-/// they are using. When we encounter a deprecated input-field or enum-value we
-/// need to ensure that the user is actually using this field/value.
-fn find_deprecations_in_arguments<
-    'a,
-    E: ExecutableDocument,
-    S: SchemaDefinition,
-    VV: VariableValues,
->(
-    input_type: &'a <S as bluejay_core::definition::SchemaDefinition>::InputType,
-    argument_name: &'a str,
-    argument_value: &<E as bluejay_core::executable::ExecutableDocument>::Value<false>,
-    schema_definition: &'a S,
-    offenders: &mut Vec<Offender>,
-    variable_values: &HashMap<&'a str, (&'a VV::Key, &'a VV::Value)>,
-) {
-    match input_type.as_ref(schema_definition) {
-        InputTypeReference::List(inner_list_type, _) => {
-            match argument_value.as_ref() {
+impl<'a, E: ExecutableDocument, S: SchemaDefinition, VV: VariableValues> Deprecation<'a, E, S, VV> {
+    fn find_deprecations_for_value<
+        const CONST: bool,
+        I: InputType<
+            CustomScalarTypeDefinition = S::CustomScalarTypeDefinition,
+            InputObjectTypeDefinition = S::InputObjectTypeDefinition,
+            EnumTypeDefinition = S::EnumTypeDefinition,
+        >,
+        V: Value<CONST>,
+    >(
+        &mut self,
+        input_type: &'a I,
+        value: &'a V,
+        name: &'a str,
+    ) {
+        match input_type.as_ref(self.schema_definition) {
+            InputTypeReference::List(inner_list_type, _) => match value.as_ref() {
                 ValueReference::List(list_value) => list_value.iter().for_each(|list_item| {
-                    find_deprecations_in_arguments::<E, S, VV>(
-                        inner_list_type,
-                        argument_name,
-                        list_item,
-                        schema_definition,
-                        offenders,
-                        variable_values,
-                    );
+                    self.find_deprecations_for_value(inner_list_type, list_item, name)
                 }),
-                ValueReference::Variable(var) => {
-                    let var = variable_values.get(var.name());
-                    if let Some((_, variable_value)) = var {
-                        if let ValueReference::List(list_value) = variable_value.as_ref() {
-                            list_value.iter().for_each(|list_item| {
-                                find_deprecations_in_variables::<E, S, VV>(
-                                    inner_list_type,
-                                    argument_name,
-                                    list_item,
-                                    schema_definition,
-                                    offenders,
-                                );
-                            })
+                _ => self.find_deprecations_for_value(inner_list_type, value, name),
+            },
+            InputTypeReference::Base(base_input_type, _) => match base_input_type {
+                BaseInputTypeReference::Enum(etd) => {
+                    let enum_value = match value.as_ref() {
+                        ValueReference::Enum(enum_value) => Some(enum_value),
+                        ValueReference::String(string_value)
+                            if V::can_coerce_string_value_to_enum() =>
+                        {
+                            Some(string_value)
                         }
-                    }
-                }
-                _ => {}
-            };
-        }
-        InputTypeReference::Base(BaseInputTypeReference::InputObject(schema_obj), _) => {
-            match argument_value.as_ref() {
-                ValueReference::Object(obj_value) => {
-                    schema_obj.input_field_definitions().iter().for_each(
-                        |input_field_definition| {
-                            let found_usage = obj_value.iter().find(|(key, _value)| {
-                                key.as_ref() == input_field_definition.name()
-                            });
-
-                            if let Some(field) = found_usage {
-                                if let Some(reason) =
-                                    get_deprecation_reason::<S::InputValueDefinition>(
-                                        input_field_definition,
-                                    )
-                                {
-                                    offenders.push(Offender {
-                                        name: input_field_definition.name().to_string(),
-                                        offense_type: UsageType::InputField,
-                                        reason,
-                                    });
-                                }
-
-                                find_deprecations_in_arguments::<E, S, VV>(
-                                    input_field_definition.r#type(),
-                                    argument_name,
-                                    field.1,
-                                    schema_definition,
-                                    offenders,
-                                    variable_values,
-                                )
-                            }
-                        },
-                    );
-                }
-                ValueReference::Variable(var) => {
-                    let var = variable_values.get(var.name());
-                    if let Some((_, variable_value)) = var {
-                        let obj_value = match variable_value.as_ref() {
-                            ValueReference::Object(object_value) => Some(object_value),
-                            _ => None,
-                        };
-
-                        if let Some(obj_value) = obj_value {
-                            schema_obj.input_field_definitions().iter().for_each(
-                                |input_field_definition| {
-                                    let found_usage = obj_value.iter().find(|item| {
-                                        item.0.as_ref() == input_field_definition.name()
-                                    });
-
-                                    if let Some(field) = found_usage {
-                                        if let Some(reason) =
-                                            get_deprecation_reason::<S::InputValueDefinition>(
-                                                input_field_definition,
-                                            )
-                                        {
-                                            offenders.push(Offender {
-                                                name: input_field_definition.name().to_string(),
-                                                offense_type: UsageType::InputField,
-                                                reason,
-                                            });
-                                        }
-
-                                        find_deprecations_in_variables::<E, S, VV>(
-                                            input_field_definition.r#type(),
-                                            argument_name,
-                                            field.1,
-                                            schema_definition,
-                                            offenders,
-                                        )
-                                    }
-                                },
-                            );
-                        }
-                    }
-                }
-                _ => {}
-            };
-        }
-        InputTypeReference::Base(BaseInputTypeReference::Enum(schema_enum), _) => {
-            let enum_value = match argument_value.as_ref() {
-                ValueReference::Enum(enum_value) => Some(enum_value),
-                ValueReference::Variable(var) => {
-                    let var = variable_values.get(var.name());
-                    if let Some((_, variable_value)) = var {
-                        match variable_value.as_ref() {
-                            ValueReference::Enum(enum_value) => Some(enum_value),
-                            ValueReference::String(string_value) => Some(string_value),
-                            _ => None,
-                        }
-                    } else {
-                        None
-                    }
-                }
-                _ => None,
-            };
-
-            if let Some(enum_value) = enum_value {
-                if let Some(deprecation_reason) = schema_enum
-                    .enum_value_definitions()
-                    .iter()
-                    .find(|schema_enum_value| schema_enum_value.name() == enum_value)
-                    .and_then(|found_enum_value| {
-                        get_deprecation_reason::<S::EnumValueDefinition>(found_enum_value)
-                    })
-                {
-                    offenders.push(Offender {
-                        name: argument_name.to_string(),
-                        offense_type: UsageType::EnumValue,
-                        reason: deprecation_reason,
-                    });
-                }
-            }
-        }
-        _ => {}
-    };
-}
-
-fn find_deprecations_in_variables<
-    'a,
-    E: ExecutableDocument,
-    S: SchemaDefinition,
-    VV: VariableValues,
->(
-    input_type: &'a <S as bluejay_core::definition::SchemaDefinition>::InputType,
-    argument_name: &'a str,
-    argument_value: &VV::Value,
-    schema_definition: &'a S,
-    offenders: &mut Vec<Offender>,
-) {
-    match input_type.as_ref(schema_definition) {
-        InputTypeReference::List(inner_list_type, _) => {
-            if let ValueReference::List(list_value) = argument_value.as_ref() {
-                list_value.iter().for_each(|list_item| {
-                    find_deprecations_in_variables::<E, S, VV>(
-                        inner_list_type,
-                        argument_name,
-                        list_item,
-                        schema_definition,
-                        offenders,
-                    );
-                })
-            }
-        }
-        InputTypeReference::Base(BaseInputTypeReference::InputObject(schema_obj), _) => {
-            let obj_value = match argument_value.as_ref() {
-                ValueReference::Object(obj_value) => Some(obj_value),
-                _ => None,
-            };
-
-            if let Some(obj_value) = obj_value {
-                schema_obj
-                    .input_field_definitions()
-                    .iter()
-                    .for_each(|input_field_definition| {
-                        let found_usage = obj_value
+                        _ => None,
+                    };
+                    if let Some(enum_value) = enum_value {
+                        if let Some(deprecation_reason) = etd
+                            .enum_value_definitions()
                             .iter()
-                            .find(|(key, _value)| key.as_ref() == input_field_definition.name());
-
-                        if let Some(field) = found_usage {
-                            if let Some(reason) = get_deprecation_reason::<S::InputValueDefinition>(
-                                input_field_definition,
-                            ) {
-                                offenders.push(Offender {
-                                    name: input_field_definition.name().to_string(),
-                                    offense_type: UsageType::InputField,
-                                    reason,
-                                });
-                            }
-
-                            find_deprecations_in_variables::<E, S, VV>(
-                                input_field_definition.r#type(),
-                                argument_name,
-                                field.1,
-                                schema_definition,
-                                offenders,
-                            )
+                            .find(|evd| evd.name() == enum_value)
+                            .and_then(|found_enum_value| {
+                                get_deprecation_reason::<S::EnumValueDefinition>(found_enum_value)
+                            })
+                        {
+                            self.offenders.push(Offender {
+                                name,
+                                offense_type: UsageType::EnumValue,
+                                reason: deprecation_reason,
+                            });
                         }
-                    });
-            }
-        }
-        InputTypeReference::Base(BaseInputTypeReference::Enum(schema_enum), _) => {
-            if let ValueReference::Enum(enum_value) = argument_value.as_ref() {
-                if let Some(deprecation_reason) = schema_enum
-                    .enum_value_definitions()
-                    .iter()
-                    .find(|schema_enum_value| schema_enum_value.name() == enum_value)
-                    .and_then(|found_enum_value| {
-                        get_deprecation_reason::<S::EnumValueDefinition>(found_enum_value)
-                    })
-                {
-                    offenders.push(Offender {
-                        name: argument_name.to_string(),
-                        offense_type: UsageType::EnumValue,
-                        reason: deprecation_reason,
-                    });
+                    }
                 }
-            }
+                BaseInputTypeReference::InputObject(iotd) => {
+                    if let ValueReference::Object(obj_value) = value.as_ref() {
+                        iotd.input_field_definitions()
+                            .iter()
+                            .for_each(|input_field_definition| {
+                                let found_usage = obj_value.iter().find(|(key, _value)| {
+                                    key.as_ref() == input_field_definition.name()
+                                });
+
+                                if let Some((_, value)) = found_usage {
+                                    if let Some(reason) =
+                                        get_deprecation_reason::<S::InputValueDefinition>(
+                                            input_field_definition,
+                                        )
+                                    {
+                                        self.offenders.push(Offender {
+                                            name: input_field_definition.name(),
+                                            offense_type: UsageType::InputField,
+                                            reason,
+                                        });
+                                    }
+
+                                    self.find_deprecations_for_value(
+                                        input_field_definition.r#type(),
+                                        value,
+                                        name,
+                                    )
+                                }
+                            });
+                    }
+                }
+                _ => {}
+            },
         }
-        _ => {}
-    };
+    }
 }
 
 impl<'a, E: ExecutableDocument, S: SchemaDefinition, VV: VariableValues> Analyzer<'a, E, S, VV>
-    for Deprecation<'a, S, VV>
+    for Deprecation<'a, E, S, VV>
 {
-    type Output = Vec<Offender>;
+    type Output = Vec<Offender<'a>>;
 
     fn into_output(self) -> Self::Output {
         self.offenders
@@ -418,12 +263,11 @@ mod tests {
         Cache,
     };
     use bluejay_parser::ast::{
-        definition::{
-            DefaultContext, DefinitionDocument, SchemaDefinition as ParserSchemaDefinition,
-        },
+        definition::{DefinitionDocument, SchemaDefinition as ParserSchemaDefinition},
         executable::ExecutableDocument as ParserExecutableDocument,
         Parse,
     };
+    use once_cell::sync::Lazy;
     use serde_json::{Map as JsonMap, Value as JsonValue};
 
     type DeprecationAnalyzer<'a, E, S> = Orchestrator<
@@ -431,10 +275,10 @@ mod tests {
         E,
         S,
         JsonMap<String, JsonValue>,
-        Deprecation<'a, S, JsonMap<String, JsonValue>>,
+        Deprecation<'a, E, S, JsonMap<String, JsonValue>>,
     >;
 
-    const TEST_SCHEMA: &str = r#"
+    const TEST_SCHEMA_SDL: &str = r#"
         enum TestEnum {
             DEPRECATED @deprecated(reason: "enum_value")
         }
@@ -465,160 +309,176 @@ mod tests {
         }
     "#;
 
-    fn find_deprecations(query: String, variables: serde_json::Value) -> Vec<Offender> {
-        let definition_document: DefinitionDocument<'_, DefaultContext> =
-            DefinitionDocument::parse(TEST_SCHEMA).expect("Schema had parse errors");
-        let schema_definition =
-            ParserSchemaDefinition::try_from(&definition_document).expect("Schema had errors");
-        let executable_document = ParserExecutableDocument::parse(&query)
+    static TEST_DEFINITION_DOCUMENT: Lazy<DefinitionDocument<'static>> =
+        Lazy::new(|| DefinitionDocument::parse(TEST_SCHEMA_SDL).unwrap());
+
+    static TEST_SCHEMA_DEFINITION: Lazy<ParserSchemaDefinition<'static>> =
+        Lazy::new(|| ParserSchemaDefinition::try_from(&*TEST_DEFINITION_DOCUMENT).unwrap());
+
+    fn validate_deprecations(query: &str, variables: serde_json::Value, expected: Vec<Offender>) {
+        let executable_document = ParserExecutableDocument::parse(query)
             .unwrap_or_else(|_| panic!("Document had parse errors"));
-        let cache = Cache::new(&executable_document, &schema_definition);
+        let cache = Cache::new(&executable_document, &*TEST_SCHEMA_DEFINITION);
         let variables = variables.as_object().expect("Variables must be an object");
-        DeprecationAnalyzer::analyze(
+        let deprecations = DeprecationAnalyzer::analyze(
             &executable_document,
-            &schema_definition,
+            &*TEST_SCHEMA_DEFINITION,
             None,
             variables,
             &cache,
             (),
         )
-        .unwrap()
+        .unwrap();
+        assert_eq!(deprecations, expected);
     }
 
     #[test]
     fn field_deprecation() {
-        let result =
-            find_deprecations(r#"query { test_field }"#.to_string(), serde_json::json!({}));
-        let first_item = result.first().unwrap();
-        assert_eq!(first_item.name, "test_field");
-        assert_eq!(first_item.reason, "field");
-        assert_eq!(first_item.offense_type, UsageType::Field);
+        validate_deprecations(
+            r#"query { test_field }"#,
+            serde_json::json!({}),
+            vec![Offender {
+                name: "test_field",
+                reason: "field",
+                offense_type: UsageType::Field,
+            }],
+        );
     }
 
     #[test]
     fn valid_field() {
-        let result = find_deprecations(
-            r#"query { valid_field }"#.to_string(),
-            serde_json::json!({}),
-        );
-        assert_eq!(result.len(), 0);
+        validate_deprecations(r#"query { valid_field }"#, serde_json::json!({}), vec![]);
     }
 
     #[test]
     fn variable_enum_value_deprecation() {
-        let result = find_deprecations(
-            r#"query ($test: TestEnum) { test_enum(deprecated_enum: $test) }"#.to_string(),
+        validate_deprecations(
+            r#"query ($test: TestEnum) { test_enum(deprecated_enum: $test) }"#,
             serde_json::json!({ "test": "DEPRECATED" }),
+            vec![Offender {
+                name: "test",
+                reason: "enum_value",
+                offense_type: UsageType::EnumValue,
+            }],
         );
-        let first_item = result.first().unwrap();
-        assert_eq!(first_item.name, "deprecated_enum");
-        assert_eq!(first_item.reason, "enum_value");
-        assert_eq!(first_item.offense_type, UsageType::EnumValue);
     }
 
     #[test]
     fn enum_value_deprecation() {
-        let result = find_deprecations(
-            r#"query { test_enum(deprecated_enum: DEPRECATED) }"#.to_string(),
+        validate_deprecations(
+            r#"query { test_enum(deprecated_enum: DEPRECATED) }"#,
             serde_json::json!({}),
+            vec![Offender {
+                name: "deprecated_enum",
+                reason: "enum_value",
+                offense_type: UsageType::EnumValue,
+            }],
         );
-        let first_item = result.first().unwrap();
-        assert_eq!(first_item.name, "deprecated_enum");
-        assert_eq!(first_item.reason, "enum_value");
-        assert_eq!(first_item.offense_type, UsageType::EnumValue);
     }
 
     #[test]
     fn arg_deprecation() {
-        let result = find_deprecations(
-            r#"query { test_arg(deprecated_arg: "x") }"#.to_string(),
+        validate_deprecations(
+            r#"query { test_arg(deprecated_arg: "x") }"#,
             serde_json::json!({}),
+            vec![Offender {
+                name: "deprecated_arg",
+                reason: "arg",
+                offense_type: UsageType::Argument,
+            }],
         );
-        let first_item = result.first().unwrap();
-        assert_eq!(first_item.name, "deprecated_arg");
-        assert_eq!(first_item.reason, "arg");
-        assert_eq!(first_item.offense_type, UsageType::Argument);
     }
 
     #[test]
     fn variable_arg_deprecation() {
-        let result = find_deprecations(
-            r#"query($test: String) { test_arg(deprecated_arg: $test) }"#.to_string(),
+        validate_deprecations(
+            r#"query($test: String) { test_arg(deprecated_arg: $test) }"#,
             serde_json::json!({ "test": "x" }),
+            vec![Offender {
+                name: "deprecated_arg",
+                reason: "arg",
+                offense_type: UsageType::Argument,
+            }],
         );
-        let first_item = result.first().unwrap();
-        assert_eq!(first_item.name, "deprecated_arg");
-        assert_eq!(first_item.reason, "arg");
-        assert_eq!(first_item.offense_type, UsageType::Argument);
     }
 
     #[test]
     fn input_field_deprecation() {
-        let result = find_deprecations(
-            r#"query { test_input(input: { deprecated_input_field: "x" }) }"#.to_string(),
+        validate_deprecations(
+            r#"query { test_input(input: { deprecated_input_field: "x" }) }"#,
             serde_json::json!({}),
+            vec![Offender {
+                name: "deprecated_input_field",
+                reason: "input_field",
+                offense_type: UsageType::InputField,
+            }],
         );
-        let first_item = result.first().unwrap();
-        assert_eq!(first_item.name, "deprecated_input_field");
-        assert_eq!(first_item.reason, "input_field");
-        assert_eq!(first_item.offense_type, UsageType::InputField);
     }
 
     #[test]
     fn variable_input_field_deprecation() {
-        let result = find_deprecations(
-            r#"query($input: TestInput) { test_input(input: $input) }"#.to_string(),
+        validate_deprecations(
+            r#"query($input: TestInput) { test_input(input: $input) }"#,
             serde_json::json!({ "input": { "deprecated_input_field": "x" } }),
+            vec![Offender {
+                name: "deprecated_input_field",
+                reason: "input_field",
+                offense_type: UsageType::InputField,
+            }],
         );
-        let first_item = result.first().unwrap();
-        assert_eq!(first_item.name, "deprecated_input_field");
-        assert_eq!(first_item.reason, "input_field");
-        assert_eq!(first_item.offense_type, UsageType::InputField);
     }
 
     #[test]
     fn nested_variable_input_field_deprecation() {
-        let result = find_deprecations(
-            r#"query($test: String) { test_input(input: { deprecated_input_field: $test }) }"#
-                .to_string(),
+        validate_deprecations(
+            r#"query($test: String) { test_input(input: { deprecated_input_field: $test }) }"#,
             serde_json::json!({
                 "test": "x"
             }),
+            vec![Offender {
+                name: "deprecated_input_field",
+                reason: "input_field",
+                offense_type: UsageType::InputField,
+            }],
         );
-        let first_item = result.first().unwrap();
-        assert_eq!(first_item.name, "deprecated_input_field");
-        assert_eq!(first_item.reason, "input_field");
-        assert_eq!(first_item.offense_type, UsageType::InputField);
     }
 
     #[test]
     fn nested_input_field_deprecation() {
-        let result = find_deprecations(r#"query { test_nested_input(nested_input: { nested: { deprecated_input_field: "x" } }) }"#.to_string(), serde_json::json!({}));
-        let first_item = result.first().unwrap();
-        assert_eq!(first_item.name, "deprecated_input_field");
-        assert_eq!(first_item.reason, "input_field");
-        assert_eq!(first_item.offense_type, UsageType::InputField);
+        validate_deprecations(
+            r#"query { test_nested_input(nested_input: { nested: { deprecated_input_field: "x" } }) }"#,
+            serde_json::json!({}),
+            vec![Offender {
+                name: "deprecated_input_field",
+                reason: "input_field",
+                offense_type: UsageType::InputField,
+            }],
+        );
     }
 
     #[test]
     fn nested_list_input_field_deprecation() {
-        let result = find_deprecations(r#"query { test_nested_input_list(nested_input: [{ nested: { deprecated_input_field: "x" } }]) }"#.to_string(), serde_json::json!({}));
-        let first_item = result.first().unwrap();
-        assert_eq!(first_item.name, "deprecated_input_field");
-        assert_eq!(first_item.reason, "input_field");
-        assert_eq!(first_item.offense_type, UsageType::InputField);
+        validate_deprecations(
+            r#"query { test_nested_input_list(nested_input: [{ nested: { deprecated_input_field: "x" } }]) }"#,
+            serde_json::json!({}),
+            vec![Offender {
+                name: "deprecated_input_field",
+                reason: "input_field",
+                offense_type: UsageType::InputField,
+            }],
+        );
     }
 
     #[test]
     fn nested_variable_list_input_field_deprecation() {
-        let result = find_deprecations(
-            r#"query($test: [NestedInput]) { test_nested_input_list(nested_input: $test) }"#
-                .to_string(),
+        validate_deprecations(
+            r#"query($test: [NestedInput]) { test_nested_input_list(nested_input: $test) }"#,
             serde_json::json!({ "test": [{ "nested": { "deprecated_input_field": "x" } }] }),
+            vec![Offender {
+                name: "deprecated_input_field",
+                reason: "input_field",
+                offense_type: UsageType::InputField,
+            }],
         );
-        let first_item = result.first().unwrap();
-        assert_eq!(first_item.name, "deprecated_input_field");
-        assert_eq!(first_item.reason, "input_field");
-        assert_eq!(first_item.offense_type, UsageType::InputField);
     }
 }
