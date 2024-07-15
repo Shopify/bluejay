@@ -42,11 +42,13 @@ impl<
         C: CostComputer<'a, E, S, V>,
     > Visitor<'a, E, S, V> for ComplexityCost<'a, E, S, V, C>
 {
+    type ExtraInfo = ();
     fn new(
         operation_definition: &'a E::OperationDefinition,
         schema_definition: &'a S,
         variable_values: &'a V,
         _: &'a Cache<'a, E, S>,
+        _: Self::ExtraInfo,
     ) -> Self {
         let mut scopes_arena = Arena::new();
         let scopes_stack = vec![Some(scopes_arena.add(ComplexityScope::default()))];
@@ -465,6 +467,7 @@ mod tests {
             operation_name,
             variables,
             &cache,
+            (),
         )
         .unwrap();
 

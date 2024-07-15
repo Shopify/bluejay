@@ -14,7 +14,15 @@ pub struct QueryDepth {
 impl<'a, E: ExecutableDocument, S: SchemaDefinition, VV: VariableValues> Visitor<'a, E, S, VV>
     for QueryDepth
 {
-    fn new(_: &'a E::OperationDefinition, _s: &'a S, _: &'a VV, _: &'a Cache<'a, E, S>) -> Self {
+    type ExtraInfo = ();
+
+    fn new(
+        _: &'a E::OperationDefinition,
+        _s: &'a S,
+        _: &'a VV,
+        _: &'a Cache<'a, E, S>,
+        _: Self::ExtraInfo,
+    ) -> Self {
         Self {
             current_depth: 0,
             max_depth: 0,
@@ -116,6 +124,7 @@ mod tests {
             operation_name,
             variables,
             &cache,
+            (),
         )
         .unwrap();
 

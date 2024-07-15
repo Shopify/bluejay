@@ -27,11 +27,14 @@ pub struct VariableValuesAreValid<
 impl<'a, E: ExecutableDocument, S: SchemaDefinition, VV: VariableValues> Visitor<'a, E, S, VV>
     for VariableValuesAreValid<'a, E, S, VV>
 {
+    type ExtraInfo = ();
+
     fn new(
         _: &'a E::OperationDefinition,
         schema_definition: &'a S,
         variable_values: &'a VV,
         cache: &'a Cache<'a, E, S>,
+        _: Self::ExtraInfo,
     ) -> Self {
         Self {
             executable_document: PhantomData,
@@ -187,6 +190,7 @@ mod tests {
                     .as_object()
                     .expect("Variables must be an object"),
                 &cache,
+                (),
             )
             .unwrap()
             .into_iter()
