@@ -4,7 +4,7 @@ expression: formatted_errors
 input_file: bluejay-validator/tests/test_data/executable/error/fragment_spread_type_exists.graphql
 ---
 Error: No type definition with name `NotInSchema`
-   ╭─[<unknown>:1:31]
+   ╭─[fragment_spread_type_exists.graphql:1:31]
    │
  1 │ fragment notOnExistingType on NotInSchema {
    │                               ─────┬─────  
@@ -12,10 +12,9 @@ Error: No type definition with name `NotInSchema`
 ───╯
 
 Error: No type definition with name `NotInSchema`
-   ╭─[<unknown>:6:10]
+   ╭─[fragment_spread_type_exists.graphql:6:10]
    │
  6 │   ... on NotInSchema {
    │          ─────┬─────  
    │               ╰─────── No type with this name
 ───╯
-

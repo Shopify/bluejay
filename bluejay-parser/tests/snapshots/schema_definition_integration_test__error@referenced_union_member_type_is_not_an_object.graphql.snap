@@ -4,7 +4,7 @@ expression: formatted_errors
 input_file: bluejay-parser/tests/test_data/schema_definition/error/referenced_union_member_type_is_not_an_object.graphql
 ---
 Error: Referenced type `Int` is not an object
-   ╭─[<unknown>:1:17]
+   ╭─[referenced_union_member_type_is_not_an_object.graphql:1:17]
    │
  1 │ union MyUnion = Int | String
    │                 ─┬─  
@@ -12,10 +12,9 @@ Error: Referenced type `Int` is not an object
 ───╯
 
 Error: Referenced type `String` is not an object
-   ╭─[<unknown>:1:23]
+   ╭─[referenced_union_member_type_is_not_an_object.graphql:1:23]
    │
  1 │ union MyUnion = Int | String
    │                       ───┬──  
    │                          ╰──── Not an object type
 ───╯
-

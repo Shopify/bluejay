@@ -4,7 +4,7 @@ expression: formatted_errors
 input_file: bluejay-validator/tests/test_data/executable/error/variable_uniqueness.graphql
 ---
 Error: Multiple variable definitions named $atOtherHomes
-   ╭─[<unknown>:1:1]
+   ╭─[variable_uniqueness.graphql:1:1]
    │
  1 │ query houseTrainedQuery($atOtherHomes: Boolean, $atOtherHomes: Boolean) {
    │                         ──────┬──────           ──────┬──────  
@@ -12,4 +12,3 @@ Error: Multiple variable definitions named $atOtherHomes
    │                                                       │        
    │                                                       ╰──────── Variable definition with name $atOtherHomes
 ───╯
-

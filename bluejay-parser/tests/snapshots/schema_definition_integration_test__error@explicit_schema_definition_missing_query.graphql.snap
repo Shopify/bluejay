@@ -4,7 +4,7 @@ expression: formatted_errors
 input_file: bluejay-parser/tests/test_data/schema_definition/error/explicit_schema_definition_missing_query.graphql
 ---
 Error: Schema definition does not contain a query
-   ╭─[<unknown>:5:8]
+   ╭─[explicit_schema_definition_missing_query.graphql:5:8]
    │
  5 │ ╭─▶ schema {
    ┆ ┆   
@@ -12,4 +12,3 @@ Error: Schema definition does not contain a query
    │ │       
    │ ╰─────── Does not contain a query
 ───╯
-

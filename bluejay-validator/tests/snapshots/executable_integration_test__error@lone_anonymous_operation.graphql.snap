@@ -4,7 +4,7 @@ expression: formatted_errors
 input_file: bluejay-validator/tests/test_data/executable/error/lone_anonymous_operation.graphql
 ---
 Error: Anonymous operation not lone operation in document
-   ╭─[<unknown>:1:1]
+   ╭─[lone_anonymous_operation.graphql:1:1]
    │
  1 │ ╭─▶ {
    ┆ ┆   
@@ -12,4 +12,3 @@ Error: Anonymous operation not lone operation in document
    │ │       
    │ ╰─────── Anonymous operation definition
 ───╯
-

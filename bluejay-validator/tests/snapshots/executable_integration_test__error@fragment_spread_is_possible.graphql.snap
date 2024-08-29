@@ -4,7 +4,7 @@ expression: formatted_errors
 input_file: bluejay-validator/tests/test_data/executable/error/fragment_spread_is_possible.graphql
 ---
 Error: Fragment targeting type Cat cannot be spread for type Dog
-   ╭─[<unknown>:2:3]
+   ╭─[fragment_spread_is_possible.graphql:2:3]
    │
  2 │ ╭─▶   ... on Cat {
    ┆ ┆   
@@ -14,7 +14,7 @@ Error: Fragment targeting type Cat cannot be spread for type Dog
 ───╯
 
 Error: Fragment targeting type Sentient cannot be spread for type Dog
-    ╭─[<unknown>:8:3]
+    ╭─[fragment_spread_is_possible.graphql:8:3]
     │
   8 │ ╭─▶   ... on Sentient {
     ┆ ┆   
@@ -24,7 +24,7 @@ Error: Fragment targeting type Sentient cannot be spread for type Dog
 ────╯
 
 Error: Fragment targeting type Dog cannot be spread for type Sentient
-    ╭─[<unknown>:14:3]
+    ╭─[fragment_spread_is_possible.graphql:14:3]
     │
  14 │ ╭─▶   ... on Dog {
     ┆ ┆   
@@ -34,7 +34,7 @@ Error: Fragment targeting type Dog cannot be spread for type Sentient
 ────╯
 
 Error: Fragment targeting type Cat cannot be spread for type HumanOrAlien
-    ╭─[<unknown>:20:3]
+    ╭─[fragment_spread_is_possible.graphql:20:3]
     │
  20 │ ╭─▶   ... on Cat {
     ┆ ┆   
@@ -44,10 +44,9 @@ Error: Fragment targeting type Cat cannot be spread for type HumanOrAlien
 ────╯
 
 Error: Fragment `sentientFragment` cannot be spread for type Pet
-    ╭─[<unknown>:26:6]
+    ╭─[fragment_spread_is_possible.graphql:26:6]
     │
  26 │   ...sentientFragment
     │      ────────┬───────  
     │              ╰───────── Cannot be spread for type Pet
 ────╯
-

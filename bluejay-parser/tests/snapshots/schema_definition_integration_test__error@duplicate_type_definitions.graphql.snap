@@ -4,7 +4,7 @@ expression: formatted_errors
 input_file: bluejay-parser/tests/test_data/schema_definition/error/duplicate_type_definitions.graphql
 ---
 Error: Multiple type definitions with name `Query`
-   ╭─[<unknown>:1:1]
+   ╭─[duplicate_type_definitions.graphql:1:1]
    │
  4 │ type Query {
    │      ──┬──  
@@ -14,4 +14,3 @@ Error: Multiple type definitions with name `Query`
    │      ──┬──  
    │        ╰──── Type definition with name `Query`
 ───╯
-

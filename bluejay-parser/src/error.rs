@@ -85,9 +85,11 @@ impl Error {
     #[cfg(feature = "format-errors")]
     pub fn format_errors<E: Into<Error>>(
         document: &str,
+        filename: Option<&str>,
         errors: impl IntoIterator<Item = E>,
     ) -> String {
-        let mut file_cache = Source::from(document);
+        let filename = filename.unwrap_or("<unknown>");
+        let mut file_cache = (filename, Source::from(document));
 
         let mut buf: Vec<u8> = Vec::new();
 
@@ -101,7 +103,7 @@ impl Error {
                 }
                 Report::build(
                     ReportKind::Error,
-                    (),
+                    filename,
                     error
                         .primary_annotation
                         .as_ref()
@@ -118,13 +120,15 @@ impl Error {
                     error
                         .primary_annotation
                         .map(|Annotation { message, span }| {
-                            Label::new(span)
+                            Label::new((filename, span.into()))
                                 .with_message(message.as_ref())
                                 .with_priority(1)
                         }),
                 )
                 .with_labels(error.secondary_annotations.into_iter().map(
-                    |Annotation { message, span }| Label::new(span).with_message(message.as_ref()),
+                    |Annotation { message, span }| {
+                        Label::new((filename, span.into())).with_message(message.as_ref())
+                    },
                 ))
                 .finish()
                 .write(&mut file_cache, &mut buf)

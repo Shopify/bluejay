@@ -4,7 +4,7 @@ expression: formatted_errors
 input_file: bluejay-validator/tests/test_data/executable/error/fragment_spreads_must_not_form_cycles_nested.graphql
 ---
 Error: Cycle detected in fragment `dogFragment`
-    ╭─[<unknown>:17:8]
+    ╭─[fragment_spreads_must_not_form_cycles_nested.graphql:17:8]
     │
   7 │ fragment dogFragment on Dog {
     │          ─────┬─────  
@@ -16,7 +16,7 @@ Error: Cycle detected in fragment `dogFragment`
 ────╯
 
 Error: Cycle detected in fragment `ownerFragment`
-    ╭─[<unknown>:10:8]
+    ╭─[fragment_spreads_must_not_form_cycles_nested.graphql:10:8]
     │
  10 │     ...ownerFragment
     │        ──────┬──────  
@@ -26,4 +26,3 @@ Error: Cycle detected in fragment `ownerFragment`
     │          ──────┬──────  
     │                ╰──────── Affected fragment definition
 ────╯
-

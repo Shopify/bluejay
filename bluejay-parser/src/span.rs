@@ -1,6 +1,6 @@
 use std::cmp::{max, min};
 use std::cmp::{Ord, Ordering, PartialOrd};
-use std::ops::Add;
+use std::ops::{Add, Range};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[repr(transparent)]
@@ -13,7 +13,7 @@ impl Span {
     }
 
     #[inline]
-    pub fn byte_range(&self) -> &std::ops::Range<usize> {
+    pub fn byte_range(&self) -> &Range<usize> {
         &self.0
     }
 
@@ -23,20 +23,9 @@ impl Span {
     }
 }
 
-#[cfg(feature = "format-errors")]
-impl ariadne::Span for Span {
-    type SourceId = ();
-
-    fn source(&self) -> &Self::SourceId {
-        &()
-    }
-
-    fn start(&self) -> usize {
-        self.0.start
-    }
-
-    fn end(&self) -> usize {
-        self.0.end
+impl From<Span> for Range<usize> {
+    fn from(val: Span) -> Self {
+        val.0
     }
 }
 

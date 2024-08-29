@@ -4,7 +4,7 @@ expression: formatted_errors
 input_file: bluejay-validator/tests/test_data/definition/error/input_object_circular_references.graphql
 ---
 Error: Input object type definition `MyInput` contains disallowed circular reference(s)
-   ╭─[<unknown>:1:7]
+   ╭─[input_object_circular_references.graphql:1:7]
    │
  1 │ input MyInput {
    │       ───┬───  
@@ -19,7 +19,7 @@ Error: Input object type definition `MyInput` contains disallowed circular refer
 ───╯
 
 Error: Input object type definition `NestedInput` contains disallowed circular reference(s)
-   ╭─[<unknown>:6:7]
+   ╭─[input_object_circular_references.graphql:6:7]
    │
  3 │   nestedCircularReference: NestedInput!
    │                            ──────┬─────  
@@ -29,4 +29,3 @@ Error: Input object type definition `NestedInput` contains disallowed circular r
    │       ─────┬─────  
    │            ╰─────── Input object type definition contains circular reference(s) through an unbroken chain of non-null singular fields, which is disallowed
 ───╯
-

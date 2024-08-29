@@ -18,7 +18,11 @@ fn test_error() {
             let cache = Cache::new(&executable_document, &schema_definition);
             let errors =
                 BuiltinRulesValidator::validate(&executable_document, &schema_definition, &cache);
-            let formatted_errors = Error::format_errors(input.as_str(), errors);
+            let formatted_errors = Error::format_errors(
+                input.as_str(),
+                path.file_name().and_then(|f| f.to_str()),
+                errors,
+            );
             insta::assert_snapshot!(formatted_errors);
         });
     });
@@ -39,7 +43,11 @@ fn test_valid() {
                 errors.is_empty(),
                 "Document `{}` had validation errors:\n{}",
                 path.display(),
-                Error::format_errors(input.as_str(), errors),
+                Error::format_errors(
+                    input.as_str(),
+                    path.file_name().and_then(|f| f.to_str()),
+                    errors
+                ),
             )
         });
     });

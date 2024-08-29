@@ -4,10 +4,9 @@ expression: formatted_errors
 input_file: bluejay-parser/tests/test_data/executable_document/error/operation_name_typo.graphql
 ---
 Error: Unexpected token
-   ╭─[<unknown>:1:1]
+   ╭─[operation_name_typo.graphql:1:1]
    │
  1 │ querry {
    │ ───┬──  
    │    ╰──── Unexpected token
 ───╯
-

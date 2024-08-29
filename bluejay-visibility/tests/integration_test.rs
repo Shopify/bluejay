@@ -140,7 +140,7 @@ fn test_visibility() {
                 panic!(
                     "Schema `{}` had parse errors:\n{}",
                     path.display(),
-                    Error::format_errors(&input, errors)
+                    Error::format_errors(&input, path.file_name().and_then(|f| f.to_str()), errors)
                 )
             });
         let schema_definition = ParserSchemaDefinition::try_from(&definition_document)
@@ -148,7 +148,7 @@ fn test_visibility() {
                 panic!(
                     "Schema `{}` had coercion errors:\n:{}",
                     path.display(),
-                    Error::format_errors(&input, errors)
+                    Error::format_errors(&input, path.file_name().and_then(|f| f.to_str()), errors)
                 )
             });
 
@@ -178,14 +178,14 @@ fn test_fields_definition_get() {
         DefinitionDocument::parse(schema).unwrap_or_else(|errors| {
             panic!(
                 "Schema had parse errors:\n{}",
-                Error::format_errors(schema, errors)
+                Error::format_errors(schema, None, errors)
             )
         });
     let schema_definition =
         ParserSchemaDefinition::try_from(&definition_document).unwrap_or_else(|errors| {
             panic!(
                 "Schema had coercion errors:\n:{}",
-                Error::format_errors(schema, errors)
+                Error::format_errors(schema, None, errors)
             )
         });
 

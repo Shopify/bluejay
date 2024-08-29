@@ -4,10 +4,9 @@ expression: formatted_errors
 input_file: bluejay-parser/tests/test_data/executable_document/error/empty_arguments.graphql
 ---
 Error: Parse error
-   ╭─[<unknown>:2:9]
+   ╭─[empty_arguments.graphql:2:9]
    │
  2 │   field()
    │         ┬  
    │         ╰── Expected a name
 ───╯
-

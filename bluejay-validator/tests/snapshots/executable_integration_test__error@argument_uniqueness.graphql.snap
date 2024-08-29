@@ -4,7 +4,7 @@ expression: formatted_errors
 input_file: bluejay-validator/tests/test_data/executable/error/argument_uniqueness.graphql
 ---
 Error: Multiple arguments with name `dogCommand`
-   ╭─[<unknown>:1:1]
+   ╭─[argument_uniqueness.graphql:1:1]
    │
  3 │     doesKnowCommand(dogCommand: SIT, dogCommand: HEEL)
    │                     ─────┬────       ─────┬────  
@@ -14,7 +14,7 @@ Error: Multiple arguments with name `dogCommand`
 ───╯
 
 Error: Multiple arguments with name `atOtherHomes`
-   ╭─[<unknown>:1:1]
+   ╭─[argument_uniqueness.graphql:1:1]
    │
  9 │     isHouseTrained(atOtherHomes: true, atOtherHomes: false) @include(if: true, if: false)
    │                    ──────┬─────        ──────┬─────  
@@ -24,7 +24,7 @@ Error: Multiple arguments with name `atOtherHomes`
 ───╯
 
 Error: Multiple arguments with name `if`
-   ╭─[<unknown>:1:1]
+   ╭─[argument_uniqueness.graphql:1:1]
    │
  9 │     isHouseTrained(atOtherHomes: true, atOtherHomes: false) @include(if: true, if: false)
    │                                                                      ─┬        ─┬  
@@ -32,4 +32,3 @@ Error: Multiple arguments with name `if`
    │                                                                                 │  
    │                                                                                 ╰── Argument with name `if`
 ───╯
-
