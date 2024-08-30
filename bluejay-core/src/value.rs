@@ -15,12 +15,40 @@ pub trait ObjectValue<const CONST: bool>: std::fmt::Debug {
     fn iter(&self) -> Self::Iterator<'_>;
 }
 
+impl<
+        const CONST: bool,
+        K: AsRef<str> + PartialEq + std::fmt::Debug,
+        V: Value<CONST, Object = Vec<(K, V)>> + std::fmt::Debug,
+    > ObjectValue<CONST> for Vec<(K, V)>
+{
+    type Key = K;
+    type Value = V;
+    type Iterator<'a> =
+        std::iter::Map<std::slice::Iter<'a, (K, V)>, fn(&'a (K, V)) -> (&'a K, &'a V)> where Self: 'a;
+
+    fn iter(&self) -> Self::Iterator<'_> {
+        self.as_slice().iter().map(|(k, v)| (k, v))
+    }
+}
+
 pub trait ListValue<const CONST: bool>: AsIter<Item = Self::Value> + std::fmt::Debug {
     type Value: Value<CONST, List = Self>;
 }
 
+impl<const CONST: bool, T: Value<CONST, List = Vec<T>> + std::fmt::Debug> ListValue<CONST>
+    for Vec<T>
+{
+    type Value = T;
+}
+
 pub trait Variable {
     fn name(&self) -> &str;
+}
+
+impl<T: AsRef<str>> Variable for T {
+    fn name(&self) -> &str {
+        self.as_ref()
+    }
 }
 
 pub trait Value<const CONST: bool>: Sized {

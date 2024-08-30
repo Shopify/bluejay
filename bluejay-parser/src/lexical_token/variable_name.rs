@@ -49,9 +49,3 @@ impl<'a> PartialEq<str> for Variable<'a> {
         self.as_ref() == other
     }
 }
-
-impl<'a> bluejay_core::Variable for Variable<'a> {
-    fn name(&self) -> &str {
-        self.value
-    }
-}
