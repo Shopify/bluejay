@@ -10,7 +10,7 @@ use bluejay_core::executable::{
     ExecutableDocument, Field, FragmentDefinition, FragmentSpread, InlineFragment, Selection,
     SelectionReference,
 };
-use bluejay_core::{Argument, AsIter, Indexed, Value};
+use bluejay_core::{Arguments, AsIter, Indexed};
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::ops::Not;
 
@@ -185,7 +185,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> FieldSelectionMer
                                         field_a: first.field,
                                         field_b: other.field,
                                     })
-                                } else if !Self::arguments_equal(
+                                } else if !<E::Arguments<false> as Arguments<false>>::equivalent(
                                     first.field.arguments(),
                                     other.field.arguments(),
                                 ) {
@@ -360,29 +360,6 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> FieldSelectionMer
             }
             _ => false,
         }
-    }
-
-    fn arguments_equal(
-        args_a: Option<&'a E::Arguments<false>>,
-        args_b: Option<&'a E::Arguments<false>>,
-    ) -> bool {
-        let lhs: HashMap<&str, _> = args_a
-            .map(|args| {
-                HashMap::from_iter(
-                    args.iter()
-                        .map(|arg: &E::Argument<false>| (arg.name(), arg.value().as_ref())),
-                )
-            })
-            .unwrap_or_default();
-        let rhs: HashMap<&str, _> = args_b
-            .map(|args| {
-                HashMap::from_iter(
-                    args.iter()
-                        .map(|arg: &E::Argument<false>| (arg.name(), arg.value().as_ref())),
-                )
-            })
-            .unwrap_or_default();
-        lhs == rhs
     }
 }
 
