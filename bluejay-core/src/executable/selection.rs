@@ -1,4 +1,7 @@
-use crate::executable::{Field, FragmentSpread, InlineFragment};
+use crate::{
+    definition::DirectiveLocation,
+    executable::{Field, FragmentSpread, InlineFragment},
+};
 
 #[derive(Debug)]
 pub enum SelectionReference<'a, S: Selection> {
@@ -21,6 +24,14 @@ impl<'a, S: Selection> SelectionReference<'a, S> {
             Self::Field(f) => f.directives(),
             Self::FragmentSpread(fs) => fs.directives(),
             Self::InlineFragment(i) => i.directives(),
+        }
+    }
+
+    pub fn associated_directive_location(&self) -> DirectiveLocation {
+        match self {
+            Self::Field(_) => DirectiveLocation::Field,
+            Self::FragmentSpread(_) => DirectiveLocation::FragmentSpread,
+            Self::InlineFragment(_) => DirectiveLocation::InlineFragment,
         }
     }
 }
