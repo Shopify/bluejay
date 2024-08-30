@@ -1,4 +1,4 @@
-use crate::{ListValue, ObjectValue, Value, ValueReference, Variable};
+use crate::{ObjectValue, Value, ValueReference, Variable};
 use serde_json::{map, Map, Value as JsonValue};
 
 pub enum Never {}
@@ -17,10 +17,6 @@ impl<const CONST: bool> ObjectValue<CONST> for Map<String, JsonValue> {
     fn iter(&self) -> Self::Iterator<'_> {
         self.iter()
     }
-}
-
-impl<const CONST: bool> ListValue<CONST> for Vec<JsonValue> {
-    type Value = JsonValue;
 }
 
 impl<const CONST: bool> Value<CONST> for JsonValue {
