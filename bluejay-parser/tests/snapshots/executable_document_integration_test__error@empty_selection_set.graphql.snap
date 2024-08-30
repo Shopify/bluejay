@@ -4,10 +4,9 @@ expression: formatted_errors
 input_file: bluejay-parser/tests/test_data/executable_document/error/empty_selection_set.graphql
 ---
 Error: Unexpected token
-   ╭─[<unknown>:1:2]
+   ╭─[empty_selection_set.graphql:1:2]
    │
  1 │ {}
    │  ┬  
    │  ╰── Unexpected token
 ───╯
-

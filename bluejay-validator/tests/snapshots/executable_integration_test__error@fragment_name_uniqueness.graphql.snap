@@ -4,7 +4,7 @@ expression: formatted_errors
 input_file: bluejay-validator/tests/test_data/executable/error/fragment_name_uniqueness.graphql
 ---
 Error: Multiple fragment definitions named `fragmentOne`
-    ╭─[<unknown>:1:1]
+    ╭─[fragment_name_uniqueness.graphql:1:1]
     │
   7 │ fragment fragmentOne on Dog {
     │          ─────┬─────  
@@ -14,4 +14,3 @@ Error: Multiple fragment definitions named `fragmentOne`
     │          ─────┬─────  
     │               ╰─────── Fragment definition with name `fragmentOne`
 ────╯
-

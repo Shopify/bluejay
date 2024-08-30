@@ -18,7 +18,8 @@ fn test_error() {
 
         let errors: Vec<_> = BuiltinRulesValidator::validate(&schema_definition).collect();
 
-        let formatted_errors = Error::format_errors(&input, errors);
+        let formatted_errors =
+            Error::format_errors(&input, path.file_name().and_then(|f| f.to_str()), errors);
         insta::assert_snapshot!(formatted_errors);
     });
 }
@@ -38,7 +39,7 @@ fn test_valid() {
             errors.is_empty(),
             "Schema `{}` had validation errors:\n{}",
             path.display(),
-            Error::format_errors(&input, errors),
+            Error::format_errors(&input, path.file_name().and_then(|f| f.to_str()), errors),
         )
     });
 }

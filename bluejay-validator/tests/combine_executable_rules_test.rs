@@ -36,6 +36,6 @@ fn test_combine_executable_rules() {
     assert!(
         errors.is_empty(),
         "Document had validation errors:\n{}",
-        Error::format_errors(executable_document_str, errors),
+        Error::format_errors(executable_document_str, None, errors),
     )
 }

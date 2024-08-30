@@ -4,7 +4,7 @@ expression: formatted_errors
 input_file: bluejay-validator/tests/test_data/executable/error/leaf_field_selections.graphql
 ---
 Error: Selection on field of leaf type `Int` was not empty
-   ╭─[<unknown>:3:16]
+   ╭─[leaf_field_selections.graphql:3:16]
    │
  3 │ ╭─▶     barkVolume {
    ┆ ┆   
@@ -14,7 +14,7 @@ Error: Selection on field of leaf type `Int` was not empty
 ───╯
 
 Error: No selection on field of non-leaf type `Human`
-    ╭─[<unknown>:10:3]
+    ╭─[leaf_field_selections.graphql:10:3]
     │
  10 │   human
     │   ──┬──  
@@ -22,7 +22,7 @@ Error: No selection on field of non-leaf type `Human`
 ────╯
 
 Error: No selection on field of non-leaf type `Pet`
-    ╭─[<unknown>:14:3]
+    ╭─[leaf_field_selections.graphql:14:3]
     │
  14 │   pet
     │   ─┬─  
@@ -30,10 +30,9 @@ Error: No selection on field of non-leaf type `Pet`
 ────╯
 
 Error: No selection on field of non-leaf type `CatOrDog`
-    ╭─[<unknown>:18:3]
+    ╭─[leaf_field_selections.graphql:18:3]
     │
  18 │   catOrDog
     │   ────┬───  
     │       ╰───── Fields of non-leaf types must have a selection
 ────╯
-

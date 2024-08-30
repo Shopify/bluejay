@@ -4,7 +4,7 @@ expression: formatted_errors
 input_file: bluejay-validator/tests/test_data/executable/error/fragment_spreads_must_not_form_cycles.graphql
 ---
 Error: Cycle detected in fragment `barkVolumeFragment`
-    ╭─[<unknown>:9:6]
+    ╭─[fragment_spreads_must_not_form_cycles.graphql:9:6]
     │
   9 │   ...barkVolumeFragment
     │      ─────────┬────────  
@@ -16,7 +16,7 @@ Error: Cycle detected in fragment `barkVolumeFragment`
 ────╯
 
 Error: Cycle detected in fragment `nameFragment`
-    ╭─[<unknown>:14:6]
+    ╭─[fragment_spreads_must_not_form_cycles.graphql:14:6]
     │
   7 │ fragment nameFragment on Dog {
     │          ──────┬─────  
@@ -26,4 +26,3 @@ Error: Cycle detected in fragment `nameFragment`
     │      ──────┬─────  
     │            ╰─────── Cycle introduced by fragment spread
 ────╯
-

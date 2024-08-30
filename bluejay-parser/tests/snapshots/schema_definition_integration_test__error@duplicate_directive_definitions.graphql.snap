@@ -4,7 +4,7 @@ expression: formatted_errors
 input_file: bluejay-parser/tests/test_data/schema_definition/error/duplicate_directive_definitions.graphql
 ---
 Error: Multiple directive definitions with name `@foo`
-   ╭─[<unknown>:1:1]
+   ╭─[duplicate_directive_definitions.graphql:1:1]
    │
  1 │ directive @foo on OBJECT
    │            ─┬─  
@@ -14,4 +14,3 @@ Error: Multiple directive definitions with name `@foo`
    │            ─┬─  
    │             ╰─── Directive definition with name `@foo`
 ───╯
-

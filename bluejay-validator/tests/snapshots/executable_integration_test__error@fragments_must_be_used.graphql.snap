@@ -4,10 +4,9 @@ expression: formatted_errors
 input_file: bluejay-validator/tests/test_data/executable/error/fragments_must_be_used.graphql
 ---
 Error: Fragment definition `nameFragment` is unused
-   ╭─[<unknown>:1:10]
+   ╭─[fragments_must_be_used.graphql:1:10]
    │
  1 │ fragment nameFragment on Dog { # unused
    │          ──────┬─────  
    │                ╰─────── Fragment definition is unused
 ───╯
-

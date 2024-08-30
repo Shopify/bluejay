@@ -76,15 +76,24 @@ fn generate_schema(input: Input, module: &mut syn::ItemMod) -> syn::Result<()> {
         ));
     }
 
-    let schema_contents = schema.read_to_string()?;
+    let (schema_contents, schema_path) = schema.read_to_string_and_path()?;
 
     let definition_document: DefinitionDocument = DefinitionDocument::parse(&schema_contents)
-        .map_err(|errors| map_parser_errors(schema, &schema_contents, errors))?;
-    let schema_definition = ParserSchemaDefinition::try_from(&definition_document)
-        .map_err(|errors| map_parser_errors(schema, &schema_contents, errors))?;
+        .map_err(|errors| {
+            map_parser_errors(schema, &schema_contents, schema_path.as_deref(), errors)
+        })?;
+    let schema_definition =
+        ParserSchemaDefinition::try_from(&definition_document).map_err(|errors| {
+            map_parser_errors(schema, &schema_contents, schema_path.as_deref(), errors)
+        })?;
     let schema_errors: Vec<_> = BuiltinRulesValidator::validate(&schema_definition).collect();
     if !schema_errors.is_empty() {
-        return Err(map_parser_errors(schema, &schema_contents, schema_errors));
+        return Err(map_parser_errors(
+            schema,
+            &schema_contents,
+            schema_path.as_deref(),
+            schema_errors,
+        ));
     }
 
     let custom_scalar_borrows = custom_scalar_borrows(module, &schema_definition, borrow)?;
@@ -283,11 +292,12 @@ fn process_module_item<S: SchemaDefinition>(
 fn map_parser_errors<E: Into<ParserError>>(
     span: &impl syn::spanned::Spanned,
     schema_contents: &str,
+    schema_path: Option<&str>,
     errors: impl IntoIterator<Item = E>,
 ) -> syn::Error {
     syn::Error::new(
         span.span(),
-        ParserError::format_errors(schema_contents, errors),
+        ParserError::format_errors(schema_contents, schema_path, errors),
     )
 }
 
@@ -298,8 +308,8 @@ fn map_parser_errors<E: Into<ParserError>>(
 /// **Positional:**
 ///
 /// 1. String literal with path to the file containing the schema definition. If relative, should be with respect to
-/// the project root (wherever `Cargo.toml` is located). Alternatively, include the schema contents enclosed in square
-/// brackets.
+///    the project root (wherever `Cargo.toml` is located). Alternatively, include the schema contents enclosed in square
+///    brackets.
 ///
 /// **Optional keyword:**
 ///
@@ -329,9 +339,9 @@ fn map_parser_errors<E: Into<ParserError>>(
 /// In order to keep the type generation code relatively simple, there are some restrictions on the queries that are
 /// permitted. This may be relaxed in future versions.
 /// * Selection sets on object and interface types must contain either a single fragment spread, or entirely field
-/// selections.
+///   selections.
 /// * Selection sets on union types must contain either a single fragment spread, or both an unaliased `__typename`
-/// selection and inline fragments for all or a subset of the objects contained in the union.
+///   selection and inline fragments for all or a subset of the objects contained in the union.
 ///
 /// ### Example
 /// See top-level documentation of `bluejay-typegen` for an example.

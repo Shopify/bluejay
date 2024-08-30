@@ -13,7 +13,11 @@ fn test_error() {
             "Document did not have any errors"
         );
         let errors = executable_document.unwrap_err();
-        let formatted_errors = Error::format_errors(input.as_str(), errors);
+        let formatted_errors = Error::format_errors(
+            input.as_str(),
+            path.file_name().and_then(|f| f.to_str()),
+            errors,
+        );
         insta::assert_snapshot!(formatted_errors);
     });
 }

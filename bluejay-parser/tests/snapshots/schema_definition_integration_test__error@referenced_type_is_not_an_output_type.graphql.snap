@@ -4,10 +4,9 @@ expression: formatted_errors
 input_file: bluejay-parser/tests/test_data/schema_definition/error/referenced_type_is_not_an_output_type.graphql
 ---
 Error: Referenced type `MyInput` is not an output type
-   ╭─[<unknown>:6:12]
+   ╭─[referenced_type_is_not_an_output_type.graphql:6:12]
    │
  6 │   myField: MyInput!
    │            ───┬───  
    │               ╰───── Not an output type
 ───╯
-

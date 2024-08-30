@@ -41,10 +41,10 @@ pub(crate) fn generate_executable_definition<S: SchemaDefinition>(
 ) -> syn::Result<Vec<syn::Item>> {
     let Input { query } = parse2(configuration)?;
 
-    let contents = query.read_to_string()?;
+    let (contents, path) = query.read_to_string_and_path()?;
 
     let executable_document = ExecutableDocument::parse(&contents)
-        .map_err(|errors| map_parser_errors(&query, &contents, errors))?;
+        .map_err(|errors| map_parser_errors(&query, &contents, path.as_deref(), errors))?;
     let validation_cache = Cache::new(&executable_document, config.schema_definition());
     let validation_errors: Vec<_> = BuiltinRulesValidator::validate(
         &executable_document,
@@ -53,7 +53,12 @@ pub(crate) fn generate_executable_definition<S: SchemaDefinition>(
     )
     .collect();
     if !validation_errors.is_empty() {
-        return Err(map_parser_errors(&query, &contents, validation_errors));
+        return Err(map_parser_errors(
+            &query,
+            &contents,
+            path.as_deref(),
+            validation_errors,
+        ));
     }
     let validation_errors: Vec<_> = Orchestrator::<_, _, validation::Rule<_, _>>::validate(
         &executable_document,
@@ -62,7 +67,12 @@ pub(crate) fn generate_executable_definition<S: SchemaDefinition>(
     )
     .collect();
     if !validation_errors.is_empty() {
-        return Err(map_parser_errors(&query, &contents, validation_errors));
+        return Err(map_parser_errors(
+            &query,
+            &contents,
+            path.as_deref(),
+            validation_errors,
+        ));
     }
 
     let executable_types = ExecutableType::for_executable_document(&executable_document, config);

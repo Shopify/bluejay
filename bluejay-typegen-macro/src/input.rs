@@ -74,10 +74,12 @@ impl ToTokens for DocumentInput {
 }
 
 impl DocumentInput {
-    pub(crate) fn read_to_string(&self) -> syn::Result<String> {
+    pub(crate) fn read_to_string_and_path(&self) -> syn::Result<(String, Option<String>)> {
         match self {
-            Self::Path(path) => Self::read_file(path),
-            Self::Dsl { contents, .. } => Ok(contents.to_string()),
+            Self::Path(path) => {
+                Self::read_file(path).map(|contents| (contents, Some(path.value())))
+            }
+            Self::Dsl { contents, .. } => Ok((contents.to_string(), None)),
         }
     }
 

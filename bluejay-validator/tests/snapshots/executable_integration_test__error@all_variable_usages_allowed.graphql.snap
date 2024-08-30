@@ -4,7 +4,7 @@ expression: formatted_errors
 input_file: bluejay-validator/tests/test_data/executable/error/all_variable_usages_allowed.graphql
 ---
 Error: Variable $intArg of type Int cannot be used here, where Boolean is expected
-   ╭─[<unknown>:3:33]
+   ╭─[all_variable_usages_allowed.graphql:3:33]
    │
  3 │     booleanArgField(booleanArg: $intArg)
    │                                 ───┬───  
@@ -12,7 +12,7 @@ Error: Variable $intArg of type Int cannot be used here, where Boolean is expect
 ───╯
 
 Error: Variable $booleanListArg of type [Boolean] cannot be used here, where Boolean is expected
-   ╭─[<unknown>:9:33]
+   ╭─[all_variable_usages_allowed.graphql:9:33]
    │
  9 │     booleanArgField(booleanArg: $booleanListArg)
    │                                 ───────┬───────  
@@ -20,7 +20,7 @@ Error: Variable $booleanListArg of type [Boolean] cannot be used here, where Boo
 ───╯
 
 Error: Variable $booleanArg of type Boolean cannot be used here, where Boolean! is expected
-    ╭─[<unknown>:15:47]
+    ╭─[all_variable_usages_allowed.graphql:15:47]
     │
  15 │     nonNullBooleanArgField(nonNullBooleanArg: $booleanArg)
     │                                               ─────┬─────  
@@ -28,10 +28,9 @@ Error: Variable $booleanArg of type Boolean cannot be used here, where Boolean! 
 ────╯
 
 Error: Variable $booleanList of type [Boolean] cannot be used here, where [Boolean!] is expected
-    ╭─[<unknown>:21:52]
+    ╭─[all_variable_usages_allowed.graphql:21:52]
     │
  21 │     nonNullBooleanListField(nonNullBooleanListArg: $booleanList)
     │                                                    ──────┬─────  
     │                                                          ╰─────── Cannot use variable of type [Boolean] where [Boolean!] is expected
 ────╯
-

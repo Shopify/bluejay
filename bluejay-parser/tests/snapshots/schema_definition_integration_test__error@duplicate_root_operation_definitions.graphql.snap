@@ -4,7 +4,7 @@ expression: formatted_errors
 input_file: bluejay-parser/tests/test_data/schema_definition/error/duplicate_root_operation_definitions.graphql
 ---
 Error: Multiple root operation type definitions for `query`
-    ╭─[<unknown>:1:1]
+    ╭─[duplicate_root_operation_definitions.graphql:1:1]
     │
  10 │   query: MyObject
     │          ────┬───  
@@ -13,4 +13,3 @@ Error: Multiple root operation type definitions for `query`
     │          ──────┬──────  
     │                ╰──────── Root operation type definition for `query`
 ────╯
-
