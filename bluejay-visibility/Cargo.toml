@@ -1,6 +1,6 @@
 [package]
 name = "bluejay-visibility"
-version = "0.1.0"
+version.workspace = true
 edition = "2021"
 license = "MIT"
 repository = "https://github.com/Shopify/bluejay"
@@ -13,15 +13,15 @@ description = "A GraphQL schema wrapper for enforcing visibility"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bluejay-core = { version = "0.1.0", path = "../bluejay-core" }
+bluejay-core = { workspace = true }
 elsa = "1.8.1"
 once_cell = "1.17"
 enum-as-inner = "0.6"
 
 [dev-dependencies]
 insta = { version = "1.28" }
-bluejay-parser = { path = "../bluejay-parser" }
-bluejay-printer = { path = "../bluejay-printer" }
+bluejay-parser = { workspace = true }
+bluejay-printer = { workspace = true }
 
 [lints]
 workspace = true

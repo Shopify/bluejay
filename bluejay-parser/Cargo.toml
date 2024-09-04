@@ -1,6 +1,6 @@
 [package]
 name = "bluejay-parser"
-version = "0.1.0"
+version.workspace = true
 edition = "2021"
 license = "MIT"
 repository = "https://github.com/Shopify/bluejay"
@@ -14,7 +14,7 @@ logos = { version = "0.14" }
 enum-as-inner = "0.6"
 ariadne = { version = "0.4.1" }
 serde = { version = "1.0.203", optional = true }
-bluejay-core = { version = "0.1.0", path = "../bluejay-core" }
+bluejay-core = { workspace = true }
 strum = { version = "0.26", features = ["derive"] }
 itertools = "0.13.0"
 

@@ -1,6 +1,6 @@
 [package]
 name = "bluejay-printer"
-version = "0.1.0"
+version.workspace = true
 edition = "2021"
 license = "MIT"
 repository = "https://github.com/Shopify/bluejay"
@@ -13,12 +13,12 @@ description = "A GraphQL printer"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bluejay-core = { version = "0.1.0", path = "../bluejay-core" }
+bluejay-core = { workspace = true }
 
 [dev-dependencies]
 insta = { version = "1.28", features = ["glob"] }
 similar-asserts = { version = "1.4" }
-bluejay-parser = { path = "../bluejay-parser" }
+bluejay-parser = { workspace = true }
 
 [lints]
 workspace = true
