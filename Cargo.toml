@@ -11,8 +11,21 @@ members = [
 ]
 resolver = "2"
 
+[workspace.package]
+version = "0.2.0"
+
 [workspace.lints.clippy]
 wildcard_imports = "deny"
+
+[workspace.dependencies]
+bluejay-core = { path = "./bluejay-core", version = "=0.2.0" }
+bluejay-parser = { path = "./bluejay-parser", version = "=0.2.0" }
+bluejay-printer = { path = "./bluejay-printer", version = "=0.2.0" }
+bluejay-schema-comparator = { path = "./bluejay-schema-comparator", version = "=0.2.0" }
+bluejay-typegen = { path = "./bluejay-typegen", version = "=0.2.0" }
+bluejay-typegen-macro = { path = "./bluejay-typegen-macro", version = "=0.2.0" }
+bluejay-validator = { path = "./bluejay-validator", version = "=0.2.0" }
+bluejay-visibility = { path = "./bluejay-visibility", version = "=0.2.0" }
 
 [profile.shopify-function]
 inherits = "release"

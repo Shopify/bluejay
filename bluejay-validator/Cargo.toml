@@ -1,6 +1,6 @@
 [package]
 name = "bluejay-validator"
-version = "0.1.0"
+version.workspace = true
 edition = "2021"
 license = "MIT"
 repository = "https://github.com/Shopify/bluejay"
@@ -10,15 +10,15 @@ exclude = [".gitignore", "tests/**/*"]
 description = "A GraphQL validator"
 
 [dependencies]
-bluejay-core = { version = "0.1.0", path = "../bluejay-core" }
-bluejay-parser = { version = "0.1.0", path = "../bluejay-parser", optional = true, features = ["format-errors"] }
+bluejay-core = { workspace = true }
+bluejay-parser = { workspace = true, optional = true, features = ["format-errors"] }
 paste = "1.0"
 itertools = "0.13.0"
 serde_json = { version = "1.0", optional = true }
 seq-macro = "0.3.5"
 
 [dev-dependencies]
-bluejay-core = { path = "../bluejay-core", features = ["serde_json"] }
+bluejay-core = { workspace = true, features = ["serde_json"] }
 criterion = "0.5"
 insta = { version = "1.28", features = ["glob"] }
 once_cell = "1.17"
