@@ -10,7 +10,7 @@ exclude = [".gitignore", "tests/**/*"]
 description = "A GraphQL type generator"
 
 [dependencies]
-bluejay-typegen-macro = { workspace = true }
+bluejay-typegen-macro = { workspace = true, default-features = false }
 # rename these packages to prevent the tests from passing if the macro generates code
 # referencing them directly instead of the re-exports
 srd = { package = "serde", version = "1.0", features = ["derive"], optional = true }
