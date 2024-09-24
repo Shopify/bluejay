@@ -25,6 +25,7 @@ itertools = "0.13.0"
 proc-macro = true
 
 [features]
+default = ["serde"]
 serde = []
 miniserde = []
 
