@@ -382,10 +382,20 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> ExecutableDocumentToExecuta
                 name: cstd.name(),
                 borrows: self.config.custom_scalar_borrows(cstd),
             },
-            BaseOutputTypeReference::Enum(etd) => ExecutableType::Leaf {
-                name: etd.name(),
-                borrows: false,
-            },
+            BaseOutputTypeReference::Enum(etd) => {
+                if self.config.enum_as_str(etd) {
+                    // kind of a hack because it's not a builtin scalar
+                    ExecutableType::BuiltinScalar {
+                        bstd: BuiltinScalarDefinition::String,
+                        borrows: self.config.borrow(),
+                    }
+                } else {
+                    ExecutableType::Leaf {
+                        name: etd.name(),
+                        borrows: false,
+                    }
+                }
+            }
             BaseOutputTypeReference::Object(otd) => {
                 let selection_set = selection_set.expect("No selections for object type");
                 match self.fields_or_fragment_spread(selection_set) {

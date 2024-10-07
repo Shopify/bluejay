@@ -1,6 +1,6 @@
 use bluejay_typegen::typegen;
 
-#[typegen("tests/schema.graphql", borrow = true)]
+#[typegen("tests/schema.graphql", borrow = true, enums_as_str = ["MyStrEnum"])]
 mod schema {
     type Decimal<'a> = std::borrow::Cow<'a, str>;
     type UnsignedInt = u32;
@@ -27,6 +27,30 @@ fn test_enum_serialization() {
     let value = schema::MyEnum::Variant1;
     let dumped = serde_json::to_value(value).expect("Error serializing value");
     assert_eq!(serde_json::json!("VARIANT_1"), dumped);
+}
+
+#[test]
+fn test_enum_as_str_deserialization() {
+    let value = serde_json::json!({ "myStrEnum": "VARIANT_2" });
+    let raw = value.to_string();
+    let parsed = serde_json::from_str(&raw).expect("Error parsing value");
+    assert_eq!(
+        schema::query::MyStrEnum {
+            my_str_enum: std::borrow::Cow::Borrowed("VARIANT_2")
+        },
+        parsed,
+    );
+}
+
+#[test]
+fn test_enum_as_str_serialization() {
+    let value = schema::MyStrEnumInput {
+        my_field: std::borrow::Cow::Borrowed("VARIANT_1"),
+    };
+    assert_eq!(
+        serde_json::json!({ "myField": "VARIANT_1" }),
+        serde_json::to_value(value).expect("Error serializing value"),
+    );
 }
 
 #[test]

@@ -1,5 +1,5 @@
 use bluejay_core::{
-    definition::{ScalarTypeDefinition, SchemaDefinition, TypeDefinitionReference},
+    definition::{prelude::*, SchemaDefinition, TypeDefinitionReference},
     BuiltinScalarDefinition,
 };
 use bluejay_parser::{
@@ -11,7 +11,7 @@ use bluejay_parser::{
 };
 use bluejay_validator::definition::BuiltinRulesValidator;
 use quote::ToTokens;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use syn::{parse_macro_input, spanned::Spanned};
 
 mod attributes;
@@ -35,6 +35,7 @@ pub(crate) struct Config<'a, S: SchemaDefinition> {
     schema_definition: &'a S,
     custom_scalar_borrows: HashMap<String, bool>,
     codec: Codec,
+    enums_as_str: HashSet<String>,
 }
 
 impl<'a, S: SchemaDefinition> Config<'a, S> {
@@ -60,6 +61,10 @@ impl<'a, S: SchemaDefinition> Config<'a, S> {
     pub(crate) fn codec(&self) -> Codec {
         self.codec
     }
+
+    pub(crate) fn enum_as_str(&self, etd: &S::EnumTypeDefinition) -> bool {
+        self.enums_as_str.contains(etd.name())
+    }
 }
 
 fn generate_schema(input: Input, module: &mut syn::ItemMod) -> syn::Result<()> {
@@ -67,6 +72,7 @@ fn generate_schema(input: Input, module: &mut syn::ItemMod) -> syn::Result<()> {
         ref schema,
         borrow,
         codec,
+        enums_as_str,
     } = input;
 
     if borrow && codec == Codec::Miniserde {
@@ -98,11 +104,14 @@ fn generate_schema(input: Input, module: &mut syn::ItemMod) -> syn::Result<()> {
 
     let custom_scalar_borrows = custom_scalar_borrows(module, &schema_definition, borrow)?;
 
+    let enums_as_str = validate_enums_as_str(enums_as_str, &schema_definition)?;
+
     let config = Config {
         schema_definition: &schema_definition,
         borrow,
         custom_scalar_borrows,
         codec,
+        enums_as_str,
     };
 
     if let Some((_, items)) = module.content.take() {
@@ -214,6 +223,35 @@ fn custom_scalar_borrows(
     Ok(custom_scalars)
 }
 
+fn validate_enums_as_str(
+    enums_as_str: syn::punctuated::Punctuated<syn::LitStr, syn::Token![,]>,
+    schema_definition: &impl SchemaDefinition,
+) -> syn::Result<HashSet<String>> {
+    let mut enum_names = HashSet::new();
+    enums_as_str.iter().try_for_each(|lit| {
+        let name: String = lit.value();
+        if matches!(
+            schema_definition.get_type_definition(&name),
+            Some(TypeDefinitionReference::Enum(_))
+        ) {
+            if enum_names.insert(name.clone()) {
+                Ok(())
+            } else {
+                Err(syn::Error::new(
+                    lit.span(),
+                    format!("Duplicate enum definition named {name}"),
+                ))
+            }
+        } else {
+            Err(syn::Error::new(
+                lit.span(),
+                format!("No enum definition named {name}"),
+            ))
+        }
+    })?;
+    Ok(enum_names)
+}
+
 fn process_module_items<S: SchemaDefinition>(
     config: &Config<S>,
     items: Vec<syn::Item>,
@@ -222,7 +260,7 @@ fn process_module_items<S: SchemaDefinition>(
         .schema_definition
         .type_definitions()
         .filter_map(|type_definition| match type_definition {
-            TypeDefinitionReference::Enum(etd) => {
+            TypeDefinitionReference::Enum(etd) if !config.enum_as_str(etd) => {
                 Some(EnumTypeDefinitionBuilder::build(etd, config))
             }
             TypeDefinitionReference::InputObject(iotd) => {
