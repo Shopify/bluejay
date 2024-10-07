@@ -39,3 +39,7 @@ query BuiltinScalars {
 fragment MyFragment on MyInterface {
   myField
 }
+
+query MyStrEnum {
+  myStrEnum
+}

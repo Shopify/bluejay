@@ -1,4 +1,4 @@
-use crate::Config;
+use crate::{types::string, Config};
 use bluejay_core::{definition::SchemaDefinition, BuiltinScalarDefinition};
 use syn::parse_quote;
 
@@ -20,12 +20,4 @@ pub(crate) fn scalar_is_reference(scalar: BuiltinScalarDefinition) -> bool {
         scalar,
         BuiltinScalarDefinition::ID | BuiltinScalarDefinition::String
     )
-}
-
-fn string<S: SchemaDefinition>(config: &Config<S>) -> syn::TypePath {
-    if config.borrow() {
-        parse_quote! { ::std::borrow::Cow<'a, str> }
-    } else {
-        parse_quote! { ::std::string::String }
-    }
 }

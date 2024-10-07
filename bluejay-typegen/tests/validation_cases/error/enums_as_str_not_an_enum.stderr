@@ -1,0 +1,5 @@
+error: No enum definition named Foo
+ --> tests/validation_cases/error/enums_as_str_not_an_enum.rs:7:20
+  |
+7 | ], enums_as_str = ["Foo"])]
+  |                    ^^^^^

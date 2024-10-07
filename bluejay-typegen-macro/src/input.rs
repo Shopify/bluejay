@@ -4,6 +4,7 @@ use syn::parse::Parse;
 mod kw {
     syn::custom_keyword!(borrow);
     syn::custom_keyword!(codec);
+    syn::custom_keyword!(enums_as_str);
 }
 
 #[derive(Clone, Copy, PartialEq)]
@@ -99,6 +100,7 @@ pub(crate) struct Input {
     pub(crate) schema: DocumentInput,
     pub(crate) borrow: bool,
     pub(crate) codec: Codec,
+    pub(crate) enums_as_str: syn::punctuated::Punctuated<syn::LitStr, syn::Token![,]>,
 }
 
 impl Parse for Input {
@@ -107,14 +109,21 @@ impl Parse for Input {
 
         let mut borrow: Option<syn::LitBool> = None;
         let mut codec: Option<Codec> = None;
+        let mut enums_as_str = None;
 
         while !input.is_empty() {
             input.parse::<syn::Token![,]>()?;
             let lookahead = input.lookahead1();
             if lookahead.peek(kw::borrow) {
-                Self::parse_key_value(&input, &mut borrow)?;
+                Self::parse_key_value(input, &mut borrow)?;
             } else if lookahead.peek(kw::codec) {
-                Self::parse_key_value(&input, &mut codec)?;
+                Self::parse_key_value(input, &mut codec)?;
+            } else if lookahead.peek(kw::enums_as_str) {
+                Self::parse_key_value_with(input, &mut enums_as_str, |input| {
+                    let content;
+                    syn::bracketed!(content in input);
+                    syn::punctuated::Punctuated::parse_separated_nonempty(&content)
+                })?;
             } else {
                 return Err(lookahead.error());
             }
@@ -122,19 +131,29 @@ impl Parse for Input {
 
         let borrow = borrow.map_or(false, |borrow| borrow.value);
         let codec = codec.unwrap_or_default();
+        let enums_as_str = enums_as_str.unwrap_or_default();
 
         Ok(Self {
             schema,
             borrow,
             codec,
+            enums_as_str,
         })
     }
 }
 
 impl Input {
     fn parse_key_value<V: syn::parse::Parse>(
-        input: &syn::parse::ParseStream,
+        input: syn::parse::ParseStream,
         value: &mut Option<V>,
+    ) -> syn::Result<()> {
+        Self::parse_key_value_with(input, value, syn::parse::Parse::parse)
+    }
+
+    fn parse_key_value_with<V>(
+        input: syn::parse::ParseStream,
+        value: &mut Option<V>,
+        parser: fn(syn::parse::ParseStream<'_>) -> syn::Result<V>,
     ) -> syn::Result<()> {
         let key: syn::Ident = input.parse()?;
 
@@ -146,7 +165,7 @@ impl Input {
         }
 
         input.parse::<syn::Token![=]>()?;
-        *value = Some(input.parse()?);
+        *value = Some(parser(input)?);
         Ok(())
     }
 }

@@ -9,6 +9,15 @@ enum MyEnum {
   VARIANT_2
 }
 
+enum MyStrEnum {
+  VARIANT_1
+  VARIANT_2
+}
+
+input MyStrEnumInput {
+  myField: MyStrEnum!
+}
+
 enum Position {
   WING
   CENTRE
@@ -21,7 +30,7 @@ input MyInput {
 }
 
 input MyOneOfInput @oneOf {
-  # myString: String
+  myString: String
   myInt: Int
 }
 
@@ -33,6 +42,7 @@ type Query {
   myEnum: MyEnum!
   myDecimals: [Decimal!]!
   builtinScalars: BuiltinScalars!
+  myStrEnum: MyStrEnum!
 }
 
 interface MyInterface {
