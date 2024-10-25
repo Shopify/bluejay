@@ -1,4 +1,4 @@
-use crate::ast::{FromTokens, ParseError, Tokens, Value};
+use crate::ast::{DepthLimiter, FromTokens, ParseError, Tokens, Value};
 use crate::lexical_token::{Name, PunctuatorType};
 use crate::{HasSpan, Span};
 
@@ -24,10 +24,13 @@ pub type VariableArgument<'a> = Argument<'a, false>;
 
 impl<'a, const CONST: bool> FromTokens<'a> for Argument<'a, CONST> {
     #[inline]
-    fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
+    fn from_tokens(
+        tokens: &mut impl Tokens<'a>,
+        depth_limiter: DepthLimiter,
+    ) -> Result<Self, ParseError> {
         let name = tokens.expect_name()?;
         tokens.expect_punctuator(PunctuatorType::Colon)?;
-        let value = Value::from_tokens(tokens)?;
+        let value = Value::from_tokens(tokens, depth_limiter.bump()?)?;
         let span = name.span().merge(value.span());
         Ok(Self { name, value, span })
     }

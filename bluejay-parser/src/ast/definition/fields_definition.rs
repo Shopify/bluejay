@@ -1,5 +1,5 @@
 use crate::ast::definition::{Context, FieldDefinition};
-use crate::ast::{FromTokens, ParseError, Tokens};
+use crate::ast::{DepthLimiter, FromTokens, ParseError, Tokens};
 use crate::lexical_token::PunctuatorType;
 use crate::Span;
 use bluejay_core::definition::FieldsDefinition as CoreFieldsDefinition;
@@ -25,12 +25,15 @@ impl<'a, C: Context> CoreFieldsDefinition for FieldsDefinition<'a, C> {
 }
 
 impl<'a, C: Context> FromTokens<'a> for FieldsDefinition<'a, C> {
-    fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
+    fn from_tokens(
+        tokens: &mut impl Tokens<'a>,
+        depth_limiter: DepthLimiter,
+    ) -> Result<Self, ParseError> {
         let open_span = tokens.expect_punctuator(PunctuatorType::OpenBrace)?;
         let mut field_definitions: Vec<FieldDefinition<'a, C>> =
             vec![FieldDefinition::__typename()];
         let close_span = loop {
-            field_definitions.push(FieldDefinition::from_tokens(tokens)?);
+            field_definitions.push(FieldDefinition::from_tokens(tokens, depth_limiter.bump()?)?);
             if let Some(close_span) = tokens.next_if_punctuator(PunctuatorType::CloseBrace) {
                 break close_span;
             }

@@ -4,7 +4,8 @@ use crate::ast::executable::{
     VariableDefinition, VariableDefinitions, VariableType,
 };
 use crate::ast::{
-    Argument, Arguments, Directive, Directives, Parse, ParseError, Tokens, TryFromTokens, Value,
+    Argument, Arguments, DepthLimiter, Directive, Directives, Parse, ParseError, Tokens,
+    TryFromTokens, Value,
 };
 use crate::Error;
 
@@ -41,38 +42,47 @@ impl<'a> ExecutableDocument<'a> {
 
 impl<'a> Parse<'a> for ExecutableDocument<'a> {
     #[inline]
-    fn parse_from_tokens(mut tokens: impl Tokens<'a>) -> Result<Self, Vec<Error>> {
+    fn parse_from_tokens(
+        mut tokens: impl Tokens<'a>,
+        max_depth: usize,
+    ) -> Result<Self, Vec<Error>> {
         let mut instance: Self = Self::new(Vec::new(), Vec::new());
         let mut errors = Vec::new();
         let mut last_pass_had_error = false;
 
         loop {
-            last_pass_had_error =
-                if let Some(res) = ExecutableDefinition::try_from_tokens(&mut tokens) {
-                    match res {
-                        Ok(ExecutableDefinition::Operation(operation_definition)) => {
-                            instance.operation_definitions.push(operation_definition);
-                            false
-                        }
-                        Ok(ExecutableDefinition::Fragment(fragment_definition)) => {
-                            instance.fragment_definitions.push(fragment_definition);
-                            false
-                        }
-                        Err(err) => {
-                            if !last_pass_had_error {
-                                errors.push(err);
-                            }
-                            true
-                        }
+            last_pass_had_error = if let Some(res) =
+                ExecutableDefinition::try_from_tokens(&mut tokens, DepthLimiter::new(max_depth))
+            {
+                match res {
+                    Ok(ExecutableDefinition::Operation(operation_definition)) => {
+                        instance.operation_definitions.push(operation_definition);
+                        false
                     }
-                } else if let Some(token) = tokens.next() {
-                    if !last_pass_had_error {
-                        errors.push(ParseError::UnexpectedToken { span: token.into() });
+                    Ok(ExecutableDefinition::Fragment(fragment_definition)) => {
+                        instance.fragment_definitions.push(fragment_definition);
+                        false
                     }
-                    true
-                } else {
-                    break;
+                    Err(ParseError::MaxDepthExceeded) => {
+                        errors.push(ParseError::MaxDepthExceeded);
+                        // no sense in continuing to parse if we've hit the depth limit
+                        break;
+                    }
+                    Err(err) => {
+                        if !last_pass_had_error {
+                            errors.push(err);
+                        }
+                        true
+                    }
                 }
+            } else if let Some(token) = tokens.next() {
+                if !last_pass_had_error {
+                    errors.push(ParseError::UnexpectedToken { span: token.into() });
+                }
+                true
+            } else {
+                break;
+            }
         }
 
         let lex_errors = tokens.into_errors();
@@ -128,6 +138,7 @@ impl<'a> bluejay_core::executable::ExecutableDocument for ExecutableDocument<'a>
 #[cfg(test)]
 mod tests {
     use super::{ExecutableDocument, Parse};
+    use crate::ast::ParseOptions;
 
     #[test]
     fn test_success() {
@@ -154,5 +165,36 @@ mod tests {
 
         assert_eq!(2, defs.fragment_definitions().len());
         assert_eq!(1, defs.operation_definitions().len());
+    }
+
+    #[test]
+    fn test_depth_limit() {
+        // Depth is bumped to 1 entering the selection set (`{`)
+        // Depth is bumped to 2 entering the field (`foo`)
+        // Depth is bumped to 3 checking for args on the field (`foo`)
+        let document = r#"query { foo }"#;
+
+        let errors = ExecutableDocument::parse_with_options(
+            document,
+            ParseOptions {
+                graphql_ruby_compatibility: false,
+                max_depth: 2,
+            },
+        )
+        .unwrap_err();
+
+        assert_eq!(1, errors.len(), "{:?}", errors);
+
+        assert_eq!("Max depth exceeded", errors[0].message());
+
+        let executable_document = ExecutableDocument::parse_with_options(
+            document,
+            ParseOptions {
+                graphql_ruby_compatibility: false,
+                max_depth: 3,
+            },
+        )
+        .unwrap();
+        assert_eq!(1, executable_document.operation_definitions().len());
     }
 }

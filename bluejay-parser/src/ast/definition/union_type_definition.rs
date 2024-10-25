@@ -1,5 +1,5 @@
 use crate::ast::definition::{Context, Directives, FieldsDefinition, UnionMemberTypes};
-use crate::ast::{ConstDirectives, FromTokens, ParseError, Tokens, TryFromTokens};
+use crate::ast::{ConstDirectives, DepthLimiter, FromTokens, ParseError, Tokens, TryFromTokens};
 use crate::lexical_token::{Name, PunctuatorType, StringValue};
 use bluejay_core::definition::{HasDirectives, UnionTypeDefinition as CoreUnionTypeDefinition};
 
@@ -42,13 +42,17 @@ impl<'a, C: Context> UnionTypeDefinition<'a, C> {
 }
 
 impl<'a, C: Context> FromTokens<'a> for UnionTypeDefinition<'a, C> {
-    fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
+    fn from_tokens(
+        tokens: &mut impl Tokens<'a>,
+        depth_limiter: DepthLimiter,
+    ) -> Result<Self, ParseError> {
         let description = tokens.next_if_string_value();
         tokens.expect_name_value(Self::UNION_IDENTIFIER)?;
         let name = tokens.expect_name()?;
-        let directives = ConstDirectives::try_from_tokens(tokens).transpose()?;
+        let directives =
+            ConstDirectives::try_from_tokens(tokens, depth_limiter.bump()?).transpose()?;
         tokens.expect_punctuator(PunctuatorType::Equals)?;
-        let member_types = UnionMemberTypes::from_tokens(tokens)?;
+        let member_types = UnionMemberTypes::from_tokens(tokens, depth_limiter.bump()?)?;
         Ok(Self {
             description,
             name,

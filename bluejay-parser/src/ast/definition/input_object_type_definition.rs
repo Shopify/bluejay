@@ -1,5 +1,5 @@
 use crate::ast::definition::{Context, Directives, InputFieldsDefinition};
-use crate::ast::{ConstDirectives, FromTokens, ParseError, Tokens, TryFromTokens};
+use crate::ast::{ConstDirectives, DepthLimiter, FromTokens, ParseError, Tokens, TryFromTokens};
 use crate::lexical_token::{Name, StringValue};
 use bluejay_core::definition::{
     HasDirectives, InputObjectTypeDefinition as CoreInputObjectTypeDefinition,
@@ -38,12 +38,17 @@ impl<'a, C: Context> InputObjectTypeDefinition<'a, C> {
 }
 
 impl<'a, C: Context> FromTokens<'a> for InputObjectTypeDefinition<'a, C> {
-    fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
+    fn from_tokens(
+        tokens: &mut impl Tokens<'a>,
+        depth_limiter: DepthLimiter,
+    ) -> Result<Self, ParseError> {
         let description = tokens.next_if_string_value();
         tokens.expect_name_value(Self::INPUT_IDENTIFIER)?;
         let name = tokens.expect_name()?;
-        let directives = ConstDirectives::try_from_tokens(tokens).transpose()?;
-        let input_fields_definition = InputFieldsDefinition::from_tokens(tokens)?;
+        let directives =
+            ConstDirectives::try_from_tokens(tokens, depth_limiter.bump()?).transpose()?;
+        let input_fields_definition =
+            InputFieldsDefinition::from_tokens(tokens, depth_limiter.bump()?)?;
         Ok(Self {
             description,
             name,

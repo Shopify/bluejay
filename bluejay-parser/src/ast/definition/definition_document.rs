@@ -5,7 +5,7 @@ use crate::ast::definition::{
     InputValueDefinition, InterfaceImplementations, InterfaceTypeDefinition, ObjectTypeDefinition,
     SchemaDefinition, TypeDefinition, UnionTypeDefinition,
 };
-use crate::ast::{FromTokens, Parse, ParseError, Tokens};
+use crate::ast::{DepthLimiter, FromTokens, Parse, ParseError, Tokens};
 use crate::Error;
 use bluejay_core::definition::{prelude::*, HasDirectives};
 use bluejay_core::{
@@ -39,7 +39,10 @@ type ExplicitSchemaDefinitionWithRootTypes<'a, C> = (
 );
 
 impl<'a, C: Context> Parse<'a> for DefinitionDocument<'a, C> {
-    fn parse_from_tokens(mut tokens: impl Tokens<'a>) -> Result<Self, Vec<Error>> {
+    fn parse_from_tokens(
+        mut tokens: impl Tokens<'a>,
+        max_depth: usize,
+    ) -> Result<Self, Vec<Error>> {
         let mut instance: Self = Self::new();
         let mut errors = Vec::new();
         let mut last_pass_had_error = false;
@@ -52,6 +55,7 @@ impl<'a, C: Context> Parse<'a> for DefinitionDocument<'a, C> {
                         &mut tokens,
                         &mut errors,
                         &mut last_pass_had_error,
+                        max_depth,
                     )
                 }
                 Some(ObjectTypeDefinition::<C>::TYPE_IDENTIFIER) => {
@@ -60,6 +64,7 @@ impl<'a, C: Context> Parse<'a> for DefinitionDocument<'a, C> {
                         &mut tokens,
                         &mut errors,
                         &mut last_pass_had_error,
+                        max_depth,
                     )
                 }
                 Some(InputObjectTypeDefinition::<C>::INPUT_IDENTIFIER) => {
@@ -68,6 +73,7 @@ impl<'a, C: Context> Parse<'a> for DefinitionDocument<'a, C> {
                         &mut tokens,
                         &mut errors,
                         &mut last_pass_had_error,
+                        max_depth,
                     )
                 }
                 Some(EnumTypeDefinition::<C>::ENUM_IDENTIFIER) => {
@@ -76,6 +82,7 @@ impl<'a, C: Context> Parse<'a> for DefinitionDocument<'a, C> {
                         &mut tokens,
                         &mut errors,
                         &mut last_pass_had_error,
+                        max_depth,
                     )
                 }
                 Some(UnionTypeDefinition::<C>::UNION_IDENTIFIER) => {
@@ -84,6 +91,7 @@ impl<'a, C: Context> Parse<'a> for DefinitionDocument<'a, C> {
                         &mut tokens,
                         &mut errors,
                         &mut last_pass_had_error,
+                        max_depth,
                     )
                 }
                 Some(InterfaceTypeDefinition::<C>::INTERFACE_IDENTIFIER) => {
@@ -92,6 +100,7 @@ impl<'a, C: Context> Parse<'a> for DefinitionDocument<'a, C> {
                         &mut tokens,
                         &mut errors,
                         &mut last_pass_had_error,
+                        max_depth,
                     )
                 }
                 Some(ExplicitSchemaDefinition::<C>::SCHEMA_IDENTIFIER) => {
@@ -100,6 +109,7 @@ impl<'a, C: Context> Parse<'a> for DefinitionDocument<'a, C> {
                         &mut tokens,
                         &mut errors,
                         &mut last_pass_had_error,
+                        max_depth,
                     )
                 }
                 Some(DirectiveDefinition::<C>::DIRECTIVE_IDENTIFIER) => {
@@ -108,6 +118,7 @@ impl<'a, C: Context> Parse<'a> for DefinitionDocument<'a, C> {
                         &mut tokens,
                         &mut errors,
                         &mut last_pass_had_error,
+                        max_depth,
                     )
                 }
                 _ => {
@@ -169,8 +180,9 @@ impl<'a, C: Context> DefinitionDocument<'a, C> {
         tokens: &mut impl Tokens<'b>,
         errors: &mut Vec<ParseError>,
         last_pass_had_error: &mut bool,
+        max_depth: usize,
     ) {
-        match T::from_tokens(tokens) {
+        match T::from_tokens(tokens, DepthLimiter::new(max_depth)) {
             Ok(definition) => {
                 definitions.push(definition.into());
                 *last_pass_had_error = false;

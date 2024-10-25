@@ -25,6 +25,7 @@ pub enum ParseError {
         span: Span,
     },
     EmptyDocument,
+    MaxDepthExceeded,
 }
 
 impl From<ParseError> for Error {
@@ -71,6 +72,7 @@ impl From<ParseError> for Error {
                 None,
                 Vec::new(),
             ),
+            ParseError::MaxDepthExceeded => Self::new("Max depth exceeded", None, Vec::new()),
         }
     }
 }

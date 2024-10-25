@@ -1,5 +1,5 @@
 use crate::ast::definition::{Context, Directives, InputType};
-use crate::ast::{ConstDirectives, ConstValue, FromTokens, ParseError, Tokens};
+use crate::ast::{ConstDirectives, ConstValue, DepthLimiter, FromTokens, ParseError, Tokens};
 use crate::lexical_token::{Name, PunctuatorType, StringValue};
 use bluejay_core::definition::{HasDirectives, InputValueDefinition as CoreInputValueDefinition};
 
@@ -40,18 +40,21 @@ impl<'a, C: Context> CoreInputValueDefinition for InputValueDefinition<'a, C> {
 }
 
 impl<'a, C: Context> FromTokens<'a> for InputValueDefinition<'a, C> {
-    fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
+    fn from_tokens(
+        tokens: &mut impl Tokens<'a>,
+        depth_limiter: DepthLimiter,
+    ) -> Result<Self, ParseError> {
         let description = tokens.next_if_string_value();
         let name = tokens.expect_name()?;
         tokens.expect_punctuator(PunctuatorType::Colon)?;
-        let r#type = InputType::from_tokens(tokens)?;
+        let r#type = InputType::from_tokens(tokens, depth_limiter.bump()?)?;
         let default_value: Option<ConstValue> =
             if tokens.next_if_punctuator(PunctuatorType::Equals).is_some() {
-                Some(ConstValue::from_tokens(tokens)?)
+                Some(ConstValue::from_tokens(tokens, depth_limiter.bump()?)?)
             } else {
                 None
             };
-        let directives = Some(ConstDirectives::from_tokens(tokens)?);
+        let directives = Some(ConstDirectives::from_tokens(tokens, depth_limiter.bump()?)?);
         Ok(Self {
             description,
             name,

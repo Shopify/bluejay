@@ -1,5 +1,5 @@
 use crate::ast::definition::{ArgumentsDefinition, Context};
-use crate::ast::{FromTokens, Parse, ParseError, Tokens, TryFromTokens};
+use crate::ast::{DepthLimiter, FromTokens, Parse, ParseError, Tokens, TryFromTokens};
 use crate::lexical_token::{Name, PunctuatorType, StringValue};
 use crate::Span;
 use bluejay_core::definition::{
@@ -102,17 +102,21 @@ impl<'a, C: Context> DirectiveDefinition<'a, C> {
 }
 
 impl<'a, C: Context> FromTokens<'a> for DirectiveDefinition<'a, C> {
-    fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
+    fn from_tokens(
+        tokens: &mut impl Tokens<'a>,
+        depth_limiter: DepthLimiter,
+    ) -> Result<Self, ParseError> {
         let description = tokens.next_if_string_value();
         tokens.expect_name_value(Self::DIRECTIVE_IDENTIFIER)?;
         tokens.expect_punctuator(PunctuatorType::At)?;
         let name = tokens.expect_name()?;
-        let arguments_definition = ArgumentsDefinition::try_from_tokens(tokens).transpose()?;
+        let arguments_definition =
+            ArgumentsDefinition::try_from_tokens(tokens, depth_limiter.bump()?).transpose()?;
         let is_repeatable = tokens
             .next_if_name_matches(Self::REPEATABLE_IDENTIFIER)
             .is_some();
         tokens.expect_name_value(Self::ON_IDENTIFIER)?;
-        let locations = DirectiveLocations::from_tokens(tokens)?;
+        let locations = DirectiveLocations::from_tokens(tokens, depth_limiter.bump()?)?;
         Ok(Self {
             description,
             name,
@@ -131,7 +135,7 @@ pub struct DirectiveLocation {
 }
 
 impl<'a> FromTokens<'a> for DirectiveLocation {
-    fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
+    fn from_tokens(tokens: &mut impl Tokens<'a>, _: DepthLimiter) -> Result<Self, ParseError> {
         tokens.expect_name().and_then(
             |name| match CoreDirectiveLocation::from_str(name.as_ref()) {
                 Ok(inner) => Ok(Self {
@@ -170,12 +174,20 @@ impl AsIter for DirectiveLocations {
 }
 
 impl<'a> FromTokens<'a> for DirectiveLocations {
-    fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
+    fn from_tokens(
+        tokens: &mut impl Tokens<'a>,
+        depth_limiter: DepthLimiter,
+    ) -> Result<Self, ParseError> {
         tokens.next_if_punctuator(PunctuatorType::Pipe);
-        let mut directive_locations: Vec<DirectiveLocation> =
-            vec![DirectiveLocation::from_tokens(tokens)?];
+        let mut directive_locations: Vec<DirectiveLocation> = vec![DirectiveLocation::from_tokens(
+            tokens,
+            depth_limiter.bump()?,
+        )?];
         while tokens.next_if_punctuator(PunctuatorType::Pipe).is_some() {
-            directive_locations.push(DirectiveLocation::from_tokens(tokens)?);
+            directive_locations.push(DirectiveLocation::from_tokens(
+                tokens,
+                depth_limiter.bump()?,
+            )?);
         }
         Ok(Self(directive_locations))
     }

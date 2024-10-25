@@ -1,4 +1,4 @@
-use crate::ast::{Arguments, FromTokens, IsMatch, ParseError, Tokens, TryFromTokens};
+use crate::ast::{Arguments, DepthLimiter, FromTokens, IsMatch, ParseError, Tokens, TryFromTokens};
 use crate::lexical_token::{Name, PunctuatorType};
 use crate::{HasSpan, Span};
 
@@ -21,10 +21,13 @@ impl<'a, const CONST: bool> IsMatch<'a> for Directive<'a, CONST> {
 
 impl<'a, const CONST: bool> FromTokens<'a> for Directive<'a, CONST> {
     #[inline]
-    fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
+    fn from_tokens(
+        tokens: &mut impl Tokens<'a>,
+        depth_limiter: DepthLimiter,
+    ) -> Result<Self, ParseError> {
         let at_span = tokens.expect_punctuator(PunctuatorType::At)?;
         let name = tokens.expect_name()?;
-        let arguments = Arguments::try_from_tokens(tokens).transpose()?;
+        let arguments = Arguments::try_from_tokens(tokens, depth_limiter.bump()?).transpose()?;
         let span = match &arguments {
             Some(arguments) => at_span.merge(arguments.span()),
             None => at_span.merge(name.span()),

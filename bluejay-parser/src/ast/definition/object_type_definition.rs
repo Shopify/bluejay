@@ -1,5 +1,7 @@
 use crate::ast::definition::{Context, Directives, FieldsDefinition, InterfaceImplementations};
-use crate::ast::{ConstDirectives, FromTokens, Parse, ParseError, Tokens, TryFromTokens};
+use crate::ast::{
+    ConstDirectives, DepthLimiter, FromTokens, Parse, ParseError, Tokens, TryFromTokens,
+};
 use crate::lexical_token::{Name, StringValue};
 use bluejay_core::definition::{HasDirectives, ObjectTypeDefinition as CoreObjectTypeDefinition};
 
@@ -135,14 +137,18 @@ impl<'a, C: Context> ObjectTypeDefinition<'a, C> {
 }
 
 impl<'a, C: Context> FromTokens<'a> for ObjectTypeDefinition<'a, C> {
-    fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
+    fn from_tokens(
+        tokens: &mut impl Tokens<'a>,
+        depth_limiter: DepthLimiter,
+    ) -> Result<Self, ParseError> {
         let description = tokens.next_if_string_value();
         tokens.expect_name_value(Self::TYPE_IDENTIFIER)?;
         let name = tokens.expect_name()?;
         let interface_implementations =
-            InterfaceImplementations::try_from_tokens(tokens).transpose()?;
-        let directives = ConstDirectives::try_from_tokens(tokens).transpose()?;
-        let fields_definition = FieldsDefinition::from_tokens(tokens)?;
+            InterfaceImplementations::try_from_tokens(tokens, depth_limiter.bump()?).transpose()?;
+        let directives =
+            ConstDirectives::try_from_tokens(tokens, depth_limiter.bump()?).transpose()?;
+        let fields_definition = FieldsDefinition::from_tokens(tokens, depth_limiter.bump()?)?;
         Ok(Self {
             description,
             name,

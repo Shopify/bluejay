@@ -1,3 +1,4 @@
+use crate::ast::DepthLimiter;
 use crate::lexical_token::{Name, StringValue};
 use crate::{
     ast::{
@@ -32,7 +33,10 @@ impl<'a, C: Context> CoreEnumValueDefinition for EnumValueDefinition<'a, C> {
 }
 
 impl<'a, C: Context> FromTokens<'a> for EnumValueDefinition<'a, C> {
-    fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
+    fn from_tokens(
+        tokens: &mut impl Tokens<'a>,
+        depth_limiter: DepthLimiter,
+    ) -> Result<Self, ParseError> {
         let description = tokens.next_if_string_value();
         let name = tokens.expect_name()?;
         if matches!(name.as_str(), "null" | "true" | "false") {
@@ -42,7 +46,8 @@ impl<'a, C: Context> FromTokens<'a> for EnumValueDefinition<'a, C> {
             });
         }
 
-        let directives = ConstDirectives::try_from_tokens(tokens).transpose()?;
+        let directives =
+            ConstDirectives::try_from_tokens(tokens, depth_limiter.bump()?).transpose()?;
         Ok(Self {
             description,
             name,

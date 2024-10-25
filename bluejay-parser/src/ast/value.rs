@@ -1,4 +1,4 @@
-use crate::ast::{FromTokens, ParseError, Tokens};
+use crate::ast::{DepthLimiter, FromTokens, ParseError, Tokens};
 use crate::lexical_token::{
     FloatValue, IntValue, LexicalToken, Name, PunctuatorType, StringValue, Variable,
 };
@@ -42,7 +42,10 @@ impl<'a, const CONST: bool> CoreValue<CONST> for Value<'a, CONST> {
 }
 
 impl<'a, const CONST: bool> FromTokens<'a> for Value<'a, CONST> {
-    fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
+    fn from_tokens(
+        tokens: &mut impl Tokens<'a>,
+        depth_limiter: DepthLimiter,
+    ) -> Result<Self, ParseError> {
         match tokens.next() {
             Some(LexicalToken::IntValue(int)) => Ok(Self::Integer(int)),
             Some(LexicalToken::FloatValue(float)) => Ok(Self::Float(float)),
@@ -77,7 +80,7 @@ impl<'a, const CONST: bool> FromTokens<'a> for Value<'a, CONST> {
                     {
                         break close_span;
                     }
-                    list.push(Self::from_tokens(tokens)?);
+                    list.push(Self::from_tokens(tokens, depth_limiter.bump()?)?);
                 };
                 let span = open_span.merge(&close_span);
                 Ok(Self::List(ListValue {
@@ -95,7 +98,7 @@ impl<'a, const CONST: bool> FromTokens<'a> for Value<'a, CONST> {
                     }
                     let name = tokens.expect_name()?;
                     tokens.expect_punctuator(PunctuatorType::Colon)?;
-                    let value = Self::from_tokens(tokens)?;
+                    let value = Self::from_tokens(tokens, depth_limiter.bump()?)?;
                     object.push((name, value));
                 };
                 let span = open_span.merge(&close_span);

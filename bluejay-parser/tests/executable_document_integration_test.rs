@@ -41,6 +41,7 @@ fn test_graphql_ruby_valid() {
                 input.as_str(),
                 ParseOptions {
                     graphql_ruby_compatibility: true,
+                    ..Default::default()
                 },
             );
             assert!(executable_document.is_ok(), "Document had errors");

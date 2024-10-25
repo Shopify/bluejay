@@ -1,7 +1,7 @@
 use std::marker::PhantomData;
 
 use crate::ast::definition::{Context, InterfaceTypeDefinition};
-use crate::ast::{FromTokens, ParseError, Tokens};
+use crate::ast::{DepthLimiter, FromTokens, ParseError, Tokens};
 use crate::lexical_token::Name;
 use bluejay_core::definition::{
     InterfaceImplementation as CoreInterfaceImplementation,
@@ -43,7 +43,7 @@ impl<'a, C: Context> InterfaceImplementation<'a, C> {
 }
 
 impl<'a, C: Context> FromTokens<'a> for InterfaceImplementation<'a, C> {
-    fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
+    fn from_tokens(tokens: &mut impl Tokens<'a>, _: DepthLimiter) -> Result<Self, ParseError> {
         tokens.expect_name().map(|name| Self {
             name,
             context: PhantomData,

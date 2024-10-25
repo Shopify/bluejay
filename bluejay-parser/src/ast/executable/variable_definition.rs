@@ -1,4 +1,5 @@
 use crate::ast::try_from_tokens::TryFromTokens;
+use crate::ast::DepthLimiter;
 use crate::ast::{
     executable::VariableType, ConstDirectives, ConstValue, FromTokens, ParseError, Tokens,
 };
@@ -14,17 +15,21 @@ pub struct VariableDefinition<'a> {
 
 impl<'a> FromTokens<'a> for VariableDefinition<'a> {
     #[inline]
-    fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
+    fn from_tokens(
+        tokens: &mut impl Tokens<'a>,
+        depth_limiter: DepthLimiter,
+    ) -> Result<Self, ParseError> {
         let variable = tokens.expect_variable()?;
         tokens.expect_punctuator(PunctuatorType::Colon)?;
-        let r#type = VariableType::from_tokens(tokens)?;
+        let r#type = VariableType::from_tokens(tokens, depth_limiter.bump()?)?;
         let default_value: Option<ConstValue> =
             if tokens.next_if_punctuator(PunctuatorType::Equals).is_some() {
-                Some(ConstValue::from_tokens(tokens)?)
+                Some(ConstValue::from_tokens(tokens, depth_limiter.bump()?)?)
             } else {
                 None
             };
-        let directives = ConstDirectives::try_from_tokens(tokens).transpose()?;
+        let directives =
+            ConstDirectives::try_from_tokens(tokens, depth_limiter.bump()?).transpose()?;
         Ok(Self {
             variable,
             r#type,

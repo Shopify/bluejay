@@ -2,7 +2,7 @@ use crate::ast::definition::{
     Context, CustomScalarTypeDefinition, EnumTypeDefinition, InterfaceTypeDefinition,
     ObjectTypeDefinition, TypeDefinition, UnionTypeDefinition,
 };
-use crate::ast::{FromTokens, ParseError, Tokens};
+use crate::ast::{DepthLimiter, FromTokens, ParseError, Tokens};
 use crate::lexical_token::{Name, PunctuatorType};
 use crate::{HasSpan, Span};
 use bluejay_core::definition::{
@@ -107,9 +107,12 @@ impl<'a, C: Context + 'a> CoreOutputType for OutputType<'a, C> {
 }
 
 impl<'a, C: Context + 'a> FromTokens<'a> for OutputType<'a, C> {
-    fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
+    fn from_tokens(
+        tokens: &mut impl Tokens<'a>,
+        depth_limiter: DepthLimiter,
+    ) -> Result<Self, ParseError> {
         if let Some(open_span) = tokens.next_if_punctuator(PunctuatorType::OpenSquareBracket) {
-            let inner = Self::from_tokens(tokens).map(Box::new)?;
+            let inner = Self::from_tokens(tokens, depth_limiter.bump()?).map(Box::new)?;
             let close_span = tokens.expect_punctuator(PunctuatorType::CloseSquareBracket)?;
             let bang_span = tokens.next_if_punctuator(PunctuatorType::Bang);
             let span = open_span.merge(&close_span);

@@ -1,6 +1,6 @@
 use crate::ast::{
     definition::{Context, Directives},
-    ConstDirectives, FromTokens, ParseError, Tokens, TryFromTokens,
+    ConstDirectives, DepthLimiter, FromTokens, ParseError, Tokens, TryFromTokens,
 };
 use crate::lexical_token::{Name, StringValue};
 use crate::Span;
@@ -46,11 +46,15 @@ impl<'a, C: Context> CustomScalarTypeDefinition<'a, C> {
 }
 
 impl<'a, C: Context> FromTokens<'a> for CustomScalarTypeDefinition<'a, C> {
-    fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
+    fn from_tokens(
+        tokens: &mut impl Tokens<'a>,
+        depth_limiter: DepthLimiter,
+    ) -> Result<Self, ParseError> {
         let description = tokens.next_if_string_value();
         let scalar_identifier_span = tokens.expect_name_value(Self::SCALAR_IDENTIFIER)?;
         let name = tokens.expect_name()?;
-        let directives = ConstDirectives::try_from_tokens(tokens).transpose()?;
+        let directives =
+            ConstDirectives::try_from_tokens(tokens, depth_limiter.bump()?).transpose()?;
         Ok(Self {
             description,
             _scalar_identifier_span: scalar_identifier_span,
