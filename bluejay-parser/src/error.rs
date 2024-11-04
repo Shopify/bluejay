@@ -101,14 +101,16 @@ impl Error {
                 if idx != 0 {
                     buf.extend("\n".as_bytes());
                 }
-                Report::build(
+                Report::<(&str, logos::Span)>::build(
                     ReportKind::Error,
-                    filename,
-                    error
-                        .primary_annotation
-                        .as_ref()
-                        .map(|a| a.span().byte_range().start)
-                        .unwrap_or(0),
+                    (
+                        filename,
+                        error
+                            .primary_annotation
+                            .as_ref()
+                            .map(|a| a.span().clone().into())
+                            .unwrap_or(0..0),
+                    ),
                 )
                 .with_config(
                     Config::default()
