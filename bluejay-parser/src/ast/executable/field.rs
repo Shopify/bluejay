@@ -1,6 +1,7 @@
 use crate::ast::executable::SelectionSet;
 use crate::ast::{
-    FromTokens, IsMatch, ParseError, Tokens, TryFromTokens, VariableArguments, VariableDirectives,
+    DepthLimiter, FromTokens, IsMatch, ParseError, Tokens, TryFromTokens, VariableArguments,
+    VariableDirectives,
 };
 use crate::lexical_token::{Name, PunctuatorType};
 use crate::{HasSpan, Span};
@@ -19,7 +20,10 @@ pub struct Field<'a> {
 
 impl<'a> FromTokens<'a> for Field<'a> {
     #[inline]
-    fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
+    fn from_tokens(
+        tokens: &mut impl Tokens<'a>,
+        depth_limiter: DepthLimiter,
+    ) -> Result<Self, ParseError> {
         let has_alias = tokens.peek_punctuator_matches(1, PunctuatorType::Colon);
         let (alias, name) = if has_alias {
             let alias = Some(tokens.expect_name()?);
@@ -29,9 +33,12 @@ impl<'a> FromTokens<'a> for Field<'a> {
         } else {
             (None, tokens.expect_name()?)
         };
-        let arguments = VariableArguments::try_from_tokens(tokens).transpose()?;
-        let directives = VariableDirectives::try_from_tokens(tokens).transpose()?;
-        let selection_set = SelectionSet::try_from_tokens(tokens).transpose()?;
+        let arguments =
+            VariableArguments::try_from_tokens(tokens, depth_limiter.bump()?).transpose()?;
+        let directives =
+            VariableDirectives::try_from_tokens(tokens, depth_limiter.bump()?).transpose()?;
+        let selection_set =
+            SelectionSet::try_from_tokens(tokens, depth_limiter.bump()?).transpose()?;
         let start_span = alias.as_ref().unwrap_or(&name).span();
         let directives_span = directives.as_ref().and_then(|directives| directives.span());
         let end_span = if let Some(selection_set) = &selection_set {

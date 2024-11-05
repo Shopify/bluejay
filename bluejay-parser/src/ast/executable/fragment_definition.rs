@@ -1,6 +1,6 @@
 use crate::ast::executable::{SelectionSet, TypeCondition};
 use crate::ast::try_from_tokens::TryFromTokens;
-use crate::ast::{FromTokens, IsMatch, ParseError, Tokens, VariableDirectives};
+use crate::ast::{DepthLimiter, FromTokens, IsMatch, ParseError, Tokens, VariableDirectives};
 use crate::lexical_token::Name;
 use crate::{HasSpan, Span};
 
@@ -22,16 +22,20 @@ impl<'a> IsMatch<'a> for FragmentDefinition<'a> {
 
 impl<'a> FromTokens<'a> for FragmentDefinition<'a> {
     #[inline]
-    fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
+    fn from_tokens(
+        tokens: &mut impl Tokens<'a>,
+        depth_limiter: DepthLimiter,
+    ) -> Result<Self, ParseError> {
         let fragment_identifier_span = tokens.expect_name_value("fragment")?;
         let name = tokens.expect_name()?;
         if name.as_ref() == TypeCondition::ON {
             // TODO: make this error message better
             return Err(ParseError::UnexpectedToken { span: name.into() });
         }
-        let type_condition = TypeCondition::from_tokens(tokens)?;
-        let directives = VariableDirectives::try_from_tokens(tokens).transpose()?;
-        let selection_set = SelectionSet::from_tokens(tokens)?;
+        let type_condition = TypeCondition::from_tokens(tokens, depth_limiter.bump()?)?;
+        let directives =
+            VariableDirectives::try_from_tokens(tokens, depth_limiter.bump()?).transpose()?;
+        let selection_set = SelectionSet::from_tokens(tokens, depth_limiter.bump()?)?;
         let span = fragment_identifier_span.merge(selection_set.span());
         Ok(Self {
             name,

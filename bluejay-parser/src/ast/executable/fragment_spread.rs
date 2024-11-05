@@ -1,6 +1,6 @@
 use crate::ast::executable::TypeCondition;
 use crate::ast::try_from_tokens::TryFromTokens;
-use crate::ast::{FromTokens, IsMatch, ParseError, Tokens, VariableDirectives};
+use crate::ast::{DepthLimiter, FromTokens, IsMatch, ParseError, Tokens, VariableDirectives};
 use crate::lexical_token::{Name, PunctuatorType};
 use crate::{HasSpan, Span};
 
@@ -13,11 +13,15 @@ pub struct FragmentSpread<'a> {
 
 impl<'a> FromTokens<'a> for FragmentSpread<'a> {
     #[inline]
-    fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
+    fn from_tokens(
+        tokens: &mut impl Tokens<'a>,
+        depth_limiter: DepthLimiter,
+    ) -> Result<Self, ParseError> {
         let ellipse_span = tokens.expect_punctuator(PunctuatorType::Ellipse)?;
         let name = tokens.expect_name()?;
         assert_ne!(TypeCondition::ON, name.as_ref());
-        let directives = VariableDirectives::try_from_tokens(tokens).transpose()?;
+        let directives =
+            VariableDirectives::try_from_tokens(tokens, depth_limiter.bump()?).transpose()?;
         let span = ellipse_span.merge(name.span());
         Ok(Self {
             name,

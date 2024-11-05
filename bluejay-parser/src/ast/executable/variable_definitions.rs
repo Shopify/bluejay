@@ -1,5 +1,5 @@
 use crate::ast::executable::VariableDefinition;
-use crate::ast::{FromTokens, IsMatch, ParseError, Tokens};
+use crate::ast::{DepthLimiter, FromTokens, IsMatch, ParseError, Tokens};
 use crate::lexical_token::PunctuatorType;
 use crate::Span;
 use bluejay_core::AsIter;
@@ -12,11 +12,17 @@ pub struct VariableDefinitions<'a> {
 
 impl<'a> FromTokens<'a> for VariableDefinitions<'a> {
     #[inline]
-    fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
+    fn from_tokens(
+        tokens: &mut impl Tokens<'a>,
+        depth_limiter: DepthLimiter,
+    ) -> Result<Self, ParseError> {
         let open_span = tokens.expect_punctuator(PunctuatorType::OpenRoundBracket)?;
         let mut variable_definitions: Vec<VariableDefinition> = Vec::new();
         let close_span = loop {
-            variable_definitions.push(VariableDefinition::from_tokens(tokens)?);
+            variable_definitions.push(VariableDefinition::from_tokens(
+                tokens,
+                depth_limiter.bump()?,
+            )?);
             if let Some(close_span) = tokens.next_if_punctuator(PunctuatorType::CloseRoundBracket) {
                 break close_span;
             }

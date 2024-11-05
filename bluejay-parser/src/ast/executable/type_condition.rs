@@ -1,4 +1,4 @@
-use crate::ast::{FromTokens, IsMatch, ParseError, Tokens};
+use crate::ast::{DepthLimiter, FromTokens, IsMatch, ParseError, Tokens};
 use crate::lexical_token::Name;
 
 #[derive(Debug)]
@@ -8,7 +8,7 @@ pub struct TypeCondition<'a> {
 
 impl<'a> FromTokens<'a> for TypeCondition<'a> {
     #[inline]
-    fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
+    fn from_tokens(tokens: &mut impl Tokens<'a>, _: DepthLimiter) -> Result<Self, ParseError> {
         tokens.expect_name_value(Self::ON)?;
         let named_type = tokens.expect_name()?;
         Ok(Self { named_type })

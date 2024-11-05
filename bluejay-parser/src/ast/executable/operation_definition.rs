@@ -1,6 +1,7 @@
 use crate::ast::executable::{SelectionSet, VariableDefinitions};
 use crate::ast::{
-    FromTokens, IsMatch, OperationType, ParseError, Tokens, TryFromTokens, VariableDirectives,
+    DepthLimiter, FromTokens, IsMatch, OperationType, ParseError, Tokens, TryFromTokens,
+    VariableDirectives,
 };
 use crate::lexical_token::Name;
 use crate::{HasSpan, Span};
@@ -46,12 +47,19 @@ impl<'a> CoreOperationDefinition for OperationDefinition<'a> {
 
 impl<'a> FromTokens<'a> for OperationDefinition<'a> {
     #[inline]
-    fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
-        if let Some(operation_type) = OperationType::try_from_tokens(tokens).transpose()? {
+    fn from_tokens(
+        tokens: &mut impl Tokens<'a>,
+        depth_limiter: DepthLimiter,
+    ) -> Result<Self, ParseError> {
+        if let Some(operation_type) =
+            OperationType::try_from_tokens(tokens, depth_limiter.bump()?).transpose()?
+        {
             let name = tokens.next_if_name();
-            let variable_definitions = VariableDefinitions::try_from_tokens(tokens).transpose()?;
-            let directives = VariableDirectives::try_from_tokens(tokens).transpose()?;
-            let selection_set = SelectionSet::from_tokens(tokens)?;
+            let variable_definitions =
+                VariableDefinitions::try_from_tokens(tokens, depth_limiter.bump()?).transpose()?;
+            let directives =
+                VariableDirectives::try_from_tokens(tokens, depth_limiter.bump()?).transpose()?;
+            let selection_set = SelectionSet::from_tokens(tokens, depth_limiter.bump()?)?;
             let span = operation_type.span().merge(selection_set.span());
             Ok(Self::Explicit(ExplicitOperationDefinition {
                 operation_type,
@@ -61,7 +69,9 @@ impl<'a> FromTokens<'a> for OperationDefinition<'a> {
                 selection_set,
                 span,
             }))
-        } else if let Some(selection_set) = SelectionSet::try_from_tokens(tokens).transpose()? {
+        } else if let Some(selection_set) =
+            SelectionSet::try_from_tokens(tokens, depth_limiter.bump()?).transpose()?
+        {
             Ok(Self::Implicit(ImplicitOperationDefinition {
                 selection_set,
             }))

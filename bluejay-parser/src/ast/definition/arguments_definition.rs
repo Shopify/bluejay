@@ -1,5 +1,5 @@
 use crate::ast::definition::{Context, InputValueDefinition};
-use crate::ast::{FromTokens, IsMatch, ParseError, Tokens};
+use crate::ast::{DepthLimiter, FromTokens, IsMatch, ParseError, Tokens};
 use crate::lexical_token::PunctuatorType;
 use crate::Span;
 use bluejay_core::definition::ArgumentsDefinition as CoreArgumentsDefinition;
@@ -25,11 +25,17 @@ impl<'a, C: Context> CoreArgumentsDefinition for ArgumentsDefinition<'a, C> {
 }
 
 impl<'a, C: Context> FromTokens<'a> for ArgumentsDefinition<'a, C> {
-    fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
+    fn from_tokens(
+        tokens: &mut impl Tokens<'a>,
+        depth_limiter: DepthLimiter,
+    ) -> Result<Self, ParseError> {
         let open_span = tokens.expect_punctuator(PunctuatorType::OpenRoundBracket)?;
         let mut argument_definitions: Vec<InputValueDefinition<C>> = Vec::new();
         let close_span = loop {
-            argument_definitions.push(InputValueDefinition::from_tokens(tokens)?);
+            argument_definitions.push(InputValueDefinition::from_tokens(
+                tokens,
+                depth_limiter.bump()?,
+            )?);
             if let Some(close_span) = tokens.next_if_punctuator(PunctuatorType::CloseRoundBracket) {
                 break close_span;
             }

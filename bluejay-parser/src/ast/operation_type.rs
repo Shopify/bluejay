@@ -1,4 +1,4 @@
-use crate::ast::{FromTokens, IsMatch, ParseError, Tokens};
+use crate::ast::{DepthLimiter, FromTokens, IsMatch, ParseError, Tokens};
 use crate::{HasSpan, Span};
 
 #[derive(Debug)]
@@ -21,7 +21,7 @@ impl From<&OperationType> for bluejay_core::OperationType {
 
 impl<'a> FromTokens<'a> for OperationType {
     #[inline]
-    fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
+    fn from_tokens(tokens: &mut impl Tokens<'a>, _: DepthLimiter) -> Result<Self, ParseError> {
         tokens.expect_name().and_then(|name| {
             match bluejay_core::OperationType::try_from(name.as_str()) {
                 Ok(operation_type) => Ok(Self {

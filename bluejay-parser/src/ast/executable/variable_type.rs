@@ -1,4 +1,4 @@
-use crate::ast::{FromTokens, ParseError, Tokens};
+use crate::ast::{DepthLimiter, FromTokens, ParseError, Tokens};
 use crate::lexical_token::{Name, PunctuatorType};
 use crate::{HasSpan, Span};
 use bluejay_core::{
@@ -43,9 +43,12 @@ impl<'a> CoreVariableType for VariableType<'a> {
 
 impl<'a> FromTokens<'a> for VariableType<'a> {
     #[inline]
-    fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
+    fn from_tokens(
+        tokens: &mut impl Tokens<'a>,
+        depth_limiter: DepthLimiter,
+    ) -> Result<Self, ParseError> {
         if let Some(open_span) = tokens.next_if_punctuator(PunctuatorType::OpenSquareBracket) {
-            let inner = Box::new(VariableType::from_tokens(tokens)?);
+            let inner = Box::new(VariableType::from_tokens(tokens, depth_limiter.bump()?)?);
             let close_span = tokens.expect_punctuator(PunctuatorType::CloseSquareBracket)?;
             let bang_span = tokens.next_if_punctuator(PunctuatorType::Bang);
             let is_required = bang_span.is_some();

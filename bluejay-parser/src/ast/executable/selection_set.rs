@@ -1,5 +1,5 @@
 use crate::ast::executable::Selection;
-use crate::ast::{FromTokens, IsMatch, ParseError, Tokens};
+use crate::ast::{DepthLimiter, FromTokens, IsMatch, ParseError, Tokens};
 use crate::lexical_token::PunctuatorType;
 use crate::{HasSpan, Span};
 use bluejay_core::AsIter;
@@ -12,11 +12,14 @@ pub struct SelectionSet<'a> {
 
 impl<'a> FromTokens<'a> for SelectionSet<'a> {
     #[inline]
-    fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
+    fn from_tokens(
+        tokens: &mut impl Tokens<'a>,
+        depth_limiter: DepthLimiter,
+    ) -> Result<Self, ParseError> {
         let open_span = tokens.expect_punctuator(PunctuatorType::OpenBrace)?;
         let mut selections: Vec<Selection> = Vec::new();
         let close_span = loop {
-            selections.push(Selection::from_tokens(tokens)?);
+            selections.push(Selection::from_tokens(tokens, depth_limiter.bump()?)?);
             if let Some(close_span) = tokens.next_if_punctuator(PunctuatorType::CloseBrace) {
                 break close_span;
             }

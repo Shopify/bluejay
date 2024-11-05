@@ -1,6 +1,6 @@
 use crate::ast::{
     definition::{Context, Directives},
-    ConstDirectives, FromTokens, ParseError, Tokens, TryFromTokens,
+    ConstDirectives, DepthLimiter, FromTokens, ParseError, Tokens, TryFromTokens,
 };
 use crate::lexical_token::{Name, PunctuatorType, StringValue};
 use crate::Span;
@@ -41,19 +41,26 @@ impl<'a, C: Context> ExplicitSchemaDefinition<'a, C> {
 }
 
 impl<'a, C: Context> FromTokens<'a> for ExplicitSchemaDefinition<'a, C> {
-    fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
+    fn from_tokens(
+        tokens: &mut impl Tokens<'a>,
+        depth_limiter: DepthLimiter,
+    ) -> Result<Self, ParseError> {
         let description = tokens.next_if_string_value();
 
         let schema_identifier_span = tokens.expect_name_value(Self::SCHEMA_IDENTIFIER)?;
 
-        let directives = ConstDirectives::try_from_tokens(tokens).transpose()?;
+        let directives =
+            ConstDirectives::try_from_tokens(tokens, depth_limiter.bump()?).transpose()?;
 
         let mut root_operation_type_definitions = Vec::new();
 
         let open_span = tokens.expect_punctuator(PunctuatorType::OpenBrace)?;
 
         let close_span = loop {
-            root_operation_type_definitions.push(RootOperationTypeDefinition::from_tokens(tokens)?);
+            root_operation_type_definitions.push(RootOperationTypeDefinition::from_tokens(
+                tokens,
+                depth_limiter.bump()?,
+            )?);
             if let Some(close_span) = tokens.next_if_punctuator(PunctuatorType::CloseBrace) {
                 break close_span;
             }
@@ -92,7 +99,7 @@ impl<'a> RootOperationTypeDefinition<'a> {
 }
 
 impl<'a> FromTokens<'a> for RootOperationTypeDefinition<'a> {
-    fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
+    fn from_tokens(tokens: &mut impl Tokens<'a>, _: DepthLimiter) -> Result<Self, ParseError> {
         let operation_type = tokens.expect_name().and_then(|name| {
             OperationType::from_str(name.as_str()).map_err(|_| ParseError::ExpectedOneOf {
                 span: name.into(),

@@ -1,5 +1,5 @@
 use crate::{
-    ast::{Directive, FromTokens, IsMatch, ParseError, Tokens, TryFromTokens},
+    ast::{DepthLimiter, Directive, FromTokens, IsMatch, ParseError, Tokens, TryFromTokens},
     HasSpan, Span,
 };
 use bluejay_core::AsIter;
@@ -15,9 +15,12 @@ pub type VariableDirectives<'a> = Directives<'a, false>;
 
 impl<'a, const CONST: bool> FromTokens<'a> for Directives<'a, CONST> {
     #[inline]
-    fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
+    fn from_tokens(
+        tokens: &mut impl Tokens<'a>,
+        depth_limiter: DepthLimiter,
+    ) -> Result<Self, ParseError> {
         let mut directives: Vec<Directive<'a, CONST>> = Vec::new();
-        while let Some(directive) = Directive::try_from_tokens(tokens) {
+        while let Some(directive) = Directive::try_from_tokens(tokens, depth_limiter.bump()?) {
             directives.push(directive?);
         }
         let span = match directives.as_slice() {

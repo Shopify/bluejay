@@ -1,5 +1,7 @@
 use crate::ast::definition::{ArgumentsDefinition, Context, Directives, OutputType};
-use crate::ast::{ConstDirectives, FromTokens, Parse, ParseError, Tokens, TryFromTokens};
+use crate::ast::{
+    ConstDirectives, DepthLimiter, FromTokens, Parse, ParseError, Tokens, TryFromTokens,
+};
 use crate::lexical_token::{Name, PunctuatorType, StringValue};
 use bluejay_core::definition::{FieldDefinition as CoreFieldDefinition, HasDirectives};
 
@@ -63,13 +65,18 @@ impl<'a, C: Context> CoreFieldDefinition for FieldDefinition<'a, C> {
 }
 
 impl<'a, C: Context> FromTokens<'a> for FieldDefinition<'a, C> {
-    fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
+    fn from_tokens(
+        tokens: &mut impl Tokens<'a>,
+        depth_limiter: DepthLimiter,
+    ) -> Result<Self, ParseError> {
         let description = tokens.next_if_string_value();
         let name = tokens.expect_name()?;
-        let arguments_definition = ArgumentsDefinition::try_from_tokens(tokens).transpose()?;
+        let arguments_definition =
+            ArgumentsDefinition::try_from_tokens(tokens, depth_limiter.bump()?).transpose()?;
         tokens.expect_punctuator(PunctuatorType::Colon)?;
-        let r#type = OutputType::from_tokens(tokens)?;
-        let directives = ConstDirectives::try_from_tokens(tokens).transpose()?;
+        let r#type = OutputType::from_tokens(tokens, depth_limiter.bump()?)?;
+        let directives =
+            ConstDirectives::try_from_tokens(tokens, depth_limiter.bump()?).transpose()?;
         Ok(Self {
             description,
             name,

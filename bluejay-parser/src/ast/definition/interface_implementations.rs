@@ -1,5 +1,5 @@
 use crate::ast::definition::{Context, InterfaceImplementation};
-use crate::ast::{FromTokens, IsMatch, ParseError, Tokens};
+use crate::ast::{DepthLimiter, FromTokens, IsMatch, ParseError, Tokens};
 use crate::lexical_token::PunctuatorType;
 use bluejay_core::definition::InterfaceImplementations as CoreInterfaceImplementations;
 use bluejay_core::AsIter;
@@ -27,15 +27,24 @@ impl<'a, C: Context + 'a> InterfaceImplementations<'a, C> {
 }
 
 impl<'a, C: Context + 'a> FromTokens<'a> for InterfaceImplementations<'a, C> {
-    fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
+    fn from_tokens(
+        tokens: &mut impl Tokens<'a>,
+        depth_limiter: DepthLimiter,
+    ) -> Result<Self, ParseError> {
         tokens.expect_name_value(Self::IMPLEMENTS_IDENTIFIER)?;
         tokens.next_if_punctuator(PunctuatorType::Ampersand);
-        let mut interface_implementations = vec![InterfaceImplementation::from_tokens(tokens)?];
+        let mut interface_implementations = vec![InterfaceImplementation::from_tokens(
+            tokens,
+            depth_limiter.bump()?,
+        )?];
         while tokens
             .next_if_punctuator(PunctuatorType::Ampersand)
             .is_some()
         {
-            interface_implementations.push(InterfaceImplementation::from_tokens(tokens)?);
+            interface_implementations.push(InterfaceImplementation::from_tokens(
+                tokens,
+                depth_limiter.bump()?,
+            )?);
         }
         Ok(Self {
             interface_implementations,

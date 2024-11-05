@@ -1,4 +1,4 @@
-use crate::ast::{Argument, FromTokens, IsMatch, ParseError, Tokens};
+use crate::ast::{Argument, DepthLimiter, FromTokens, IsMatch, ParseError, Tokens};
 use crate::lexical_token::PunctuatorType;
 use crate::{HasSpan, Span};
 use bluejay_core::AsIter;
@@ -13,11 +13,14 @@ pub type VariableArguments<'a> = Arguments<'a, false>;
 
 impl<'a, const CONST: bool> FromTokens<'a> for Arguments<'a, CONST> {
     #[inline]
-    fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
+    fn from_tokens(
+        tokens: &mut impl Tokens<'a>,
+        depth_limiter: DepthLimiter,
+    ) -> Result<Self, ParseError> {
         let open_span = tokens.expect_punctuator(PunctuatorType::OpenRoundBracket)?;
         let mut arguments: Vec<Argument<CONST>> = Vec::new();
         let close_span = loop {
-            arguments.push(Argument::from_tokens(tokens)?);
+            arguments.push(Argument::from_tokens(tokens, depth_limiter.bump()?)?);
             if let Some(close_span) = tokens.next_if_punctuator(PunctuatorType::CloseRoundBracket) {
                 break close_span;
             }

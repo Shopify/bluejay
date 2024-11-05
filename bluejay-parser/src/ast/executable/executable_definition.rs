@@ -1,5 +1,5 @@
 use crate::ast::executable::{FragmentDefinition, OperationDefinition};
-use crate::ast::{FromTokens, IsMatch, ParseError, Tokens};
+use crate::ast::{DepthLimiter, FromTokens, IsMatch, ParseError, Tokens};
 
 #[derive(Debug)]
 pub enum ExecutableDefinition<'a> {
@@ -9,11 +9,15 @@ pub enum ExecutableDefinition<'a> {
 
 impl<'a> FromTokens<'a> for ExecutableDefinition<'a> {
     #[inline]
-    fn from_tokens(tokens: &mut impl Tokens<'a>) -> Result<Self, ParseError> {
+    fn from_tokens(
+        tokens: &mut impl Tokens<'a>,
+        depth_limiter: DepthLimiter,
+    ) -> Result<Self, ParseError> {
+        // don't bump depth limiters because this is just a thin wrapper in the AST
         if OperationDefinition::is_match(tokens) {
-            OperationDefinition::from_tokens(tokens).map(Self::Operation)
+            OperationDefinition::from_tokens(tokens, depth_limiter).map(Self::Operation)
         } else if FragmentDefinition::is_match(tokens) {
-            FragmentDefinition::from_tokens(tokens).map(Self::Fragment)
+            FragmentDefinition::from_tokens(tokens, depth_limiter).map(Self::Fragment)
         } else {
             Err(tokens.unexpected_token())
         }
