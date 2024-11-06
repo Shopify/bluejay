@@ -64,7 +64,7 @@ impl Error {
                         message: primary_annotation.message,
                         locations: vec![Location { line, col }],
                     }))
-                } else {
+                } else if !err.secondary_annotations.is_empty() {
                     Either::Right(err.secondary_annotations.into_iter().map(
                         |secondary_annotation| {
                             let (line, col) = converter
@@ -77,6 +77,11 @@ impl Error {
                             }
                         },
                     ))
+                } else {
+                    Either::Left(std::iter::once(GraphQLError {
+                        message: err.message,
+                        locations: vec![],
+                    }))
                 }
             })
             .collect()
