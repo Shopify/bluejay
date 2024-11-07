@@ -1,7 +1,7 @@
 use crate::attributes::doc_string;
 use crate::builtin_scalar::{builtin_scalar_type, scalar_is_reference};
 use crate::names::{enum_variant_ident, field_ident, type_ident};
-use crate::{Codec, Config};
+use crate::{types, Codec, Config};
 use bluejay_core::definition::{
     prelude::*, BaseInputTypeReference, EnumTypeDefinition, InputTypeReference,
     ScalarTypeDefinition, SchemaDefinition,
@@ -258,7 +258,9 @@ impl<'a, S: SchemaDefinition> InputObjectTypeDefinitionBuilder<'a, S> {
         match base {
             BaseInputTypeReference::BuiltinScalar(bstd) => scalar_is_reference(bstd),
             BaseInputTypeReference::CustomScalar(cstd) => self.config.custom_scalar_borrows(cstd),
-            BaseInputTypeReference::Enum(_) => false,
+            BaseInputTypeReference::Enum(etd) => {
+                self.config.enum_as_str(etd) && self.config.borrow()
+            }
             BaseInputTypeReference::InputObject(iotd) => {
                 self.input_object_contains_reference_types(iotd, visited)
             }
@@ -287,8 +289,12 @@ impl<'a, S: SchemaDefinition> InputObjectTypeDefinitionBuilder<'a, S> {
                 parse_quote! { #ident #lifetime }
             }
             BaseInputTypeReference::Enum(etd) => {
-                let ident = type_ident(etd.name());
-                parse_quote! { #ident }
+                if self.config.enum_as_str(etd) {
+                    types::string(self.config)
+                } else {
+                    let ident = type_ident(etd.name());
+                    parse_quote! { #ident }
+                }
             }
             BaseInputTypeReference::CustomScalar(cstd) => {
                 let ident = type_ident(cstd.name());
