@@ -10,7 +10,7 @@ exclude = [".gitignore", "tests/**/*"]
 description = "A GraphQL parser"
 
 [dependencies]
-logos = { version = "0.14" }
+logos = { version = "0.15" }
 enum-as-inner = "0.6"
 ariadne = { version = "0.5.0" }
 serde = { version = "1.0.203", optional = true }
