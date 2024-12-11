@@ -55,11 +55,13 @@ impl<'a, S: SchemaDefinition> ExecutableStructBuilder<'a, S> {
         let mut attributes = Vec::new();
         attributes.extend(self.executable_struct.description.map(doc_string));
         attributes.push(parse_quote! { #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::fmt::Debug)] });
+        let serde_path = self.config.serde_path();
+        let serde_path_lit_str = self.config.serde_path_lit_str();
 
         match self.config.codec() {
             Codec::Serde => {
-                attributes.push(parse_quote! { #[derive(::bluejay_typegen::serde::Deserialize)] });
-                attributes.push(parse_quote! { #[serde(crate = "bluejay_typegen::serde")] });
+                attributes.push(parse_quote! { #[derive(#serde_path ::Deserialize)] });
+                attributes.push(parse_quote! { #[serde(crate = #serde_path_lit_str)] });
             }
             Codec::Miniserde => {}
         }
@@ -128,12 +130,14 @@ impl<'a, S: SchemaDefinition> ExecutableStructBuilder<'a, S> {
 
             let field_serialized_as = field_builders.iter().map(ExecutableFieldBuilder::serialized_as).collect::<Vec<syn::LitStr>>();
 
+            let miniserde_path = self.config.miniserde_path();
+
             parse_quote! {
                 const _: () = {
-                    ::bluejay_typegen::miniserde::make_place!(__Place);
+                    #miniserde_path ::make_place!(__Place);
 
-                    impl ::bluejay_typegen::miniserde::de::Deserialize for #name_ident {
-                        fn begin(out: &mut ::std::option::Option<Self>) -> &mut dyn ::bluejay_typegen::miniserde::de::Visitor {
+                    impl #miniserde_path ::de::Deserialize for #name_ident {
+                        fn begin(out: &mut ::std::option::Option<Self>) -> &mut dyn #miniserde_path ::de::Visitor {
                             __Place::new(out)
                         }
                     }
@@ -143,23 +147,23 @@ impl<'a, S: SchemaDefinition> ExecutableStructBuilder<'a, S> {
                         out: &'a mut ::std::option::Option<#name_ident>,
                     }
 
-                    impl<'a> ::bluejay_typegen::miniserde::de::Map for #builder_ident<'a> {
-                        fn key(&mut self, k: &::std::primitive::str) -> ::bluejay_typegen::miniserde::Result<&mut dyn ::bluejay_typegen::miniserde::de::Visitor> {
+                    impl<'a> #miniserde_path ::de::Map for #builder_ident<'a> {
+                        fn key(&mut self, k: &::std::primitive::str) -> #miniserde_path ::Result<&mut dyn #miniserde_path ::de::Visitor> {
                             match k {
-                                #(#field_serialized_as => ::std::result::Result::Ok(::bluejay_typegen::miniserde::de::Deserialize::begin(&mut self.#field_idents)),)*
-                                _ => ::std::result::Result::Ok(<dyn ::bluejay_typegen::miniserde::de::Visitor>::ignore()),
+                                #(#field_serialized_as => ::std::result::Result::Ok(#miniserde_path ::de::Deserialize::begin(&mut self.#field_idents)),)*
+                                _ => ::std::result::Result::Ok(<dyn #miniserde_path ::de::Visitor>::ignore()),
                             }
                         }
 
-                        fn finish(&mut self) -> ::bluejay_typegen::miniserde::Result<()> {
-                            #(let #field_idents = self.#field_idents.take().ok_or(::bluejay_typegen::miniserde::Error)?;)*
+                        fn finish(&mut self) -> #miniserde_path ::Result<()> {
+                            #(let #field_idents = self.#field_idents.take().ok_or(#miniserde_path ::Error)?;)*
                             *self.out = ::std::option::Option::Some(#name_ident { #(#field_idents,)* });
                             ::std::result::Result::Ok(())
                         }
                     }
 
-                    impl ::bluejay_typegen::miniserde::de::Visitor for __Place<#name_ident> {
-                        fn map(&mut self) -> ::bluejay_typegen::miniserde::Result<::std::boxed::Box<dyn ::bluejay_typegen::miniserde::de::Map + '_>> {
+                    impl #miniserde_path ::de::Visitor for __Place<#name_ident> {
+                        fn map(&mut self) -> #miniserde_path ::Result<::std::boxed::Box<dyn #miniserde_path ::de::Map + '_>> {
                             ::std::result::Result::Ok(::std::boxed::Box::new(#builder_ident {
                                 #(#field_idents: ::std::option::Option::None,)*
                                 out: &mut self.out,

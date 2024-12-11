@@ -56,11 +56,13 @@ impl<'a, S: SchemaDefinition> ExecutableEnumBuilder<'a, S> {
         let mut attributes = Vec::new();
         attributes.extend(self.executable_enum.description.map(doc_string));
         attributes.push(parse_quote! { #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::fmt::Debug)] });
+        let serde_path = self.config.serde_path();
+        let serde_path_lit_str = self.config.serde_path_lit_str();
 
         match self.config.codec() {
             Codec::Serde => {
-                attributes.push(parse_quote! { #[derive(::bluejay_typegen::serde::Deserialize)] });
-                attributes.push(parse_quote! { #[serde(crate = "bluejay_typegen::serde")] });
+                attributes.push(parse_quote! { #[derive(#serde_path ::Deserialize)] });
+                attributes.push(parse_quote! { #[serde(crate = #serde_path_lit_str)] });
                 attributes.push(parse_quote! { #[serde(tag = "__typename")] });
             }
             Codec::Miniserde => {}
@@ -188,6 +190,8 @@ impl<'a, S: SchemaDefinition> ExecutableEnumBuilder<'a, S> {
                 ))
                 .collect::<Vec<syn::Arm>>();
 
+            let miniserde_path = self.config.miniserde_path();
+
             let state_key_arm = variant_builders
                 .iter()
                 .map(|variant_builder| {
@@ -205,15 +209,15 @@ impl<'a, S: SchemaDefinition> ExecutableEnumBuilder<'a, S> {
                     parse_quote! {
                         #builder_state_ident::#variant_ident { #(#field_idents,)* } => {
                             match k {
-                                #(#field_serialized_as => ::std::result::Result::Ok(::bluejay_typegen::miniserde::de::Deserialize::begin(#field_idents)),)*
-                                _ => ::std::result::Result::Err(::bluejay_typegen::miniserde::Error)
+                                #(#field_serialized_as => ::std::result::Result::Ok(#miniserde_path ::de::Deserialize::begin(#field_idents)),)*
+                                _ => ::std::result::Result::Err(#miniserde_path ::Error)
                             }
                         }
                     }
                 })
                 .chain(std::iter::once(
                     parse_quote! {
-                        #builder_state_ident::Other => ::std::result::Result::Err(::bluejay_typegen::miniserde::Error)
+                        #builder_state_ident::Other => ::std::result::Result::Err(#miniserde_path ::Error)
                     }
                 ))
                 .collect::<Vec<syn::Arm>>();
@@ -229,7 +233,7 @@ impl<'a, S: SchemaDefinition> ExecutableEnumBuilder<'a, S> {
 
                     parse_quote! {
                         #builder_state_ident::#variant_ident { #(mut #field_idents,)* } => {
-                            #name_ident::#variant_ident { #(#field_idents: #field_idents.take().ok_or(::bluejay_typegen::miniserde::Error)?,)* }
+                            #name_ident::#variant_ident { #(#field_idents: #field_idents.take().ok_or(#miniserde_path ::Error)?,)* }
                         }
                     }
                 })
@@ -242,16 +246,16 @@ impl<'a, S: SchemaDefinition> ExecutableEnumBuilder<'a, S> {
 
             parse_quote! {
                 const _: () = {
-                    ::bluejay_typegen::miniserde::make_place!(__Place);
+                    #miniserde_path ::make_place!(__Place);
 
-                    impl ::bluejay_typegen::miniserde::de::Deserialize for #name_ident {
-                        fn begin(out: &mut ::std::option::Option<Self>) -> &mut dyn ::bluejay_typegen::miniserde::de::Visitor {
+                    impl #miniserde_path ::de::Deserialize for #name_ident {
+                        fn begin(out: &mut ::std::option::Option<Self>) -> &mut dyn #miniserde_path ::de::Visitor {
                             __Place::new(out)
                         }
                     }
 
-                    impl ::bluejay_typegen::miniserde::de::Visitor for __Place<#name_ident> {
-                        fn map(&mut self) -> ::bluejay_typegen::miniserde::Result<::std::boxed::Box<dyn ::bluejay_typegen::miniserde::de::Map + '_>> {
+                    impl #miniserde_path ::de::Visitor for __Place<#name_ident> {
+                        fn map(&mut self) -> #miniserde_path ::Result<::std::boxed::Box<dyn #miniserde_path ::de::Map + '_>> {
                             ::std::result::Result::Ok(::std::boxed::Box::new(#builder_ident {
                                 state: ::std::option::Option::None,
                                 out: &mut self.out,
@@ -263,8 +267,8 @@ impl<'a, S: SchemaDefinition> ExecutableEnumBuilder<'a, S> {
                         #(#builder_state_variants,)*
                     }
 
-                    impl ::bluejay_typegen::miniserde::de::Visitor for __Place<#builder_state_ident> {
-                        fn string(&mut self, s: &::std::primitive::str) -> ::bluejay_typegen::miniserde::Result<()> {
+                    impl #miniserde_path ::de::Visitor for __Place<#builder_state_ident> {
+                        fn string(&mut self, s: &::std::primitive::str) -> #miniserde_path ::Result<()> {
                             match s {
                                 #(#typename_to_builder_variant,)*
                             }
@@ -276,27 +280,27 @@ impl<'a, S: SchemaDefinition> ExecutableEnumBuilder<'a, S> {
                         out: &'a mut ::std::option::Option<#name_ident>,
                     }
 
-                    impl ::bluejay_typegen::miniserde::de::Deserialize for #builder_state_ident {
-                        fn begin(out: &mut ::std::option::Option<Self>) -> &mut dyn ::bluejay_typegen::miniserde::de::Visitor {
+                    impl #miniserde_path ::de::Deserialize for #builder_state_ident {
+                        fn begin(out: &mut ::std::option::Option<Self>) -> &mut dyn #miniserde_path ::de::Visitor {
                             __Place::new(out)
                         }
                     }
 
-                    impl<'a> ::bluejay_typegen::miniserde::de::Map for #builder_ident<'a> {
-                        fn key(&mut self, k: &::std::primitive::str) -> ::bluejay_typegen::miniserde::Result<&mut dyn ::bluejay_typegen::miniserde::de::Visitor> {
+                    impl<'a> #miniserde_path ::de::Map for #builder_ident<'a> {
+                        fn key(&mut self, k: &::std::primitive::str) -> #miniserde_path ::Result<&mut dyn #miniserde_path ::de::Visitor> {
                             if let ::std::option::Option::Some(ref mut state) = self.state {
                                 match state {
                                     #(#state_key_arm,)*
                                 }
                             } else if k == "__typename" {
-                                ::std::result::Result::Ok(::bluejay_typegen::miniserde::de::Deserialize::begin(&mut self.state))
+                                ::std::result::Result::Ok(#miniserde_path ::de::Deserialize::begin(&mut self.state))
                             } else {
-                                ::std::result::Result::Err(::bluejay_typegen::miniserde::Error)
+                                ::std::result::Result::Err(#miniserde_path ::Error)
                             }
                         }
 
-                        fn finish(&mut self) -> ::bluejay_typegen::miniserde::Result<()> {
-                            let mut state = self.state.take().ok_or(::bluejay_typegen::miniserde::Error)?;
+                        fn finish(&mut self) -> #miniserde_path ::Result<()> {
+                            let mut state = self.state.take().ok_or(#miniserde_path ::Error)?;
 
                             *self.out = ::std::option::Option::Some(match state {
                                 #(#state_finish_arm,)*

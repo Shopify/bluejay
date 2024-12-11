@@ -89,13 +89,15 @@ impl<'a, S: SchemaDefinition> EnumTypeDefinitionBuilder<'a, S> {
         let mut attributes = Vec::new();
         attributes.extend(self.enum_type_definition.description().map(doc_string));
         attributes.push(parse_quote! { #[derive(::std::clone::Clone, ::std::marker::Copy, ::std::cmp::PartialEq, ::std::cmp::Eq, ::std::fmt::Debug)] });
+        let serde_path = self.config.serde_path();
+        let serde_path_lit_str = self.config.serde_path_lit_str();
 
         match self.config.codec() {
             Codec::Serde => attributes.extend([
-                parse_quote! { #[derive(::bluejay_typegen::serde::Serialize, ::bluejay_typegen::serde::Deserialize)] },
-                parse_quote! { #[serde(crate = "bluejay_typegen::serde")] },
+                parse_quote! { #[derive(#serde_path ::Serialize, #serde_path ::Deserialize)] },
+                parse_quote! { #[serde(crate = #serde_path_lit_str)] },
             ]),
-            Codec::Miniserde => {},
+            Codec::Miniserde => {}
         }
 
         attributes
@@ -106,12 +108,13 @@ impl<'a, S: SchemaDefinition> EnumTypeDefinitionBuilder<'a, S> {
             let name_ident = self.name_ident();
             let variant_idents = self.variant_idents();
             let variant_serialized_as = self.variant_serialized_as();
+            let miniserde_path = self.config.miniserde_path();
 
             parse_quote! {
                 const _: () = {
-                    impl ::bluejay_typegen::miniserde::ser::Serialize for #name_ident {
-                        fn begin(&self) -> ::bluejay_typegen::miniserde::ser::Fragment {
-                            ::bluejay_typegen::miniserde::ser::Fragment::Str(::std::borrow::Cow::Borrowed(match self {
+                    impl #miniserde_path ::ser::Serialize for #name_ident {
+                        fn begin(&self) -> #miniserde_path ::ser::Fragment {
+                            #miniserde_path ::ser::Fragment::Str(::std::borrow::Cow::Borrowed(match self {
                                 #(
                                     #name_ident::#variant_idents => #variant_serialized_as,
                                 )*
@@ -129,19 +132,20 @@ impl<'a, S: SchemaDefinition> EnumTypeDefinitionBuilder<'a, S> {
             let name_ident = self.name_ident();
             let variant_idents = self.variant_idents();
             let variant_serialized_as = self.variant_serialized_as();
+            let miniserde_path = self.config.miniserde_path();
 
             parse_quote! {
                 const _: () = {
-                    ::bluejay_typegen::miniserde::make_place!(__Place);
+                    #miniserde_path ::make_place!(__Place);
 
-                    impl ::bluejay_typegen::miniserde::de::Deserialize for #name_ident {
-                        fn begin(out: &mut ::std::option::Option<Self>) -> &mut dyn ::bluejay_typegen::miniserde::de::Visitor {
+                    impl #miniserde_path ::de::Deserialize for #name_ident {
+                        fn begin(out: &mut ::std::option::Option<Self>) -> &mut dyn #miniserde_path ::de::Visitor {
                             __Place::new(out)
                         }
                     }
 
-                    impl ::bluejay_typegen::miniserde::de::Visitor for __Place<#name_ident> {
-                        fn string(&mut self, s: &::std::primitive::str) -> ::bluejay_typegen::miniserde::Result<()> {
+                    impl #miniserde_path ::de::Visitor for __Place<#name_ident> {
+                        fn string(&mut self, s: &::std::primitive::str) -> #miniserde_path ::Result<()> {
                             match s {
                                 #(
                                     #variant_serialized_as => {

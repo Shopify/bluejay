@@ -5,6 +5,8 @@ mod kw {
     syn::custom_keyword!(borrow);
     syn::custom_keyword!(codec);
     syn::custom_keyword!(enums_as_str);
+    syn::custom_keyword!(serde_path);
+    syn::custom_keyword!(miniserde_path);
 }
 
 #[derive(Clone, Copy, PartialEq)]
@@ -101,6 +103,8 @@ pub struct Input {
     pub(crate) borrow: bool,
     pub(crate) codec: Codec,
     pub(crate) enums_as_str: syn::punctuated::Punctuated<syn::LitStr, syn::Token![,]>,
+    pub serde_path: Option<syn::Path>,
+    pub miniserde_path: Option<syn::Path>,
 }
 
 impl Parse for Input {
@@ -110,6 +114,8 @@ impl Parse for Input {
         let mut borrow: Option<syn::LitBool> = None;
         let mut codec: Option<Codec> = None;
         let mut enums_as_str = None;
+        let mut serde_path: Option<syn::Path> = None;
+        let mut miniserde_path: Option<syn::Path> = None;
 
         while !input.is_empty() {
             input.parse::<syn::Token![,]>()?;
@@ -124,6 +130,10 @@ impl Parse for Input {
                     syn::bracketed!(content in input);
                     syn::punctuated::Punctuated::parse_separated_nonempty(&content)
                 })?;
+            } else if lookahead.peek(kw::serde_path) {
+                Self::parse_key_value(input, &mut serde_path)?;
+            } else if lookahead.peek(kw::miniserde_path) {
+                Self::parse_key_value(input, &mut miniserde_path)?;
             } else {
                 return Err(lookahead.error());
             }
@@ -138,6 +148,8 @@ impl Parse for Input {
             borrow,
             codec,
             enums_as_str,
+            serde_path,
+            miniserde_path,
         })
     }
 }

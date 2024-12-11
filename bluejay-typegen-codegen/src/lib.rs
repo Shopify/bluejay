@@ -10,6 +10,8 @@ use bluejay_parser::{
     Error as ParserError,
 };
 use bluejay_validator::definition::BuiltinRulesValidator;
+use itertools::Itertools;
+use proc_macro2::Span;
 use std::collections::{HashMap, HashSet};
 use syn::{parse_quote, spanned::Spanned};
 
@@ -36,6 +38,8 @@ pub(crate) struct Config<'a, S: SchemaDefinition> {
     custom_scalar_borrows: HashMap<String, bool>,
     codec: Codec,
     enums_as_str: HashSet<String>,
+    serde_path: syn::Path,
+    miniserde_path: syn::Path,
 }
 
 impl<'a, S: SchemaDefinition> Config<'a, S> {
@@ -65,6 +69,24 @@ impl<'a, S: SchemaDefinition> Config<'a, S> {
     pub(crate) fn enum_as_str(&self, etd: &S::EnumTypeDefinition) -> bool {
         self.enums_as_str.contains(etd.name())
     }
+
+    pub(crate) fn serde_path(&self) -> &syn::Path {
+        &self.serde_path
+    }
+
+    pub(crate) fn miniserde_path(&self) -> &syn::Path {
+        &self.miniserde_path
+    }
+
+    pub(crate) fn serde_path_lit_str(&self) -> syn::LitStr {
+        let path = self
+            .serde_path()
+            .segments
+            .iter()
+            .map(|segment| segment.ident.to_string())
+            .join("::");
+        syn::LitStr::new(&path, Span::call_site())
+    }
 }
 
 pub fn generate_schema(
@@ -77,6 +99,8 @@ pub fn generate_schema(
         borrow,
         codec,
         enums_as_str,
+        serde_path,
+        miniserde_path,
     } = input;
 
     if borrow && codec == Codec::Miniserde {
@@ -121,6 +145,9 @@ pub fn generate_schema(
         custom_scalar_borrows,
         codec,
         enums_as_str,
+        serde_path: serde_path.unwrap_or_else(|| parse_quote! { ::bluejay_typegen::serde }),
+        miniserde_path: miniserde_path
+            .unwrap_or_else(|| parse_quote! { ::bluejay_typegen::miniserde }),
     };
 
     if let Some((_, items)) = module.content.take() {
@@ -371,6 +398,6 @@ fn map_parser_errors<E: Into<ParserError>>(
 
 #[derive(Clone)]
 pub struct KnownCustomScalarType {
-    pub path_for_owned: syn::Path,
-    pub path_for_borrowed: Option<syn::Path>,
+    pub path_for_owned: syn::Type,
+    pub path_for_borrowed: Option<syn::Type>,
 }

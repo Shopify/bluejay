@@ -108,12 +108,14 @@ impl<'a, S: SchemaDefinition> InputObjectTypeDefinitionBuilder<'a, S> {
                 .map(doc_string),
         );
         attributes.push(parse_quote! { #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::fmt::Debug)] });
+        let serde_path = self.config.serde_path();
+        let serde_path_lit_str = self.config.serde_path_lit_str();
 
         match self.config.codec() {
             Codec::Serde => {
                 attributes.extend([
-                    parse_quote! { #[derive(::bluejay_typegen::serde::Serialize)] },
-                    parse_quote! { #[serde(crate = "bluejay_typegen::serde")] },
+                    parse_quote! { #[derive(#serde_path ::Serialize)] },
+                    parse_quote! { #[serde(crate = #serde_path_lit_str)] },
                 ]);
             }
             Codec::Miniserde => {}
@@ -364,7 +366,7 @@ impl<'a, S: SchemaDefinition> InputObjectTypeDefinitionBuilder<'a, S> {
             let name_ident = self.name_ident();
             let variant_idents = self.variant_idents();
             let serialized_as = self.field_serialized_as();
-
+            let miniserde_path = self.config.miniserde_path();
             parse_quote! {
                 const _: () = {
                     struct #stream_ident<'a> {
@@ -372,8 +374,8 @@ impl<'a, S: SchemaDefinition> InputObjectTypeDefinitionBuilder<'a, S> {
                         visited: ::std::primitive::bool,
                     }
 
-                    impl<'a> ::bluejay_typegen::miniserde::ser::Map for #stream_ident<'a> {
-                        fn next(&mut self) -> ::std::option::Option<(::std::borrow::Cow<::std::primitive::str>, &dyn ::bluejay_typegen::miniserde::ser::Serialize)> {
+                    impl<'a> #miniserde_path ::ser::Map for #stream_ident<'a> {
+                        fn next(&mut self) -> ::std::option::Option<(::std::borrow::Cow<::std::primitive::str>, &dyn #miniserde_path ::ser::Serialize)> {
                             if self.visited {
                                 return ::std::option::Option::None;
                             }
@@ -390,9 +392,9 @@ impl<'a, S: SchemaDefinition> InputObjectTypeDefinitionBuilder<'a, S> {
                         }
                     }
 
-                    impl ::bluejay_typegen::miniserde::ser::Serialize for #name_ident {
-                        fn begin(&self) -> ::bluejay_typegen::miniserde::ser::Fragment {
-                            ::bluejay_typegen::miniserde::ser::Fragment::Map(::std::boxed::Box::new(#stream_ident {
+                    impl #miniserde_path ::ser::Serialize for #name_ident {
+                        fn begin(&self) -> #miniserde_path ::ser::Fragment {
+                            #miniserde_path ::ser::Fragment::Map(::std::boxed::Box::new(#stream_ident {
                                 data: self,
                                 visited: false,
                             }))
@@ -410,7 +412,7 @@ impl<'a, S: SchemaDefinition> InputObjectTypeDefinitionBuilder<'a, S> {
             let field_idents = self.field_idents();
             let serialized_as = self.field_serialized_as();
             let states = (0..self.field_idents().len()).collect::<Vec<_>>();
-
+            let miniserde_path = self.config.miniserde_path();
             parse_quote! {
                 const _: () = {
                     struct #stream_ident<'a> {
@@ -418,8 +420,8 @@ impl<'a, S: SchemaDefinition> InputObjectTypeDefinitionBuilder<'a, S> {
                         state: ::std::primitive::usize,
                     }
 
-                    impl<'a> ::bluejay_typegen::miniserde::ser::Map for #stream_ident<'a> {
-                        fn next(&mut self) -> ::std::option::Option<(::std::borrow::Cow<::std::primitive::str>, &dyn ::bluejay_typegen::miniserde::ser::Serialize)> {
+                    impl<'a> #miniserde_path ::ser::Map for #stream_ident<'a> {
+                        fn next(&mut self) -> ::std::option::Option<(::std::borrow::Cow<::std::primitive::str>, &dyn #miniserde_path ::ser::Serialize)> {
                             let state = self.state;
                             self.state += 1;
                             match state {
@@ -434,9 +436,9 @@ impl<'a, S: SchemaDefinition> InputObjectTypeDefinitionBuilder<'a, S> {
                         }
                     }
 
-                    impl ::bluejay_typegen::miniserde::ser::Serialize for #name_ident {
-                        fn begin(&self) -> ::bluejay_typegen::miniserde::ser::Fragment {
-                            ::bluejay_typegen::miniserde::ser::Fragment::Map(::std::boxed::Box::new(#stream_ident {
+                    impl #miniserde_path ::ser::Serialize for #name_ident {
+                        fn begin(&self) -> #miniserde_path ::ser::Fragment {
+                            #miniserde_path ::ser::Fragment::Map(::std::boxed::Box::new(#stream_ident {
                                 data: self,
                                 state: 0,
                             }))
