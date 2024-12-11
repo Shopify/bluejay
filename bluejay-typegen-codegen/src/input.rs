@@ -96,7 +96,7 @@ impl DocumentInput {
     }
 }
 
-pub(crate) struct Input {
+pub struct Input {
     pub(crate) schema: DocumentInput,
     pub(crate) borrow: bool,
     pub(crate) codec: Codec,

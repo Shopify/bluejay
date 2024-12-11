@@ -9,6 +9,7 @@
 - [`bluejay-printer`](/bluejay-printer/README.md)
 - [`bluejay-schema-comparator`](/bluejay-schema-comparator/README.md)
 - [`bluejay-typegen`](/bluejay-typegen/README.md)
+- [`bluejay-typegen-codegen`](/bluejay-typegen-codegen/README.md)
 - [`bluejay-typegen-macro`](/bluejay-typegen-macro/README.md)
 - [`bluejay-validator`](/bluejay-validator/README.md)
 - [`bluejay-visibility`](/bluejay-visibility/README.md)
