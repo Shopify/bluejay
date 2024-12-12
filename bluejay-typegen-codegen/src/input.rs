@@ -7,6 +7,7 @@ mod kw {
     syn::custom_keyword!(enums_as_str);
     syn::custom_keyword!(serde_path);
     syn::custom_keyword!(miniserde_path);
+    syn::custom_keyword!(allow_unknown_enums_as_str);
 }
 
 #[derive(Clone, Copy, PartialEq)]
@@ -102,7 +103,8 @@ pub struct Input {
     pub(crate) schema: DocumentInput,
     pub(crate) borrow: bool,
     pub(crate) codec: Codec,
-    pub(crate) enums_as_str: syn::punctuated::Punctuated<syn::LitStr, syn::Token![,]>,
+    pub enums_as_str: Option<syn::punctuated::Punctuated<syn::LitStr, syn::Token![,]>>,
+    pub allow_unknown_enums_as_str: bool,
     pub serde_path: Option<syn::Path>,
     pub miniserde_path: Option<syn::Path>,
 }
@@ -114,6 +116,7 @@ impl Parse for Input {
         let mut borrow: Option<syn::LitBool> = None;
         let mut codec: Option<Codec> = None;
         let mut enums_as_str = None;
+        let mut allow_unknown_enums_as_str: Option<syn::LitBool> = None;
         let mut serde_path: Option<syn::Path> = None;
         let mut miniserde_path: Option<syn::Path> = None;
 
@@ -128,8 +131,10 @@ impl Parse for Input {
                 Self::parse_key_value_with(input, &mut enums_as_str, |input| {
                     let content;
                     syn::bracketed!(content in input);
-                    syn::punctuated::Punctuated::parse_separated_nonempty(&content)
+                    syn::punctuated::Punctuated::parse_terminated(&content)
                 })?;
+            } else if lookahead.peek(kw::allow_unknown_enums_as_str) {
+                Self::parse_key_value(input, &mut allow_unknown_enums_as_str)?;
             } else if lookahead.peek(kw::serde_path) {
                 Self::parse_key_value(input, &mut serde_path)?;
             } else if lookahead.peek(kw::miniserde_path) {
@@ -141,13 +146,15 @@ impl Parse for Input {
 
         let borrow = borrow.map_or(false, |borrow| borrow.value);
         let codec = codec.unwrap_or_default();
-        let enums_as_str = enums_as_str.unwrap_or_default();
+        let allow_unknown_enums_as_str =
+            allow_unknown_enums_as_str.map_or(false, |borrow| borrow.value);
 
         Ok(Self {
             schema,
             borrow,
             codec,
             enums_as_str,
+            allow_unknown_enums_as_str,
             serde_path,
             miniserde_path,
         })

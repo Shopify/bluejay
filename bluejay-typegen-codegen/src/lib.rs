@@ -99,6 +99,7 @@ pub fn generate_schema(
         borrow,
         codec,
         enums_as_str,
+        allow_unknown_enums_as_str,
         serde_path,
         miniserde_path,
     } = input;
@@ -137,7 +138,8 @@ pub fn generate_schema(
         known_custom_scalar_types,
     )?;
 
-    let enums_as_str = validate_enums_as_str(enums_as_str, &schema_definition)?;
+    let enums_as_str =
+        validate_enums_as_str(enums_as_str, allow_unknown_enums_as_str, &schema_definition)?;
 
     let config = Config {
         schema_definition: &schema_definition,
@@ -281,31 +283,35 @@ fn custom_scalar_borrows(
 }
 
 fn validate_enums_as_str(
-    enums_as_str: syn::punctuated::Punctuated<syn::LitStr, syn::Token![,]>,
+    enums_as_str: Option<syn::punctuated::Punctuated<syn::LitStr, syn::Token![,]>>,
+    allow_unknown_enums_as_str: bool,
     schema_definition: &impl SchemaDefinition,
 ) -> syn::Result<HashSet<String>> {
     let mut enum_names = HashSet::new();
-    enums_as_str.iter().try_for_each(|lit| {
-        let name: String = lit.value();
-        if matches!(
-            schema_definition.get_type_definition(&name),
-            Some(TypeDefinitionReference::Enum(_))
-        ) {
-            if enum_names.insert(name.clone()) {
-                Ok(())
+    if let Some(enums_as_str) = enums_as_str {
+        enums_as_str.iter().try_for_each(|lit| {
+            let name: String = lit.value();
+            if matches!(
+                schema_definition.get_type_definition(&name),
+                Some(TypeDefinitionReference::Enum(_))
+            ) || allow_unknown_enums_as_str
+            {
+                if enum_names.insert(name.clone()) {
+                    Ok(())
+                } else {
+                    Err(syn::Error::new(
+                        lit.span(),
+                        format!("Duplicate enum definition named {name}"),
+                    ))
+                }
             } else {
                 Err(syn::Error::new(
                     lit.span(),
-                    format!("Duplicate enum definition named {name}"),
+                    format!("No enum definition named {name}"),
                 ))
             }
-        } else {
-            Err(syn::Error::new(
-                lit.span(),
-                format!("No enum definition named {name}"),
-            ))
-        }
-    })?;
+        })?;
+    }
     Ok(enum_names)
 }
 
