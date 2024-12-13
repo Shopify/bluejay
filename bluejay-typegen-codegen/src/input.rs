@@ -11,7 +11,7 @@ mod kw {
 }
 
 #[derive(Clone, Copy, PartialEq)]
-pub(crate) enum Codec {
+pub enum Codec {
     Serde,
     Miniserde,
 }
@@ -102,7 +102,7 @@ impl DocumentInput {
 pub struct Input {
     pub(crate) schema: DocumentInput,
     pub(crate) borrow: bool,
-    pub(crate) codec: Codec,
+    pub codec: Codec,
     pub enums_as_str: Option<syn::punctuated::Punctuated<syn::LitStr, syn::Token![,]>>,
     pub allow_unknown_enums_as_str: bool,
     pub serde_path: Option<syn::Path>,

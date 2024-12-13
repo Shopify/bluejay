@@ -28,8 +28,8 @@ mod validation;
 use attributes::doc_string;
 use enum_type_definition::EnumTypeDefinitionBuilder;
 use executable_definition::generate_executable_definition;
-pub use input::Input;
-use input::{Codec, DocumentInput};
+use input::DocumentInput;
+pub use input::{Codec, Input};
 use input_object_type_definition::InputObjectTypeDefinitionBuilder;
 
 pub(crate) struct Config<'a, S: SchemaDefinition> {
