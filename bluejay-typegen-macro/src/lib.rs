@@ -17,11 +17,19 @@ use syn::parse_macro_input;
 /// _borrow_: Boolean literal indicating whether the generated types should borrow where possible. Defaults to `false`.
 /// When `true`, deserializing must be done from a string as a opposed to `serde_json::Value` or a reader.
 ///
+/// _codec_: String literal indicating the codec to use for serialization and deserialization. Defaults to `serde`.
+/// Allowed values are `serde` and `miniserde`. `miniserde` is only available when the `miniserde` feature is enabled.
+///
+/// _enums_as_str_: Optional list of enum names for which the generated code should use string types instead of
+/// a fully formed enum.
+///
 /// ### Trait implementations
 ///
 /// By default, will implement `PartialEq`, `Eq`, `Clone`, and `Debug` for all types. Will implement `Copy` for enums.
-/// For types corresponding to values returned from queries, `serde::Deserialize` is implemented. For types that would
-/// be arguments to a query, `serde::Serialize` is implemented.
+/// For types corresponding to values returned from queries,  the relevant deserialization trait for the selected codec
+/// is implemented (e.g. `serde::Deserialize` in the case of `serde`). For types that would
+/// be arguments to a query, the relevant serialization trait for the selected codec is implemented
+/// (e.g. `serde::Serialize` for the `serde` codec).
 ///
 /// ### Usage
 ///
