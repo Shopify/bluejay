@@ -2,7 +2,11 @@
 //! data structures that have baked into them many of the assumptions that are validated by the validator. This allows the type
 //! generation to be simpler because we don't need to do so much coercion of the AST while generating the types.
 
-use crate::{names::ANONYMOUS_OPERATION_STRUCT_NAME, Config};
+use crate::{
+    executable_definition::CustomScalarOverride,
+    names::{type_ident, ANONYMOUS_OPERATION_STRUCT_NAME},
+    Config,
+};
 use bluejay_core::{
     definition::{prelude::*, BaseOutputTypeReference, OutputTypeReference, SchemaDefinition},
     executable::{
@@ -14,6 +18,42 @@ use bluejay_core::{
 use itertools::Either;
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::marker::PhantomData;
+
+#[derive(Clone)]
+enum PathRoot<'a> {
+    Operation { name: Option<&'a str> },
+    Fragment { name: &'a str },
+}
+
+impl<'a> PathRoot<'a> {
+    fn name(&self) -> Option<&'a str> {
+        match self {
+            PathRoot::Operation { name } => *name,
+            PathRoot::Fragment { name } => Some(name),
+        }
+    }
+}
+
+#[derive(Clone)]
+struct Path<'a> {
+    root: PathRoot<'a>,
+    fields: Vec<&'a str>,
+}
+
+impl<'a> Path<'a> {
+    fn new(root: PathRoot<'a>) -> Self {
+        Self {
+            root,
+            fields: Vec::new(),
+        }
+    }
+
+    fn with_field(&self, field: &'a str) -> Self {
+        let mut clone = self.clone();
+        clone.fields.push(field);
+        clone
+    }
+}
 
 pub(crate) enum ExecutableType<'a> {
     /// Any part of a query that maps to a Rust struct
@@ -29,15 +69,23 @@ pub(crate) enum ExecutableType<'a> {
         borrows: bool,
     },
     /// A custom scalar or GraphQL enum
-    Leaf { name: &'a str, borrows: bool },
+    Leaf {
+        path_segments: Vec<syn::Ident>,
+        borrows: bool,
+    },
 }
 
 impl<'a> ExecutableType<'a> {
     pub(crate) fn for_executable_document<E: ExecutableDocument, S: SchemaDefinition>(
         executable_document: &'a E,
         config: &'a Config<'a, S>,
+        custom_scalar_overrides: Vec<CustomScalarOverride>,
     ) -> Vec<Self> {
-        ExecutableDocumentToExecutableTypes::convert(executable_document, config)
+        ExecutableDocumentToExecutableTypes::convert(
+            executable_document,
+            config,
+            custom_scalar_overrides,
+        )
     }
 
     fn update_fragment_definition_references_borrow(
@@ -92,7 +140,7 @@ pub(crate) struct ExecutableStruct<'a> {
     pub(crate) fields: Vec<ExecutableField<'a>>,
 }
 
-impl<'a> ExecutableStruct<'a> {
+impl ExecutableStruct<'_> {
     pub(crate) fn borrows(&self) -> bool {
         self.fields
             .iter()
@@ -107,7 +155,7 @@ pub(crate) struct ExecutableEnum<'a> {
     pub(crate) variants: Vec<ExecutableEnumVariant<'a>>,
 }
 
-impl<'a> ExecutableEnum<'a> {
+impl ExecutableEnum<'_> {
     pub(crate) fn borrows(&self) -> bool {
         self.variants.iter().any(|variant| variant.borrows())
     }
@@ -149,7 +197,7 @@ pub(crate) struct ExecutableEnumVariant<'a> {
     pub(crate) fields: Vec<ExecutableField<'a>>,
 }
 
-impl<'a> ExecutableEnumVariant<'a> {
+impl ExecutableEnumVariant<'_> {
     pub(crate) fn borrows(&self) -> bool {
         self.fields
             .iter()
@@ -160,13 +208,19 @@ impl<'a> ExecutableEnumVariant<'a> {
 struct ExecutableDocumentToExecutableTypes<'a, E: ExecutableDocument, S: SchemaDefinition> {
     executable_document_type: PhantomData<&'a E>,
     config: &'a Config<'a, S>,
+    custom_scalar_overrides: Vec<CustomScalarOverride>,
 }
 
 impl<'a, E: ExecutableDocument, S: SchemaDefinition> ExecutableDocumentToExecutableTypes<'a, E, S> {
-    fn convert(executable_document: &'a E, config: &'a Config<'a, S>) -> Vec<ExecutableType<'a>> {
+    fn convert(
+        executable_document: &'a E,
+        config: &'a Config<'a, S>,
+        custom_scalar_overrides: Vec<CustomScalarOverride>,
+    ) -> Vec<ExecutableType<'a>> {
         let instance = Self {
             executable_document_type: PhantomData,
             config,
+            custom_scalar_overrides,
         };
 
         let named_fragment_definition_types = executable_document
@@ -227,6 +281,9 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> ExecutableDocumentToExecuta
                 .subscription()
                 .expect("Unsupported operation type used"),
         };
+        let path = Path::new(PathRoot::Operation {
+            name: operation_definition.as_ref().name(),
+        });
         self.build_base_type(
             operation_definition
                 .as_ref()
@@ -234,6 +291,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> ExecutableDocumentToExecuta
                 .unwrap_or(ANONYMOUS_OPERATION_STRUCT_NAME),
             Some(operation_definition.as_ref().selection_set()),
             BaseOutputTypeReference::Object(object_type_definition),
+            path,
         )
     }
 
@@ -246,12 +304,16 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> ExecutableDocumentToExecuta
             .schema_definition()
             .get_type_definition(fragment_definition.type_condition())
             .expect("Fragment type condition not found");
+        let path = Path::new(PathRoot::Fragment {
+            name: fragment_definition.name(),
+        });
         self.build_base_type(
             fragment_definition.name(),
             Some(fragment_definition.selection_set()),
             target_type
                 .try_into()
                 .expect("Fragment type not an output type"),
+            path,
         )
     }
 
@@ -321,12 +383,14 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> ExecutableDocumentToExecuta
         &self,
         field: &'a E::Field,
         field_definition: &'a S::FieldDefinition,
+        path: Path<'a>,
     ) -> ExecutableField<'a> {
         let r#type = self.build_field_type(
             field,
             field_definition
                 .r#type()
                 .as_ref(self.config.schema_definition()),
+            path,
         );
 
         ExecutableField {
@@ -340,12 +404,15 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> ExecutableDocumentToExecuta
         &self,
         field: &'a E::Field,
         output_type: OutputTypeReference<'a, S::OutputType>,
+        path: Path<'a>,
     ) -> WrappedExecutableType<'a> {
         match output_type {
             OutputTypeReference::List(list, required) => {
-                let list_type = WrappedExecutableType::Vec(Box::new(
-                    self.build_field_type(field, list.as_ref(self.config.schema_definition())),
-                ));
+                let list_type = WrappedExecutableType::Vec(Box::new(self.build_field_type(
+                    field,
+                    list.as_ref(self.config.schema_definition()),
+                    path,
+                )));
                 if required {
                     list_type
                 } else {
@@ -357,6 +424,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> ExecutableDocumentToExecuta
                     field.response_name(),
                     field.selection_set(),
                     inner,
+                    path,
                 ));
                 if required {
                     base_type
@@ -372,16 +440,26 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> ExecutableDocumentToExecuta
         parent_name: &'a str,
         selection_set: Option<&'a E::SelectionSet>,
         base_output_type: BaseOutputTypeReference<'a, S::OutputType>,
+        path: Path<'a>,
     ) -> ExecutableType<'a> {
         match base_output_type {
             BaseOutputTypeReference::BuiltinScalar(bstd) => ExecutableType::BuiltinScalar {
                 bstd,
                 borrows: self.config.builtin_scalar_borrows(bstd),
             },
-            BaseOutputTypeReference::CustomScalar(cstd) => ExecutableType::Leaf {
-                name: cstd.name(),
-                borrows: self.config.custom_scalar_borrows(cstd),
-            },
+            BaseOutputTypeReference::CustomScalar(cstd) => {
+                if let Some(custom_scalar_override) = self.custom_scalar_override_for_path(&path) {
+                    ExecutableType::Leaf {
+                        path_segments: custom_scalar_override.path_segments(),
+                        borrows: custom_scalar_override.borrows,
+                    }
+                } else {
+                    ExecutableType::Leaf {
+                        path_segments: vec![type_ident(cstd.name())],
+                        borrows: self.config.custom_scalar_borrows(cstd),
+                    }
+                }
+            }
             BaseOutputTypeReference::Enum(etd) => {
                 if self.config.enum_as_str(etd) {
                     // kind of a hack because it's not a builtin scalar
@@ -391,7 +469,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> ExecutableDocumentToExecuta
                     }
                 } else {
                     ExecutableType::Leaf {
-                        name: etd.name(),
+                        path_segments: vec![type_ident(etd.name())],
                         borrows: false,
                     }
                 }
@@ -412,6 +490,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> ExecutableDocumentToExecuta
                                         fields_definition
                                             .get(field.name())
                                             .expect("Field not found"),
+                                        path.with_field(field.response_name()),
                                     )
                                 })
                                 .collect(),
@@ -439,6 +518,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> ExecutableDocumentToExecuta
                                         fields_definition
                                             .get(field.name())
                                             .expect("Field not found"),
+                                        path.with_field(field.response_name()),
                                     )
                                 })
                                 .collect(),
@@ -478,6 +558,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> ExecutableDocumentToExecuta
                                                         .fields_definition()
                                                         .get(field.name())
                                                         .expect("Field not found"),
+                                                    path.with_field(field.response_name()),
                                                 )
                                             }
                                             SelectionReference::InlineFragment(_)
@@ -537,5 +618,18 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> ExecutableDocumentToExecuta
             ExecutableType::BuiltinScalar { borrows, .. } => *borrows,
             ExecutableType::Leaf { borrows, .. } => *borrows,
         }
+    }
+
+    fn custom_scalar_override_for_path(&self, path: &Path<'a>) -> Option<&CustomScalarOverride> {
+        self.custom_scalar_overrides
+            .iter()
+            .find(|custom_scalar_override| {
+                custom_scalar_override.graphql_path.split_first().map_or(
+                    false,
+                    |(operation_name, fields)| {
+                        path.root.name() == Some(operation_name) && path.fields == fields
+                    },
+                )
+            })
     }
 }

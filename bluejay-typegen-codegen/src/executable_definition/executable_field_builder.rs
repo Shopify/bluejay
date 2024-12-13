@@ -101,11 +101,13 @@ impl<'a, S: SchemaDefinition> ExecutableFieldBuilder<'a, S> {
     fn compute_type_path(&self, r#type: &WrappedExecutableType<'a>) -> syn::TypePath {
         match r#type {
             WrappedExecutableType::Base(base) => match base {
-                ExecutableType::Leaf { name, borrows } => {
+                ExecutableType::Leaf {
+                    path_segments,
+                    borrows,
+                } => {
                     let prefix = self.prefix_for_schema_definition_module();
-                    let type_ident = type_ident(name);
                     let lifetime: Option<syn::Generics> = borrows.then(|| parse_quote! { <'a> });
-                    parse_quote! { #(#prefix::)* #type_ident #lifetime }
+                    parse_quote! { #(#prefix::)* #(#path_segments)::* #lifetime }
                 }
                 ExecutableType::BuiltinScalar { bstd, .. } => {
                     builtin_scalar_type(*bstd, self.config)

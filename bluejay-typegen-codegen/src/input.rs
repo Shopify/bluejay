@@ -124,21 +124,21 @@ impl Parse for Input {
             input.parse::<syn::Token![,]>()?;
             let lookahead = input.lookahead1();
             if lookahead.peek(kw::borrow) {
-                Self::parse_key_value(input, &mut borrow)?;
+                parse_key_value(input, &mut borrow)?;
             } else if lookahead.peek(kw::codec) {
-                Self::parse_key_value(input, &mut codec)?;
+                parse_key_value(input, &mut codec)?;
             } else if lookahead.peek(kw::enums_as_str) {
-                Self::parse_key_value_with(input, &mut enums_as_str, |input| {
+                parse_key_value_with(input, &mut enums_as_str, |input| {
                     let content;
                     syn::bracketed!(content in input);
                     syn::punctuated::Punctuated::parse_terminated(&content)
                 })?;
             } else if lookahead.peek(kw::allow_unknown_enums_as_str) {
-                Self::parse_key_value(input, &mut allow_unknown_enums_as_str)?;
+                parse_key_value(input, &mut allow_unknown_enums_as_str)?;
             } else if lookahead.peek(kw::serde_path) {
-                Self::parse_key_value(input, &mut serde_path)?;
+                parse_key_value(input, &mut serde_path)?;
             } else if lookahead.peek(kw::miniserde_path) {
-                Self::parse_key_value(input, &mut miniserde_path)?;
+                parse_key_value(input, &mut miniserde_path)?;
             } else {
                 return Err(lookahead.error());
             }
@@ -161,30 +161,28 @@ impl Parse for Input {
     }
 }
 
-impl Input {
-    fn parse_key_value<V: syn::parse::Parse>(
-        input: syn::parse::ParseStream,
-        value: &mut Option<V>,
-    ) -> syn::Result<()> {
-        Self::parse_key_value_with(input, value, syn::parse::Parse::parse)
+pub(crate) fn parse_key_value<V: syn::parse::Parse>(
+    input: syn::parse::ParseStream,
+    value: &mut Option<V>,
+) -> syn::Result<()> {
+    parse_key_value_with(input, value, syn::parse::Parse::parse)
+}
+
+pub(crate) fn parse_key_value_with<V>(
+    input: syn::parse::ParseStream,
+    value: &mut Option<V>,
+    parser: fn(syn::parse::ParseStream<'_>) -> syn::Result<V>,
+) -> syn::Result<()> {
+    let key: syn::Ident = input.parse()?;
+
+    if value.is_some() {
+        return Err(syn::Error::new(
+            key.span(),
+            format!("Duplicate entry for `{}`", key),
+        ));
     }
 
-    fn parse_key_value_with<V>(
-        input: syn::parse::ParseStream,
-        value: &mut Option<V>,
-        parser: fn(syn::parse::ParseStream<'_>) -> syn::Result<V>,
-    ) -> syn::Result<()> {
-        let key: syn::Ident = input.parse()?;
-
-        if value.is_some() {
-            return Err(syn::Error::new(
-                key.span(),
-                format!("Duplicate entry for `{}`", key),
-            ));
-        }
-
-        input.parse::<syn::Token![=]>()?;
-        *value = Some(parser(input)?);
-        Ok(())
-    }
+    input.parse::<syn::Token![=]>()?;
+    *value = Some(parser(input)?);
+    Ok(())
 }

@@ -30,6 +30,7 @@ bluejay-validator = { path = "./bluejay-validator", version = "=0.2.0" }
 bluejay-visibility = { path = "./bluejay-visibility", version = "=0.2.0" }
 
 [profile.shopify-function]
+target = "wasm32-wasi"
 inherits = "release"
 lto = true
 opt-level = 's'

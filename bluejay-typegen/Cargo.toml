@@ -32,3 +32,8 @@ workspace = true
 name = "shopify_function_miniserde"
 path = "examples/shopify_function_miniserde.rs"
 required-features = ["miniserde"]
+
+[[example]]
+name = "shopify_function_serde"
+path = "examples/shopify_function_serde.rs"
+required-features = ["serde"]
