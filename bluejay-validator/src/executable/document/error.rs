@@ -120,6 +120,11 @@ pub enum Error<'a, E: ExecutableDocument, S: SchemaDefinition> {
         variable_type: &'a E::VariableType,
         location_type: &'a S::InputType,
     },
+    InvalidOneOfVariableUsage {
+        variable: &'a <E::Value<false> as Value<false>>::Variable,
+        variable_type: &'a E::VariableType,
+        parent_type_name: &'a str,
+    },
 }
 
 #[cfg(feature = "parser-integration")]
@@ -514,6 +519,28 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                         "Cannot use variable of type {} where {} is expected",
                         variable_type.as_ref().display_name(),
                         location_type.display_name(),
+                    ),
+                    variable.span().clone(),
+                )),
+                Vec::new(),
+            ),
+            Error::InvalidOneOfVariableUsage {
+                variable,
+                variable_type,
+                parent_type_name,
+            } => Self::new(
+                format!(
+                    "Variable ${} is of type {} but must be non-nullable to be used for OneOf Input Object {}",
+                    variable.name(),
+                    variable_type.as_ref().display_name(),
+                    parent_type_name,
+                ),
+                Some(Annotation::new(
+                    format!(
+                        "Variable ${} is of type {} but must be non-nullable to be used for OneOf Input Object {}",
+                        variable.name(),
+                        variable_type.as_ref().display_name(),
+                        parent_type_name,
                     ),
                     variable.span().clone(),
                 )),

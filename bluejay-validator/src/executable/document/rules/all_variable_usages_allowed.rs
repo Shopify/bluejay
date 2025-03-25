@@ -3,13 +3,14 @@ use crate::executable::{
     Cache,
 };
 use bluejay_core::definition::{
-    BaseInputTypeReference, InputFieldsDefinition, InputObjectTypeDefinition, InputType,
-    InputTypeReference, InputValueDefinition, SchemaDefinition, TypeDefinitionReference,
+    BaseInputTypeReference, HasDirectives, InputFieldsDefinition, InputObjectTypeDefinition,
+    InputType, InputTypeReference, InputValueDefinition, SchemaDefinition, TypeDefinitionReference,
 };
 use bluejay_core::executable::{
     ExecutableDocument, FragmentSpread, OperationDefinition, VariableDefinition, VariableType,
     VariableTypeReference,
 };
+use bluejay_core::Directive;
 use bluejay_core::{Argument, AsIter, Indexed, ObjectValue, Value, ValueReference, Variable};
 use itertools::Either;
 use std::collections::{BTreeMap, BTreeSet, HashMap};
@@ -44,6 +45,9 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Visitor<'a, E, S>
             argument.value(),
             *path.root(),
             VariableUsageLocation::Argument(input_value_definition),
+            input_value_definition
+                .r#type()
+                .as_ref(self.schema_definition),
         );
     }
 
@@ -68,19 +72,43 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> AllVariableUsagesAllowed<'a
         value: &'a <E as ExecutableDocument>::Value<false>,
         root: PathRoot<'a, E>,
         location: VariableUsageLocation<'a, S>,
+        parent_type: InputTypeReference<'a, S::InputType>,
     ) {
+        let (is_one_of_parent, parent_type_name) =
+            if let InputTypeReference::Base(BaseInputTypeReference::InputObject(iotd), _) =
+                parent_type
+            {
+                (
+                    iotd.directives()
+                        .and_then(|d| d.iter().find(|d| d.name() == "oneOf"))
+                        .is_some(),
+                    iotd.name(),
+                )
+            } else {
+                (false, "")
+            };
         match value.as_ref() {
             ValueReference::Variable(variable) => {
                 self.variable_usages
                     .entry(root)
                     .or_default()
-                    .push(VariableUsage { variable, location });
+                    .push(VariableUsage {
+                        variable,
+                        location,
+                        is_one_of_parent,
+                        parent_type_name,
+                    });
             }
             ValueReference::List(l) => l.iter().for_each(|value| {
                 if let InputTypeReference::List(inner, _) =
                     location.r#type().as_ref(self.schema_definition)
                 {
-                    self.visit_value(value, root, VariableUsageLocation::ListValue(inner));
+                    self.visit_value(
+                        value,
+                        root,
+                        VariableUsageLocation::ListValue(inner),
+                        parent_type,
+                    );
                 }
             }),
             ValueReference::Object(o) => o.iter().for_each(|(key, value)| {
@@ -89,7 +117,12 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> AllVariableUsagesAllowed<'a
                         ivd.r#type().base(self.schema_definition)
                     {
                         if let Some(ivd) = iotd.input_field_definitions().get(key.as_ref()) {
-                            self.visit_value(value, root, VariableUsageLocation::ObjectField(ivd));
+                            self.visit_value(
+                                value,
+                                root,
+                                VariableUsageLocation::ObjectField(ivd),
+                                parent_type,
+                            );
                         }
                     }
                 }
@@ -212,7 +245,12 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Rule<'a, E, S>
                     };
                 operation_definitions.flat_map(|operation_definition| {
                     variable_usages.iter().filter_map(|variable_usage| {
-                        let VariableUsage { variable, location } = variable_usage;
+                        let VariableUsage {
+                            variable,
+                            location,
+                            is_one_of_parent,
+                            parent_type_name,
+                        } = variable_usage;
                         let variable_definition = operation_definition
                             .as_ref()
                             .variable_definitions()
@@ -223,6 +261,14 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Rule<'a, E, S>
                             });
 
                         variable_definition.and_then(|variable_definition| {
+                            let variable_type = variable_definition.r#type().as_ref();
+                            if *is_one_of_parent && !variable_type.is_required() {
+                                return Some(Error::InvalidOneOfVariableUsage {
+                                    variable: *variable,
+                                    variable_type: variable_definition.r#type(),
+                                    parent_type_name,
+                                });
+                            }
                             self.is_variable_usage_allowed(variable_definition, variable_usage)
                                 .not()
                                 .then_some(Error::InvalidVariableUsage {
@@ -266,4 +312,6 @@ impl<'a, S: SchemaDefinition> VariableUsageLocation<'a, S> {
 struct VariableUsage<'a, E: ExecutableDocument, S: SchemaDefinition> {
     variable: &'a <E::Value<false> as Value<false>>::Variable,
     location: VariableUsageLocation<'a, S>,
+    is_one_of_parent: bool,
+    parent_type_name: &'a str,
 }

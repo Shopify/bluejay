@@ -6,6 +6,12 @@ type Query {
   arguments: Arguments
   findDog(complex: ComplexInput): Dog
   booleanList(booleanListArg: [Boolean!]): Boolean
+  oneOf(oneOfArg: OneOfInput!): String
+}
+
+input OneOfInput @oneOf {
+  oneOfField: String
+  anotherField: String
 }
 
 type Subscription {
