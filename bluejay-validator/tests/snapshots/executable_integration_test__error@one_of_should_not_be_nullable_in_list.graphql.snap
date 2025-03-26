@@ -1,0 +1,6 @@
+---
+source: bluejay-validator/tests/executable_integration_test.rs
+expression: formatted_errors
+input_file: bluejay-validator/tests/test_data/executable/error/one_of_should_not_be_nullable_in_list.graphql
+---
+

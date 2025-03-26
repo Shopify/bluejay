@@ -4,7 +4,7 @@ expression: formatted_errors
 input_file: bluejay-validator/tests/test_data/executable/error/one_of_should_not_be_nullable.graphql
 ---
 Error: Variable $oneOfArg is of type String but must be non-nullable to be used for OneOf Input Object OneOfInput
-   ╭─[<unknown>:2:33]
+   ╭─[ one_of_should_not_be_nullable.graphql:2:33 ]
    │
  2 │   oneOf(oneOfArg: { oneOfField: $oneOfArg })
    │                                 ────┬────  

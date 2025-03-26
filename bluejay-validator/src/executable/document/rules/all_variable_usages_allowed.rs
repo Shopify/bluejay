@@ -82,10 +82,10 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> AllVariableUsagesAllowed<'a
                     iotd.directives()
                         .and_then(|d| d.iter().find(|d| d.name() == "oneOf"))
                         .is_some(),
-                    iotd.name(),
+                    Some(iotd.name()),
                 )
             } else {
-                (false, "")
+                (false, None)
             };
         match value.as_ref() {
             ValueReference::Variable(variable) => {
@@ -96,7 +96,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> AllVariableUsagesAllowed<'a
                         variable,
                         location,
                         is_one_of_parent,
-                        parent_type_name,
+                        parent_type_name: parent_type_name.unwrap_or(""),
                     });
             }
             ValueReference::List(l) => l.iter().for_each(|value| {
