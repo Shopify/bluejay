@@ -31,12 +31,15 @@ impl<'a> DirectiveWarden<'a> {
 
 impl<'a> Warden for DirectiveWarden<'a> {
     type SchemaDefinition = ParserSchemaDefinition<'a>;
-    type TypeDefinitionsForName<'b> = std::option::IntoIter<
+    type TypeDefinitionsForName<'b>
+        = std::option::IntoIter<
         TypeDefinitionReference<
             'b,
             <Self::SchemaDefinition as CoreSchemaDefinition>::TypeDefinition,
         >,
-    > where Self: 'b;
+    >
+    where
+        Self: 'b;
 
     fn is_enum_value_definition_visible(
         &self,

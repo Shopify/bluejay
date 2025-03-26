@@ -27,7 +27,8 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Visitor<'a, E, S>
         let type_name = variable_definition.r#type().as_ref().name();
         if !self
             .schema_definition
-            .get_type_definition(type_name).is_some_and(|tdr| tdr.is_input())
+            .get_type_definition(type_name)
+            .is_some_and(|tdr| tdr.is_input())
         {
             self.errors.push(Error::VariableDefinitionTypeNotInput {
                 variable_definition,

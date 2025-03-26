@@ -23,8 +23,10 @@ impl<
 {
     type Key = K;
     type Value = V;
-    type Iterator<'a> =
-        std::iter::Map<std::slice::Iter<'a, (K, V)>, fn(&'a (K, V)) -> (&'a K, &'a V)> where Self: 'a;
+    type Iterator<'a>
+        = std::iter::Map<std::slice::Iter<'a, (K, V)>, fn(&'a (K, V)) -> (&'a K, &'a V)>
+    where
+        Self: 'a;
 
     fn iter(&self) -> Self::Iterator<'_> {
         self.as_slice().iter().map(|(k, v)| (k, v))

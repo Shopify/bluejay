@@ -11,7 +11,10 @@ pub struct UnionMemberTypes<'a, C: Context> {
 
 impl<'a, C: Context> AsIter for UnionMemberTypes<'a, C> {
     type Item = UnionMemberType<'a, C>;
-    type Iterator<'b> = std::slice::Iter<'b, Self::Item> where 'a: 'b;
+    type Iterator<'b>
+        = std::slice::Iter<'b, Self::Item>
+    where
+        'a: 'b;
 
     fn iter(&self) -> Self::Iterator<'_> {
         self.union_member_types.iter()

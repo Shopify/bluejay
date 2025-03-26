@@ -45,7 +45,10 @@ impl<'a, const CONST: bool> bluejay_core::Directives<CONST> for Directives<'a, C
 
 impl<'a, const CONST: bool> AsIter for Directives<'a, CONST> {
     type Item = Directive<'a, CONST>;
-    type Iterator<'b> = std::slice::Iter<'b, Self::Item> where 'a: 'b;
+    type Iterator<'b>
+        = std::slice::Iter<'b, Self::Item>
+    where
+        'a: 'b;
 
     fn iter(&self) -> Self::Iterator<'_> {
         self.directives.iter()

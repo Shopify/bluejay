@@ -50,7 +50,10 @@ impl<'a> bluejay_core::executable::SelectionSet for SelectionSet<'a> {
 
 impl<'a> AsIter for SelectionSet<'a> {
     type Item = Selection<'a>;
-    type Iterator<'b> = std::slice::Iter<'b, Self::Item> where 'a: 'b;
+    type Iterator<'b>
+        = std::slice::Iter<'b, Self::Item>
+    where
+        'a: 'b;
 
     fn iter(&self) -> Self::Iterator<'_> {
         self.selections.iter()

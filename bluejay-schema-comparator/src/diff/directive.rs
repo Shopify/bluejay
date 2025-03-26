@@ -78,9 +78,9 @@ impl<'a, S: SchemaDefinition + 'a> DirectiveDiff<'a, S> {
             .into_iter()
             .flatten()
             .filter(|new_arg| {
-                self.old_directive.arguments().is_none_or(|args| {
-                    !args.iter().any(|old_arg| old_arg.name() == new_arg.name())
-                })
+                self.old_directive
+                    .arguments()
+                    .is_none_or(|args| !args.iter().any(|old_arg| old_arg.name() == new_arg.name()))
             })
     }
 

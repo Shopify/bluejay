@@ -118,9 +118,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, V: VariableValues> CostComp
     }
 }
 
-impl<E: ExecutableDocument, S: SchemaDefinition, V: VariableValues>
-    RelayCostComputer<'_, E, S, V>
-{
+impl<E: ExecutableDocument, S: SchemaDefinition, V: VariableValues> RelayCostComputer<'_, E, S, V> {
     fn extract_field_sizing_argument(
         &self,
         field: &<E as ExecutableDocument>::Field,

@@ -133,7 +133,9 @@ impl<'a, S: SchemaDefinition + 'a> ObjectTypeDiff<'a, S> {
             .flatten()
             .filter(
                 |new_interface_impl: &&'a <S as SchemaDefinition>::InterfaceImplementation| {
-                    self.old_type_definition.interface_implementations().is_none_or(|interface_implementations| {
+                    self.old_type_definition
+                        .interface_implementations()
+                        .is_none_or(|interface_implementations| {
                             !interface_implementations.iter().any(|old_interface_impl| {
                                 old_interface_impl.name() == new_interface_impl.name()
                             })
@@ -150,7 +152,9 @@ impl<'a, S: SchemaDefinition + 'a> ObjectTypeDiff<'a, S> {
             .flatten()
             .filter(
                 |old_interface_impl: &&'a <S as SchemaDefinition>::InterfaceImplementation| {
-                    self.new_type_definition.interface_implementations().is_none_or(|interface_implementations| {
+                    self.new_type_definition
+                        .interface_implementations()
+                        .is_none_or(|interface_implementations| {
                             !interface_implementations.iter().any(|new_interface_impl| {
                                 old_interface_impl.name() == new_interface_impl.name()
                             })
