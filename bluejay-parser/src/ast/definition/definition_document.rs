@@ -287,7 +287,7 @@ impl<'a, C: Context> DefinitionDocument<'a, C> {
     fn index_directive_definitions(
         &'a self,
         errors: &mut Vec<DefinitionDocumentError<'a, C>>,
-    ) -> BTreeMap<&str, &'a DirectiveDefinition<'a, C>> {
+    ) -> BTreeMap<&'a str, &'a DirectiveDefinition<'a, C>> {
         let mut indexed: BTreeMap<&str, &DirectiveDefinition<'a, C>> = BTreeMap::new();
         let mut duplicates: BTreeMap<&str, Vec<&DirectiveDefinition<'a, C>>> = BTreeMap::new();
 
@@ -317,7 +317,7 @@ impl<'a, C: Context> DefinitionDocument<'a, C> {
     fn index_type_definitions(
         &'a self,
         errors: &mut Vec<DefinitionDocumentError<'a, C>>,
-    ) -> BTreeMap<&str, &TypeDefinition<'a, C>> {
+    ) -> BTreeMap<&'a str, &'a TypeDefinition<'a, C>> {
         let mut indexed: BTreeMap<&str, &TypeDefinition<'a, C>> = BTreeMap::new();
         let mut duplicates: BTreeMap<&str, Vec<&TypeDefinition<'a, C>>> = BTreeMap::new();
 

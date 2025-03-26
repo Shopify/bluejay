@@ -12,13 +12,13 @@ pub enum BaseInputTypeReference<'a, T: InputType> {
     Enum(&'a T::EnumTypeDefinition),
 }
 
-impl<'a, T: InputType> Clone for BaseInputTypeReference<'a, T> {
+impl<T: InputType> Clone for BaseInputTypeReference<'_, T> {
     fn clone(&self) -> Self {
         *self
     }
 }
 
-impl<'a, T: InputType> Copy for BaseInputTypeReference<'a, T> {}
+impl<T: InputType> Copy for BaseInputTypeReference<'_, T> {}
 
 impl<'a, T: InputType> BaseInputTypeReference<'a, T> {
     pub fn name(&self) -> &'a str {
@@ -53,13 +53,13 @@ pub enum InputTypeReference<'a, I: InputType> {
     List(&'a I, bool),
 }
 
-impl<'a, I: InputType> Clone for InputTypeReference<'a, I> {
+impl<I: InputType> Clone for InputTypeReference<'_, I> {
     fn clone(&self) -> Self {
         *self
     }
 }
 
-impl<'a, I: InputType> Copy for InputTypeReference<'a, I> {}
+impl<I: InputType> Copy for InputTypeReference<'_, I> {}
 
 impl<'a, I: InputType> InputTypeReference<'a, I> {
     pub fn is_required(&self) -> bool {
@@ -99,7 +99,7 @@ pub enum ShallowInputTypeReference<'a, I: InputType> {
     List(&'a I, bool),
 }
 
-impl<'a, I: InputType> ShallowInputTypeReference<'a, I> {
+impl<I: InputType> ShallowInputTypeReference<'_, I> {
     pub fn is_required(&self) -> bool {
         match self {
             Self::Base(_, r) => *r,
@@ -108,7 +108,7 @@ impl<'a, I: InputType> ShallowInputTypeReference<'a, I> {
     }
 }
 
-impl<'a, I: InputType> std::fmt::Display for ShallowInputTypeReference<'a, I> {
+impl<I: InputType> std::fmt::Display for ShallowInputTypeReference<'_, I> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             ShallowInputTypeReference::Base(name, required) => {
@@ -126,7 +126,7 @@ impl<'a, I: InputType> std::fmt::Display for ShallowInputTypeReference<'a, I> {
     }
 }
 
-impl<'a, I: InputType> PartialEq for ShallowInputTypeReference<'a, I> {
+impl<I: InputType> PartialEq for ShallowInputTypeReference<'_, I> {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
             (

@@ -21,7 +21,7 @@ struct DirectiveWarden<'a>(PhantomData<ParserSchemaDefinition<'a>>);
 
 impl<'a> DirectiveWarden<'a> {
     fn has_visible_directive(directives: Option<&Directives<'a, DefaultContext>>) -> bool {
-        directives.map_or(false, |directives| {
+        directives.is_some_and(|directives| {
             directives
                 .iter()
                 .any(|directive| directive.name() == "visible")

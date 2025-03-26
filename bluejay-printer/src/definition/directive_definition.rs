@@ -13,7 +13,7 @@ impl<'a, D: DirectiveDefinition> DirectiveDefinitionPrinter<'a, D> {
     }
 }
 
-impl<'a, D: DirectiveDefinition> Display for DirectiveDefinitionPrinter<'a, D> {
+impl<D: DirectiveDefinition> Display for DirectiveDefinitionPrinter<'_, D> {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         let Self(directive_definition) = *self;
         if let Some(description) = directive_definition.description() {

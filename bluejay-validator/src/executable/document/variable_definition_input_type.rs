@@ -10,7 +10,7 @@ pub enum VariableDefinitionInputType<'a, I: InputType> {
     List(Box<Self>, bool),
 }
 
-impl<'a, I: InputType> InputType for VariableDefinitionInputType<'a, I> {
+impl<I: InputType> InputType for VariableDefinitionInputType<'_, I> {
     type CustomScalarTypeDefinition = I::CustomScalarTypeDefinition;
     type EnumTypeDefinition = I::EnumTypeDefinition;
     type InputObjectTypeDefinition = I::InputObjectTypeDefinition;

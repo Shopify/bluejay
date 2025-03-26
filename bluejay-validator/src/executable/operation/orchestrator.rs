@@ -182,9 +182,9 @@ impl<
             self.visit_variable_directives(directives, DirectiveLocation::Field);
         }
         let included = included
-            && field.directives().map_or(true, |directives| {
-                self.evaluate_selection_inclusion(directives)
-            });
+            && field
+                .directives()
+                .is_none_or(|directives| self.evaluate_selection_inclusion(directives));
 
         self.visitor
             .visit_field(field, field_definition, owner_type, included);
@@ -244,9 +244,9 @@ impl<
         }
 
         let included = included
-            && inline_fragment.directives().map_or(true, |directives| {
-                self.evaluate_selection_inclusion(directives)
-            });
+            && inline_fragment
+                .directives()
+                .is_none_or(|directives| self.evaluate_selection_inclusion(directives));
 
         let fragment_type = if let Some(type_condition) = inline_fragment.type_condition() {
             self.schema_definition.get_type_definition(type_condition)
@@ -265,9 +265,9 @@ impl<
         }
 
         let included = included
-            && fragment_spread.directives().map_or(true, |directives| {
-                self.evaluate_selection_inclusion(directives)
-            });
+            && fragment_spread
+                .directives()
+                .is_none_or(|directives| self.evaluate_selection_inclusion(directives));
         if self
             .currently_spread_fragments
             .insert(fragment_spread.name())
@@ -348,10 +348,7 @@ impl<
             Some(operation_name) => executable_document
                 .operation_definitions()
                 .find(|operation_definition| {
-                    operation_definition
-                        .as_ref()
-                        .name()
-                        .map_or(false, |name| name == operation_name)
+                    operation_definition.as_ref().name() == Some(operation_name)
                 })
                 .ok_or(OperationResolutionError::NoOperationWithName {
                     name: operation_name,
@@ -384,7 +381,7 @@ pub enum OperationResolutionError<'a> {
     AnonymousNotEligible,
 }
 
-impl<'a> OperationResolutionError<'a> {
+impl OperationResolutionError<'_> {
     pub fn message(&self) -> Cow<'static, str> {
         match self {
             Self::NoOperationWithName { name } => format!("No operation defined with name {}", name).into(),

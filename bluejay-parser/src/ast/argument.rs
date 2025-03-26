@@ -48,7 +48,7 @@ impl<'a, const CONST: bool> bluejay_core::Argument<CONST> for Argument<'a, CONST
     }
 }
 
-impl<'a, const CONST: bool> HasSpan for Argument<'a, CONST> {
+impl<const CONST: bool> HasSpan for Argument<'_, CONST> {
     fn span(&self) -> &Span {
         &self.span
     }

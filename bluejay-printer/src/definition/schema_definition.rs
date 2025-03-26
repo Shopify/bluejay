@@ -72,7 +72,7 @@ impl<'a, S: SchemaDefinition> SchemaDefinitionPrinter<'a, S> {
     }
 }
 
-impl<'a, S: SchemaDefinition> Display for SchemaDefinitionPrinter<'a, S> {
+impl<S: SchemaDefinition> Display for SchemaDefinitionPrinter<'_, S> {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         let Self(schema_definition) = *self;
         schema_definition

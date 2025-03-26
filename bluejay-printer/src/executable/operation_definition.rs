@@ -17,7 +17,7 @@ impl<'a, O: OperationDefinition> OperationDefinitionPrinter<'a, O> {
     }
 }
 
-impl<'a, O: OperationDefinition> Display for OperationDefinitionPrinter<'a, O> {
+impl<O: OperationDefinition> Display for OperationDefinitionPrinter<'_, O> {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         let Self {
             operation_definition,

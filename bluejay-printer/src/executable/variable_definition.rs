@@ -15,7 +15,7 @@ impl<'a, T: VariableDefinition> VariableDefinitionPrinter<'a, T> {
     }
 }
 
-impl<'a, T: VariableDefinition> Display for VariableDefinitionPrinter<'a, T> {
+impl<T: VariableDefinition> Display for VariableDefinitionPrinter<'_, T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         let Self {
             variable_definition,
@@ -49,7 +49,7 @@ impl<'a, T: VariableDefinitions> VariableDefinitionsPrinter<'a, T> {
     }
 }
 
-impl<'a, T: VariableDefinitions> Display for VariableDefinitionsPrinter<'a, T> {
+impl<T: VariableDefinitions> Display for VariableDefinitionsPrinter<'_, T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         let Self {
             variable_definitions,

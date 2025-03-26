@@ -18,7 +18,7 @@ impl<'a> StringValue<'a> {
     }
 }
 
-impl<'a> HasSpan for StringValue<'a> {
+impl HasSpan for StringValue<'_> {
     fn span(&self) -> &Span {
         &self.span
     }
@@ -30,7 +30,7 @@ impl<'a> From<StringValue<'a>> for Span {
     }
 }
 
-impl<'a> AsRef<str> for StringValue<'a> {
+impl AsRef<str> for StringValue<'_> {
     fn as_ref(&self) -> &str {
         self.as_str()
     }

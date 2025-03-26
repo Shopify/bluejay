@@ -19,7 +19,7 @@ impl<'a, F: FieldDefinition> FieldDefinitionPrinter<'a, F> {
     }
 }
 
-impl<'a, F: FieldDefinition> Display for FieldDefinitionPrinter<'a, F> {
+impl<F: FieldDefinition> Display for FieldDefinitionPrinter<'_, F> {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         let Self {
             field_definition,
@@ -68,7 +68,7 @@ impl<'a, F: FieldsDefinition> FieldsDefinitionPrinter<'a, F> {
     }
 }
 
-impl<'a, F: FieldsDefinition> Display for FieldsDefinitionPrinter<'a, F> {
+impl<F: FieldsDefinition> Display for FieldsDefinitionPrinter<'_, F> {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         let Self {
             fields_definition,

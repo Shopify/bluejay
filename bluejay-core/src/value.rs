@@ -83,21 +83,21 @@ pub enum ValueReference<'a, const CONST: bool, V: Value<CONST>> {
     Object(&'a V::Object),
 }
 
-impl<'a, const CONST: bool, V: Value<CONST>> ValueReference<'a, CONST, V> {
+impl<const CONST: bool, V: Value<CONST>> ValueReference<'_, CONST, V> {
     pub fn variant(&self) -> &'static str {
         self.into()
     }
 }
 
-impl<'a, const CONST: bool, V: Value<CONST>> Clone for ValueReference<'a, CONST, V> {
+impl<const CONST: bool, V: Value<CONST>> Clone for ValueReference<'_, CONST, V> {
     fn clone(&self) -> Self {
         *self
     }
 }
 
-impl<'a, const CONST: bool, V: Value<CONST>> Copy for ValueReference<'a, CONST, V> {}
+impl<const CONST: bool, V: Value<CONST>> Copy for ValueReference<'_, CONST, V> {}
 
-impl<'a, const CONST: bool, V: Value<CONST>> std::cmp::PartialEq for ValueReference<'a, CONST, V> {
+impl<const CONST: bool, V: Value<CONST>> std::cmp::PartialEq for ValueReference<'_, CONST, V> {
     fn eq(&self, other: &Self) -> bool {
         match self {
             Self::Variable(v) => {

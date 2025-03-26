@@ -125,8 +125,7 @@ impl<'a, S: SchemaDefinition + 'a> DirectiveDefinitionDiff<'a, S> {
             .flatten()
             .filter(|old_argument| {
                 self.new_directive_definition
-                    .arguments_definition()
-                    .map_or(false, |args| {
+                    .arguments_definition().is_some_and(|args| {
                         !args
                             .iter()
                             .any(|new_argument| old_argument.name() == new_argument.name())
@@ -142,8 +141,7 @@ impl<'a, S: SchemaDefinition + 'a> DirectiveDefinitionDiff<'a, S> {
             .flatten()
             .filter(|new_argument| {
                 self.old_directive_definition
-                    .arguments_definition()
-                    .map_or(false, |args| {
+                    .arguments_definition().is_some_and(|args| {
                         !args
                             .iter()
                             .any(|old_argument| old_argument.name() == new_argument.name())

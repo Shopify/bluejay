@@ -14,7 +14,7 @@ impl<'a, T: FragmentDefinition> FragmentDefinitionPrinter<'a, T> {
     }
 }
 
-impl<'a, T: FragmentDefinition> Display for FragmentDefinitionPrinter<'a, T> {
+impl<T: FragmentDefinition> Display for FragmentDefinitionPrinter<'_, T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         let Self {
             fragment_definition,

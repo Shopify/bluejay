@@ -117,22 +117,22 @@ impl<'a> bluejay_core::executable::Field for Field<'a> {
     }
 }
 
-impl<'a> HasSpan for Field<'a> {
+impl HasSpan for Field<'_> {
     fn span(&self) -> &Span {
         &self.span
     }
 }
 
-impl<'a> Hash for Field<'a> {
+impl Hash for Field<'_> {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.span().hash(state);
     }
 }
 
-impl<'a> PartialEq for Field<'a> {
+impl PartialEq for Field<'_> {
     fn eq(&self, other: &Self) -> bool {
         self.span() == other.span()
     }
 }
 
-impl<'a> Eq for Field<'a> {}
+impl Eq for Field<'_> {}

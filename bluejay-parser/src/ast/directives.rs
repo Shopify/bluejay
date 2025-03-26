@@ -52,7 +52,7 @@ impl<'a, const CONST: bool> AsIter for Directives<'a, CONST> {
     }
 }
 
-impl<'a, const CONST: bool> Directives<'a, CONST> {
+impl<const CONST: bool> Directives<'_, CONST> {
     pub(crate) fn span(&self) -> Option<&Span> {
         self.span.as_ref()
     }

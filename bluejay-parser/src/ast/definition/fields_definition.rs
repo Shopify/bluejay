@@ -46,7 +46,7 @@ impl<'a, C: Context> FromTokens<'a> for FieldsDefinition<'a, C> {
     }
 }
 
-impl<'a, C: Context> FieldsDefinition<'a, C> {
+impl<C: Context> FieldsDefinition<'_, C> {
     pub(crate) fn add_query_root_fields(&mut self) {
         self.field_definitions.push(FieldDefinition::__schema());
         self.field_definitions.push(FieldDefinition::__type());

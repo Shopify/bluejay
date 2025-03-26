@@ -25,7 +25,7 @@ impl<'a> OperationDefinition<'a> {
     }
 }
 
-impl<'a> Indexable for OperationDefinition<'a> {
+impl Indexable for OperationDefinition<'_> {
     type Id = Span;
 
     fn id(&self) -> &Self::Id {
@@ -88,7 +88,7 @@ impl<'a> IsMatch<'a> for OperationDefinition<'a> {
     }
 }
 
-impl<'a> HasSpan for OperationDefinition<'a> {
+impl HasSpan for OperationDefinition<'_> {
     fn span(&self) -> &Span {
         match self {
             Self::Explicit(e) => e.span(),
@@ -143,7 +143,7 @@ impl<'a> ExplicitOperationDefinition<'a> {
     }
 }
 
-impl<'a> HasSpan for ExplicitOperationDefinition<'a> {
+impl HasSpan for ExplicitOperationDefinition<'_> {
     fn span(&self) -> &Span {
         &self.span
     }
@@ -162,7 +162,7 @@ impl<'a> bluejay_core::executable::ImplicitOperationDefinition for ImplicitOpera
     }
 }
 
-impl<'a> HasSpan for ImplicitOperationDefinition<'a> {
+impl HasSpan for ImplicitOperationDefinition<'_> {
     fn span(&self) -> &Span {
         self.selection_set.span()
     }

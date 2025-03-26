@@ -10,13 +10,13 @@ pub enum VariableTypeReference<'a, T: VariableType> {
     List(&'a T, bool),
 }
 
-impl<'a, T: VariableType> Clone for VariableTypeReference<'a, T> {
+impl<T: VariableType> Clone for VariableTypeReference<'_, T> {
     fn clone(&self) -> Self {
         *self
     }
 }
 
-impl<'a, T: VariableType> Copy for VariableTypeReference<'a, T> {}
+impl<T: VariableType> Copy for VariableTypeReference<'_, T> {}
 
 impl<'a, T: VariableType> VariableTypeReference<'a, T> {
     pub fn name(&self) -> &'a str {
@@ -56,7 +56,7 @@ impl<'a, T: VariableType> VariableTypeReference<'a, T> {
     }
 }
 
-impl<'a, T: VariableType> PartialEq for VariableTypeReference<'a, T> {
+impl<T: VariableType> PartialEq for VariableTypeReference<'_, T> {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
             (Self::Named(name, required), Self::Named(other_name, other_required)) => {

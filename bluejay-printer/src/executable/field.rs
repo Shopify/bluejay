@@ -16,7 +16,7 @@ impl<'a, F: Field> FieldPrinter<'a, F> {
     }
 }
 
-impl<'a, F: Field> Display for FieldPrinter<'a, F> {
+impl<F: Field> Display for FieldPrinter<'_, F> {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         let Self { field, indentation } = *self;
         write_indent(f, indentation)?;

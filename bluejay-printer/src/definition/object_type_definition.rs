@@ -17,7 +17,7 @@ impl<'a, O: ObjectTypeDefinition> ObjectTypeDefinitionPrinter<'a, O> {
     }
 }
 
-impl<'a, O: ObjectTypeDefinition> Display for ObjectTypeDefinitionPrinter<'a, O> {
+impl<O: ObjectTypeDefinition> Display for ObjectTypeDefinitionPrinter<'_, O> {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         let Self(object_type_definition) = *self;
         if let Some(description) = object_type_definition.description() {

@@ -10,7 +10,7 @@ impl<'a, const CONST: bool, T: Argument<CONST>> ArgumentPrinter<'a, CONST, T> {
     }
 }
 
-impl<'a, const CONST: bool, T: Argument<CONST>> Display for ArgumentPrinter<'a, CONST, T> {
+impl<const CONST: bool, T: Argument<CONST>> Display for ArgumentPrinter<'_, CONST, T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         let Self(argument) = *self;
         write!(
@@ -30,7 +30,7 @@ impl<'a, const CONST: bool, T: Arguments<CONST>> ArgumentsPrinter<'a, CONST, T> 
     }
 }
 
-impl<'a, const CONST: bool, T: Arguments<CONST>> Display for ArgumentsPrinter<'a, CONST, T> {
+impl<const CONST: bool, T: Arguments<CONST>> Display for ArgumentsPrinter<'_, CONST, T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         let Self(arguments) = *self;
         if arguments.is_empty() {

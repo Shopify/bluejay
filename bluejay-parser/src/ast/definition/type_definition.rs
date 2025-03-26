@@ -17,7 +17,7 @@ pub enum TypeDefinition<'a, C: Context> {
     Interface(InterfaceTypeDefinition<'a, C>),
 }
 
-impl<'a, C: Context> TypeDefinition<'a, C> {
+impl<C: Context> TypeDefinition<'_, C> {
     pub(crate) fn name_token(&self) -> Option<&Name<'_>> {
         match self {
             Self::BuiltinScalar(_) => None,

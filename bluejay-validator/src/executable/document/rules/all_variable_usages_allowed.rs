@@ -185,8 +185,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> AllVariableUsagesAllowed<'a
 
     fn is_input_type(&self, name: &str) -> bool {
         self.schema_definition
-            .get_type_definition(name)
-            .map_or(false, |tdr| tdr.is_input())
+            .get_type_definition(name).is_some_and(|tdr| tdr.is_input())
     }
 }
 

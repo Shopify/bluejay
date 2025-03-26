@@ -16,7 +16,7 @@ impl<'a, I: InlineFragment> InlineFragmentPrinter<'a, I> {
     }
 }
 
-impl<'a, I: InlineFragment> Display for InlineFragmentPrinter<'a, I> {
+impl<I: InlineFragment> Display for InlineFragmentPrinter<'_, I> {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         let Self {
             inline_fragment,

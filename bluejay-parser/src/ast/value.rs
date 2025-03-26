@@ -114,7 +114,7 @@ impl<'a, const CONST: bool> FromTokens<'a> for Value<'a, CONST> {
     }
 }
 
-impl<'a, const CONST: bool> HasSpan for Value<'a, CONST> {
+impl<const CONST: bool> HasSpan for Value<'_, CONST> {
     fn span(&self) -> &Span {
         match self {
             Self::Boolean(b) => &b.span,
@@ -189,7 +189,7 @@ impl<'a, const CONST: bool> AsIter for ObjectValue<'a, CONST> {
     }
 }
 
-impl<'a, const CONST: bool> HasSpan for ObjectValue<'a, CONST> {
+impl<const CONST: bool> HasSpan for ObjectValue<'_, CONST> {
     fn span(&self) -> &Span {
         &self.span
     }

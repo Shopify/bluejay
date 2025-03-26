@@ -118,7 +118,7 @@ pub enum VariableValueError<'a, E: ExecutableDocument, VV: VariableValues> {
     },
 }
 
-impl<'a, E: ExecutableDocument, VV: VariableValues> VariableValueError<'a, E, VV> {
+impl<E: ExecutableDocument, VV: VariableValues> VariableValueError<'_, E, VV> {
     pub fn message(&self) -> String {
         match self {
             Self::MissingValue {

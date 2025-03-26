@@ -60,7 +60,7 @@ impl<'a> bluejay_core::executable::FragmentSpread for FragmentSpread<'a> {
     }
 }
 
-impl<'a> HasSpan for FragmentSpread<'a> {
+impl HasSpan for FragmentSpread<'_> {
     fn span(&self) -> &Span {
         &self.span
     }

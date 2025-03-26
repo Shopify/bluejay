@@ -22,7 +22,7 @@ impl<'a, C: Context> EnumValueDefinition<'a, C> {
     }
 }
 
-impl<'a, C: Context> CoreEnumValueDefinition for EnumValueDefinition<'a, C> {
+impl<C: Context> CoreEnumValueDefinition for EnumValueDefinition<'_, C> {
     fn description(&self) -> Option<&str> {
         self.description.as_ref().map(AsRef::as_ref)
     }

@@ -179,7 +179,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> SelectionsAreValid<'a, E, S
 
         let (targets_member_type, does_not_target_member_type): (Vec<_>, Vec<_>) = inline_fragments
             .partition(|inline_fragment| {
-                inline_fragment.type_condition().map_or(false, |name| {
+                inline_fragment.type_condition().is_some_and(|name| {
                     union_type_definition
                         .union_member_types()
                         .contains_type(name)

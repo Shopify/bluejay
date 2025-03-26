@@ -24,8 +24,8 @@ impl<'a, S: SchemaDefinition, W: Warden<SchemaDefinition = S>> Directive<'a, S, 
     }
 }
 
-impl<'a, S: SchemaDefinition, W: Warden<SchemaDefinition = S>> CoreDirective<true>
-    for Directive<'a, S, W>
+impl<S: SchemaDefinition, W: Warden<SchemaDefinition = S>> CoreDirective<true>
+    for Directive<'_, S, W>
 {
     type Arguments = <S::Directive as CoreDirective<true>>::Arguments;
 

@@ -39,7 +39,7 @@ impl<'a> FromTokens<'a> for VariableDefinition<'a> {
     }
 }
 
-impl<'a> VariableDefinition<'a> {
+impl VariableDefinition<'_> {
     pub fn variable(&self) -> &Variable {
         &self.variable
     }

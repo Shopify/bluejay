@@ -46,7 +46,7 @@ impl<'a, C: Context> From<ast::Directive<'a, true>> for Directive<'a, C> {
     }
 }
 
-impl<'a, C: Context> HasSpan for Directive<'a, C> {
+impl<C: Context> HasSpan for Directive<'_, C> {
     fn span(&self) -> &Span {
         self.inner.span()
     }

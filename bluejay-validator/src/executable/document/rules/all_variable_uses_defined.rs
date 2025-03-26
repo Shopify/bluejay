@@ -125,8 +125,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Rule<'a, E, S>
                     variables.iter().copied().filter_map(|variable| {
                         operation_definition
                             .as_ref()
-                            .variable_definitions()
-                            .map_or(true, |variable_definitions| {
+                            .variable_definitions().is_none_or(|variable_definitions| {
                                 variable_definitions.iter().all(|variable_definition| {
                                     variable_definition.variable() != variable.name()
                                 })

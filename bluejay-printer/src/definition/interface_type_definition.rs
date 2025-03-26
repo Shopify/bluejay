@@ -17,7 +17,7 @@ impl<'a, I: InterfaceTypeDefinition> InterfaceTypeDefinitionPrinter<'a, I> {
     }
 }
 
-impl<'a, I: InterfaceTypeDefinition> Display for InterfaceTypeDefinitionPrinter<'a, I> {
+impl<I: InterfaceTypeDefinition> Display for InterfaceTypeDefinitionPrinter<'_, I> {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         let Self(interface_type_definition) = *self;
         if let Some(description) = interface_type_definition.description() {

@@ -129,7 +129,7 @@ impl Parse for Input {
             }
         }
 
-        let borrow = borrow.map_or(false, |borrow| borrow.value);
+        let borrow = borrow.is_some_and(|borrow| borrow.value);
         let codec = codec.unwrap_or_default();
         let enums_as_str = enums_as_str.unwrap_or_default();
 

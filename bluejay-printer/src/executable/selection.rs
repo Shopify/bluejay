@@ -16,7 +16,7 @@ impl<'a, S: Selection> SelectionPrinter<'a, S> {
     }
 }
 
-impl<'a, S: Selection> Display for SelectionPrinter<'a, S> {
+impl<S: Selection> Display for SelectionPrinter<'_, S> {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         let Self {
             selection,

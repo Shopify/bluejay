@@ -78,7 +78,7 @@ impl<'a, S: SchemaDefinition + 'a> DirectiveDiff<'a, S> {
             .into_iter()
             .flatten()
             .filter(|new_arg| {
-                self.old_directive.arguments().map_or(true, |args| {
+                self.old_directive.arguments().is_none_or(|args| {
                     !args.iter().any(|old_arg| old_arg.name() == new_arg.name())
                 })
             })
@@ -91,7 +91,7 @@ impl<'a, S: SchemaDefinition + 'a> DirectiveDiff<'a, S> {
             .into_iter()
             .flatten()
             .filter(|old_arg| {
-                self.new_directive.arguments().map_or(false, |args| {
+                self.new_directive.arguments().is_some_and(|args| {
                     !args.iter().any(|new_arg| old_arg.name() == new_arg.name())
                 })
             })
@@ -112,7 +112,7 @@ pub fn directive_additions<
         .into_iter()
         .flatten()
         .filter(|new_directive| {
-            old_member.directives().map_or(true, |directives| {
+            old_member.directives().is_none_or(|directives| {
                 !directives
                     .iter()
                     .any(|old_directive| old_directive.name() == new_directive.name())
@@ -134,7 +134,7 @@ pub fn directive_removals<
         .into_iter()
         .flatten()
         .filter(|old_directive| {
-            new_member.directives().map_or(true, |directives| {
+            new_member.directives().is_none_or(|directives| {
                 !directives
                     .iter()
                     .any(|new_directive| old_directive.name() == new_directive.name())

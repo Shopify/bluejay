@@ -38,26 +38,26 @@ impl<'a, O: OutputType> BaseOutputTypeReference<'a, O> {
     }
 }
 
-impl<'a, O: OutputType> Clone for BaseOutputTypeReference<'a, O> {
+impl<O: OutputType> Clone for BaseOutputTypeReference<'_, O> {
     fn clone(&self) -> Self {
         *self
     }
 }
 
-impl<'a, O: OutputType> Copy for BaseOutputTypeReference<'a, O> {}
+impl<O: OutputType> Copy for BaseOutputTypeReference<'_, O> {}
 
 pub enum OutputTypeReference<'a, O: OutputType> {
     Base(BaseOutputTypeReference<'a, O>, bool),
     List(&'a O, bool),
 }
 
-impl<'a, O: OutputType> Clone for OutputTypeReference<'a, O> {
+impl<O: OutputType> Clone for OutputTypeReference<'_, O> {
     fn clone(&self) -> Self {
         *self
     }
 }
 
-impl<'a, O: OutputType> Copy for OutputTypeReference<'a, O> {}
+impl<O: OutputType> Copy for OutputTypeReference<'_, O> {}
 
 impl<'a, O: OutputType> OutputTypeReference<'a, O> {
     pub fn is_required(&self) -> bool {
@@ -108,7 +108,7 @@ impl<'a, O: OutputType> ShallowOutputTypeReference<'a, O> {
     }
 }
 
-impl<'a, O: OutputType> PartialEq for ShallowOutputTypeReference<'a, O> {
+impl<O: OutputType> PartialEq for ShallowOutputTypeReference<'_, O> {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
             (
@@ -124,7 +124,7 @@ impl<'a, O: OutputType> PartialEq for ShallowOutputTypeReference<'a, O> {
     }
 }
 
-impl<'a, O: OutputType> std::fmt::Display for ShallowOutputTypeReference<'a, O> {
+impl<O: OutputType> std::fmt::Display for ShallowOutputTypeReference<'_, O> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             ShallowOutputTypeReference::Base(name, required) => {

@@ -9,7 +9,7 @@ impl<'a, I: InterfaceImplementations> InterfaceImplementationsPrinter<'a, I> {
     }
 }
 
-impl<'a, I: InterfaceImplementations> Display for InterfaceImplementationsPrinter<'a, I> {
+impl<I: InterfaceImplementations> Display for InterfaceImplementationsPrinter<'_, I> {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         let Self(interface_implementations) = *self;
         if !interface_implementations.is_empty() {

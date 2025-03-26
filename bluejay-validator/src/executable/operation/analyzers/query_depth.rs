@@ -55,7 +55,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, VV: VariableValues> Visitor
     }
 }
 
-impl<'a, E: ExecutableDocument, S: SchemaDefinition, VV: VariableValues> Analyzer<'a, E, S, VV>
+impl<E: ExecutableDocument, S: SchemaDefinition, VV: VariableValues> Analyzer<'_, E, S, VV>
     for QueryDepth
 {
     type Output = usize;

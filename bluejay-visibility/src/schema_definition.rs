@@ -117,8 +117,7 @@ impl<'a, S: definition::SchemaDefinition, W: Warden<SchemaDefinition = S>>
                             .as_object()
                             .unwrap();
 
-                        otd.interface_implementations()
-                            .map_or(false, |interface_implementations| {
+                        otd.interface_implementations().is_some_and(|interface_implementations| {
                                 interface_implementations
                                     .iter()
                                     .any(|ii| ii.name() == itd.name())

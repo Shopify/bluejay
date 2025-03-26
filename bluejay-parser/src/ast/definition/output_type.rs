@@ -80,7 +80,7 @@ impl<'a, C: Context + 'a> CoreOutputType for OutputType<'a, C> {
     >(
         &'b self,
         schema_definition: &'b S,
-    ) -> OutputTypeReference<'_, Self> {
+    ) -> OutputTypeReference<'b, Self> {
         match self {
             Self::Base(base, required, _) => OutputTypeReference::Base(
                 schema_definition
