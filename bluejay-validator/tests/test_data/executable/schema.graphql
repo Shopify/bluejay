@@ -7,6 +7,12 @@ type Query {
   findDog(complex: ComplexInput): Dog
   booleanList(booleanListArg: [Boolean!]): Boolean
   oneOf(oneOfArg: OneOfInput!): String
+  oneOfList(oneOfListArg: [OneOfInput]!): String
+  nestedOneOf(nestedOneOfArg: NestedOneOfInput!): String
+}
+
+input NestedOneOfInput {
+  nestedOneOfField: OneOfInput!
 }
 
 input OneOfInput @oneOf {
