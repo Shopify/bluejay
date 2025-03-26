@@ -15,6 +15,5 @@ error: Error: bluejay_typegen requires fragment and operation names to be unique
 13 | |             myType {
 14 | |                 ...Foo
 ...  |
-20 | |         }
 21 | |     ])]
    | |_____^

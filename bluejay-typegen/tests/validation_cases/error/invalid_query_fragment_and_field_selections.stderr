@@ -15,6 +15,5 @@ error: Error: bluejay_typegen requires a fragment spread to be the only selectio
 9  | |             foo
 10 | |             ...MyFragment
 ...  |
-15 | |         }
 16 | |     ])]
    | |_____^

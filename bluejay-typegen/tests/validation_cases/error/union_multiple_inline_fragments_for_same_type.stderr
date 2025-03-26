@@ -17,6 +17,5 @@ error: Error: bluejay_typegen requires the inline fragments in a selection set h
 19 | |             foo {
 20 | |                 __typename
 ...  |
-24 | |         }
 25 | |     ])]
    | |_____^
