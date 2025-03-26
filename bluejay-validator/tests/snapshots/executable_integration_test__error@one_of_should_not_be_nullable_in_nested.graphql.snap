@@ -1,10 +1,10 @@
 ---
 source: bluejay-validator/tests/executable_integration_test.rs
 expression: formatted_errors
-input_file: bluejay-validator/tests/test_data/executable/error/nested_one_of.graphql
+input_file: bluejay-validator/tests/test_data/executable/error/one_of_should_not_be_nullable_in_nested.graphql
 ---
 Error: Variable $oneOfArg is of type String but must be non-nullable to be used for OneOf Input Object OneOfInput
-   ╭─[ nested_one_of.graphql:2:65 ]
+   ╭─[ one_of_should_not_be_nullable_in_nested.graphql:2:65 ]
    │
  2 │   nestedOneOf(nestedOneOfArg: { nestedOneOfField: { oneOfField: $oneOfArg } })
    │                                                                 ────┬────  

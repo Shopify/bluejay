@@ -11,13 +11,13 @@ type Query {
   nestedOneOf(nestedOneOfArg: NestedOneOfInput!): String
 }
 
-input NestedOneOfInput {
-  nestedOneOfField: OneOfInput!
-}
-
 input OneOfInput @oneOf {
   oneOfField: String
   anotherField: String
+}
+
+input NestedOneOfInput {
+  nestedOneOfField: OneOfInput!
 }
 
 type Subscription {

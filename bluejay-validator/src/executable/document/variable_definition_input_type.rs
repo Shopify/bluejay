@@ -4,7 +4,7 @@ use bluejay_core::definition::{
 };
 use bluejay_core::executable::{VariableType, VariableTypeReference};
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub enum VariableDefinitionInputType<'a, I: InputType> {
     Base(BaseInputTypeReference<'a, I>, bool),
     List(Box<Self>, bool),
