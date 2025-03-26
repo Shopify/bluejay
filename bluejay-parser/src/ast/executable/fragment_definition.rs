@@ -61,7 +61,7 @@ impl<'a> FragmentDefinition<'a> {
     }
 }
 
-impl<'a> bluejay_core::Indexable for FragmentDefinition<'a> {
+impl bluejay_core::Indexable for FragmentDefinition<'_> {
     type Id = Span;
 
     fn id(&self) -> &Self::Id {
@@ -90,7 +90,7 @@ impl<'a> bluejay_core::executable::FragmentDefinition for FragmentDefinition<'a>
     }
 }
 
-impl<'a> HasSpan for FragmentDefinition<'a> {
+impl HasSpan for FragmentDefinition<'_> {
     fn span(&self) -> &Span {
         &self.span
     }

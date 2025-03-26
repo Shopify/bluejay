@@ -23,7 +23,10 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> AsIter
     for UnionMemberTypes<'a, S, W>
 {
     type Item = UnionMemberType<'a, S, W>;
-    type Iterator<'b> = std::slice::Iter<'b, Self::Item> where 'a: 'b;
+    type Iterator<'b>
+        = std::slice::Iter<'b, Self::Item>
+    where
+        'a: 'b;
 
     fn iter(&self) -> Self::Iterator<'_> {
         self.member_types

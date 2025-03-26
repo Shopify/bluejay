@@ -75,7 +75,7 @@ impl<'a> bluejay_core::executable::InlineFragment for InlineFragment<'a> {
     }
 }
 
-impl<'a> HasSpan for InlineFragment<'a> {
+impl HasSpan for InlineFragment<'_> {
     fn span(&self) -> &Span {
         &self.span
     }

@@ -17,7 +17,7 @@ impl<'a, T: FragmentSpread> FragmentSpreadPrinter<'a, T> {
     }
 }
 
-impl<'a, T: FragmentSpread> Display for FragmentSpreadPrinter<'a, T> {
+impl<T: FragmentSpread> Display for FragmentSpreadPrinter<'_, T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         let Self {
             fragment_spread,

@@ -170,8 +170,10 @@ impl<S: SchemaDefinition> Default for NullWarden<S> {
 
 impl<S: SchemaDefinition> Warden for NullWarden<S> {
     type SchemaDefinition = S;
-    type TypeDefinitionsForName<'a> =
-        std::option::IntoIter<TypeDefinitionReference<'a, S::TypeDefinition>> where Self: 'a;
+    type TypeDefinitionsForName<'a>
+        = std::option::IntoIter<TypeDefinitionReference<'a, S::TypeDefinition>>
+    where
+        Self: 'a;
 
     fn is_field_definition_visible(
         &self,

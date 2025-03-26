@@ -115,9 +115,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Rule<'a, E, S>
                 operation_definition
                     .as_ref()
                     .variable_definitions()
-                    .map_or(false, |variable_definitions| {
-                        !variable_definitions.is_empty()
-                    })
+                    .is_some_and(|variable_definitions| !variable_definitions.is_empty())
             })
             .flat_map(|operation_definition| {
                 let variable_usages: HashSet<&'a str> = self

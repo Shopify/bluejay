@@ -13,7 +13,10 @@ pub struct EnumValueDefinitions<'a, C: Context> {
 
 impl<'a, C: Context> AsIter for EnumValueDefinitions<'a, C> {
     type Item = EnumValueDefinition<'a, C>;
-    type Iterator<'b> = std::slice::Iter<'b, Self::Item> where 'a: 'b;
+    type Iterator<'b>
+        = std::slice::Iter<'b, Self::Item>
+    where
+        'a: 'b;
 
     fn iter(&self) -> Self::Iterator<'_> {
         self.enum_value_definitions.iter()

@@ -13,7 +13,7 @@ impl<'a, U: UnionTypeDefinition> UnionTypeDefinitionPrinter<'a, U> {
     }
 }
 
-impl<'a, U: UnionTypeDefinition> Display for UnionTypeDefinitionPrinter<'a, U> {
+impl<U: UnionTypeDefinition> Display for UnionTypeDefinitionPrinter<'_, U> {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         let Self(union_type_definition) = *self;
         if let Some(description) = union_type_definition.description() {

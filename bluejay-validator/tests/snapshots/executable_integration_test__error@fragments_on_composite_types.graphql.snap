@@ -4,7 +4,7 @@ expression: formatted_errors
 input_file: bluejay-validator/tests/test_data/executable/error/fragments_on_composite_types.graphql
 ---
 Error: `Int` is not a composite type
-   ╭─[fragments_on_composite_types.graphql:1:26]
+   ╭─[ fragments_on_composite_types.graphql:1:26 ]
    │
  1 │ fragment fragOnScalar on Int {
    │                          ─┬─  
@@ -12,7 +12,7 @@ Error: `Int` is not a composite type
 ───╯
 
 Error: `Boolean` is not a composite type
-   ╭─[fragments_on_composite_types.graphql:6:10]
+   ╭─[ fragments_on_composite_types.graphql:6:10 ]
    │
  6 │   ... on Boolean {
    │          ───┬───  

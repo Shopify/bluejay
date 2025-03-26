@@ -13,7 +13,10 @@ pub struct InputFieldsDefinition<'a, C: Context> {
 
 impl<'a, C: Context> AsIter for InputFieldsDefinition<'a, C> {
     type Item = InputValueDefinition<'a, C>;
-    type Iterator<'b> = std::slice::Iter<'b, Self::Item> where 'a: 'b;
+    type Iterator<'b>
+        = std::slice::Iter<'b, Self::Item>
+    where
+        'a: 'b;
 
     fn iter(&self) -> Self::Iterator<'_> {
         self.input_field_definitions.iter()

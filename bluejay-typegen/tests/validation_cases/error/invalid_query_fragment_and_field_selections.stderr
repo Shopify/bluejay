@@ -1,5 +1,5 @@
 error: Error: bluejay_typegen requires a fragment spread to be the only selection in the set
-          ╭─[<unknown>:1:1]
+          ╭─[ <unknown>:1:1 ]
           │
         1 │ { foo ...MyFragment } fragment MyFragment on Query { foo }
           │ ──────────┬─┬────────
@@ -15,6 +15,5 @@ error: Error: bluejay_typegen requires a fragment spread to be the only selectio
 9  | |             foo
 10 | |             ...MyFragment
 ...  |
-15 | |         }
 16 | |     ])]
    | |_____^

@@ -13,7 +13,7 @@ impl<'a, I: InputObjectTypeDefinition> InputObjectTypeDefinitionPrinter<'a, I> {
     }
 }
 
-impl<'a, I: InputObjectTypeDefinition> Display for InputObjectTypeDefinitionPrinter<'a, I> {
+impl<I: InputObjectTypeDefinition> Display for InputObjectTypeDefinitionPrinter<'_, I> {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         let Self(input_object_type_definition) = *self;
         if let Some(description) = input_object_type_definition.description() {

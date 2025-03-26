@@ -10,7 +10,7 @@ impl<'a, S: ScalarTypeDefinition> ScalarTypeDefinitionPrinter<'a, S> {
     }
 }
 
-impl<'a, S: ScalarTypeDefinition> Display for ScalarTypeDefinitionPrinter<'a, S> {
+impl<S: ScalarTypeDefinition> Display for ScalarTypeDefinitionPrinter<'_, S> {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         let Self(scalar_type_definition) = *self;
         if let Some(description) = scalar_type_definition.description() {

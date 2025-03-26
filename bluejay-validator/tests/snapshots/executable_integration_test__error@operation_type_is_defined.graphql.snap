@@ -4,7 +4,7 @@ expression: formatted_errors
 input_file: bluejay-validator/tests/test_data/executable/error/operation_type_is_defined.graphql
 ---
 Error: Schema does not define a mutation root
-   ╭─[operation_type_is_defined.graphql:1:1]
+   ╭─[ operation_type_is_defined.graphql:1:1 ]
    │
  1 │ mutation {
    │ ────┬───  

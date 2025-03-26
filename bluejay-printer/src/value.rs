@@ -14,7 +14,7 @@ impl<'a, const CONST: bool, V: Value<CONST>> ValuePrinter<'a, CONST, V> {
     }
 }
 
-impl<'a, const CONST: bool, V: Value<CONST>> Display for ValuePrinter<'a, CONST, V> {
+impl<const CONST: bool, V: Value<CONST>> Display for ValuePrinter<'_, CONST, V> {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         let Self(value) = *self;
         match value.as_ref() {

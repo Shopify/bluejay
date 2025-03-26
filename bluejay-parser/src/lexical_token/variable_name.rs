@@ -26,7 +26,7 @@ impl<'a> Variable<'a> {
     }
 }
 
-impl<'a> HasSpan for Variable<'a> {
+impl HasSpan for Variable<'_> {
     fn span(&self) -> &Span {
         &self.span
     }
@@ -38,13 +38,13 @@ impl<'a> From<Variable<'a>> for Span {
     }
 }
 
-impl<'a> AsRef<str> for Variable<'a> {
+impl AsRef<str> for Variable<'_> {
     fn as_ref(&self) -> &str {
         self.value
     }
 }
 
-impl<'a> PartialEq<str> for Variable<'a> {
+impl PartialEq<str> for Variable<'_> {
     fn eq(&self, other: &str) -> bool {
         self.as_ref() == other
     }

@@ -36,7 +36,7 @@ impl<'a> IsMatch<'a> for SelectionSet<'a> {
     }
 }
 
-impl<'a> bluejay_core::Indexable for SelectionSet<'a> {
+impl bluejay_core::Indexable for SelectionSet<'_> {
     type Id = Span;
 
     fn id(&self) -> &Self::Id {
@@ -50,7 +50,10 @@ impl<'a> bluejay_core::executable::SelectionSet for SelectionSet<'a> {
 
 impl<'a> AsIter for SelectionSet<'a> {
     type Item = Selection<'a>;
-    type Iterator<'b> = std::slice::Iter<'b, Self::Item> where 'a: 'b;
+    type Iterator<'b>
+        = std::slice::Iter<'b, Self::Item>
+    where
+        'a: 'b;
 
     fn iter(&self) -> Self::Iterator<'_> {
         self.selections.iter()
@@ -61,7 +64,7 @@ impl<'a> AsIter for SelectionSet<'a> {
     }
 }
 
-impl<'a> HasSpan for SelectionSet<'a> {
+impl HasSpan for SelectionSet<'_> {
     fn span(&self) -> &Span {
         &self.span
     }

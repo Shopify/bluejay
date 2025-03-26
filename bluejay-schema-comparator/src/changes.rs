@@ -237,7 +237,7 @@ pub enum Change<'a, S: SchemaDefinition> {
     },
 }
 
-impl<'a, S: SchemaDefinition> Change<'a, S> {
+impl<S: SchemaDefinition> Change<'_, S> {
     pub fn breaking(&self) -> bool {
         matches!(self.criticality(), Criticality::Breaking { .. })
     }
@@ -260,11 +260,7 @@ impl<'a, S: SchemaDefinition> Change<'a, S> {
             Self::TypeDescriptionChanged { .. } => Criticality::safe(None),
             Self::FieldAdded { .. } => Criticality::safe(None),
             Self::FieldRemoved { removed_field_definition: removed_field, type_name: _ } => {
-                if removed_field.directives()
-                .map_or(
-                    false,
-                    |directives| directives.iter().any(|d| d.name() == "deprecated"),
-                ) {
+                if removed_field.directives().is_some_and(|directives| directives.iter().any(|d| d.name() == "deprecated")) {
                     Criticality::breaking(Some(Cow::from("Removing a deprecated field is a breaking change. Before removing it, you may want to look at the field's usage to see the impact of removing the field.")))
                 } else {
                     Criticality::breaking(Some(Cow::from("Removing a field is a breaking change. It is preferable to deprecate the field before removing it.")))

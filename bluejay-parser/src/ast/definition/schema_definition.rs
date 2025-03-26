@@ -100,13 +100,25 @@ impl<'a, C: Context> CoreSchemaDefinition for SchemaDefinition<'a, C> {
     type EnumTypeDefinition = EnumTypeDefinition<'a, C>;
     type TypeDefinition = TypeDefinition<'a, C>;
     type DirectiveDefinition = DirectiveDefinition<'a, C>;
-    type TypeDefinitions<'b> = std::iter::Map<
+    type TypeDefinitions<'b>
+        = std::iter::Map<
         Values<'b, &'b str, &'b TypeDefinition<'a, C>>,
-        fn(&&'b TypeDefinition<'a, C>) -> TypeDefinitionReference<'b, TypeDefinition<'a, C>>
-    > where 'a: 'b;
-    type DirectiveDefinitions<'b> =
-        std::iter::Copied<Values<'b, &'b str, &'b DirectiveDefinition<'a, C>>> where 'a: 'b;
-    type InterfaceImplementors<'b> = std::iter::Flatten<std::option::IntoIter<std::iter::Copied<std::slice::Iter<'b, &'b ObjectTypeDefinition<'a, C>>>>> where 'a: 'b;
+        fn(&&'b TypeDefinition<'a, C>) -> TypeDefinitionReference<'b, TypeDefinition<'a, C>>,
+    >
+    where
+        'a: 'b;
+    type DirectiveDefinitions<'b>
+        = std::iter::Copied<Values<'b, &'b str, &'b DirectiveDefinition<'a, C>>>
+    where
+        'a: 'b;
+    type InterfaceImplementors<'b>
+        = std::iter::Flatten<
+        std::option::IntoIter<
+            std::iter::Copied<std::slice::Iter<'b, &'b ObjectTypeDefinition<'a, C>>>,
+        >,
+    >
+    where
+        'a: 'b;
 
     fn description(&self) -> Option<&str> {
         self.description.as_ref().map(AsRef::as_ref)

@@ -7,7 +7,7 @@ pub struct Path<'a, E: ExecutableDocument> {
     members: Vec<&'a E::Selection>,
 }
 
-impl<'a, E: ExecutableDocument> Clone for Path<'a, E> {
+impl<E: ExecutableDocument> Clone for Path<'_, E> {
     fn clone(&self) -> Self {
         Self {
             root: self.root,
@@ -40,15 +40,15 @@ pub enum PathRoot<'a, E: ExecutableDocument> {
     Fragment(&'a E::FragmentDefinition),
 }
 
-impl<'a, E: ExecutableDocument> Clone for PathRoot<'a, E> {
+impl<E: ExecutableDocument> Clone for PathRoot<'_, E> {
     fn clone(&self) -> Self {
         *self
     }
 }
 
-impl<'a, E: ExecutableDocument> Copy for PathRoot<'a, E> {}
+impl<E: ExecutableDocument> Copy for PathRoot<'_, E> {}
 
-impl<'a, E: ExecutableDocument> Hash for PathRoot<'a, E> {
+impl<E: ExecutableDocument> Hash for PathRoot<'_, E> {
     fn hash<H: Hasher>(&self, state: &mut H) {
         match self {
             Self::Operation(o) => o.id().hash(state),
@@ -57,7 +57,7 @@ impl<'a, E: ExecutableDocument> Hash for PathRoot<'a, E> {
     }
 }
 
-impl<'a, E: ExecutableDocument> PartialEq for PathRoot<'a, E> {
+impl<E: ExecutableDocument> PartialEq for PathRoot<'_, E> {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
             (Self::Operation(l), Self::Operation(r)) => l.id() == r.id(),
@@ -67,9 +67,9 @@ impl<'a, E: ExecutableDocument> PartialEq for PathRoot<'a, E> {
     }
 }
 
-impl<'a, E: ExecutableDocument> Eq for PathRoot<'a, E> {}
+impl<E: ExecutableDocument> Eq for PathRoot<'_, E> {}
 
-impl<'a, E: ExecutableDocument> Ord for PathRoot<'a, E> {
+impl<E: ExecutableDocument> Ord for PathRoot<'_, E> {
     fn cmp(&self, other: &Self) -> Ordering {
         match (self, other) {
             (Self::Fragment(l), Self::Fragment(r)) => l.id().cmp(r.id()),
@@ -80,7 +80,7 @@ impl<'a, E: ExecutableDocument> Ord for PathRoot<'a, E> {
     }
 }
 
-impl<'a, E: ExecutableDocument> PartialOrd for PathRoot<'a, E> {
+impl<E: ExecutableDocument> PartialOrd for PathRoot<'_, E> {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
     }

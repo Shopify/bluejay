@@ -28,7 +28,10 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> AsIter
     for Directives<'a, S, W>
 {
     type Item = Directive<'a, S, W>;
-    type Iterator<'b> = std::slice::Iter<'b, Self::Item> where 'a: 'b;
+    type Iterator<'b>
+        = std::slice::Iter<'b, Self::Item>
+    where
+        'a: 'b;
 
     fn iter(&self) -> Self::Iterator<'_> {
         self.directives

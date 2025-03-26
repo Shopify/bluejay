@@ -114,7 +114,7 @@ impl<'a, const CONST: bool> FromTokens<'a> for Value<'a, CONST> {
     }
 }
 
-impl<'a, const CONST: bool> HasSpan for Value<'a, CONST> {
+impl<const CONST: bool> HasSpan for Value<'_, CONST> {
     fn span(&self) -> &Span {
         match self {
             Self::Boolean(b) => &b.span,
@@ -157,7 +157,10 @@ impl<'a, const CONST: bool> CoreListValue<CONST> for ListValue<'a, CONST> {
 
 impl<'a, const CONST: bool> AsIter for ListValue<'a, CONST> {
     type Item = Value<'a, CONST>;
-    type Iterator<'b> = std::slice::Iter<'b, Self::Item> where 'a: 'b;
+    type Iterator<'b>
+        = std::slice::Iter<'b, Self::Item>
+    where
+        'a: 'b;
 
     fn iter(&self) -> Self::Iterator<'_> {
         self.elements.iter()
@@ -173,7 +176,13 @@ pub struct ObjectValue<'a, const CONST: bool> {
 impl<'a, const CONST: bool> CoreObjectValue<CONST> for ObjectValue<'a, CONST> {
     type Key = Name<'a>;
     type Value = Value<'a, CONST>;
-    type Iterator<'b> = std::iter::Map<std::slice::Iter<'b, (Name<'a>, Value<'a, CONST>)>, fn(&'b (Name<'a>, Value<'a, CONST>)) -> (&'b Name<'a>, &'b Value<'a, CONST>)> where 'a: 'b;
+    type Iterator<'b>
+        = std::iter::Map<
+        std::slice::Iter<'b, (Name<'a>, Value<'a, CONST>)>,
+        fn(&'b (Name<'a>, Value<'a, CONST>)) -> (&'b Name<'a>, &'b Value<'a, CONST>),
+    >
+    where
+        'a: 'b;
 
     fn iter(&self) -> Self::Iterator<'_> {
         self.fields.iter().map(|(key, value)| (key, value))
@@ -182,14 +191,17 @@ impl<'a, const CONST: bool> CoreObjectValue<CONST> for ObjectValue<'a, CONST> {
 
 impl<'a, const CONST: bool> AsIter for ObjectValue<'a, CONST> {
     type Item = (Name<'a>, Value<'a, CONST>);
-    type Iterator<'b> = std::slice::Iter<'b, (Name<'a>, Value<'a, CONST>)> where 'a: 'b;
+    type Iterator<'b>
+        = std::slice::Iter<'b, (Name<'a>, Value<'a, CONST>)>
+    where
+        'a: 'b;
 
     fn iter(&self) -> Self::Iterator<'_> {
         self.fields.iter()
     }
 }
 
-impl<'a, const CONST: bool> HasSpan for ObjectValue<'a, CONST> {
+impl<const CONST: bool> HasSpan for ObjectValue<'_, CONST> {
     fn span(&self) -> &Span {
         &self.span
     }

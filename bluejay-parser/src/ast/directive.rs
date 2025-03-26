@@ -53,7 +53,7 @@ impl<'a, const CONST: bool> bluejay_core::Directive<CONST> for Directive<'a, CON
     }
 }
 
-impl<'a, const CONST: bool> HasSpan for Directive<'a, CONST> {
+impl<const CONST: bool> HasSpan for Directive<'_, CONST> {
     fn span(&self) -> &Span {
         &self.span
     }

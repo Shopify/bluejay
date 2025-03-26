@@ -11,7 +11,10 @@ pub struct InterfaceImplementations<'a, C: Context + 'a> {
 
 impl<'a, C: Context + 'a> AsIter for InterfaceImplementations<'a, C> {
     type Item = InterfaceImplementation<'a, C>;
-    type Iterator<'b> = std::slice::Iter<'b, Self::Item> where 'a: 'b;
+    type Iterator<'b>
+        = std::slice::Iter<'b, Self::Item>
+    where
+        'a: 'b;
 
     fn iter(&self) -> Self::Iterator<'_> {
         self.interface_implementations.iter()

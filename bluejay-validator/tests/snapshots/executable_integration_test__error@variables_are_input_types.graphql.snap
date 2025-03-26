@@ -4,7 +4,7 @@ expression: formatted_errors
 input_file: bluejay-validator/tests/test_data/executable/error/variables_are_input_types.graphql
 ---
 Error: Type of variable $cat, Cat, is not an input type
-   ╭─[variables_are_input_types.graphql:1:22]
+   ╭─[ variables_are_input_types.graphql:1:22 ]
    │
  1 │ query takesCat($cat: Cat) {
    │                      ─┬─  
@@ -12,7 +12,7 @@ Error: Type of variable $cat, Cat, is not an input type
 ───╯
 
 Error: Type of variable $dog, Dog, is not an input type
-   ╭─[variables_are_input_types.graphql:5:26]
+   ╭─[ variables_are_input_types.graphql:5:26 ]
    │
  5 │ query takesDogBang($dog: Dog!) {
    │                          ──┬─  
@@ -20,7 +20,7 @@ Error: Type of variable $dog, Dog, is not an input type
 ───╯
 
 Error: Type of variable $pets, Pet, is not an input type
-   ╭─[variables_are_input_types.graphql:9:29]
+   ╭─[ variables_are_input_types.graphql:9:29 ]
    │
  9 │ query takesListOfPet($pets: [Pet]) {
    │                             ──┬──  
@@ -28,7 +28,7 @@ Error: Type of variable $pets, Pet, is not an input type
 ───╯
 
 Error: Type of variable $catOrDog, CatOrDog, is not an input type
-    ╭─[variables_are_input_types.graphql:13:32]
+    ╭─[ variables_are_input_types.graphql:13:32 ]
     │
  13 │ query takesCatOrDog($catOrDog: CatOrDog) {
     │                                ────┬───  
@@ -36,7 +36,7 @@ Error: Type of variable $catOrDog, CatOrDog, is not an input type
 ────╯
 
 Error: Type of variable $nonExistent, NonExistent, is not an input type
-    ╭─[variables_are_input_types.graphql:17:38]
+    ╭─[ variables_are_input_types.graphql:17:38 ]
     │
  17 │ query takesNonExistent($nonExistent: NonExistent) {
     │                                      ─────┬─────  

@@ -19,7 +19,7 @@ impl<'a, T: InputValueDefinition> InputValueDefinitionPrinter<'a, T> {
     }
 }
 
-impl<'a, T: InputValueDefinition> Display for InputValueDefinitionPrinter<'a, T> {
+impl<T: InputValueDefinition> Display for InputValueDefinitionPrinter<'_, T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         let Self {
             input_value_definition,

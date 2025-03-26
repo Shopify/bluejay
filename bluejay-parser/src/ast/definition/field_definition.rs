@@ -15,7 +15,7 @@ pub struct FieldDefinition<'a, C: Context> {
     is_builtin: bool,
 }
 
-impl<'a, C: Context> FieldDefinition<'a, C> {
+impl<C: Context> FieldDefinition<'_, C> {
     const __TYPENAME_DEFINITION: &'static str = "__typename: String!";
     const __SCHEMA_DEFINITION: &'static str = "__schema: __Schema!";
     const __TYPE_DEFINITION: &'static str = "__type(name: String!): __Type";

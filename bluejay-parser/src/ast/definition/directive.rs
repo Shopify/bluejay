@@ -46,7 +46,7 @@ impl<'a, C: Context> From<ast::Directive<'a, true>> for Directive<'a, C> {
     }
 }
 
-impl<'a, C: Context> HasSpan for Directive<'a, C> {
+impl<C: Context> HasSpan for Directive<'_, C> {
     fn span(&self) -> &Span {
         self.inner.span()
     }
@@ -59,7 +59,10 @@ pub struct Directives<'a, C: Context> {
 
 impl<'a, C: Context> bluejay_core::AsIter for Directives<'a, C> {
     type Item = Directive<'a, C>;
-    type Iterator<'b> = std::slice::Iter<'b, Self::Item> where 'a: 'b;
+    type Iterator<'b>
+        = std::slice::Iter<'b, Self::Item>
+    where
+        'a: 'b;
 
     fn iter(&self) -> Self::Iterator<'_> {
         self.directives.iter()

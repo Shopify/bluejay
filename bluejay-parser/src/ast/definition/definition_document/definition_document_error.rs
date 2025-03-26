@@ -61,7 +61,7 @@ pub enum DefinitionDocumentError<'a, C: Context> {
     },
 }
 
-impl<'a, C: Context> From<DefinitionDocumentError<'a, C>> for Error {
+impl<C: Context> From<DefinitionDocumentError<'_, C>> for Error {
     fn from(value: DefinitionDocumentError<C>) -> Self {
         match value {
             DefinitionDocumentError::DuplicateDirectiveDefinitions { name, definitions } => {

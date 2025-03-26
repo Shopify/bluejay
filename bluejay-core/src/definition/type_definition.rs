@@ -84,13 +84,13 @@ pub trait TypeDefinition: Sized {
     fn as_ref(&self) -> TypeDefinitionReference<'_, Self>;
 }
 
-impl<'a, T: TypeDefinition> Clone for TypeDefinitionReference<'a, T> {
+impl<T: TypeDefinition> Clone for TypeDefinitionReference<'_, T> {
     fn clone(&self) -> Self {
         *self
     }
 }
 
-impl<'a, T: TypeDefinition> Copy for TypeDefinitionReference<'a, T> {}
+impl<T: TypeDefinition> Copy for TypeDefinitionReference<'_, T> {}
 
 impl<'a, T: TypeDefinition> TypeDefinitionReference<'a, T> {
     pub fn name(&self) -> &'a str {

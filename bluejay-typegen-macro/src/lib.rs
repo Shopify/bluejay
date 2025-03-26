@@ -273,7 +273,7 @@ fn process_module_items<S: SchemaDefinition>(
         .chain(
             items
                 .into_iter()
-                .map(|item| process_module_item(config, item).map(Into::into)),
+                .map(|item| process_module_item(config, item)),
         )
         .collect()
 }

@@ -20,7 +20,7 @@ pub enum VariableType<'a> {
     },
 }
 
-impl<'a> Indexable for VariableType<'a> {
+impl Indexable for VariableType<'_> {
     type Id = Span;
 
     fn id(&self) -> &Self::Id {
@@ -28,7 +28,7 @@ impl<'a> Indexable for VariableType<'a> {
     }
 }
 
-impl<'a> CoreVariableType for VariableType<'a> {
+impl CoreVariableType for VariableType<'_> {
     fn as_ref(&self) -> VariableTypeReference<'_, Self> {
         match self {
             Self::Named {
@@ -76,7 +76,7 @@ impl<'a> FromTokens<'a> for VariableType<'a> {
     }
 }
 
-impl<'a> HasSpan for VariableType<'a> {
+impl HasSpan for VariableType<'_> {
     fn span(&self) -> &Span {
         match self {
             Self::Named { span, .. } => span,

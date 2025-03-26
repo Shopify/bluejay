@@ -18,7 +18,7 @@ impl<'a, T: ExecutableDocument> ExecutableDocumentPrinter<'a, T> {
     }
 }
 
-impl<'a, T: ExecutableDocument> Display for ExecutableDocumentPrinter<'a, T> {
+impl<T: ExecutableDocument> Display for ExecutableDocumentPrinter<'_, T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         let Self {
             executable_document,

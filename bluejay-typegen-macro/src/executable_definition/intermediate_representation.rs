@@ -92,7 +92,7 @@ pub(crate) struct ExecutableStruct<'a> {
     pub(crate) fields: Vec<ExecutableField<'a>>,
 }
 
-impl<'a> ExecutableStruct<'a> {
+impl ExecutableStruct<'_> {
     pub(crate) fn borrows(&self) -> bool {
         self.fields
             .iter()
@@ -107,7 +107,7 @@ pub(crate) struct ExecutableEnum<'a> {
     pub(crate) variants: Vec<ExecutableEnumVariant<'a>>,
 }
 
-impl<'a> ExecutableEnum<'a> {
+impl ExecutableEnum<'_> {
     pub(crate) fn borrows(&self) -> bool {
         self.variants.iter().any(|variant| variant.borrows())
     }
@@ -149,7 +149,7 @@ pub(crate) struct ExecutableEnumVariant<'a> {
     pub(crate) fields: Vec<ExecutableField<'a>>,
 }
 
-impl<'a> ExecutableEnumVariant<'a> {
+impl ExecutableEnumVariant<'_> {
     pub(crate) fn borrows(&self) -> bool {
         self.fields
             .iter()

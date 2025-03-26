@@ -4,7 +4,7 @@ expression: formatted_errors
 input_file: bluejay-parser/tests/test_data/schema_definition/error/referenced_type_does_not_exist.graphql
 ---
 Error: Referenced type `TypeDoesNotExist` does not exist
-   ╭─[referenced_type_does_not_exist.graphql:2:11]
+   ╭─[ referenced_type_does_not_exist.graphql:2:11 ]
    │
  2 │   field1: TypeDoesNotExist!
    │           ────────┬───────  
@@ -12,7 +12,7 @@ Error: Referenced type `TypeDoesNotExist` does not exist
 ───╯
 
 Error: Referenced type `TypeAlsoDoesNotExist` does not exist
-   ╭─[referenced_type_does_not_exist.graphql:3:11]
+   ╭─[ referenced_type_does_not_exist.graphql:3:11 ]
    │
  3 │   field2: TypeAlsoDoesNotExist!
    │           ──────────┬─────────  

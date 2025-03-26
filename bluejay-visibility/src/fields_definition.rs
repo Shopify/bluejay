@@ -29,7 +29,13 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> AsIter
     for FieldsDefinition<'a, S, W>
 {
     type Item = FieldDefinition<'a, S, W>;
-    type Iterator<'b> = std::iter::Map<std::slice::Iter<'b, Rc<Self::Item>>, fn(&'b Rc<Self::Item>) -> &'b Self::Item> where 'a: 'b;
+    type Iterator<'b>
+        = std::iter::Map<
+        std::slice::Iter<'b, Rc<Self::Item>>,
+        fn(&'b Rc<Self::Item>) -> &'b Self::Item,
+    >
+    where
+        'a: 'b;
 
     fn iter(&self) -> Self::Iterator<'_> {
         self.fields_definition

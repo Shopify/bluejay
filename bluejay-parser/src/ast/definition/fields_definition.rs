@@ -13,7 +13,10 @@ pub struct FieldsDefinition<'a, C: Context> {
 
 impl<'a, C: Context> AsIter for FieldsDefinition<'a, C> {
     type Item = FieldDefinition<'a, C>;
-    type Iterator<'b> = std::slice::Iter<'b, Self::Item> where 'a: 'b;
+    type Iterator<'b>
+        = std::slice::Iter<'b, Self::Item>
+    where
+        'a: 'b;
 
     fn iter(&self) -> Self::Iterator<'_> {
         self.field_definitions.iter()
@@ -46,7 +49,7 @@ impl<'a, C: Context> FromTokens<'a> for FieldsDefinition<'a, C> {
     }
 }
 
-impl<'a, C: Context> FieldsDefinition<'a, C> {
+impl<C: Context> FieldsDefinition<'_, C> {
     pub(crate) fn add_query_root_fields(&mut self) {
         self.field_definitions.push(FieldDefinition::__schema());
         self.field_definitions.push(FieldDefinition::__type());

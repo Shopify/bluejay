@@ -1,5 +1,5 @@
 error: Error: Referenced type `Bar` does not exist
-          ╭─[<unknown>:1:19]
+          ╭─[ <unknown>:1:19 ]
           │
         1 │ type Query { foo: Bar }
           │                   ─┬─

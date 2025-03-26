@@ -4,7 +4,7 @@ expression: formatted_errors
 input_file: bluejay-validator/tests/test_data/executable/error/argument_names.graphql
 ---
 Error: Field `doesKnowCommand` does not define an argument named `command`
-   ╭─[argument_names.graphql:3:21]
+   ╭─[ argument_names.graphql:3:21 ]
    │
  3 │     doesKnowCommand(command: CLEAN_UP_HOUSE, dogCommand: SIT)
    │                     ───┬───  
@@ -12,7 +12,7 @@ Error: Field `doesKnowCommand` does not define an argument named `command`
 ───╯
 
 Error: Directive `include` does not define an argument named `unless`
-   ╭─[argument_names.graphql:9:49]
+   ╭─[ argument_names.graphql:9:49 ]
    │
  9 │     isHouseTrained(atOtherHomes: true) @include(unless: false, if: true)
    │                                                 ───┬──  

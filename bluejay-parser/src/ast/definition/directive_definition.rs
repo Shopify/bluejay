@@ -39,7 +39,7 @@ impl BuiltinDirectiveDefinition {
     }
 }
 
-impl<'a, C: Context> From<BuiltinDirectiveDefinition> for DirectiveDefinition<'a, C> {
+impl<C: Context> From<BuiltinDirectiveDefinition> for DirectiveDefinition<'_, C> {
     fn from(value: BuiltinDirectiveDefinition) -> Self {
         let mut definition = DirectiveDefinition::parse(value.definition()).unwrap();
 

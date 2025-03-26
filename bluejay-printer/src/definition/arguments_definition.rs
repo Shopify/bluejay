@@ -18,7 +18,7 @@ impl<'a, T: ArgumentsDefinition> ArgumentsDefinitionPrinter<'a, T> {
     }
 }
 
-impl<'a, T: ArgumentsDefinition> Display for ArgumentsDefinitionPrinter<'a, T> {
+impl<T: ArgumentsDefinition> Display for ArgumentsDefinitionPrinter<'_, T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         let Self {
             arguments_definition,

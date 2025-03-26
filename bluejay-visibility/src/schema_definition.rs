@@ -118,7 +118,7 @@ impl<'a, S: definition::SchemaDefinition, W: Warden<SchemaDefinition = S>>
                             .unwrap();
 
                         otd.interface_implementations()
-                            .map_or(false, |interface_implementations| {
+                            .is_some_and(|interface_implementations| {
                                 interface_implementations
                                     .iter()
                                     .any(|ii| ii.name() == itd.name())
@@ -160,9 +160,20 @@ impl<'a, S: definition::SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>>
     type EnumTypeDefinition = EnumTypeDefinition<'a, S, W>;
     type TypeDefinition = TypeDefinition<'a, S, W>;
     type DirectiveDefinition = DirectiveDefinition<'a, S, W>;
-    type TypeDefinitions<'b> = std::iter::Copied<btree_map::Values<'b, &'a str, TypeDefinitionReference<'b, Self::TypeDefinition>>> where 'a: 'b;
-    type DirectiveDefinitions<'b> = std::iter::Copied<btree_map::Values<'b, &'a str, &'b Self::DirectiveDefinition>> where 'a: 'b;
-    type InterfaceImplementors<'b> = std::iter::Copied<std::slice::Iter<'b, &'b Self::ObjectTypeDefinition>> where 'a: 'b;
+    type TypeDefinitions<'b>
+        = std::iter::Copied<
+        btree_map::Values<'b, &'a str, TypeDefinitionReference<'b, Self::TypeDefinition>>,
+    >
+    where
+        'a: 'b;
+    type DirectiveDefinitions<'b>
+        = std::iter::Copied<btree_map::Values<'b, &'a str, &'b Self::DirectiveDefinition>>
+    where
+        'a: 'b;
+    type InterfaceImplementors<'b>
+        = std::iter::Copied<std::slice::Iter<'b, &'b Self::ObjectTypeDefinition>>
+    where
+        'a: 'b;
 
     fn description(&self) -> Option<&str> {
         self.inner().description()

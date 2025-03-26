@@ -37,7 +37,7 @@ impl<'a, const CONST: bool> IsMatch<'a> for Arguments<'a, CONST> {
     }
 }
 
-impl<'a, const CONST: bool> HasSpan for Arguments<'a, CONST> {
+impl<const CONST: bool> HasSpan for Arguments<'_, CONST> {
     fn span(&self) -> &Span {
         &self.span
     }
@@ -49,7 +49,10 @@ impl<'a, const CONST: bool> bluejay_core::Arguments<CONST> for Arguments<'a, CON
 
 impl<'a, const CONST: bool> AsIter for Arguments<'a, CONST> {
     type Item = Argument<'a, CONST>;
-    type Iterator<'b> = std::slice::Iter<'b, Self::Item> where 'a: 'b;
+    type Iterator<'b>
+        = std::slice::Iter<'b, Self::Item>
+    where
+        'a: 'b;
 
     fn iter(&self) -> Self::Iterator<'_> {
         self.arguments.iter()

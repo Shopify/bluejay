@@ -67,7 +67,7 @@ pub enum Error<'a, const CONST: bool, V: Value<CONST>> {
     },
 }
 
-impl<'a, const CONST: bool, V: Value<CONST>> Error<'a, CONST, V> {
+impl<const CONST: bool, V: Value<CONST>> Error<'_, CONST, V> {
     pub fn message(&self) -> Cow<'static, str> {
         match self {
             Self::NullValueForRequiredType { input_type_name, .. } => {

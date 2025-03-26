@@ -317,7 +317,7 @@ struct ComplexityScope<'a, T: TypeDefinition, F> {
     field_multipliers: F,
 }
 
-impl<'a, T: TypeDefinition, F: Default> Default for ComplexityScope<'a, T, F> {
+impl<T: TypeDefinition, F: Default> Default for ComplexityScope<'_, T, F> {
     fn default() -> Self {
         Self {
             cost: 0,
@@ -328,7 +328,7 @@ impl<'a, T: TypeDefinition, F: Default> Default for ComplexityScope<'a, T, F> {
     }
 }
 
-impl<'a, T: TypeDefinition, F> ComplexityScope<'a, T, F> {
+impl<T: TypeDefinition, F> ComplexityScope<'_, T, F> {
     fn multiplier_for_field<E: ExecutableDocument>(&self, field: &E::Field) -> usize
     where
         F: FieldMultipliers<E>,

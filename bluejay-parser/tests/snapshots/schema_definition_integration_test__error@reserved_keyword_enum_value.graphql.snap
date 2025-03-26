@@ -4,7 +4,7 @@ expression: formatted_errors
 input_file: bluejay-parser/tests/test_data/schema_definition/error/reserved_keyword_enum_value.graphql
 ---
 Error: Parse error
-   ╭─[reserved_keyword_enum_value.graphql:2:3]
+   ╭─[ reserved_keyword_enum_value.graphql:2:3 ]
    │
  2 │   true
    │   ──┬─  

@@ -9,7 +9,7 @@ impl<'a> StringValuePrinter<'a> {
     }
 }
 
-impl<'a> Display for StringValuePrinter<'a> {
+impl Display for StringValuePrinter<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         let Self(value) = *self;
         write!(f, "\"")?;
@@ -37,7 +37,7 @@ impl<'a> BlockStringValuePrinter<'a> {
     }
 }
 
-impl<'a> Display for BlockStringValuePrinter<'a> {
+impl Display for BlockStringValuePrinter<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         let Self { value, indentation } = *self;
         write_indent(f, indentation)?;

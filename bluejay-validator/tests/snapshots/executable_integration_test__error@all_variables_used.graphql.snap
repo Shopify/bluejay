@@ -4,7 +4,7 @@ expression: formatted_errors
 input_file: bluejay-validator/tests/test_data/executable/error/all_variables_used.graphql
 ---
 Error: Variable definition $atOtherHomes not used
-   ╭─[all_variables_used.graphql:1:22]
+   ╭─[ all_variables_used.graphql:1:22 ]
    │
  1 │ query variableUnused($atOtherHomes: Boolean) {
    │                      ──────┬──────  
@@ -12,7 +12,7 @@ Error: Variable definition $atOtherHomes not used
 ───╯
 
 Error: Variable definition $atOtherHomes not used
-   ╭─[all_variables_used.graphql:7:37]
+   ╭─[ all_variables_used.graphql:7:37 ]
    │
  7 │ query variableNotUsedWithinFragment($atOtherHomes: Boolean) {
    │                                     ──────┬──────  
@@ -20,7 +20,7 @@ Error: Variable definition $atOtherHomes not used
 ───╯
 
 Error: Variable definition $extra not used
-    ╭─[all_variables_used.graphql:23:49]
+    ╭─[ all_variables_used.graphql:23:49 ]
     │
  23 │ query queryWithExtraVar($atOtherHomes: Boolean, $extra: Int) {
     │                                                 ───┬──  

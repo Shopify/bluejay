@@ -44,7 +44,7 @@ impl<'a, T: Lexer<'a>> LexerTokens<'a, T> {
     }
 
     #[inline]
-    pub fn peek<'b, 'c: 'b>(&'c mut self, idx: usize) -> Option<&'b LexicalToken> {
+    pub fn peek<'b, 'c: 'b>(&'c mut self, idx: usize) -> Option<&'b LexicalToken<'c>> {
         self.compute_up_to(idx);
         self.buffer.get(idx)
     }

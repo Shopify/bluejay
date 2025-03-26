@@ -1,5 +1,5 @@
 error: Error: bluejay_typegen requires the inline fragments in a selection set have unique type conditions
-          ╭─[<unknown>:1:7]
+          ╭─[ <unknown>:1:7 ]
           │
         1 │ { foo { __typename ...on Bar { bar } ...on Bar { bar } } }
           │       ─────────────────────┬───┬─────────────┬──────────
@@ -17,6 +17,5 @@ error: Error: bluejay_typegen requires the inline fragments in a selection set h
 19 | |             foo {
 20 | |                 __typename
 ...  |
-24 | |         }
 25 | |     ])]
    | |_____^

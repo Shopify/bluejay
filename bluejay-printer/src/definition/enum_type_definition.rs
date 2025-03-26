@@ -16,7 +16,7 @@ impl<'a, E: EnumTypeDefinition> EnumTypeDefinitionPrinter<'a, E> {
     }
 }
 
-impl<'a, E: EnumTypeDefinition> Display for EnumTypeDefinitionPrinter<'a, E> {
+impl<E: EnumTypeDefinition> Display for EnumTypeDefinitionPrinter<'_, E> {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         let Self(enum_type_definition) = *self;
         if let Some(description) = enum_type_definition.description() {

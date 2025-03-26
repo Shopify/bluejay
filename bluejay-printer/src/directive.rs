@@ -10,7 +10,7 @@ impl<'a, const CONST: bool, T: Directive<CONST>> DirectivePrinter<'a, CONST, T> 
     }
 }
 
-impl<'a, const CONST: bool, T: Directive<CONST>> Display for DirectivePrinter<'a, CONST, T> {
+impl<const CONST: bool, T: Directive<CONST>> Display for DirectivePrinter<'_, CONST, T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         let Self(directive) = *self;
         write!(f, "@{}", directive.name())?;
@@ -29,7 +29,7 @@ impl<'a, const CONST: bool, T: Directives<CONST>> DirectivesPrinter<'a, CONST, T
     }
 }
 
-impl<'a, const CONST: bool, T: Directives<CONST>> Display for DirectivesPrinter<'a, CONST, T> {
+impl<const CONST: bool, T: Directives<CONST>> Display for DirectivesPrinter<'_, CONST, T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         let Self(directives) = *self;
         directives

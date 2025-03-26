@@ -24,7 +24,7 @@ impl<'a, C: Context> CustomScalarTypeDefinition<'a, C> {
     }
 }
 
-impl<'a, C: Context> CoreScalarTypeDefinition for CustomScalarTypeDefinition<'a, C> {
+impl<C: Context> CoreScalarTypeDefinition for CustomScalarTypeDefinition<'_, C> {
     fn description(&self) -> Option<&str> {
         self.description.as_ref().map(AsRef::as_ref)
     }
@@ -41,7 +41,7 @@ impl<'a, C: Context> CoreScalarTypeDefinition for CustomScalarTypeDefinition<'a,
     }
 }
 
-impl<'a, C: Context> CustomScalarTypeDefinition<'a, C> {
+impl<C: Context> CustomScalarTypeDefinition<'_, C> {
     pub(crate) const SCALAR_IDENTIFIER: &'static str = "scalar";
 }
 

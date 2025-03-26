@@ -17,7 +17,10 @@ pub trait AsIter {
 
 impl<T> AsIter for Vec<T> {
     type Item = T;
-    type Iterator<'a> = std::slice::Iter<'a, Self::Item> where T: 'a;
+    type Iterator<'a>
+        = std::slice::Iter<'a, Self::Item>
+    where
+        T: 'a;
 
     fn iter(&self) -> Self::Iterator<'_> {
         self.as_slice().iter()

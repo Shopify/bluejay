@@ -24,7 +24,7 @@ pub enum LexicalToken<'a> {
     StringValue(StringValue<'a>),
 }
 
-impl<'a> HasSpan for LexicalToken<'a> {
+impl HasSpan for LexicalToken<'_> {
     fn span(&self) -> &Span {
         match self {
             Self::VariableName(f) => f.span(),

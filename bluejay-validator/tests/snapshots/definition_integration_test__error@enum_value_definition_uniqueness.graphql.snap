@@ -4,7 +4,7 @@ expression: formatted_errors
 input_file: bluejay-validator/tests/test_data/definition/error/enum_value_definition_uniqueness.graphql
 ---
 Error: Multiple enum value definitions named `VARIANT_1`
-   ╭─[enum_value_definition_uniqueness.graphql:1:1]
+   ╭─[ enum_value_definition_uniqueness.graphql:1:1 ]
    │
  2 │   VARIANT_1
    │   ────┬────  

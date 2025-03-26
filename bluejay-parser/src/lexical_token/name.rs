@@ -18,7 +18,7 @@ impl<'a> Name<'a> {
     }
 }
 
-impl<'a> HasSpan for Name<'a> {
+impl HasSpan for Name<'_> {
     fn span(&self) -> &Span {
         &self.span
     }
@@ -30,13 +30,13 @@ impl<'a> From<Name<'a>> for Span {
     }
 }
 
-impl<'a> AsRef<str> for Name<'a> {
+impl AsRef<str> for Name<'_> {
     fn as_ref(&self) -> &str {
         self.value
     }
 }
 
-impl<'a> PartialEq<str> for Name<'a> {
+impl PartialEq<str> for Name<'_> {
     fn eq(&self, other: &str) -> bool {
         self.as_ref() == other
     }
