@@ -4,7 +4,7 @@ expression: formatted_errors
 input_file: bluejay-validator/tests/test_data/executable/error/value_is_valid.graphql
 ---
 Error: No implicit conversion of integer to String
-   ╭─[value_is_valid.graphql:6:28]
+   ╭─[ value_is_valid.graphql:6:28 ]
    │
  6 │   findDog(complex: { name: 123 }) { name }
    │                            ─┬─  
@@ -12,7 +12,7 @@ Error: No implicit conversion of integer to String
 ───╯
 
 Error: No field with name favoriteCookieFlavor on input type ComplexInput
-    ╭─[value_is_valid.graphql:13:22]
+    ╭─[ value_is_valid.graphql:13:22 ]
     │
  13 │   findDog(complex: { favoriteCookieFlavor: "Bacon" }) { name }
     │                      ──────────┬─────────  
@@ -20,7 +20,7 @@ Error: No field with name favoriteCookieFlavor on input type ComplexInput
 ────╯
 
 Error: Object with multiple entries for field name
-    ╭─[value_is_valid.graphql:1:1]
+    ╭─[ value_is_valid.graphql:1:1 ]
     │
  17 │   findDog(complex: { name: "Fido", name: "Fido" }) { name }
     │                      ──┬─          ──┬─  
@@ -30,7 +30,7 @@ Error: Object with multiple entries for field name
 ────╯
 
 Error: No implicit conversion of string to Int
-   ╭─[value_is_valid.graphql:2:23]
+   ╭─[ value_is_valid.graphql:2:23 ]
    │
  2 │   intArgField(intArg: "123")
    │                       ──┬──  

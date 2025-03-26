@@ -1,5 +1,5 @@
 error: Error: bluejay_typegen requires fragment and operation names to be unique, but encountered a clash with name `Foo`
-          ╭─[<unknown>:1:33]
+          ╭─[ <unknown>:1:33 ]
           │
         1 │ query Foo { myType { ...Foo } } fragment Foo on MyType { field }
           │ ───────────────┬─────────────── ────────────────┬───────────────

@@ -1,5 +1,5 @@
 error: Error: bluejay_typegen requires fragment spreads on interfaces to target either the interface or one of the interfaces it implements
-          ╭─[<unknown>:1:17]
+          ╭─[ <unknown>:1:17 ]
           │
         1 │ { myInterface { ...MyFragment } } fragment MyFragment on MyObject { field }
           │                 ──────┬──────

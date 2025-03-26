@@ -4,7 +4,7 @@ expression: formatted_errors
 input_file: bluejay-validator/tests/test_data/executable/error/field_selections.graphql
 ---
 Error: Field `name` does not exist on type `CatOrDog`
-   ╭─[field_selections.graphql:3:5]
+   ╭─[ field_selections.graphql:3:5 ]
    │
  3 │     name
    │     ──┬─  
@@ -12,7 +12,7 @@ Error: Field `name` does not exist on type `CatOrDog`
 ───╯
 
 Error: Field `barkVolume` does not exist on type `Pet`
-   ╭─[field_selections.graphql:9:5]
+   ╭─[ field_selections.graphql:9:5 ]
    │
  9 │     barkVolume
    │     ─────┬────  

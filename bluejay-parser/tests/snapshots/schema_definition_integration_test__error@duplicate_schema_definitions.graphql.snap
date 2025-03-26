@@ -4,7 +4,7 @@ expression: formatted_errors
 input_file: bluejay-parser/tests/test_data/schema_definition/error/duplicate_schema_definitions.graphql
 ---
 Error: Multiple schema definitions
-   ╭─[duplicate_schema_definitions.graphql:1:1]
+   ╭─[ duplicate_schema_definitions.graphql:1:1 ]
    │
  5 │ schema {
    │ ───┬──  

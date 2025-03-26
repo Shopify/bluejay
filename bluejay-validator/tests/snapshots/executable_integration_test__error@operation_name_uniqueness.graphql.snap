@@ -4,7 +4,7 @@ expression: formatted_errors
 input_file: bluejay-validator/tests/test_data/executable/error/operation_name_uniqueness.graphql
 ---
 Error: Multiple operation definitions named `getName`
-   ╭─[operation_name_uniqueness.graphql:1:1]
+   ╭─[ operation_name_uniqueness.graphql:1:1 ]
    │
  1 │ query getName {
    │       ───┬───  

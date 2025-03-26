@@ -4,7 +4,7 @@ expression: formatted_errors
 input_file: bluejay-validator/tests/test_data/definition/error/input_value_definition_uniqueness.graphql
 ---
 Error: Multiple input value definitions named `arg1`
-   ╭─[input_value_definition_uniqueness.graphql:1:1]
+   ╭─[ input_value_definition_uniqueness.graphql:1:1 ]
    │
  2 │   arg1: String
    │   ──┬─  

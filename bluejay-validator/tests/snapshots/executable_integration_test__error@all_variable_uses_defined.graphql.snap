@@ -4,7 +4,7 @@ expression: formatted_errors
 input_file: bluejay-validator/tests/test_data/executable/error/all_variable_uses_defined.graphql
 ---
 Error: Variable $atOtherHomes not defined in operation variableIsNotDefined
-   ╭─[all_variable_uses_defined.graphql:3:34]
+   ╭─[ all_variable_uses_defined.graphql:3:34 ]
    │
  3 │     isHouseTrained(atOtherHomes: $atOtherHomes)
    │                                  ──────┬──────  
@@ -12,7 +12,7 @@ Error: Variable $atOtherHomes not defined in operation variableIsNotDefined
 ───╯
 
 Error: Variable $atOtherHomes not defined in operation variableIsNotDefinedUsedInNestedFragment
-    ╭─[all_variable_uses_defined.graphql:18:32]
+    ╭─[ all_variable_uses_defined.graphql:18:32 ]
     │
  18 │   isHouseTrained(atOtherHomes: $atOtherHomes)
     │                                ──────┬──────  
@@ -20,7 +20,7 @@ Error: Variable $atOtherHomes not defined in operation variableIsNotDefinedUsedI
 ────╯
 
 Error: Variable $atOtherHomes not defined in operation houseTrainedQueryTwoNotDefined
-    ╭─[all_variable_uses_defined.graphql:18:32]
+    ╭─[ all_variable_uses_defined.graphql:18:32 ]
     │
  18 │   isHouseTrained(atOtherHomes: $atOtherHomes)
     │                                ──────┬──────  

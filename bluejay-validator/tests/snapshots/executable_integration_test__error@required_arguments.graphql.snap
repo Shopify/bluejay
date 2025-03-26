@@ -4,7 +4,7 @@ expression: formatted_errors
 input_file: bluejay-validator/tests/test_data/executable/error/required_arguments.graphql
 ---
 Error: Field `nonNullBooleanArgField` missing argument(s): nonNullBooleanArg
-   ╭─[required_arguments.graphql:3:5]
+   ╭─[ required_arguments.graphql:3:5 ]
    │
  3 │     nonNullBooleanArgField
    │     ───────────┬──────────  
@@ -12,7 +12,7 @@ Error: Field `nonNullBooleanArgField` missing argument(s): nonNullBooleanArg
 ───╯
 
 Error: Got null when non-null value of type Boolean! was expected
-   ╭─[required_arguments.graphql:9:47]
+   ╭─[ required_arguments.graphql:9:47 ]
    │
  9 │     nonNullBooleanArgField(nonNullBooleanArg: null)
    │                                               ──┬─  

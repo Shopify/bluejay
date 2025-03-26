@@ -4,7 +4,7 @@ expression: formatted_errors
 input_file: bluejay-parser/tests/test_data/schema_definition/error/redefine_builtin_type_definition.graphql
 ---
 Error: Cannot redefine builtin type __Schema
-   ╭─[redefine_builtin_type_definition.graphql:1:1]
+   ╭─[ redefine_builtin_type_definition.graphql:1:1 ]
    │
  1 │ type __Schema {
    │      ────┬───  

@@ -1,5 +1,5 @@
 error: Error: bluejay_typegen requires unaliased selection of `__typename` on union types to properly deserialize, and for that to be the first in the selection set
-          ╭─[<unknown>:1:7]
+          ╭─[ <unknown>:1:7 ]
           │
         1 │ { foo { ...on Bar { bar } ...on Baz { baz } } }
           │       ───────────────────┬───────────────────

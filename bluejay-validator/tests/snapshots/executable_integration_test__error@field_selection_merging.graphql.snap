@@ -4,7 +4,7 @@ expression: formatted_errors
 input_file: bluejay-validator/tests/test_data/executable/error/field_selection_merging.graphql
 ---
 Error: Fields in selection set do not merge due to incompatible types
-   ╭─[field_selection_merging.graphql:2:7]
+   ╭─[ field_selection_merging.graphql:2:7 ]
    │
  2 │ ╭─▶   dog {
  3 │ │       name: nickname
@@ -19,7 +19,7 @@ Error: Fields in selection set do not merge due to incompatible types
 ───╯
 
 Error: Fields in selection set do not merge due to unequal field names
-   ╭─[field_selection_merging.graphql:2:7]
+   ╭─[ field_selection_merging.graphql:2:7 ]
    │
  2 │ ╭─▶   dog {
  3 │ │       name: nickname
@@ -34,7 +34,7 @@ Error: Fields in selection set do not merge due to unequal field names
 ───╯
 
 Error: Fields in selection set do not merge due to unequal arguments
-    ╭─[field_selection_merging.graphql:9:7]
+    ╭─[ field_selection_merging.graphql:9:7 ]
     │
   9 │ ╭─▶   dog {
  10 │ │       doesKnowCommand(dogCommand: SIT)
@@ -49,7 +49,7 @@ Error: Fields in selection set do not merge due to unequal arguments
 ────╯
 
 Error: Fields in selection set do not merge due to unequal arguments
-    ╭─[field_selection_merging.graphql:16:7]
+    ╭─[ field_selection_merging.graphql:16:7 ]
     │
  16 │ ╭─▶   dog {
  17 │ │       doesKnowCommand(dogCommand: SIT)
@@ -64,7 +64,7 @@ Error: Fields in selection set do not merge due to unequal arguments
 ────╯
 
 Error: Fields in selection set do not merge due to unequal arguments
-    ╭─[field_selection_merging.graphql:23:7]
+    ╭─[ field_selection_merging.graphql:23:7 ]
     │
  23 │ ╭─▶   dog {
  24 │ │       doesKnowCommand(dogCommand: $varOne)
@@ -79,7 +79,7 @@ Error: Fields in selection set do not merge due to unequal arguments
 ────╯
 
 Error: Fields in selection set do not merge due to unequal arguments
-    ╭─[field_selection_merging.graphql:30:7]
+    ╭─[ field_selection_merging.graphql:30:7 ]
     │
  30 │ ╭─▶   dog {
  31 │ │       doesKnowCommand(dogCommand: SIT)
@@ -94,7 +94,7 @@ Error: Fields in selection set do not merge due to unequal arguments
 ────╯
 
 Error: Fields in selection set do not merge due to incompatible types
-    ╭─[field_selection_merging.graphql:37:7]
+    ╭─[ field_selection_merging.graphql:37:7 ]
     │
  37 │ ╭─▶   pet {
     ┆ ┆   
@@ -112,7 +112,7 @@ Error: Fields in selection set do not merge due to incompatible types
 ────╯
 
 Error: Field `doesKnowCommand` missing argument(s): dogCommand
-    ╭─[field_selection_merging.graphql:32:5]
+    ╭─[ field_selection_merging.graphql:32:5 ]
     │
  32 │     doesKnowCommand
     │     ───────┬───────  
