@@ -8,11 +8,16 @@ type Query {
   booleanList(booleanListArg: [Boolean!]): Boolean
   oneOf(oneOfArg: OneOfInput!): String
   oneOfList(oneOfListArg: [OneOfInput]!): String
+  nestedOneOf(nestedOneOfArg: NestedOneOfInput!): String
 }
 
 input OneOfInput @oneOf {
   oneOfField: String
   anotherField: String
+}
+
+input NestedOneOfInput {
+  nestedOneOfField: OneOfInput!
 }
 
 type Subscription {

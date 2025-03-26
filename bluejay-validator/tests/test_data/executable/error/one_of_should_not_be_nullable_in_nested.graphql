@@ -1,0 +1,3 @@
+query oneOfShouldNotBeNullableInNested($oneOfArg: String) {
+  nestedOneOf(nestedOneOfArg: { nestedOneOfField: { oneOfField: $oneOfArg } })
+}
