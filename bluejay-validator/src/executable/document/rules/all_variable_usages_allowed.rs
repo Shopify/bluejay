@@ -3,17 +3,17 @@ use crate::executable::{
     Cache,
 };
 use bluejay_core::definition::{
-    BaseInputTypeReference, InputFieldsDefinition, InputObjectTypeDefinition, InputType,
-    InputTypeReference, InputValueDefinition, SchemaDefinition, TypeDefinitionReference,
+    BaseInputTypeReference, HasDirectives, InputFieldsDefinition, InputObjectTypeDefinition,
+    InputType, InputTypeReference, InputValueDefinition, SchemaDefinition, TypeDefinitionReference,
 };
 use bluejay_core::executable::{
     ExecutableDocument, FragmentSpread, OperationDefinition, VariableDefinition, VariableType,
     VariableTypeReference,
 };
+use bluejay_core::Directive;
 use bluejay_core::{Argument, AsIter, Indexed, ObjectValue, Value, ValueReference, Variable};
 use itertools::Either;
 use std::collections::{BTreeMap, BTreeSet, HashMap};
-use std::ops::Not;
 
 pub struct AllVariableUsagesAllowed<'a, E: ExecutableDocument, S: SchemaDefinition> {
     fragment_references: HashMap<Indexed<'a, E::FragmentDefinition>, BTreeSet<PathRoot<'a, E>>>,
@@ -83,17 +83,24 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> AllVariableUsagesAllowed<'a
                     self.visit_value(value, root, VariableUsageLocation::ListValue(inner));
                 }
             }),
-            ValueReference::Object(o) => o.iter().for_each(|(key, value)| {
-                if let Some(ivd) = location.input_value_definition() {
-                    if let BaseInputTypeReference::InputObject(iotd) =
-                        ivd.r#type().base(self.schema_definition)
-                    {
+            ValueReference::Object(o) => {
+                if let BaseInputTypeReference::InputObject(iotd) =
+                    location.r#type().base(self.schema_definition)
+                {
+                    o.iter().for_each(|(key, value)| {
                         if let Some(ivd) = iotd.input_field_definitions().get(key.as_ref()) {
-                            self.visit_value(value, root, VariableUsageLocation::ObjectField(ivd));
+                            self.visit_value(
+                                value,
+                                root,
+                                VariableUsageLocation::ObjectField {
+                                    input_value_definition: ivd,
+                                    parent_type: iotd,
+                                },
+                            );
                         }
-                    }
+                    });
                 }
-            }),
+            }
             _ => {}
         }
     }
@@ -128,23 +135,24 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> AllVariableUsagesAllowed<'a
         }
     }
 
-    fn is_variable_usage_allowed(
+    fn validate_variable_usage(
         &self,
         variable_definition: &'a E::VariableDefinition,
         variable_usage: &VariableUsage<'a, E, S>,
-    ) -> bool {
+    ) -> Result<(), Error<'a, E, S>> {
         let variable_type = variable_definition.r#type().as_ref();
 
         // filter non-input types to avoid duplicate error
         if !self.is_input_type(variable_type.name()) {
-            return true;
+            return Ok(());
         }
 
         let VariableUsage { location, .. } = variable_usage;
         let location_type = location.r#type().as_ref(self.schema_definition);
         let input_value_definition = location.input_value_definition();
+        let is_nested_one_of = location.is_nested_one_of();
 
-        if location_type.is_required() && !variable_type.is_required() {
+        let is_compatible = if location_type.is_required() && !variable_type.is_required() {
             let has_non_null_variable_default_value =
                 matches!(variable_definition.default_value(), Some(v) if !v.as_ref().is_null());
             let has_location_default_value = matches!(input_value_definition.and_then(InputValueDefinition::default_value), Some(v) if !v.as_ref().is_null());
@@ -156,6 +164,22 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> AllVariableUsagesAllowed<'a
             }
         } else {
             self.are_types_compatible(variable_type, location_type)
+        };
+
+        if !is_compatible {
+            Err(Error::InvalidVariableUsage {
+                variable: variable_usage.variable,
+                variable_type: variable_definition.r#type(),
+                location_type: location.r#type(),
+            })
+        } else if is_nested_one_of && !variable_type.is_required() {
+            Err(Error::InvalidOneOfVariableUsage {
+                variable: variable_usage.variable,
+                variable_type: variable_definition.r#type(),
+                parent_type_name: location.parent_type_name().unwrap(),
+            })
+        } else {
+            Ok(())
         }
     }
 
@@ -212,7 +236,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Rule<'a, E, S>
                     };
                 operation_definitions.flat_map(|operation_definition| {
                     variable_usages.iter().filter_map(|variable_usage| {
-                        let VariableUsage { variable, location } = variable_usage;
+                        let VariableUsage { variable, .. } = variable_usage;
                         let variable_definition = operation_definition
                             .as_ref()
                             .variable_definitions()
@@ -223,13 +247,8 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Rule<'a, E, S>
                             });
 
                         variable_definition.and_then(|variable_definition| {
-                            self.is_variable_usage_allowed(variable_definition, variable_usage)
-                                .not()
-                                .then_some(Error::InvalidVariableUsage {
-                                    variable: *variable,
-                                    variable_type: variable_definition.r#type(),
-                                    location_type: location.r#type(),
-                                })
+                            self.validate_variable_usage(variable_definition, variable_usage)
+                                .err()
                         })
                     })
                 })
@@ -239,9 +258,13 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Rule<'a, E, S>
     }
 }
 
+#[derive(Debug)]
 enum VariableUsageLocation<'a, S: SchemaDefinition> {
     Argument(&'a S::InputValueDefinition),
-    ObjectField(&'a S::InputValueDefinition),
+    ObjectField {
+        input_value_definition: &'a S::InputValueDefinition,
+        parent_type: &'a S::InputObjectTypeDefinition,
+    },
     ListValue(&'a S::InputType),
 }
 
@@ -249,7 +272,10 @@ impl<'a, S: SchemaDefinition> VariableUsageLocation<'a, S> {
     fn input_value_definition(&self) -> Option<&'a S::InputValueDefinition> {
         match self {
             Self::Argument(ivd) => Some(ivd),
-            Self::ObjectField(ivd) => Some(ivd),
+            Self::ObjectField {
+                input_value_definition,
+                ..
+            } => Some(input_value_definition),
             Self::ListValue(_) => None,
         }
     }
@@ -257,8 +283,28 @@ impl<'a, S: SchemaDefinition> VariableUsageLocation<'a, S> {
     fn r#type(&self) -> &'a S::InputType {
         match self {
             Self::Argument(ivd) => ivd.r#type(),
-            Self::ObjectField(ivd) => ivd.r#type(),
+            Self::ObjectField {
+                input_value_definition,
+                ..
+            } => input_value_definition.r#type(),
             Self::ListValue(t) => t,
+        }
+    }
+
+    fn is_nested_one_of(&self) -> bool {
+        match self {
+            Self::ObjectField { parent_type, .. } => parent_type
+                .directives()
+                .and_then(|d| d.iter().find(|d| d.name() == "oneOf"))
+                .is_some(),
+            _ => false,
+        }
+    }
+
+    fn parent_type_name(&self) -> Option<&'a str> {
+        match self {
+            Self::ObjectField { parent_type, .. } => Some(parent_type.name()),
+            _ => None,
         }
     }
 }

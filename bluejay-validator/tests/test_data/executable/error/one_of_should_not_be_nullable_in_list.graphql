@@ -1,0 +1,3 @@
+query oneOfShouldNotBeNullableInList($oneOfArg: String) {
+  oneOfList(oneOfListArg: [{ oneOfField: $oneOfArg }])
+}
