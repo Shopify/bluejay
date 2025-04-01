@@ -8,7 +8,7 @@ mod kw {
 }
 
 #[derive(Clone, Copy, PartialEq)]
-pub(crate) enum Codec {
+pub enum Codec {
     Serde,
     Miniserde,
 }
@@ -41,7 +41,7 @@ impl Parse for Codec {
     }
 }
 
-pub(crate) enum DocumentInput {
+pub enum DocumentInput {
     Path(syn::LitStr),
     Dsl {
         bracket: syn::token::Bracket,
@@ -96,11 +96,11 @@ impl DocumentInput {
     }
 }
 
-pub(crate) struct Input {
+pub struct Input {
     pub(crate) schema: DocumentInput,
     pub(crate) borrow: bool,
-    pub(crate) codec: Codec,
-    pub(crate) enums_as_str: syn::punctuated::Punctuated<syn::LitStr, syn::Token![,]>,
+    pub codec: Codec,
+    pub enums_as_str: syn::punctuated::Punctuated<syn::LitStr, syn::Token![,]>,
 }
 
 impl Parse for Input {

@@ -1,7 +1,7 @@
 use std::error::Error;
 use std::io::Write;
 
-#[bluejay_typegen::typegen("examples/schema.graphql", codec = "miniserde")]
+#[bluejay_typegen::typegen("examples/schema.graphql", codec = "serde")]
 #[allow(dead_code)]
 pub mod schema {
     type Date = String;
