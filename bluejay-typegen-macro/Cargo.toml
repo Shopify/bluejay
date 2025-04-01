@@ -15,15 +15,14 @@ description = "Macros for `bluejay-typegen`"
 bluejay-typegen-codegen = { workspace = true }
 syn = { version = "2.0", features = ["full"] }
 quote = "1.0"
-proc-macro2 = "1.0"
 
 [lib]
 proc-macro = true
 
 [features]
 default = ["serde"]
-serde = []
-miniserde = []
+serde = ["bluejay-typegen-codegen/serde"]
+miniserde = ["bluejay-typegen-codegen/miniserde"]
 
 [lints]
 workspace = true
