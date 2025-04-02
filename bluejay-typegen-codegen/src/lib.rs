@@ -223,14 +223,14 @@ fn custom_scalar_borrows(
                     Ok(())
                 } else if let Some(known_custom_scalar_type) = known_custom_scalar_types.get(&name)
                 {
-                    let (path, lifetime): (_, Option<syn::Generics>) =
+                    let (ty, lifetime): (_, Option<syn::Generics>) =
                         match known_custom_scalar_type.type_for_borrowed.as_ref() {
-                            Some(path) if borrow => (path, Some(parse_quote! { <'a> })),
+                            Some(ty) if borrow => (ty, Some(parse_quote! { <'a> })),
                             _ => (&known_custom_scalar_type.type_for_owned, None),
                         };
                     let ident = quote::format_ident!("{}", name);
                     let alias: syn::ItemType = parse_quote! {
-                        type #ident #lifetime = #path;
+                        type #ident #lifetime = #ty;
                     };
                     if let Some((_, items)) = module.content.as_mut() {
                         items.push(alias.into());
