@@ -11,7 +11,7 @@ use bluejay_parser::{
 };
 use bluejay_validator::definition::BuiltinRulesValidator;
 use std::collections::{HashMap, HashSet};
-use syn::spanned::Spanned;
+use syn::{parse_quote, spanned::Spanned};
 
 mod attributes;
 mod builtin_scalar;
@@ -67,7 +67,11 @@ impl<'a, S: SchemaDefinition> Config<'a, S> {
     }
 }
 
-pub fn generate_schema(input: Input, module: &mut syn::ItemMod) -> syn::Result<()> {
+pub fn generate_schema(
+    input: Input, 
+    module: &mut syn::ItemMod, 
+    known_custom_scalar_types: HashMap<String, KnownCustomScalarType>,
+) -> syn::Result<()> {
     let Input {
         ref schema,
         borrow,
@@ -102,7 +106,12 @@ pub fn generate_schema(input: Input, module: &mut syn::ItemMod) -> syn::Result<(
         ));
     }
 
-    let custom_scalar_borrows = custom_scalar_borrows(module, &schema_definition, borrow)?;
+    let custom_scalar_borrows = custom_scalar_borrows(
+        module, 
+        &schema_definition, 
+        borrow, 
+        known_custom_scalar_types,
+    )?;
 
     let enums_as_str = validate_enums_as_str(enums_as_str, &schema_definition)?;
 
@@ -130,9 +139,10 @@ pub fn generate_schema(input: Input, module: &mut syn::ItemMod) -> syn::Result<(
 }
 
 fn custom_scalar_borrows(
-    module: &syn::ItemMod,
+    module: &mut syn::ItemMod,
     schema_definition: &impl SchemaDefinition,
     borrow: bool,
+    known_custom_scalar_types: HashMap<String, KnownCustomScalarType>,
 ) -> syn::Result<HashMap<String, bool>> {
     let items = module
         .content
@@ -193,7 +203,7 @@ fn custom_scalar_borrows(
         Ok(())
     })?;
 
-    let custom_scalars: HashMap<String, bool> = type_aliases
+    let mut custom_scalars: HashMap<String, bool> = type_aliases
         .into_iter()
         .map(|type_alias| {
             (
@@ -208,7 +218,27 @@ fn custom_scalar_borrows(
         .try_for_each(|td| match td {
             TypeDefinitionReference::CustomScalar(cstd) => {
                 let name = names::type_name(cstd.name());
+                #[allow(clippy::map_entry)]
                 if custom_scalars.contains_key(&name) {
+                    Ok(())
+                } else if let Some(known_custom_scalar_type) = known_custom_scalar_types.get(&name)
+                {
+                    let (path, lifetime): (_, Option<syn::Generics>) =
+                        match known_custom_scalar_type.path_for_borrowed.as_ref() {
+                            Some(path) if borrow => (path, Some(parse_quote! { <'a> })),
+                            _ => (&known_custom_scalar_type.path_for_owned, None),
+                        };
+                    let ident = quote::format_ident!("{}", name);
+                    let alias: syn::ItemType = parse_quote! {
+                        type #ident #lifetime = #path;
+                    };
+                    if let Some((_, items)) = module.content.as_mut() {
+                        items.push(alias.into());
+                    }
+                    custom_scalars.insert(
+                        name,
+                        borrow && known_custom_scalar_type.path_for_borrowed.is_some(),
+                    );
                     Ok(())
                 } else {
                     Err(syn::Error::new(
@@ -338,3 +368,9 @@ fn map_parser_errors<E: Into<ParserError>>(
         ParserError::format_errors(schema_contents, schema_path, errors),
     )
 }
+
+#[derive(Clone)]
+ pub struct KnownCustomScalarType {
+     pub path_for_owned: syn::Path,
+     pub path_for_borrowed: Option<syn::Path>,
+ }

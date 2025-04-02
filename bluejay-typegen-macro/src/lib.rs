@@ -54,7 +54,7 @@ pub fn typegen(
     let input = parse_macro_input!(attr as Input);
     let mut module = parse_macro_input!(item as syn::ItemMod);
 
-    if let Err(error) = generate_schema(input, &mut module) {
+    if let Err(error) = generate_schema(input, &mut module, Default::default()) {
         return error.to_compile_error().into();
     }
 
