@@ -68,8 +68,8 @@ impl<'a, S: SchemaDefinition> Config<'a, S> {
 }
 
 pub fn generate_schema(
-    input: Input, 
-    module: &mut syn::ItemMod, 
+    input: Input,
+    module: &mut syn::ItemMod,
     known_custom_scalar_types: HashMap<String, KnownCustomScalarType>,
 ) -> syn::Result<()> {
     let Input {
@@ -107,9 +107,9 @@ pub fn generate_schema(
     }
 
     let custom_scalar_borrows = custom_scalar_borrows(
-        module, 
-        &schema_definition, 
-        borrow, 
+        module,
+        &schema_definition,
+        borrow,
         known_custom_scalar_types,
     )?;
 
@@ -370,7 +370,7 @@ fn map_parser_errors<E: Into<ParserError>>(
 }
 
 #[derive(Clone)]
- pub struct KnownCustomScalarType {
-     pub path_for_owned: syn::Path,
-     pub path_for_borrowed: Option<syn::Path>,
- }
+pub struct KnownCustomScalarType {
+    pub path_for_owned: syn::Path,
+    pub path_for_borrowed: Option<syn::Path>,
+}
