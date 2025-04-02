@@ -12,22 +12,17 @@ description = "Macros for `bluejay-typegen`"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bluejay-core = { workspace = true }
-bluejay-parser = { workspace = true, features = ["format-errors"] }
-bluejay-validator = { workspace = true }
+bluejay-typegen-codegen = { workspace = true }
 syn = { version = "2.0", features = ["full"] }
 quote = "1.0"
-proc-macro2 = "1.0"
-convert_case = "0.8"
-itertools = "0.14.0"
 
 [lib]
 proc-macro = true
 
 [features]
 default = ["serde"]
-serde = []
-miniserde = []
+serde = ["bluejay-typegen-codegen/serde"]
+miniserde = ["bluejay-typegen-codegen/miniserde"]
 
 [lints]
 workspace = true
