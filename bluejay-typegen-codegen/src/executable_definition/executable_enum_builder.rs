@@ -87,9 +87,11 @@ impl<'a, S: SchemaDefinition> ExecutableEnumBuilder<'a, S> {
                     self.executable_enum.parent_name,
                 )
             })
-            .chain(std::iter::once(
+            .chain(std::iter::once((
                 ExecutableEnumVariantBuilder::build_other_variant(self.config),
-            ))
+                None,
+            )))
+            .map(|(variant, _)| variant)
             .collect()
     }
 
@@ -98,7 +100,14 @@ impl<'a, S: SchemaDefinition> ExecutableEnumBuilder<'a, S> {
             .executable_enum
             .variants
             .iter()
-            .flat_map(|variant| {
+            .filter_map(|variant| {
+                let (_, struct_definition) = ExecutableEnumVariantBuilder::build(
+                    self.config,
+                    variant,
+                    self.depth + 2,
+                    self.executable_enum.parent_name,
+                );
+
                 let modules_for_variant = variant
                     .fields
                     .iter()
@@ -111,11 +120,16 @@ impl<'a, S: SchemaDefinition> ExecutableEnumBuilder<'a, S> {
                     })
                     .collect::<Vec<syn::Item>>();
 
-                modules_for_variant.is_empty().not().then(|| {
+                let module_items = struct_definition
+                    .into_iter()
+                    .chain(modules_for_variant)
+                    .collect::<Vec<syn::Item>>();
+
+                module_items.is_empty().not().then(|| {
                     let module_ident = module_ident(variant.name);
                     parse_quote! {
                         pub mod #module_ident {
-                            #(#modules_for_variant)*
+                            #(#module_items)*
                         }
                     }
                 })

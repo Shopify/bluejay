@@ -1,5 +1,10 @@
 use crate::executable_definition::{ExecutableEnumVariant, ExecutableFieldBuilder};
-use crate::{attributes::doc_string, input::Codec, names::type_ident, Config};
+use crate::{
+    attributes::doc_string,
+    input::Codec,
+    names::{module_ident, type_ident},
+    Config,
+};
 use bluejay_core::{definition::SchemaDefinition, AsIter};
 use proc_macro2::Span;
 use syn::parse_quote;
@@ -19,7 +24,7 @@ impl<'a, S: SchemaDefinition> ExecutableEnumVariantBuilder<'a, S> {
         executable_enum_variant: &'a ExecutableEnumVariant<'a>,
         depth: usize,
         composite_type_name: &'a str,
-    ) -> syn::Variant {
+    ) -> (syn::Variant, Option<syn::Item>) {
         let instance = Self {
             config,
             executable_enum_variant,
@@ -29,12 +34,18 @@ impl<'a, S: SchemaDefinition> ExecutableEnumVariantBuilder<'a, S> {
 
         let name_ident = instance.name_ident();
         let attributes = instance.attributes();
-        let fields = instance.fields();
+        let struct_name_ident = instance.struct_name_ident();
+        let struct_definition = instance.struct_definition();
+        let enum_module_ident = module_ident(composite_type_name);
+        let variant_module_ident = module_ident(executable_enum_variant.name);
+        let lifetime = instance.lifetime();
 
-        parse_quote! {
+        let variant = parse_quote! {
             #(#attributes)*
-            #name_ident #fields
-        }
+            #name_ident(#enum_module_ident::#variant_module_ident::#struct_name_ident #lifetime)
+        };
+
+        (variant, struct_definition)
     }
 
     pub(crate) fn new(
@@ -62,6 +73,10 @@ impl<'a, S: SchemaDefinition> ExecutableEnumVariantBuilder<'a, S> {
     }
 
     pub(crate) fn name_ident(&self) -> syn::Ident {
+        type_ident(self.executable_enum_variant.name)
+    }
+
+    pub(crate) fn struct_name_ident(&self) -> syn::Ident {
         type_ident(self.executable_enum_variant.name)
     }
 
@@ -100,7 +115,7 @@ impl<'a, S: SchemaDefinition> ExecutableEnumVariantBuilder<'a, S> {
             .collect()
     }
 
-    fn fields(&self) -> syn::FieldsNamed {
+    fn struct_definition(&self) -> Option<syn::Item> {
         let fields = self
             .executable_enum_variant
             .fields
@@ -115,6 +130,41 @@ impl<'a, S: SchemaDefinition> ExecutableEnumVariantBuilder<'a, S> {
                 )
             })
             .collect::<Vec<syn::Field>>();
-        parse_quote! { { #(#fields,)* } }
+
+        if fields.is_empty() {
+            None
+        } else {
+            let struct_name_ident = self.struct_name_ident();
+            let attributes = self.struct_attributes();
+            let lifetime = self.lifetime();
+            Some(parse_quote! {
+                #(#attributes)*
+                pub struct #struct_name_ident #lifetime { #(#fields,)* }
+            })
+        }
+    }
+
+    fn struct_attributes(&self) -> Vec<syn::Attribute> {
+        let mut attributes = Vec::new();
+        attributes.extend(self.executable_enum_variant.description.map(doc_string));
+        attributes.push(parse_quote! { #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::fmt::Debug)] });
+
+        match self.config.codec() {
+            Codec::Serde => {
+                attributes.push(parse_quote! { #[derive(::bluejay_typegen::serde::Deserialize)] });
+                attributes.push(parse_quote! { #[serde(crate = "bluejay_typegen::serde")] });
+            }
+            Codec::Miniserde => {}
+        }
+
+        attributes
+    }
+
+    fn lifetime(&self) -> Option<syn::Generics> {
+        self.executable_enum_variant
+            .fields
+            .iter()
+            .any(|field| field.r#type.base().borrows())
+            .then(|| parse_quote! { <'a> })
     }
 }
