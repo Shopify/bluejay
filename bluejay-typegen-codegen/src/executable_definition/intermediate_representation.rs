@@ -104,7 +104,7 @@ pub(crate) struct ExecutableEnum<'a> {
     pub(crate) description: Option<&'a str>,
     /// name of either the operation, fragment, or field that owns the selection set that this struct represents
     pub(crate) parent_name: &'a str,
-    pub(crate) variants: Vec<ExecutableEnumVariant<'a>>,
+    pub(crate) variants: Vec<ExecutableStruct<'a>>,
 }
 
 impl ExecutableEnum<'_> {
@@ -141,20 +141,6 @@ pub(crate) struct ExecutableField<'a> {
     pub(crate) description: Option<&'a str>,
     pub(crate) graphql_name: &'a str,
     pub(crate) r#type: WrappedExecutableType<'a>,
-}
-
-pub(crate) struct ExecutableEnumVariant<'a> {
-    pub(crate) description: Option<&'a str>,
-    pub(crate) name: &'a str,
-    pub(crate) fields: Vec<ExecutableField<'a>>,
-}
-
-impl ExecutableEnumVariant<'_> {
-    pub(crate) fn borrows(&self) -> bool {
-        self.fields
-            .iter()
-            .any(|field| field.r#type.base().borrows())
-    }
 }
 
 struct ExecutableDocumentToExecutableTypes<'a, E: ExecutableDocument, S: SchemaDefinition> {
@@ -464,9 +450,9 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> ExecutableDocumentToExecuta
                                     .get(type_condition)
                                     .expect("Union member type not found")
                                     .member_type(self.config.schema_definition());
-                                ExecutableEnumVariant {
+                                ExecutableStruct {
                                     description: target_type.description(),
-                                    name: type_condition,
+                                    parent_name: type_condition,
                                     fields: inline_fragment
                                         .selection_set()
                                         .iter()

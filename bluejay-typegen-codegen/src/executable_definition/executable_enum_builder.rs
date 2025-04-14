@@ -1,5 +1,5 @@
 use crate::executable_definition::{
-    ExecutableEnum, ExecutableEnumVariantBuilder, ExecutableTypeBuilder,
+    ExecutableEnum, ExecutableEnumVariantBuilder, ExecutableStructBuilder,
 };
 use crate::{
     attributes::doc_string,
@@ -69,53 +69,29 @@ impl<'a, S: SchemaDefinition> ExecutableEnumBuilder<'a, S> {
             .variants
             .iter()
             .map(|variant| {
-                ExecutableEnumVariantBuilder::build(
-                    self.config,
-                    variant,
-                    self.depth,
-                    self.executable_enum.parent_name,
-                )
+                ExecutableEnumVariantBuilder::build(variant, self.executable_enum.parent_name)
             })
             .chain(std::iter::once(
-                ExecutableEnumVariantBuilder::<S>::build_other_variant(),
+                ExecutableEnumVariantBuilder::build_other_variant(),
             ))
             .collect()
     }
 
     fn nested_module(&self) -> Option<syn::Item> {
-        let variant_modules = self
+        let variant_structs = self
             .executable_enum
             .variants
             .iter()
             .flat_map(|variant| {
-                let modules_for_variant = variant
-                    .fields
-                    .iter()
-                    .flat_map(|field| {
-                        ExecutableTypeBuilder::build(
-                            field.r#type.base(),
-                            self.config,
-                            self.depth + 2,
-                        )
-                    })
-                    .collect::<Vec<syn::Item>>();
-
-                modules_for_variant.is_empty().not().then(|| {
-                    let module_ident = module_ident(variant.name);
-                    parse_quote! {
-                        pub mod #module_ident {
-                            #(#modules_for_variant)*
-                        }
-                    }
-                })
+                ExecutableStructBuilder::build(variant, self.config, self.depth + 1)
             })
             .collect::<Vec<syn::Item>>();
 
-        variant_modules.is_empty().not().then(|| {
+        variant_structs.is_empty().not().then(|| {
             let module_ident = module_ident(self.executable_enum.parent_name);
             parse_quote! {
                 pub mod #module_ident {
-                    #(#variant_modules)*
+                    #(#variant_structs)*
                 }
             }
         })

@@ -160,12 +160,12 @@ fn test_union_query_deserialization() {
 
     assert_eq!(
         schema::query::Player {
-            player: schema::query::player::Player::Skater {
+            player: schema::query::player::Player::Skater(schema::query::player::player::Skater {
                 name: "Auston Matthews".into(),
                 age: 25,
                 position: schema::Position::Centre,
                 stats: vec![schema::query::player::player::skater::Stats { goals: 60 }],
-            },
+            }),
         },
         result,
     );
