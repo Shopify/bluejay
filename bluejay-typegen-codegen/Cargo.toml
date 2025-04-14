@@ -19,10 +19,5 @@ proc-macro2 = "1.0"
 convert_case = "0.8"
 itertools = "0.14.0"
 
-[features]
-default = ["serde"]
-serde = []
-miniserde = []
-
 [lints]
 workspace = true

@@ -1,0 +1,4 @@
+#!/bin/bash
+cargo build -p bluejay-typegen --example shopify_function --profile shopify-function --target wasm32-wasip1
+
+function-runner -f target/wasm32-wasip1/shopify-function/examples/shopify_function.wasm -i bluejay-typegen/examples/input.json

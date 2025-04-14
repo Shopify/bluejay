@@ -1,14 +1,13 @@
 use crate::attributes::doc_string;
 use crate::builtin_scalar::{builtin_scalar_type, scalar_is_reference};
 use crate::names::{enum_variant_ident, field_ident, type_ident};
-use crate::{types, Codec, Config};
+use crate::{types, Config};
 use bluejay_core::definition::{
     prelude::*, BaseInputTypeReference, EnumTypeDefinition, InputTypeReference,
     ScalarTypeDefinition, SchemaDefinition,
 };
 use bluejay_core::{AsIter, Directive};
 use proc_macro2::Span;
-use quote::format_ident;
 use std::collections::HashSet;
 use syn::parse_quote;
 
@@ -52,7 +51,7 @@ impl<'a, S: SchemaDefinition> InputObjectTypeDefinitionBuilder<'a, S> {
         let field_serde_borrow_attributes = self.field_serde_borrow_attributes();
         let lifetime = self.lifetime(self.input_object_type_definition);
 
-        let mut items = vec![parse_quote! {
+        vec![parse_quote! {
             #(#attributes)*
             pub enum #name_ident #lifetime {
                 #(
@@ -62,11 +61,7 @@ impl<'a, S: SchemaDefinition> InputObjectTypeDefinitionBuilder<'a, S> {
                     #variant_idents(#variant_type_paths),
                 )*
             }
-        }];
-
-        items.extend(self.enum_miniserde_serialize_impl());
-
-        items
+        }]
     }
 
     fn build_struct(&self) -> Vec<syn::Item> {
@@ -79,7 +74,7 @@ impl<'a, S: SchemaDefinition> InputObjectTypeDefinitionBuilder<'a, S> {
         let field_serde_borrow_attributes = self.field_serde_borrow_attributes();
         let lifetime = self.lifetime(self.input_object_type_definition);
 
-        let mut items = vec![parse_quote! {
+        vec![parse_quote! {
             #(#attributes)*
             pub struct #name_ident #lifetime {
                 #(
@@ -89,11 +84,7 @@ impl<'a, S: SchemaDefinition> InputObjectTypeDefinitionBuilder<'a, S> {
                     pub #field_idents: #field_type_paths,
                 )*
             }
-        }];
-
-        items.extend(self.struct_miniserde_serialize_impl());
-
-        items
+        }]
     }
 
     fn name_ident(&self) -> syn::Ident {
@@ -107,17 +98,8 @@ impl<'a, S: SchemaDefinition> InputObjectTypeDefinitionBuilder<'a, S> {
                 .description()
                 .map(doc_string),
         );
-        attributes.push(parse_quote! { #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::fmt::Debug)] });
-
-        match self.config.codec() {
-            Codec::Serde => {
-                attributes.extend([
-                    parse_quote! { #[derive(::bluejay_typegen::serde::Serialize)] },
-                    parse_quote! { #[serde(crate = "bluejay_typegen::serde")] },
-                ]);
-            }
-            Codec::Miniserde => {}
-        }
+        attributes.push(parse_quote! { #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::fmt::Debug, ::bluejay_typegen::serde::Serialize)] });
+        attributes.push(parse_quote! { #[serde(crate = "bluejay_typegen::serde")] });
 
         attributes
     }
@@ -184,13 +166,10 @@ impl<'a, S: SchemaDefinition> InputObjectTypeDefinitionBuilder<'a, S> {
             .collect()
     }
 
-    fn field_serde_rename_attributes(&self) -> Vec<Option<syn::Attribute>> {
+    fn field_serde_rename_attributes(&self) -> Vec<syn::Attribute> {
         self.field_serialized_as()
             .iter()
-            .map(|serialized_as| {
-                (self.config.codec() == Codec::Serde)
-                    .then(|| parse_quote!(#[serde(rename = #serialized_as)]))
-            })
+            .map(|serialized_as| parse_quote!(#[serde(rename = #serialized_as)]))
             .collect()
     }
 
@@ -199,8 +178,6 @@ impl<'a, S: SchemaDefinition> InputObjectTypeDefinitionBuilder<'a, S> {
             .input_field_definitions()
             .iter()
             .map(|ivd| {
-                // don't need to check that codec is serde because miniserde
-                // doesn't support borrowing (kind of a hack)
                 self.contains_reference_types(ivd.r#type(), &mut HashSet::new())
                     .then(|| parse_quote!(#[serde(borrow)]))
             })
@@ -356,94 +333,5 @@ impl<'a, S: SchemaDefinition> InputObjectTypeDefinitionBuilder<'a, S> {
             Some(parent_type_name),
             Some(ivd.default_value().is_some()),
         )
-    }
-
-    fn enum_miniserde_serialize_impl(&self) -> Option<syn::Item> {
-        (self.config.codec() == Codec::Miniserde).then(|| {
-            let stream_ident = format_ident!("__{}Stream", self.input_object_type_definition.name());
-            let name_ident = self.name_ident();
-            let variant_idents = self.variant_idents();
-            let serialized_as = self.field_serialized_as();
-
-            parse_quote! {
-                const _: () = {
-                    struct #stream_ident<'a> {
-                        data: &'a #name_ident,
-                        visited: ::std::primitive::bool,
-                    }
-
-                    impl<'a> ::bluejay_typegen::miniserde::ser::Map for #stream_ident<'a> {
-                        fn next(&mut self) -> ::std::option::Option<(::std::borrow::Cow<::std::primitive::str>, &dyn ::bluejay_typegen::miniserde::ser::Serialize)> {
-                            if self.visited {
-                                return ::std::option::Option::None;
-                            }
-                            self.visited = true;
-
-                            match &self.data {
-                                #(
-                                    #name_ident::#variant_idents(data) => ::std::option::Option::Some((
-                                        ::std::borrow::Cow::Borrowed(#serialized_as),
-                                        data,
-                                    )),
-                                )*
-                            }
-                        }
-                    }
-
-                    impl ::bluejay_typegen::miniserde::ser::Serialize for #name_ident {
-                        fn begin(&self) -> ::bluejay_typegen::miniserde::ser::Fragment {
-                            ::bluejay_typegen::miniserde::ser::Fragment::Map(::std::boxed::Box::new(#stream_ident {
-                                data: self,
-                                visited: false,
-                            }))
-                        }
-                    }
-                };
-            }
-        })
-    }
-
-    fn struct_miniserde_serialize_impl(&self) -> Option<syn::Item> {
-        (self.config.codec() == Codec::Miniserde).then(|| {
-            let stream_ident = format_ident!("__{}Stream", self.input_object_type_definition.name());
-            let name_ident = self.name_ident();
-            let field_idents = self.field_idents();
-            let serialized_as = self.field_serialized_as();
-            let states = (0..self.field_idents().len()).collect::<Vec<_>>();
-
-            parse_quote! {
-                const _: () = {
-                    struct #stream_ident<'a> {
-                        data: &'a #name_ident,
-                        state: ::std::primitive::usize,
-                    }
-
-                    impl<'a> ::bluejay_typegen::miniserde::ser::Map for #stream_ident<'a> {
-                        fn next(&mut self) -> ::std::option::Option<(::std::borrow::Cow<::std::primitive::str>, &dyn ::bluejay_typegen::miniserde::ser::Serialize)> {
-                            let state = self.state;
-                            self.state += 1;
-                            match state {
-                                #(
-                                    #states => ::std::option::Option::Some((
-                                        ::std::borrow::Cow::Borrowed(#serialized_as),
-                                        &self.data.#field_idents,
-                                    )),
-                                )*
-                                _ => ::std::option::Option::None,
-                            }
-                        }
-                    }
-
-                    impl ::bluejay_typegen::miniserde::ser::Serialize for #name_ident {
-                        fn begin(&self) -> ::bluejay_typegen::miniserde::ser::Fragment {
-                            ::bluejay_typegen::miniserde::ser::Fragment::Map(::std::boxed::Box::new(#stream_ident {
-                                data: self,
-                                state: 0,
-                            }))
-                        }
-                    }
-                };
-            }
-        })
     }
 }

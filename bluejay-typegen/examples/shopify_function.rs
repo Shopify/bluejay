@@ -1,7 +1,7 @@
 use std::error::Error;
 use std::io::Write;
 
-#[bluejay_typegen::typegen("examples/schema.graphql", codec = "miniserde")]
+#[bluejay_typegen::typegen("examples/schema.graphql")]
 #[allow(dead_code)]
 pub mod schema {
     type Date = String;
@@ -44,10 +44,10 @@ pub fn function(input: schema::input::Input) -> schema::FunctionRunResult {
 fn main() -> Result<(), Box<dyn Error>> {
     let mut string = String::new();
     std::io::Read::read_to_string(&mut std::io::stdin(), &mut string)?;
-    let input: schema::input::Input = bluejay_typegen::miniserde::json::from_str(&string)?;
+    let input: schema::input::Input = serde_json::from_str(&string)?;
     let mut out = std::io::stdout();
     let result = function(input);
-    let serialized = bluejay_typegen::miniserde::json::to_string(&result);
+    let serialized = serde_json::to_string(&result)?;
     out.write_all(serialized.as_bytes())?;
     out.flush()?;
 

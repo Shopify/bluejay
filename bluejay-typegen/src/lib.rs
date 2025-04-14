@@ -11,9 +11,6 @@
 //! or DSL code defining the schema directly in the macro invocation, enclosed within square brackets.
 //! The optional named arguments are:
 //! - `borrow`: A boolean indicating whether the generated types should borrow strings from the input JSON value instead of owning them. Defaults to `false`.
-//! - `codec`: A string literal specifying the codec to use for serializing and deserializing values.
-//!   Must be one of `"serde"` or `"miniserde"`. Defaults to `"serde"` when the `serde` feature is enabled, otherwise `"miniserde"` when the `miniserde` feature is enabled.
-//!   When `"miniserde"` is used, `borrow` must be `false` as `miniserde` does not support borrowing strings.
 //! - `enums_as_str`: An array of string literals containing the names of enum types from the GraphQL schema that should be represented as strings. Defaults to `[]`.
 //!   When `borrow` is true, the values are `std::borrow::Cow<str>`, otherwise they are `String`.
 //!
@@ -139,8 +136,4 @@
 
 pub use bluejay_typegen_macro::typegen;
 
-#[cfg(feature = "serde")]
 pub use srd as serde;
-
-#[cfg(feature = "miniserde")]
-pub use mnsrd as miniserde;

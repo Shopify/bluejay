@@ -3,42 +3,7 @@ use syn::parse::Parse;
 
 mod kw {
     syn::custom_keyword!(borrow);
-    syn::custom_keyword!(codec);
     syn::custom_keyword!(enums_as_str);
-}
-
-#[derive(Clone, Copy, PartialEq)]
-pub enum Codec {
-    Serde,
-    Miniserde,
-}
-
-#[cfg(feature = "serde")]
-impl Default for Codec {
-    fn default() -> Self {
-        Self::Serde
-    }
-}
-
-#[cfg(not(feature = "serde"))]
-impl Default for Codec {
-    fn default() -> Self {
-        Self::Miniserde
-    }
-}
-
-#[cfg(all(not(feature = "serde"), not(feature = "miniserde")))]
-compile_error!("At least one of the features `serde` or `miniserde` must be enabled");
-
-impl Parse for Codec {
-    fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
-        let codec = input.parse::<syn::LitStr>()?;
-        match codec.value().as_str() {
-            "serde" if cfg!(feature = "serde") => Ok(Self::Serde),
-            "miniserde" if cfg!(feature = "miniserde") => Ok(Self::Miniserde),
-            _ => Err(syn::Error::new(codec.span(), "Invalid codec")),
-        }
-    }
 }
 
 pub enum DocumentInput {
@@ -99,7 +64,6 @@ impl DocumentInput {
 pub struct Input {
     pub(crate) schema: DocumentInput,
     pub(crate) borrow: bool,
-    pub codec: Codec,
     pub enums_as_str: syn::punctuated::Punctuated<syn::LitStr, syn::Token![,]>,
 }
 
@@ -108,7 +72,6 @@ impl Parse for Input {
         let schema: DocumentInput = input.parse()?;
 
         let mut borrow: Option<syn::LitBool> = None;
-        let mut codec: Option<Codec> = None;
         let mut enums_as_str = None;
 
         while !input.is_empty() {
@@ -116,8 +79,6 @@ impl Parse for Input {
             let lookahead = input.lookahead1();
             if lookahead.peek(kw::borrow) {
                 Self::parse_key_value(input, &mut borrow)?;
-            } else if lookahead.peek(kw::codec) {
-                Self::parse_key_value(input, &mut codec)?;
             } else if lookahead.peek(kw::enums_as_str) {
                 Self::parse_key_value_with(input, &mut enums_as_str, |input| {
                     let content;
@@ -130,13 +91,11 @@ impl Parse for Input {
         }
 
         let borrow = borrow.is_some_and(|borrow| borrow.value);
-        let codec = codec.unwrap_or_default();
         let enums_as_str = enums_as_str.unwrap_or_default();
 
         Ok(Self {
             schema,
             borrow,
-            codec,
             enums_as_str,
         })
     }

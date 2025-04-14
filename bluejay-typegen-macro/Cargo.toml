@@ -19,10 +19,5 @@ quote = "1.0"
 [lib]
 proc-macro = true
 
-[features]
-default = ["serde"]
-serde = ["bluejay-typegen-codegen/serde"]
-miniserde = ["bluejay-typegen-codegen/miniserde"]
-
 [lints]
 workspace = true

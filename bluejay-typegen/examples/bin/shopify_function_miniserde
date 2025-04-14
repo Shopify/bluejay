@@ -1,4 +1,0 @@
-#!/bin/bash
-cargo wasi build -p bluejay-typegen --example shopify_function_miniserde --profile shopify-function --features miniserde
-
-function-runner -f target/wasm32-wasi/shopify-function/examples/shopify_function_miniserde.wasm -i bluejay-typegen/examples/input.json

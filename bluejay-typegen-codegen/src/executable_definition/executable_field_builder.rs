@@ -2,7 +2,6 @@ use crate::executable_definition::{ExecutableField, ExecutableType, WrappedExecu
 use crate::{
     attributes::doc_string,
     builtin_scalar::builtin_scalar_type,
-    input::Codec,
     names::{field_ident, module_ident, type_ident},
     types, Config,
 };
@@ -48,22 +47,6 @@ impl<'a, S: SchemaDefinition> ExecutableFieldBuilder<'a, S> {
         }
     }
 
-    pub(crate) fn new(
-        executable_field: &'a ExecutableField<'a>,
-        config: &'a Config<'a, S>,
-        depth: usize,
-        composite_type_name: &'a str,
-        enum_variant_name: Option<&'a str>,
-    ) -> Self {
-        Self {
-            config,
-            executable_field,
-            depth,
-            composite_type_name,
-            enum_variant_name,
-        }
-    }
-
     fn for_struct(&self) -> bool {
         self.enum_variant_name.is_none()
     }
@@ -80,15 +63,11 @@ impl<'a, S: SchemaDefinition> ExecutableFieldBuilder<'a, S> {
         let mut attributes = Vec::new();
         attributes.extend(self.executable_field.description.map(doc_string));
 
-        match self.config.codec() {
-            Codec::Serde => {
-                let serialized_as = self.serialized_as();
-                attributes.push(parse_quote! { #[serde(rename = #serialized_as)] });
-                if self.executable_field.r#type.base().borrows() {
-                    attributes.push(parse_quote! { #[serde(borrow)] });
-                }
-            }
-            Codec::Miniserde => {}
+        let serialized_as = self.serialized_as();
+        attributes.push(parse_quote! { #[serde(rename = #serialized_as)] });
+
+        if self.executable_field.r#type.base().borrows() {
+            attributes.push(parse_quote! { #[serde(borrow)] });
         }
 
         attributes

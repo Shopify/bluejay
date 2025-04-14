@@ -1,24 +1,19 @@
 use crate::attributes::doc_string;
 use crate::names::{enum_variant_ident, type_ident};
-use crate::Codec;
-use crate::Config;
-use bluejay_core::definition::{EnumTypeDefinition, EnumValueDefinition, SchemaDefinition};
-use bluejay_core::AsIter;
+use bluejay_core::{
+    definition::{EnumTypeDefinition, EnumValueDefinition, SchemaDefinition},
+    AsIter,
+};
 use proc_macro2::Span;
 use syn::parse_quote;
 
 pub(crate) struct EnumTypeDefinitionBuilder<'a, S: SchemaDefinition> {
-    config: &'a Config<'a, S>,
     enum_type_definition: &'a S::EnumTypeDefinition,
 }
 
 impl<'a, S: SchemaDefinition> EnumTypeDefinitionBuilder<'a, S> {
-    pub(crate) fn build(
-        enum_type_definition: &'a S::EnumTypeDefinition,
-        config: &'a Config<'a, S>,
-    ) -> Vec<syn::Item> {
+    pub(crate) fn build(enum_type_definition: &'a S::EnumTypeDefinition) -> Vec<syn::Item> {
         let instance = Self {
-            config,
             enum_type_definition,
         };
 
@@ -29,7 +24,7 @@ impl<'a, S: SchemaDefinition> EnumTypeDefinitionBuilder<'a, S> {
         let attributes = instance.attributes();
         let other_variant = instance.other_variant();
 
-        let mut items = vec![parse_quote! {
+        vec![parse_quote! {
             #(#attributes)*
             pub enum #name_ident {
                 #(
@@ -39,12 +34,7 @@ impl<'a, S: SchemaDefinition> EnumTypeDefinitionBuilder<'a, S> {
                 )*
                 #other_variant,
             }
-        }];
-
-        items.extend(instance.miniserde_serialize_impl());
-        items.extend(instance.miniserde_deserialize_impl());
-
-        items
+        }]
     }
 
     fn name_ident(&self) -> syn::Ident {
@@ -75,100 +65,25 @@ impl<'a, S: SchemaDefinition> EnumTypeDefinitionBuilder<'a, S> {
             .collect()
     }
 
-    fn variant_serde_rename_attributes(&self) -> Vec<Option<syn::Attribute>> {
+    fn variant_serde_rename_attributes(&self) -> Vec<syn::Attribute> {
         self.variant_serialized_as()
             .iter()
-            .map(|serialized_as| {
-                (self.config.codec() == Codec::Serde)
-                    .then(|| parse_quote!(#[serde(rename = #serialized_as)]))
-            })
+            .map(|serialized_as| parse_quote!(#[serde(rename = #serialized_as)]))
             .collect()
     }
 
     fn attributes(&self) -> Vec<syn::Attribute> {
         let mut attributes = Vec::new();
         attributes.extend(self.enum_type_definition.description().map(doc_string));
-        attributes.push(parse_quote! { #[derive(::std::clone::Clone, ::std::marker::Copy, ::std::cmp::PartialEq, ::std::cmp::Eq, ::std::fmt::Debug)] });
-
-        match self.config.codec() {
-            Codec::Serde => attributes.extend([
-                parse_quote! { #[derive(::bluejay_typegen::serde::Serialize, ::bluejay_typegen::serde::Deserialize)] },
-                parse_quote! { #[serde(crate = "bluejay_typegen::serde")] },
-            ]),
-            Codec::Miniserde => {},
-        }
+        attributes.push(parse_quote! { #[derive(::std::clone::Clone, ::std::marker::Copy, ::std::cmp::PartialEq, ::std::cmp::Eq, ::std::fmt::Debug, ::bluejay_typegen::serde::Serialize, ::bluejay_typegen::serde::Deserialize)] });
+        attributes.push(parse_quote! { #[serde(crate = "bluejay_typegen::serde")] });
 
         attributes
     }
 
-    fn miniserde_serialize_impl(&self) -> Option<syn::Item> {
-        (self.config.codec() == Codec::Miniserde).then(|| {
-            let name_ident = self.name_ident();
-            let variant_idents = self.variant_idents();
-            let variant_serialized_as = self.variant_serialized_as();
-
-            parse_quote! {
-                const _: () = {
-                    impl ::bluejay_typegen::miniserde::ser::Serialize for #name_ident {
-                        fn begin(&self) -> ::bluejay_typegen::miniserde::ser::Fragment {
-                            ::bluejay_typegen::miniserde::ser::Fragment::Str(::std::borrow::Cow::Borrowed(match self {
-                                #(
-                                    #name_ident::#variant_idents => #variant_serialized_as,
-                                )*
-                                #name_ident::Other => ::std::panic!("Cannot serialize Other variant"),
-                            }))
-                        }
-                    }
-                };
-            }
-        })
-    }
-
-    fn miniserde_deserialize_impl(&self) -> Option<syn::Item> {
-        (self.config.codec() == Codec::Miniserde).then(|| {
-            let name_ident = self.name_ident();
-            let variant_idents = self.variant_idents();
-            let variant_serialized_as = self.variant_serialized_as();
-
-            parse_quote! {
-                const _: () = {
-                    ::bluejay_typegen::miniserde::make_place!(__Place);
-
-                    impl ::bluejay_typegen::miniserde::de::Deserialize for #name_ident {
-                        fn begin(out: &mut ::std::option::Option<Self>) -> &mut dyn ::bluejay_typegen::miniserde::de::Visitor {
-                            __Place::new(out)
-                        }
-                    }
-
-                    impl ::bluejay_typegen::miniserde::de::Visitor for __Place<#name_ident> {
-                        fn string(&mut self, s: &::std::primitive::str) -> ::bluejay_typegen::miniserde::Result<()> {
-                            match s {
-                                #(
-                                    #variant_serialized_as => {
-                                        self.out = ::std::option::Option::Some(#name_ident::#variant_idents);
-                                        ::std::result::Result::Ok(())
-                                    },
-                                )*
-                                _ => {
-                                    self.out = ::std::option::Option::Some(#name_ident::Other);
-                                    ::std::result::Result::Ok(())
-                                },
-                            }
-                        }
-                    }
-                };
-            }
-        })
-    }
-
     fn other_variant(&self) -> syn::Variant {
-        let attributes: Vec<syn::Attribute> = match self.config.codec() {
-            Codec::Serde => vec![parse_quote!(#[serde(other)])],
-            Codec::Miniserde => Vec::new(),
-        };
-
         parse_quote! {
-            #(#attributes)*
+            #[serde(other)]
             Other
         }
     }
