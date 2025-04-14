@@ -27,14 +27,13 @@ use attributes::doc_string;
 use enum_type_definition::EnumTypeDefinitionBuilder;
 use executable_definition::generate_executable_definition;
 use input::DocumentInput;
-pub use input::{Codec, Input};
+pub use input::Input;
 use input_object_type_definition::InputObjectTypeDefinitionBuilder;
 
 pub(crate) struct Config<'a, S: SchemaDefinition> {
     borrow: bool,
     schema_definition: &'a S,
     custom_scalar_borrows: HashMap<String, bool>,
-    codec: Codec,
     enums_as_str: HashSet<String>,
 }
 
@@ -58,10 +57,6 @@ impl<'a, S: SchemaDefinition> Config<'a, S> {
         self.borrow && builtin_scalar::scalar_is_reference(bstd)
     }
 
-    pub(crate) fn codec(&self) -> Codec {
-        self.codec
-    }
-
     pub(crate) fn enum_as_str(&self, etd: &S::EnumTypeDefinition) -> bool {
         self.enums_as_str.contains(etd.name())
     }
@@ -75,16 +70,8 @@ pub fn generate_schema(
     let Input {
         ref schema,
         borrow,
-        codec,
         enums_as_str,
     } = input;
-
-    if borrow && codec == Codec::Miniserde {
-        return Err(syn::Error::new(
-            module.span(),
-            "Cannot borrow with miniserde codec",
-        ));
-    }
 
     let (schema_contents, schema_path) = schema.read_to_string_and_path()?;
 
@@ -119,7 +106,6 @@ pub fn generate_schema(
         schema_definition: &schema_definition,
         borrow,
         custom_scalar_borrows,
-        codec,
         enums_as_str,
     };
 
@@ -291,7 +277,7 @@ fn process_module_items<S: SchemaDefinition>(
         .type_definitions()
         .filter_map(|type_definition| match type_definition {
             TypeDefinitionReference::Enum(etd) if !config.enum_as_str(etd) => {
-                Some(EnumTypeDefinitionBuilder::build(etd, config))
+                Some(EnumTypeDefinitionBuilder::<S>::build(etd))
             }
             TypeDefinitionReference::InputObject(iotd) => {
                 Some(InputObjectTypeDefinitionBuilder::build(iotd, config))
