@@ -218,3 +218,50 @@ fn test_builtin_scalars_deserialization() {
         parsed,
     );
 }
+
+#[test]
+fn test_object_query_field_accessor() {
+    let value = schema::query::MyQuery {
+        my_field: Some("hello".into()),
+        my_aliased_field: Some("world".into()),
+        my_nested_field: Some(schema::query::my_query::MyNestedField {
+            my_field: Some("hello".into()),
+        }),
+        my_required_field: "hello".into(),
+        my_nested_field_with_fragment: Some(schema::query::MyFragment {
+            my_field: Some("hello".into()),
+        }),
+        r#type: Some("hello".into()),
+        my_enum: schema::MyEnum::Variant1,
+        my_decimals: vec!["1.2".into(), "3.4".into()],
+    };
+
+    assert_eq!(value.my_field(), Some(&std::borrow::Cow::Borrowed("hello")));
+    assert_eq!(
+        value.my_aliased_field(),
+        Some(&std::borrow::Cow::Borrowed("world"))
+    );
+    assert_eq!(
+        value.my_nested_field().and_then(|nested| nested.my_field()),
+        Some(&std::borrow::Cow::Borrowed("hello"))
+    );
+    assert_eq!(
+        value.my_required_field(),
+        &std::borrow::Cow::Borrowed("hello")
+    );
+    assert_eq!(
+        value
+            .my_nested_field_with_fragment()
+            .and_then(|fragment| fragment.my_field()),
+        Some(&std::borrow::Cow::Borrowed("hello"))
+    );
+    assert_eq!(value.r#type(), Some(&std::borrow::Cow::Borrowed("hello")));
+    assert_eq!(value.my_enum(), &schema::MyEnum::Variant1);
+    assert_eq!(
+        value.my_decimals(),
+        &[
+            std::borrow::Cow::Borrowed("1.2"),
+            std::borrow::Cow::Borrowed("3.4")
+        ]
+    );
+}

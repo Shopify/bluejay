@@ -17,8 +17,9 @@ use executable_enum_builder::ExecutableEnumBuilder;
 use executable_enum_variant_builder::ExecutableEnumVariantBuilder;
 use executable_struct_builder::ExecutableStructBuilder;
 use executable_type_builder::ExecutableTypeBuilder;
-use intermediate_representation::ExecutableType;
-pub use intermediate_representation::{ExecutableEnum, ExecutableField, ExecutableStruct};
+pub use intermediate_representation::{
+    ExecutableEnum, ExecutableField, ExecutableStruct, ExecutableType, WrappedExecutableType,
+};
 
 struct Input {
     query: DocumentInput,

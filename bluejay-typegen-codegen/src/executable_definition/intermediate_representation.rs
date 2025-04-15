@@ -127,45 +127,59 @@ impl ExecutableStruct<'_> {
     }
 
     /// Computes the type path for a field of the struct, relative to where the struct is defined.
-    pub fn type_path_for_field(&self, field: &ExecutableField<'_>) -> syn::TypePath {
-        self.compute_type_path(&field.r#type)
+    pub fn type_for_field(&self, field: &ExecutableField<'_>, reference: bool) -> syn::Type {
+        self.compute_type(&field.r#type, reference)
     }
 
-    fn compute_type_path(&self, r#type: &WrappedExecutableType<'_>) -> syn::TypePath {
+    fn compute_type(&self, r#type: &WrappedExecutableType<'_>, reference: bool) -> syn::Type {
         match r#type {
-            WrappedExecutableType::Base(base) => match base {
-                ExecutableType::Leaf { name, borrows } => {
-                    let prefix = self.prefix_for_schema_definition_module();
-                    let type_ident = type_ident(name);
-                    let lifetime: Option<syn::Generics> = borrows.then(|| parse_quote! { <'a> });
-                    parse_quote! { #(#prefix::)* #type_ident #lifetime }
+            WrappedExecutableType::Base(base) => {
+                let base_type_path = match base {
+                    ExecutableType::Leaf { name, borrows } => {
+                        let prefix = self.prefix_for_schema_definition_module();
+                        let type_ident = type_ident(name);
+                        let lifetime: Option<syn::Generics> =
+                            borrows.then(|| parse_quote! { <'a> });
+                        parse_quote! { #(#prefix::)* #type_ident #lifetime }
+                    }
+                    ExecutableType::BuiltinScalar { bstd, borrows } => {
+                        builtin_scalar_type(*bstd, *borrows)
+                    }
+                    ExecutableType::FragmentDefinitionReference { name, borrows } => {
+                        let prefix = self.prefix_for_executable_document_module();
+                        let type_ident = type_ident(name);
+                        let lifetime: Option<syn::Generics> =
+                            borrows.then(|| parse_quote! { <'a> });
+                        parse_quote! { #(#prefix::)* #type_ident #lifetime }
+                    }
+                    ExecutableType::Struct(es) => {
+                        let prefix = module_ident(self.parent_name);
+                        let type_ident = type_ident(es.parent_name);
+                        let lifetime: Option<syn::Generics> =
+                            es.borrows().then(|| parse_quote! { <'a> });
+                        parse_quote! { #prefix:: #type_ident #lifetime }
+                    }
+                    ExecutableType::Enum(ee) => {
+                        let prefix = module_ident(self.parent_name);
+                        let type_ident = type_ident(ee.parent_name);
+                        let lifetime: Option<syn::Generics> =
+                            ee.borrows().then(|| parse_quote! { <'a> });
+                        parse_quote! { #prefix:: #type_ident #lifetime }
+                    }
+                };
+                let reference: Option<syn::Token![&]> = reference.then(Default::default);
+                parse_quote! { #reference #base_type_path }
+            }
+            WrappedExecutableType::Optional(inner) => {
+                types::option(self.compute_type(inner, reference))
+            }
+            WrappedExecutableType::Vec(inner) => {
+                if reference {
+                    types::slice(self.compute_type(inner, false))
+                } else {
+                    types::vec(self.compute_type(inner, false))
                 }
-                ExecutableType::BuiltinScalar { bstd, borrows } => {
-                    builtin_scalar_type(*bstd, *borrows)
-                }
-                ExecutableType::FragmentDefinitionReference { name, borrows } => {
-                    let prefix = self.prefix_for_executable_document_module();
-                    let type_ident = type_ident(name);
-                    let lifetime: Option<syn::Generics> = borrows.then(|| parse_quote! { <'a> });
-                    parse_quote! { #(#prefix::)* #type_ident #lifetime }
-                }
-                ExecutableType::Struct(es) => {
-                    let prefix = module_ident(self.parent_name);
-                    let type_ident = type_ident(es.parent_name);
-                    let lifetime: Option<syn::Generics> =
-                        es.borrows().then(|| parse_quote! { <'a> });
-                    parse_quote! { #prefix:: #type_ident #lifetime }
-                }
-                ExecutableType::Enum(ee) => {
-                    let prefix = module_ident(self.parent_name);
-                    let type_ident = type_ident(ee.parent_name);
-                    let lifetime: Option<syn::Generics> =
-                        ee.borrows().then(|| parse_quote! { <'a> });
-                    parse_quote! { #prefix:: #type_ident #lifetime }
-                }
-            },
-            WrappedExecutableType::Optional(inner) => types::option(self.compute_type_path(inner)),
-            WrappedExecutableType::Vec(inner) => types::vec(self.compute_type_path(inner)),
+            }
         }
     }
 

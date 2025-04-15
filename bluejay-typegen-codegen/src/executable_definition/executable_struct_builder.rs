@@ -94,13 +94,13 @@ impl<'a, C: CodeGenerator> ExecutableStructBuilder<'a, C> {
                     .code_generator
                     .field_accessor_block(self.executable_struct, field);
 
-                let type_path = self.executable_struct.type_path_for_field(field);
+                let type_path = self.executable_struct.type_for_field(field, true);
 
                 let doc_string = field.description().map(doc_string);
 
                 parse_quote! {
                     #doc_string
-                    pub fn #name_ident(&self) -> &#type_path #block
+                    pub fn #name_ident(&self) -> #type_path #block
                 }
             })
             .collect();

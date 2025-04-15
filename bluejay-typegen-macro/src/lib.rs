@@ -1,6 +1,6 @@
 use bluejay_typegen_codegen::{
     generate_schema, names::field_ident, CodeGenerator, ExecutableEnum, ExecutableField,
-    ExecutableStruct, Input,
+    ExecutableStruct, Input, WrappedExecutableType,
 };
 use proc_macro2::Span;
 use quote::ToTokens;
@@ -87,7 +87,7 @@ impl CodeGenerator for SerdeCodeGenerator {
                 let name_ident = field_ident(executable_field.graphql_name());
 
                 let attributes = self.attributes_for_field(executable_field);
-                let type_path = executable_struct.type_path_for_field(executable_field);
+                let type_path = executable_struct.type_for_field(executable_field, false);
 
                 parse_quote! {
                     #(#attributes)*
@@ -108,9 +108,11 @@ impl CodeGenerator for SerdeCodeGenerator {
     ) -> syn::Block {
         let name_ident = field_ident(field.graphql_name());
 
+        let expr = Self::reference_property_for_type(field.r#type(), &name_ident);
+
         parse_quote! {
             {
-                &self.#name_ident
+                #expr
             }
         }
     }
@@ -159,5 +161,20 @@ impl SerdeCodeGenerator {
         }
 
         attributes
+    }
+
+    fn reference_property_for_type(
+        r#type: &WrappedExecutableType,
+        property: &syn::Ident,
+    ) -> syn::Expr {
+        match r#type {
+            WrappedExecutableType::Base(_) | WrappedExecutableType::Vec(_) => {
+                parse_quote! { &self.#property }
+            }
+            WrappedExecutableType::Optional(inner) => {
+                let inner_reference = Self::reference_property_for_type(inner, property);
+                parse_quote! { ::std::option::Option::as_ref(#inner_reference) }
+            }
+        }
     }
 }

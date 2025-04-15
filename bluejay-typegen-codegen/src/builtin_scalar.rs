@@ -2,7 +2,7 @@ use crate::types::string;
 use bluejay_core::BuiltinScalarDefinition;
 use syn::parse_quote;
 
-pub(crate) fn builtin_scalar_type(scalar: BuiltinScalarDefinition, borrows: bool) -> syn::TypePath {
+pub(crate) fn builtin_scalar_type(scalar: BuiltinScalarDefinition, borrows: bool) -> syn::Type {
     match scalar {
         BuiltinScalarDefinition::Boolean => parse_quote! { ::std::primitive::bool },
         BuiltinScalarDefinition::Float => parse_quote! { ::std::primitive::f64 },

@@ -46,7 +46,7 @@ impl<'a, S: SchemaDefinition, C: CodeGenerator> InputObjectTypeDefinitionBuilder
         let name_ident = self.name_ident();
         let variant_idents = self.variant_idents();
         let field_description_attributes = self.field_description_attributes();
-        let variant_type_paths = self.variant_type_paths();
+        let variant_types = self.variant_types();
         let field_serde_rename_attributes = self.field_serde_rename_attributes();
         let field_serde_borrow_attributes = self.field_serde_borrow_attributes();
         let lifetime = self.lifetime(self.input_object_type_definition);
@@ -58,7 +58,7 @@ impl<'a, S: SchemaDefinition, C: CodeGenerator> InputObjectTypeDefinitionBuilder
                     #field_description_attributes
                     #field_serde_rename_attributes
                     #field_serde_borrow_attributes
-                    #variant_idents(#variant_type_paths),
+                    #variant_idents(#variant_types),
                 )*
             }
         }]
@@ -69,7 +69,7 @@ impl<'a, S: SchemaDefinition, C: CodeGenerator> InputObjectTypeDefinitionBuilder
         let name_ident = self.name_ident();
         let field_idents = self.field_idents();
         let field_description_attributes = self.field_description_attributes();
-        let field_type_paths = self.field_type_paths();
+        let field_types = self.field_types();
         let field_serde_rename_attributes = self.field_serde_rename_attributes();
         let field_serde_borrow_attributes = self.field_serde_borrow_attributes();
         let lifetime = self.lifetime(self.input_object_type_definition);
@@ -81,7 +81,7 @@ impl<'a, S: SchemaDefinition, C: CodeGenerator> InputObjectTypeDefinitionBuilder
                     #field_description_attributes
                     #field_serde_rename_attributes
                     #field_serde_borrow_attributes
-                    pub #field_idents: #field_type_paths,
+                    pub #field_idents: #field_types,
                 )*
             }
         }]
@@ -128,7 +128,7 @@ impl<'a, S: SchemaDefinition, C: CodeGenerator> InputObjectTypeDefinitionBuilder
             .collect()
     }
 
-    fn field_type_paths(&self) -> Vec<syn::TypePath> {
+    fn field_types(&self) -> Vec<syn::Type> {
         self.input_object_type_definition
             .input_field_definitions()
             .iter()
@@ -138,7 +138,7 @@ impl<'a, S: SchemaDefinition, C: CodeGenerator> InputObjectTypeDefinitionBuilder
             .collect()
     }
 
-    fn variant_type_paths(&self) -> Vec<syn::TypePath> {
+    fn variant_types(&self) -> Vec<syn::Type> {
         self.input_object_type_definition
             .input_field_definitions()
             .iter()
@@ -254,10 +254,7 @@ impl<'a, S: SchemaDefinition, C: CodeGenerator> InputObjectTypeDefinitionBuilder
             .any(|ivd| self.contains_reference_types(ivd.r#type(), visited))
     }
 
-    fn type_for_base_input_type(
-        &self,
-        base: BaseInputTypeReference<S::InputType>,
-    ) -> syn::TypePath {
+    fn type_for_base_input_type(&self, base: BaseInputTypeReference<S::InputType>) -> syn::Type {
         match base {
             BaseInputTypeReference::BuiltinScalar(bstd) => {
                 builtin_scalar_type(bstd, self.config.borrow())
@@ -291,7 +288,7 @@ impl<'a, S: SchemaDefinition, C: CodeGenerator> InputObjectTypeDefinitionBuilder
         ty: InputTypeReference<S::InputType>,
         parent_type_name: Option<&str>,
         has_default_value: Option<bool>,
-    ) -> syn::TypePath {
+    ) -> syn::Type {
         let required = has_default_value.map_or_else(
             || ty.is_required(),
             |has_default_value| !has_default_value && ty.is_required(),
@@ -329,7 +326,7 @@ impl<'a, S: SchemaDefinition, C: CodeGenerator> InputObjectTypeDefinitionBuilder
         &self,
         parent_type_name: &str,
         ivd: &S::InputValueDefinition,
-    ) -> syn::TypePath {
+    ) -> syn::Type {
         self.type_for_input_type(
             ivd.r#type().as_ref(self.config.schema_definition()),
             Some(parent_type_name),
