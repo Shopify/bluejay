@@ -1,7 +1,7 @@
 use crate::attributes::doc_string;
 use crate::builtin_scalar::{builtin_scalar_type, scalar_is_reference};
 use crate::names::{enum_variant_ident, field_ident, type_ident};
-use crate::{types, Config};
+use crate::{types, CodeGenerator, Config};
 use bluejay_core::definition::{
     prelude::*, BaseInputTypeReference, EnumTypeDefinition, InputTypeReference,
     ScalarTypeDefinition, SchemaDefinition,
@@ -11,15 +11,15 @@ use proc_macro2::Span;
 use std::collections::HashSet;
 use syn::parse_quote;
 
-pub(crate) struct InputObjectTypeDefinitionBuilder<'a, S: SchemaDefinition> {
-    config: &'a Config<'a, S>,
+pub(crate) struct InputObjectTypeDefinitionBuilder<'a, S: SchemaDefinition, C: CodeGenerator> {
+    config: &'a Config<'a, S, C>,
     input_object_type_definition: &'a S::InputObjectTypeDefinition,
 }
 
-impl<'a, S: SchemaDefinition> InputObjectTypeDefinitionBuilder<'a, S> {
+impl<'a, S: SchemaDefinition, C: CodeGenerator> InputObjectTypeDefinitionBuilder<'a, S, C> {
     pub(crate) fn build(
         input_object_type_definition: &'a S::InputObjectTypeDefinition,
-        config: &'a Config<'a, S>,
+        config: &'a Config<'a, S, C>,
     ) -> Vec<syn::Item> {
         let instance = Self {
             config,
@@ -259,7 +259,9 @@ impl<'a, S: SchemaDefinition> InputObjectTypeDefinitionBuilder<'a, S> {
         base: BaseInputTypeReference<S::InputType>,
     ) -> syn::TypePath {
         match base {
-            BaseInputTypeReference::BuiltinScalar(bstd) => builtin_scalar_type(bstd, self.config),
+            BaseInputTypeReference::BuiltinScalar(bstd) => {
+                builtin_scalar_type(bstd, self.config.borrow())
+            }
             BaseInputTypeReference::InputObject(iotd) => {
                 let ident = type_ident(iotd.name());
                 let lifetime = self.lifetime(iotd);
@@ -267,7 +269,7 @@ impl<'a, S: SchemaDefinition> InputObjectTypeDefinitionBuilder<'a, S> {
             }
             BaseInputTypeReference::Enum(etd) => {
                 if self.config.enum_as_str(etd) {
-                    types::string(self.config)
+                    types::string(self.config.borrow())
                 } else {
                     let ident = type_ident(etd.name());
                     parse_quote! { #ident }

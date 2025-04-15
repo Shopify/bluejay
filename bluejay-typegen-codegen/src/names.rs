@@ -24,7 +24,7 @@ pub(crate) fn field_name(graphql_name: &str) -> String {
     graphql_name.to_case(Case::Snake)
 }
 
-pub(crate) fn field_ident(graphql_name: &str) -> Ident {
+pub fn field_ident(graphql_name: &str) -> Ident {
     to_ident(&field_name(graphql_name))
 }
 

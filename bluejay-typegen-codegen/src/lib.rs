@@ -15,29 +15,33 @@ use syn::{parse_quote, spanned::Spanned};
 
 mod attributes;
 mod builtin_scalar;
+mod code_generator;
 mod enum_type_definition;
 mod executable_definition;
 mod input;
 mod input_object_type_definition;
-mod names;
+pub mod names;
 mod types;
 mod validation;
 
 use attributes::doc_string;
+pub use code_generator::CodeGenerator;
 use enum_type_definition::EnumTypeDefinitionBuilder;
 use executable_definition::generate_executable_definition;
+pub use executable_definition::{ExecutableEnum, ExecutableField, ExecutableStruct};
 use input::DocumentInput;
 pub use input::Input;
 use input_object_type_definition::InputObjectTypeDefinitionBuilder;
 
-pub(crate) struct Config<'a, S: SchemaDefinition> {
+pub(crate) struct Config<'a, S: SchemaDefinition, C: CodeGenerator> {
     borrow: bool,
     schema_definition: &'a S,
     custom_scalar_borrows: HashMap<String, bool>,
     enums_as_str: HashSet<String>,
+    code_generator: &'a C,
 }
 
-impl<'a, S: SchemaDefinition> Config<'a, S> {
+impl<'a, S: SchemaDefinition, C: CodeGenerator> Config<'a, S, C> {
     pub(crate) fn schema_definition(&self) -> &'a S {
         self.schema_definition
     }
@@ -60,12 +64,17 @@ impl<'a, S: SchemaDefinition> Config<'a, S> {
     pub(crate) fn enum_as_str(&self, etd: &S::EnumTypeDefinition) -> bool {
         self.enums_as_str.contains(etd.name())
     }
+
+    pub(crate) fn code_generator(&self) -> &C {
+        self.code_generator
+    }
 }
 
 pub fn generate_schema(
     input: Input,
     module: &mut syn::ItemMod,
     known_custom_scalar_types: HashMap<String, KnownCustomScalarType>,
+    code_generator: impl CodeGenerator,
 ) -> syn::Result<()> {
     let Input {
         ref schema,
@@ -107,6 +116,7 @@ pub fn generate_schema(
         borrow,
         custom_scalar_borrows,
         enums_as_str,
+        code_generator: &code_generator,
     };
 
     if let Some((_, items)) = module.content.take() {
@@ -268,8 +278,8 @@ fn validate_enums_as_str(
     Ok(enum_names)
 }
 
-fn process_module_items<S: SchemaDefinition>(
-    config: &Config<S>,
+fn process_module_items<S: SchemaDefinition, C: CodeGenerator>(
+    config: &Config<S, C>,
     items: Vec<syn::Item>,
 ) -> syn::Result<Vec<syn::Item>> {
     config
@@ -294,8 +304,8 @@ fn process_module_items<S: SchemaDefinition>(
         .collect()
 }
 
-fn process_module_item<S: SchemaDefinition>(
-    config: &Config<S>,
+fn process_module_item<S: SchemaDefinition, C: CodeGenerator>(
+    config: &Config<S, C>,
     item: syn::Item,
 ) -> syn::Result<syn::Item> {
     if let syn::Item::Mod(mut module) = item {

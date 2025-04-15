@@ -1,6 +1,10 @@
-use bluejay_typegen_codegen::{generate_schema, Input};
+use bluejay_typegen_codegen::{
+    generate_schema, names::field_ident, CodeGenerator, ExecutableEnum, ExecutableField,
+    ExecutableStruct, Input,
+};
+use proc_macro2::Span;
 use quote::ToTokens;
-use syn::parse_macro_input;
+use syn::{parse_macro_input, parse_quote};
 
 /// Generates Rust types from GraphQL schema definitions and queries.
 ///
@@ -54,9 +58,106 @@ pub fn typegen(
     let input = parse_macro_input!(attr as Input);
     let mut module = parse_macro_input!(item as syn::ItemMod);
 
-    if let Err(error) = generate_schema(input, &mut module, Default::default()) {
+    if let Err(error) = generate_schema(input, &mut module, Default::default(), SerdeCodeGenerator)
+    {
         return error.to_compile_error().into();
     }
 
     module.to_token_stream().into()
+}
+
+struct SerdeCodeGenerator;
+
+impl CodeGenerator for SerdeCodeGenerator {
+    fn attributes_for_executable_struct(
+        &self,
+        _executable_struct: &ExecutableStruct,
+    ) -> Vec<syn::Attribute> {
+        vec![
+            parse_quote! { #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::fmt::Debug, ::bluejay_typegen::serde::Deserialize)] },
+            parse_quote! { #[serde(crate = "bluejay_typegen::serde")] },
+        ]
+    }
+
+    fn fields_for_executable_struct(&self, executable_struct: &ExecutableStruct) -> syn::Fields {
+        let fields: Vec<syn::Field> = executable_struct
+            .fields()
+            .iter()
+            .map(|executable_field| {
+                let name_ident = field_ident(executable_field.graphql_name());
+
+                let attributes = self.attributes_for_field(executable_field);
+                let type_path = executable_struct.type_path_for_field(executable_field);
+
+                parse_quote! {
+                    #(#attributes)*
+                    pub #name_ident: #type_path
+                }
+            })
+            .collect();
+
+        let fields_named: syn::FieldsNamed = parse_quote! { { #(#fields,)* } };
+
+        fields_named.into()
+    }
+
+    fn field_accessor_block(
+        &self,
+        _executable_struct: &ExecutableStruct,
+        field: &ExecutableField,
+    ) -> syn::Block {
+        let name_ident = field_ident(field.graphql_name());
+
+        parse_quote! {
+            {
+                &self.#name_ident
+            }
+        }
+    }
+
+    fn attributes_for_executable_enum(
+        &self,
+        _executable_enum: &ExecutableEnum,
+    ) -> Vec<syn::Attribute> {
+        vec![
+            parse_quote! { #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::fmt::Debug, ::bluejay_typegen::serde::Deserialize)] },
+            parse_quote! { #[serde(crate = "bluejay_typegen::serde")] },
+            parse_quote! { #[serde(tag = "__typename")] },
+        ]
+    }
+
+    fn attributes_for_executable_enum_variant(
+        &self,
+        executable_struct: &ExecutableStruct,
+    ) -> Vec<syn::Attribute> {
+        let mut attributes = Vec::new();
+
+        let serialized_as = syn::LitStr::new(executable_struct.parent_name(), Span::call_site());
+        attributes.push(parse_quote! { #[serde(rename = #serialized_as)] });
+
+        if executable_struct.borrows() {
+            attributes.push(parse_quote! { #[serde(borrow)] });
+        }
+
+        attributes
+    }
+
+    fn attributes_for_executable_enum_variant_other(&self) -> Vec<syn::Attribute> {
+        vec![parse_quote! { #[serde(other)] }]
+    }
+}
+
+impl SerdeCodeGenerator {
+    fn attributes_for_field(&self, executable_field: &ExecutableField) -> Vec<syn::Attribute> {
+        let mut attributes = Vec::new();
+
+        let serialized_as = syn::LitStr::new(executable_field.graphql_name(), Span::call_site());
+        attributes.push(parse_quote! { #[serde(rename = #serialized_as)] });
+
+        if executable_field.r#type().base().borrows() {
+            attributes.push(parse_quote! { #[serde(borrow)] });
+        }
+
+        attributes
+    }
 }

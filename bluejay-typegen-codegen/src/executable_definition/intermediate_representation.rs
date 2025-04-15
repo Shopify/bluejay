@@ -2,7 +2,11 @@
 //! data structures that have baked into them many of the assumptions that are validated by the validator. This allows the type
 //! generation to be simpler because we don't need to do so much coercion of the AST while generating the types.
 
-use crate::{names::ANONYMOUS_OPERATION_STRUCT_NAME, Config};
+use crate::{
+    builtin_scalar::builtin_scalar_type,
+    names::{module_ident, type_ident, ANONYMOUS_OPERATION_STRUCT_NAME},
+    types, CodeGenerator, Config,
+};
 use bluejay_core::{
     definition::{prelude::*, BaseOutputTypeReference, OutputTypeReference, SchemaDefinition},
     executable::{
@@ -14,8 +18,9 @@ use bluejay_core::{
 use itertools::Either;
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::marker::PhantomData;
+use syn::parse_quote;
 
-pub(crate) enum ExecutableType<'a> {
+pub enum ExecutableType<'a> {
     /// Any part of a query that maps to a Rust struct
     Struct(ExecutableStruct<'a>),
     /// Any part of a query that maps to a Rust enum
@@ -33,9 +38,13 @@ pub(crate) enum ExecutableType<'a> {
 }
 
 impl<'a> ExecutableType<'a> {
-    pub(crate) fn for_executable_document<E: ExecutableDocument, S: SchemaDefinition>(
+    pub(crate) fn for_executable_document<
+        E: ExecutableDocument,
+        S: SchemaDefinition,
+        C: CodeGenerator,
+    >(
         executable_document: &'a E,
-        config: &'a Config<'a, S>,
+        config: &'a Config<'a, S, C>,
     ) -> Vec<Self> {
         ExecutableDocumentToExecutableTypes::convert(executable_document, config)
     }
@@ -74,7 +83,8 @@ impl<'a> ExecutableType<'a> {
         }
     }
 
-    pub(crate) fn borrows(&self) -> bool {
+    /// whether the type contains any fields that borrow
+    pub fn borrows(&self) -> bool {
         match self {
             Self::Leaf { borrows, .. } => *borrows,
             Self::BuiltinScalar { borrows, .. } => *borrows,
@@ -85,42 +95,129 @@ impl<'a> ExecutableType<'a> {
     }
 }
 
-pub(crate) struct ExecutableStruct<'a> {
-    pub(crate) description: Option<&'a str>,
-    /// name of either the operation, fragment, or field that owns the selection set that this struct represents
-    pub(crate) parent_name: &'a str,
-    pub(crate) fields: Vec<ExecutableField<'a>>,
+pub struct ExecutableStruct<'a> {
+    description: Option<&'a str>,
+    parent_name: &'a str,
+    fields: Vec<ExecutableField<'a>>,
+    /// depth within the module for the executable document
+    depth: usize,
 }
 
 impl ExecutableStruct<'_> {
-    pub(crate) fn borrows(&self) -> bool {
+    /// description of the struct from the schema definition
+    pub fn description(&self) -> Option<&str> {
+        self.description
+    }
+
+    /// name of either the operation, fragment, or field that owns the selection set that this struct represents
+    pub fn parent_name(&self) -> &str {
+        self.parent_name
+    }
+
+    /// fields of the struct
+    pub fn fields(&self) -> &[ExecutableField<'_>] {
+        &self.fields
+    }
+
+    /// whether the struct contains any fields that borrow
+    pub fn borrows(&self) -> bool {
         self.fields
             .iter()
             .any(|field| field.r#type.base().borrows())
     }
-}
 
-pub(crate) struct ExecutableEnum<'a> {
-    pub(crate) description: Option<&'a str>,
-    /// name of either the operation, fragment, or field that owns the selection set that this struct represents
-    pub(crate) parent_name: &'a str,
-    pub(crate) variants: Vec<ExecutableStruct<'a>>,
-}
+    /// Computes the type path for a field of the struct, relative to where the struct is defined.
+    pub fn type_path_for_field(&self, field: &ExecutableField<'_>) -> syn::TypePath {
+        self.compute_type_path(&field.r#type)
+    }
 
-impl ExecutableEnum<'_> {
-    pub(crate) fn borrows(&self) -> bool {
-        self.variants.iter().any(|variant| variant.borrows())
+    fn compute_type_path(&self, r#type: &WrappedExecutableType<'_>) -> syn::TypePath {
+        match r#type {
+            WrappedExecutableType::Base(base) => match base {
+                ExecutableType::Leaf { name, borrows } => {
+                    let prefix = self.prefix_for_schema_definition_module();
+                    let type_ident = type_ident(name);
+                    let lifetime: Option<syn::Generics> = borrows.then(|| parse_quote! { <'a> });
+                    parse_quote! { #(#prefix::)* #type_ident #lifetime }
+                }
+                ExecutableType::BuiltinScalar { bstd, borrows } => {
+                    builtin_scalar_type(*bstd, *borrows)
+                }
+                ExecutableType::FragmentDefinitionReference { name, borrows } => {
+                    let prefix = self.prefix_for_executable_document_module();
+                    let type_ident = type_ident(name);
+                    let lifetime: Option<syn::Generics> = borrows.then(|| parse_quote! { <'a> });
+                    parse_quote! { #(#prefix::)* #type_ident #lifetime }
+                }
+                ExecutableType::Struct(es) => {
+                    let prefix = module_ident(self.parent_name);
+                    let type_ident = type_ident(es.parent_name);
+                    let lifetime: Option<syn::Generics> =
+                        es.borrows().then(|| parse_quote! { <'a> });
+                    parse_quote! { #prefix:: #type_ident #lifetime }
+                }
+                ExecutableType::Enum(ee) => {
+                    let prefix = module_ident(self.parent_name);
+                    let type_ident = type_ident(ee.parent_name);
+                    let lifetime: Option<syn::Generics> =
+                        ee.borrows().then(|| parse_quote! { <'a> });
+                    parse_quote! { #prefix:: #type_ident #lifetime }
+                }
+            },
+            WrappedExecutableType::Optional(inner) => types::option(self.compute_type_path(inner)),
+            WrappedExecutableType::Vec(inner) => types::vec(self.compute_type_path(inner)),
+        }
+    }
+
+    fn prefix_for_schema_definition_module(&self) -> impl Iterator<Item = syn::Token![super]> {
+        // root is one level higher than the executable/query module
+        std::iter::repeat(Default::default()).take(self.depth + 1)
+    }
+
+    fn prefix_for_executable_document_module(&self) -> impl Iterator<Item = syn::Token![super]> {
+        std::iter::repeat(Default::default()).take(self.depth)
     }
 }
 
-pub(crate) enum WrappedExecutableType<'a> {
+pub struct ExecutableEnum<'a> {
+    description: Option<&'a str>,
+    parent_name: &'a str,
+    variants: Vec<ExecutableStruct<'a>>,
+}
+
+impl ExecutableEnum<'_> {
+    /// whether the enum contains any variants that borrow
+    pub fn borrows(&self) -> bool {
+        self.variants.iter().any(|variant| variant.borrows())
+    }
+
+    /// description of the enum from the schema definition
+    pub fn description(&self) -> Option<&str> {
+        self.description
+    }
+
+    /// name of either the operation, fragment, or field that owns the selection set that this struct represents
+    pub fn parent_name(&self) -> &str {
+        self.parent_name
+    }
+
+    /// variants of the enum
+    pub fn variants(&self) -> &[ExecutableStruct<'_>] {
+        &self.variants
+    }
+}
+
+pub enum WrappedExecutableType<'a> {
+    /// a required type, unless wrapped in an `Optional`
     Base(ExecutableType<'a>),
+    /// an optional type
     Optional(Box<WrappedExecutableType<'a>>),
+    /// a list type, required unless wrapped in an `Optional`
     Vec(Box<WrappedExecutableType<'a>>),
 }
 
 impl<'a> WrappedExecutableType<'a> {
-    pub(crate) fn base(&self) -> &ExecutableType<'a> {
+    pub fn base(&self) -> &ExecutableType<'a> {
         match self {
             WrappedExecutableType::Base(base) => base,
             WrappedExecutableType::Optional(inner) => inner.base(),
@@ -137,19 +234,46 @@ impl<'a> WrappedExecutableType<'a> {
     }
 }
 
-pub(crate) struct ExecutableField<'a> {
-    pub(crate) description: Option<&'a str>,
-    pub(crate) graphql_name: &'a str,
-    pub(crate) r#type: WrappedExecutableType<'a>,
+pub struct ExecutableField<'a> {
+    description: Option<&'a str>,
+    graphql_name: &'a str,
+    r#type: WrappedExecutableType<'a>,
 }
 
-struct ExecutableDocumentToExecutableTypes<'a, E: ExecutableDocument, S: SchemaDefinition> {
+impl<'a> ExecutableField<'a> {
+    /// description of the field from the schema definition
+    pub fn description(&self) -> Option<&str> {
+        self.description
+    }
+
+    /// name of the field
+    pub fn graphql_name(&self) -> &str {
+        self.graphql_name
+    }
+
+    /// type of the field
+    pub fn r#type(&self) -> &WrappedExecutableType<'a> {
+        &self.r#type
+    }
+}
+
+struct ExecutableDocumentToExecutableTypes<
+    'a,
+    E: ExecutableDocument,
+    S: SchemaDefinition,
+    C: CodeGenerator,
+> {
     executable_document_type: PhantomData<&'a E>,
-    config: &'a Config<'a, S>,
+    config: &'a Config<'a, S, C>,
 }
 
-impl<'a, E: ExecutableDocument, S: SchemaDefinition> ExecutableDocumentToExecutableTypes<'a, E, S> {
-    fn convert(executable_document: &'a E, config: &'a Config<'a, S>) -> Vec<ExecutableType<'a>> {
+impl<'a, E: ExecutableDocument, S: SchemaDefinition, C: CodeGenerator>
+    ExecutableDocumentToExecutableTypes<'a, E, S, C>
+{
+    fn convert(
+        executable_document: &'a E,
+        config: &'a Config<'a, S, C>,
+    ) -> Vec<ExecutableType<'a>> {
         let instance = Self {
             executable_document_type: PhantomData,
             config,
@@ -220,6 +344,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> ExecutableDocumentToExecuta
                 .unwrap_or(ANONYMOUS_OPERATION_STRUCT_NAME),
             Some(operation_definition.as_ref().selection_set()),
             BaseOutputTypeReference::Object(object_type_definition),
+            0,
         )
     }
 
@@ -238,6 +363,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> ExecutableDocumentToExecuta
             target_type
                 .try_into()
                 .expect("Fragment type not an output type"),
+            0,
         )
     }
 
@@ -307,12 +433,14 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> ExecutableDocumentToExecuta
         &self,
         field: &'a E::Field,
         field_definition: &'a S::FieldDefinition,
+        depth: usize,
     ) -> ExecutableField<'a> {
         let r#type = self.build_field_type(
             field,
             field_definition
                 .r#type()
                 .as_ref(self.config.schema_definition()),
+            depth,
         );
 
         ExecutableField {
@@ -326,12 +454,15 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> ExecutableDocumentToExecuta
         &self,
         field: &'a E::Field,
         output_type: OutputTypeReference<'a, S::OutputType>,
+        depth: usize,
     ) -> WrappedExecutableType<'a> {
         match output_type {
             OutputTypeReference::List(list, required) => {
-                let list_type = WrappedExecutableType::Vec(Box::new(
-                    self.build_field_type(field, list.as_ref(self.config.schema_definition())),
-                ));
+                let list_type = WrappedExecutableType::Vec(Box::new(self.build_field_type(
+                    field,
+                    list.as_ref(self.config.schema_definition()),
+                    depth,
+                )));
                 if required {
                     list_type
                 } else {
@@ -343,6 +474,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> ExecutableDocumentToExecuta
                     field.response_name(),
                     field.selection_set(),
                     inner,
+                    depth,
                 ));
                 if required {
                     base_type
@@ -358,6 +490,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> ExecutableDocumentToExecuta
         parent_name: &'a str,
         selection_set: Option<&'a E::SelectionSet>,
         base_output_type: BaseOutputTypeReference<'a, S::OutputType>,
+        depth: usize,
     ) -> ExecutableType<'a> {
         match base_output_type {
             BaseOutputTypeReference::BuiltinScalar(bstd) => ExecutableType::BuiltinScalar {
@@ -398,9 +531,11 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> ExecutableDocumentToExecuta
                                         fields_definition
                                             .get(field.name())
                                             .expect("Field not found"),
+                                        depth + 1,
                                     )
                                 })
                                 .collect(),
+                            depth,
                         })
                     }
                     Either::Right(fragment_spread) => ExecutableType::FragmentDefinitionReference {
@@ -425,9 +560,11 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> ExecutableDocumentToExecuta
                                         fields_definition
                                             .get(field.name())
                                             .expect("Field not found"),
+                                        depth + 1,
                                     )
                                 })
                                 .collect(),
+                            depth,
                         })
                     }
                     Either::Right(fragment_spread) => ExecutableType::FragmentDefinitionReference {
@@ -464,13 +601,15 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> ExecutableDocumentToExecuta
                                                         .fields_definition()
                                                         .get(field.name())
                                                         .expect("Field not found"),
+                                                    depth + 2,
                                                 )
                                             }
                                             SelectionReference::InlineFragment(_)
                                             | SelectionReference::FragmentSpread(_) => {
                                                 panic!("Selection set does not contains exclusively fields")
                                             }
-                                        }).collect()
+                                        }).collect(),
+                                    depth: depth + 1,
                                 }
                             }).collect(),
                         })

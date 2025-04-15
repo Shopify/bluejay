@@ -1,4 +1,4 @@
-use crate::{map_parser_errors, validation, Config, DocumentInput};
+use crate::{map_parser_errors, validation, CodeGenerator, Config, DocumentInput};
 use bluejay_core::definition::SchemaDefinition;
 use bluejay_parser::ast::{executable::ExecutableDocument, Parse as _};
 use bluejay_validator::executable::{
@@ -9,19 +9,16 @@ use syn::{parse::Parse, parse2};
 
 mod executable_enum_builder;
 mod executable_enum_variant_builder;
-mod executable_field_builder;
 mod executable_struct_builder;
 mod executable_type_builder;
 mod intermediate_representation;
 
 use executable_enum_builder::ExecutableEnumBuilder;
 use executable_enum_variant_builder::ExecutableEnumVariantBuilder;
-use executable_field_builder::ExecutableFieldBuilder;
 use executable_struct_builder::ExecutableStructBuilder;
 use executable_type_builder::ExecutableTypeBuilder;
-use intermediate_representation::{
-    ExecutableEnum, ExecutableField, ExecutableStruct, ExecutableType, WrappedExecutableType,
-};
+use intermediate_representation::ExecutableType;
+pub use intermediate_representation::{ExecutableEnum, ExecutableField, ExecutableStruct};
 
 struct Input {
     query: DocumentInput,
@@ -34,8 +31,8 @@ impl Parse for Input {
     }
 }
 
-pub(crate) fn generate_executable_definition<S: SchemaDefinition>(
-    config: &Config<S>,
+pub(crate) fn generate_executable_definition<S: SchemaDefinition, C: CodeGenerator>(
+    config: &Config<S, C>,
     configuration: proc_macro2::TokenStream,
 ) -> syn::Result<Vec<syn::Item>> {
     let Input { query } = parse2(configuration)?;
@@ -78,6 +75,6 @@ pub(crate) fn generate_executable_definition<S: SchemaDefinition>(
 
     Ok(executable_types
         .iter()
-        .flat_map(|et| ExecutableTypeBuilder::build(et, config, 0))
+        .flat_map(|et| ExecutableTypeBuilder::build(et, config.code_generator()))
         .collect())
 }

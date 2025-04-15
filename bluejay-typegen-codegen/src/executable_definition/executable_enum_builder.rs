@@ -4,29 +4,24 @@ use crate::executable_definition::{
 use crate::{
     attributes::doc_string,
     names::{module_ident, type_ident},
-    Config,
+    CodeGenerator,
 };
-use bluejay_core::{definition::SchemaDefinition, AsIter};
 use std::ops::Not;
 use syn::parse_quote;
 
-pub(crate) struct ExecutableEnumBuilder<'a, S: SchemaDefinition> {
-    config: &'a Config<'a, S>,
+pub(crate) struct ExecutableEnumBuilder<'a, C: CodeGenerator> {
     executable_enum: &'a ExecutableEnum<'a>,
-    /// depth within the module for the executable document
-    depth: usize,
+    code_generator: &'a C,
 }
 
-impl<'a, S: SchemaDefinition> ExecutableEnumBuilder<'a, S> {
+impl<'a, C: CodeGenerator> ExecutableEnumBuilder<'a, C> {
     pub(crate) fn build(
         executable_enum: &'a ExecutableEnum<'a>,
-        config: &'a Config<'a, S>,
-        depth: usize,
+        code_generator: &'a C,
     ) -> Vec<syn::Item> {
         let instance = Self {
-            config,
             executable_enum,
-            depth,
+            code_generator,
         };
 
         let name_ident = instance.name_ident();
@@ -39,21 +34,30 @@ impl<'a, S: SchemaDefinition> ExecutableEnumBuilder<'a, S> {
             pub enum #name_ident #lifetime { #(#variants,)* }
         }];
 
+        items.extend(
+            instance
+                .code_generator
+                .additional_impls_for_executable_enum(instance.executable_enum)
+                .into_iter()
+                .map(Into::into),
+        );
+
         items.extend(instance.nested_module());
 
         items
     }
 
     fn name_ident(&self) -> syn::Ident {
-        type_ident(self.executable_enum.parent_name)
+        type_ident(self.executable_enum.parent_name())
     }
 
     fn attributes(&self) -> Vec<syn::Attribute> {
         let mut attributes = Vec::new();
-        attributes.extend(self.executable_enum.description.map(doc_string));
-        attributes.push(parse_quote! { #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::fmt::Debug, ::bluejay_typegen::serde::Deserialize)] });
-        attributes.push(parse_quote! { #[serde(crate = "bluejay_typegen::serde")] });
-        attributes.push(parse_quote! { #[serde(tag = "__typename")] });
+        attributes.extend(self.executable_enum.description().map(doc_string));
+        attributes.extend(
+            self.code_generator
+                .attributes_for_executable_enum(self.executable_enum),
+        );
 
         attributes
     }
@@ -66,13 +70,17 @@ impl<'a, S: SchemaDefinition> ExecutableEnumBuilder<'a, S> {
 
     fn variants(&self) -> Vec<syn::Variant> {
         self.executable_enum
-            .variants
+            .variants()
             .iter()
             .map(|variant| {
-                ExecutableEnumVariantBuilder::build(variant, self.executable_enum.parent_name)
+                ExecutableEnumVariantBuilder::build(
+                    variant,
+                    self.code_generator,
+                    self.executable_enum.parent_name(),
+                )
             })
             .chain(std::iter::once(
-                ExecutableEnumVariantBuilder::build_other_variant(),
+                ExecutableEnumVariantBuilder::build_other_variant(self.code_generator),
             ))
             .collect()
     }
@@ -80,15 +88,13 @@ impl<'a, S: SchemaDefinition> ExecutableEnumBuilder<'a, S> {
     fn nested_module(&self) -> Option<syn::Item> {
         let variant_structs = self
             .executable_enum
-            .variants
+            .variants()
             .iter()
-            .flat_map(|variant| {
-                ExecutableStructBuilder::build(variant, self.config, self.depth + 1)
-            })
+            .flat_map(|variant| ExecutableStructBuilder::build(variant, self.code_generator))
             .collect::<Vec<syn::Item>>();
 
         variant_structs.is_empty().not().then(|| {
-            let module_ident = module_ident(self.executable_enum.parent_name);
+            let module_ident = module_ident(self.executable_enum.parent_name());
             parse_quote! {
                 pub mod #module_ident {
                     #(#variant_structs)*
