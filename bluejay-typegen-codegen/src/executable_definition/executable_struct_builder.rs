@@ -68,7 +68,6 @@ impl<'a, S: SchemaDefinition> ExecutableStructBuilder<'a, S> {
                     self.config,
                     self.depth,
                     self.executable_struct.parent_name,
-                    None,
                 )
             })
             .collect::<Vec<syn::Field>>();

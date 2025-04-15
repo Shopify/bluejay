@@ -16,8 +16,6 @@ pub(crate) struct ExecutableFieldBuilder<'a, S: SchemaDefinition> {
     depth: usize,
     /// name of the composite type that contains the field
     composite_type_name: &'a str,
-    /// name of the enum variant that contains the field, if the field is part of an enum
-    enum_variant_name: Option<&'a str>,
 }
 
 impl<'a, S: SchemaDefinition> ExecutableFieldBuilder<'a, S> {
@@ -26,29 +24,22 @@ impl<'a, S: SchemaDefinition> ExecutableFieldBuilder<'a, S> {
         config: &'a Config<'a, S>,
         depth: usize,
         composite_type_name: &'a str,
-        enum_variant_name: Option<&'a str>,
     ) -> syn::Field {
         let instance = Self {
             config,
             executable_field,
             depth,
             composite_type_name,
-            enum_variant_name,
         };
 
         let name_ident = instance.name_ident();
         let attributes = instance.attributes();
         let type_path = instance.type_path();
-        let pub_token = instance.pub_token();
 
         parse_quote! {
             #(#attributes)*
-            #pub_token #name_ident: #type_path
+            pub #name_ident: #type_path
         }
-    }
-
-    fn for_struct(&self) -> bool {
-        self.enum_variant_name.is_none()
     }
 
     pub(crate) fn name_ident(&self) -> syn::Ident {
@@ -96,20 +87,18 @@ impl<'a, S: SchemaDefinition> ExecutableFieldBuilder<'a, S> {
                     parse_quote! { #(#prefix::)* #type_ident #lifetime }
                 }
                 ExecutableType::Struct(es) => {
-                    let prefix = std::iter::once(module_ident(self.composite_type_name))
-                        .chain(self.enum_variant_name.map(module_ident));
+                    let prefix = module_ident(self.composite_type_name);
                     let type_ident = type_ident(es.parent_name);
                     let lifetime: Option<syn::Generics> =
                         es.borrows().then(|| parse_quote! { <'a> });
-                    parse_quote! { #(#prefix::)* #type_ident #lifetime }
+                    parse_quote! { #prefix:: #type_ident #lifetime }
                 }
                 ExecutableType::Enum(ee) => {
-                    let prefix = std::iter::once(module_ident(self.composite_type_name))
-                        .chain(self.enum_variant_name.map(module_ident));
+                    let prefix = module_ident(self.composite_type_name);
                     let type_ident = type_ident(ee.parent_name);
                     let lifetime: Option<syn::Generics> =
                         ee.borrows().then(|| parse_quote! { <'a> });
-                    parse_quote! { #(#prefix::)* #type_ident #lifetime }
+                    parse_quote! { #prefix:: #type_ident #lifetime }
                 }
             },
             WrappedExecutableType::Optional(inner) => types::option(self.compute_type_path(inner)),
@@ -124,9 +113,5 @@ impl<'a, S: SchemaDefinition> ExecutableFieldBuilder<'a, S> {
 
     fn prefix_for_executable_document_module(&self) -> impl Iterator<Item = syn::Token![super]> {
         std::iter::repeat(Default::default()).take(self.depth)
-    }
-
-    fn pub_token(&self) -> Option<syn::Token![pub]> {
-        self.for_struct().then(Default::default)
     }
 }

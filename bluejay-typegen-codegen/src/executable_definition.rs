@@ -20,8 +20,7 @@ use executable_field_builder::ExecutableFieldBuilder;
 use executable_struct_builder::ExecutableStructBuilder;
 use executable_type_builder::ExecutableTypeBuilder;
 use intermediate_representation::{
-    ExecutableEnum, ExecutableEnumVariant, ExecutableField, ExecutableStruct, ExecutableType,
-    WrappedExecutableType,
+    ExecutableEnum, ExecutableField, ExecutableStruct, ExecutableType, WrappedExecutableType,
 };
 
 struct Input {
