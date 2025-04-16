@@ -288,9 +288,9 @@ fn process_module_items<S: SchemaDefinition, C: CodeGenerator>(
         .schema_definition
         .type_definitions()
         .filter_map(|type_definition| match type_definition {
-            TypeDefinitionReference::Enum(etd) if !config.enum_as_str(etd) => {
-                Some(EnumTypeDefinitionBuilder::<S>::build(etd))
-            }
+            TypeDefinitionReference::Enum(etd) if !config.enum_as_str(etd) => Some(
+                EnumTypeDefinitionBuilder::<S, C>::build(etd, config.code_generator()),
+            ),
             TypeDefinitionReference::InputObject(iotd) => {
                 Some(InputObjectTypeDefinitionBuilder::build(iotd, config))
             }

@@ -1,3 +1,4 @@
+use bluejay_core::definition::{EnumTypeDefinition, EnumValueDefinition};
 use bluejay_typegen_codegen::{
     generate_schema, names::field_ident, CodeGenerator, ExecutableEnum, ExecutableField,
     ExecutableStruct, Input, WrappedExecutableType,
@@ -145,6 +146,28 @@ impl CodeGenerator for SerdeCodeGenerator {
     }
 
     fn attributes_for_executable_enum_variant_other(&self) -> Vec<syn::Attribute> {
+        vec![parse_quote! { #[serde(other)] }]
+    }
+
+    fn attributes_for_enum(
+        &self,
+        _enum_type_definition: &impl EnumTypeDefinition,
+    ) -> Vec<syn::Attribute> {
+        vec![
+            parse_quote! { #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::fmt::Debug, ::bluejay_typegen::serde::Serialize, ::bluejay_typegen::serde::Deserialize)] },
+            parse_quote! { #[serde(crate = "bluejay_typegen::serde")] },
+        ]
+    }
+
+    fn attributes_for_enum_variant(
+        &self,
+        enum_value_definition: &impl EnumValueDefinition,
+    ) -> Vec<syn::Attribute> {
+        let serialized_as = syn::LitStr::new(enum_value_definition.name(), Span::call_site());
+        vec![parse_quote! { #[serde(rename = #serialized_as)] }]
+    }
+
+    fn attributes_for_enum_variant_other(&self) -> Vec<syn::Attribute> {
         vec![parse_quote! { #[serde(other)] }]
     }
 }
