@@ -170,6 +170,50 @@ impl CodeGenerator for SerdeCodeGenerator {
     fn attributes_for_enum_variant_other(&self) -> Vec<syn::Attribute> {
         vec![parse_quote! { #[serde(other)] }]
     }
+
+    fn attributes_for_input_object(
+        &self,
+        #[allow(unused_variables)]
+        input_object_type_definition: &impl bluejay_core::definition::InputObjectTypeDefinition,
+    ) -> Vec<syn::Attribute> {
+        vec![
+            parse_quote! { #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::fmt::Debug, ::bluejay_typegen::serde::Serialize)] },
+            parse_quote! { #[serde(crate = "bluejay_typegen::serde")] },
+        ]
+    }
+
+    fn attributes_for_input_object_field(
+        &self,
+        input_value_definition: &impl bluejay_core::definition::InputValueDefinition,
+        borrows: bool,
+    ) -> Vec<syn::Attribute> {
+        let serialized_as = syn::LitStr::new(input_value_definition.name(), Span::call_site());
+        let mut attributes = vec![parse_quote! { #[serde(rename = #serialized_as)] }];
+
+        if borrows {
+            attributes.push(parse_quote! { #[serde(borrow)] });
+        }
+
+        attributes
+    }
+
+    fn attributes_for_one_of_input_object(
+        &self,
+        #[allow(unused_variables)]
+        input_object_type_definition: &impl bluejay_core::definition::InputObjectTypeDefinition,
+    ) -> Vec<syn::Attribute> {
+        // the attributes are the same as for a normal input object
+        self.attributes_for_input_object(input_object_type_definition)
+    }
+
+    fn attributes_for_one_of_input_object_field(
+        &self,
+        input_value_definition: &impl bluejay_core::definition::InputValueDefinition,
+        borrows: bool,
+    ) -> Vec<syn::Attribute> {
+        // the attributes are the same as for a normal input object field
+        self.attributes_for_input_object_field(input_value_definition, borrows)
+    }
 }
 
 impl SerdeCodeGenerator {

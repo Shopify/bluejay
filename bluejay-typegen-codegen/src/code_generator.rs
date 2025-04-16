@@ -1,4 +1,6 @@
-use bluejay_core::definition::{EnumTypeDefinition, EnumValueDefinition};
+use bluejay_core::definition::{
+    EnumTypeDefinition, EnumValueDefinition, InputObjectTypeDefinition, InputValueDefinition,
+};
 
 use crate::{ExecutableEnum, ExecutableField, ExecutableStruct};
 
@@ -84,6 +86,58 @@ pub trait CodeGenerator {
 
     /// Any attributes for the `Other` variant that is added to all enums.
     fn attributes_for_enum_variant_other(&self) -> Vec<syn::Attribute> {
+        Vec::new()
+    }
+
+    /// Any attributes for the input object type definition. Does not need to include the doc string attribute, that will be added automatically.
+    /// Note that this does not apply to `@oneOf` input objects, those will use the `attributes_for_one_of_input_object` method instead.
+    fn attributes_for_input_object(
+        &self,
+        #[allow(unused_variables)] input_object_type_definition: &impl InputObjectTypeDefinition,
+    ) -> Vec<syn::Attribute> {
+        Vec::new()
+    }
+
+    /// Any additional impl blocks for the input object type definition.
+    /// Note that this does not apply to `@oneOf` input objects, those will use the `additional_impls_for_one_of_input_object` method instead.
+    fn additional_impls_for_input_object(
+        &self,
+        #[allow(unused_variables)] input_object_type_definition: &impl InputObjectTypeDefinition,
+    ) -> Vec<syn::ItemImpl> {
+        Vec::new()
+    }
+
+    /// Any attributes for the input value definition. Does not need to include the doc string attribute, that will be added automatically.
+    fn attributes_for_input_object_field(
+        &self,
+        #[allow(unused_variables)] input_value_definition: &impl InputValueDefinition,
+        #[allow(unused_variables)] borrows: bool,
+    ) -> Vec<syn::Attribute> {
+        Vec::new()
+    }
+
+    /// Any attributes for the `@oneOf` input object type definition. Does not need to include the doc string attribute, that will be added automatically.
+    fn attributes_for_one_of_input_object(
+        &self,
+        #[allow(unused_variables)] input_object_type_definition: &impl InputObjectTypeDefinition,
+    ) -> Vec<syn::Attribute> {
+        Vec::new()
+    }
+
+    /// Any additional impl blocks for the `@oneOf` input object type definition.
+    fn additional_impls_for_one_of_input_object(
+        &self,
+        #[allow(unused_variables)] input_object_type_definition: &impl InputObjectTypeDefinition,
+    ) -> Vec<syn::ItemImpl> {
+        Vec::new()
+    }
+
+    /// Any attributes for the input value definition of a `@oneOf` input object. Does not need to include the doc string attribute, that will be added automatically.
+    fn attributes_for_one_of_input_object_field(
+        &self,
+        #[allow(unused_variables)] input_value_definition: &impl InputValueDefinition,
+        #[allow(unused_variables)] borrows: bool,
+    ) -> Vec<syn::Attribute> {
         Vec::new()
     }
 }
