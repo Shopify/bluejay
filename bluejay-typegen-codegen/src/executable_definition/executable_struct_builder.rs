@@ -1,5 +1,4 @@
 use crate::executable_definition::{ExecutableStruct, ExecutableTypeBuilder};
-use crate::names::field_ident;
 use crate::{
     attributes::doc_string,
     names::{module_ident, type_ident},
@@ -32,8 +31,6 @@ impl<'a, C: CodeGenerator> ExecutableStructBuilder<'a, C> {
             #(#attributes)*
             pub struct #name_ident #lifetime #fields
         }];
-
-        items.push(instance.field_accessors().into());
 
         items.extend(
             instance
@@ -81,38 +78,6 @@ impl<'a, C: CodeGenerator> ExecutableStructBuilder<'a, C> {
                 }
             }
         })
-    }
-
-    fn field_accessors(&self) -> syn::ItemImpl {
-        let functions: Vec<syn::ImplItemFn> = self
-            .executable_struct
-            .fields()
-            .iter()
-            .map(|field| {
-                let name_ident = field_ident(field.graphql_name());
-                let block = self
-                    .code_generator
-                    .field_accessor_block(self.executable_struct, field);
-
-                let type_path = self.executable_struct.type_for_field(field, true);
-
-                let doc_string = field.description().map(doc_string);
-
-                parse_quote! {
-                    #doc_string
-                    pub fn #name_ident(&self) -> #type_path #block
-                }
-            })
-            .collect();
-
-        let lifetime = self.lifetime();
-        let name_ident = self.name_ident();
-
-        parse_quote! {
-            impl #lifetime #name_ident #lifetime {
-                #(#functions)*
-            }
-        }
     }
 
     fn lifetime(&self) -> Option<syn::Generics> {

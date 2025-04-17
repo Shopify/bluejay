@@ -2,7 +2,7 @@ use bluejay_core::definition::{
     EnumTypeDefinition, EnumValueDefinition, InputObjectTypeDefinition, InputValueDefinition,
 };
 
-use crate::{ExecutableEnum, ExecutableField, ExecutableStruct};
+use crate::{ExecutableEnum, ExecutableStruct};
 
 pub trait CodeGenerator {
     /// Does not need to include the doc string attribute, that will be added automatically.
@@ -23,13 +23,6 @@ pub trait CodeGenerator {
     ) -> Vec<syn::ItemImpl> {
         Vec::new()
     }
-
-    /// The body of the field accessor function.
-    fn field_accessor_block(
-        &self,
-        executable_struct: &ExecutableStruct,
-        field: &ExecutableField,
-    ) -> syn::Block;
 
     /// Does not need to include the doc string attribute, that will be added automatically.
     fn attributes_for_executable_enum(
