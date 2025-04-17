@@ -88,7 +88,7 @@ impl CodeGenerator for SerdeCodeGenerator {
                 let name_ident = field_ident(executable_field.graphql_name());
 
                 let attributes = self.attributes_for_field(executable_field);
-                let type_path = executable_struct.type_for_field(executable_field, false);
+                let type_path = executable_struct.compute_type(executable_field.r#type());
 
                 parse_quote! {
                     #(#attributes)*
