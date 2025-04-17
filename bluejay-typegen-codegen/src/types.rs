@@ -8,10 +8,6 @@ pub(crate) fn vec(ty: syn::Type) -> syn::Type {
     parse_quote! { ::std::vec::Vec<#ty> }
 }
 
-pub(crate) fn slice(ty: syn::Type) -> syn::Type {
-    parse_quote! { &[#ty] }
-}
-
 pub(crate) fn string(borrows: bool) -> syn::Type {
     if borrows {
         parse_quote! { ::std::borrow::Cow<'a, str> }
