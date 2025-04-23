@@ -4,35 +4,35 @@ use quote::format_ident;
 
 pub(crate) const ANONYMOUS_OPERATION_STRUCT_NAME: &str = "Root";
 
-pub(crate) fn type_name(graphql_name: &str) -> String {
+pub fn type_name(graphql_name: &str) -> String {
     graphql_name.to_case(Case::Pascal)
 }
 
-pub(crate) fn type_ident(graphql_name: &str) -> Ident {
+pub fn type_ident(graphql_name: &str) -> Ident {
     to_ident(&type_name(graphql_name))
 }
 
-pub(crate) fn enum_variant_name(graphql_name: &str) -> String {
+pub fn enum_variant_name(graphql_name: &str) -> String {
     graphql_name.to_case(Case::Pascal)
 }
 
-pub(crate) fn enum_variant_ident(graphql_name: &str) -> Ident {
+pub fn enum_variant_ident(graphql_name: &str) -> Ident {
     to_ident(&enum_variant_name(graphql_name))
 }
 
-pub(crate) fn field_name(graphql_name: &str) -> String {
+pub fn field_name(graphql_name: &str) -> String {
     graphql_name.to_case(Case::Snake)
 }
 
-pub(crate) fn field_ident(graphql_name: &str) -> Ident {
+pub fn field_ident(graphql_name: &str) -> Ident {
     to_ident(&field_name(graphql_name))
 }
 
-pub(crate) fn module_name(graphql_name: &str) -> String {
+pub fn module_name(graphql_name: &str) -> String {
     graphql_name.to_case(Case::Snake)
 }
 
-pub(crate) fn module_ident(graphql_name: &str) -> Ident {
+pub fn module_ident(graphql_name: &str) -> Ident {
     to_ident(&module_name(graphql_name))
 }
 

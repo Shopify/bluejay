@@ -1,43 +1,44 @@
-use crate::executable_definition::{
-    ExecutableFieldBuilder, ExecutableStruct, ExecutableTypeBuilder,
-};
+use crate::executable_definition::{ExecutableStruct, ExecutableTypeBuilder};
 use crate::{
     attributes::doc_string,
     names::{module_ident, type_ident},
-    Config,
+    CodeGenerator,
 };
-use bluejay_core::definition::SchemaDefinition;
 use std::ops::Not;
 use syn::parse_quote;
 
-pub(crate) struct ExecutableStructBuilder<'a, S: SchemaDefinition> {
-    config: &'a Config<'a, S>,
+pub(crate) struct ExecutableStructBuilder<'a, C: CodeGenerator> {
     executable_struct: &'a ExecutableStruct<'a>,
-    /// depth within the module for the executable document
-    depth: usize,
+    code_generator: &'a C,
 }
 
-impl<'a, S: SchemaDefinition> ExecutableStructBuilder<'a, S> {
+impl<'a, C: CodeGenerator> ExecutableStructBuilder<'a, C> {
     pub(crate) fn build(
         executable_struct: &'a ExecutableStruct<'a>,
-        config: &'a Config<'a, S>,
-        depth: usize,
+        code_generator: &'a C,
     ) -> Vec<syn::Item> {
         let instance = Self {
-            config,
             executable_struct,
-            depth,
+            code_generator,
         };
 
         let name_ident = instance.name_ident();
         let attributes = instance.attributes();
-        let fields = instance.fields();
+        let fields = code_generator.fields_for_executable_struct(executable_struct);
         let lifetime = instance.lifetime();
 
-        let mut items = vec![parse_quote! {
+        let mut items: Vec<syn::Item> = vec![parse_quote! {
             #(#attributes)*
             pub struct #name_ident #lifetime #fields
         }];
+
+        items.extend(
+            instance
+                .code_generator
+                .additional_impls_for_executable_struct(instance.executable_struct)
+                .into_iter()
+                .map(Into::into),
+        );
 
         items.extend(instance.nested_module());
 
@@ -45,47 +46,32 @@ impl<'a, S: SchemaDefinition> ExecutableStructBuilder<'a, S> {
     }
 
     fn name_ident(&self) -> syn::Ident {
-        type_ident(self.executable_struct.parent_name)
+        type_ident(self.executable_struct.parent_name())
     }
 
     fn attributes(&self) -> Vec<syn::Attribute> {
         let mut attributes = Vec::new();
-        attributes.extend(self.executable_struct.description.map(doc_string));
-        attributes.push(parse_quote! { #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::fmt::Debug, ::bluejay_typegen::serde::Deserialize)] });
-        attributes.push(parse_quote! { #[serde(crate = "bluejay_typegen::serde")] });
+        attributes.extend(self.executable_struct.description().map(doc_string));
+        attributes.extend(
+            self.code_generator
+                .attributes_for_executable_struct(self.executable_struct),
+        );
 
         attributes
-    }
-
-    fn fields(&self) -> syn::FieldsNamed {
-        let fields = self
-            .executable_struct
-            .fields
-            .iter()
-            .map(|field| {
-                ExecutableFieldBuilder::build(
-                    field,
-                    self.config,
-                    self.depth,
-                    self.executable_struct.parent_name,
-                )
-            })
-            .collect::<Vec<syn::Field>>();
-        parse_quote! { { #(#fields,)* } }
     }
 
     fn nested_module(&self) -> Option<syn::Item> {
         let nested = self
             .executable_struct
-            .fields
+            .fields()
             .iter()
             .flat_map(|field| {
-                ExecutableTypeBuilder::build(field.r#type.base(), self.config, self.depth + 1)
+                ExecutableTypeBuilder::build(field.r#type().base(), self.code_generator)
             })
             .collect::<Vec<syn::Item>>();
 
         nested.is_empty().not().then(|| {
-            let module_ident = module_ident(self.executable_struct.parent_name);
+            let module_ident = module_ident(self.executable_struct.parent_name());
             parse_quote! {
                 pub mod #module_ident {
                     #(#nested)*

@@ -2,23 +2,26 @@ use crate::executable_definition::ExecutableStruct;
 use crate::{
     attributes::doc_string,
     names::{module_ident, type_ident},
+    CodeGenerator,
 };
-use proc_macro2::Span;
 use syn::parse_quote;
 
-pub(crate) struct ExecutableEnumVariantBuilder<'a> {
+pub(crate) struct ExecutableEnumVariantBuilder<'a, C: CodeGenerator> {
     executable_struct: &'a ExecutableStruct<'a>,
+    code_generator: &'a C,
     /// name of the composite type that contains the field
     composite_type_name: &'a str,
 }
 
-impl<'a> ExecutableEnumVariantBuilder<'a> {
+impl<'a, C: CodeGenerator> ExecutableEnumVariantBuilder<'a, C> {
     pub(crate) fn build(
         executable_struct: &'a ExecutableStruct<'a>,
+        code_generator: &'a C,
         composite_type_name: &'a str,
     ) -> syn::Variant {
         let instance = Self {
             executable_struct,
+            code_generator,
             composite_type_name,
         };
 
@@ -33,35 +36,30 @@ impl<'a> ExecutableEnumVariantBuilder<'a> {
         }
     }
 
-    pub(crate) fn build_other_variant() -> syn::Variant {
+    pub(crate) fn build_other_variant(code_generator: &C) -> syn::Variant {
+        let attributes = code_generator.attributes_for_executable_enum_variant_other();
         parse_quote! {
-            #[serde(other)]
+            #(#attributes)*
             Other
         }
     }
 
     pub(crate) fn name_ident(&self) -> syn::Ident {
-        type_ident(self.executable_struct.parent_name)
+        type_ident(self.executable_struct.parent_name())
     }
 
     pub(crate) fn module_ident(&self) -> syn::Ident {
         module_ident(self.composite_type_name)
     }
 
-    pub(crate) fn serialized_as(&self) -> syn::LitStr {
-        syn::LitStr::new(self.executable_struct.parent_name, Span::call_site())
-    }
-
     fn attributes(&self) -> Vec<syn::Attribute> {
         let mut attributes = Vec::new();
-        attributes.extend(self.executable_struct.description.map(doc_string));
+        attributes.extend(self.executable_struct.description().map(doc_string));
 
-        let serialized_as = self.serialized_as();
-        attributes.push(parse_quote! { #[serde(rename = #serialized_as)] });
-
-        if self.executable_struct.borrows() {
-            attributes.push(parse_quote! { #[serde(borrow)] });
-        }
+        attributes.extend(
+            self.code_generator
+                .attributes_for_executable_enum_variant(self.executable_struct),
+        );
 
         attributes
     }

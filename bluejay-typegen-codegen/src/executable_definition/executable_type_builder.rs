@@ -1,20 +1,18 @@
 use crate::{
     executable_definition::{ExecutableEnumBuilder, ExecutableStructBuilder, ExecutableType},
-    Config,
+    CodeGenerator,
 };
-use bluejay_core::definition::SchemaDefinition;
 
 pub(crate) struct ExecutableTypeBuilder;
 
 impl ExecutableTypeBuilder {
-    pub(crate) fn build<'a, S: SchemaDefinition>(
+    pub(crate) fn build<'a, C: CodeGenerator>(
         executable_type: &'a ExecutableType<'a>,
-        config: &'a Config<'a, S>,
-        depth: usize,
+        code_generator: &'a C,
     ) -> Vec<syn::Item> {
         match executable_type {
-            ExecutableType::Struct(es) => ExecutableStructBuilder::build(es, config, depth),
-            ExecutableType::Enum(ee) => ExecutableEnumBuilder::build(ee, config, depth),
+            ExecutableType::Struct(es) => ExecutableStructBuilder::build(es, code_generator),
+            ExecutableType::Enum(ee) => ExecutableEnumBuilder::build(ee, code_generator),
             ExecutableType::FragmentDefinitionReference { .. }
             | ExecutableType::Leaf { .. }
             | ExecutableType::BuiltinScalar { .. } => Vec::new(),

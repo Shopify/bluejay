@@ -1,25 +1,24 @@
 use crate::attributes::doc_string;
 use crate::builtin_scalar::{builtin_scalar_type, scalar_is_reference};
 use crate::names::{enum_variant_ident, field_ident, type_ident};
-use crate::{types, Config};
+use crate::{types, CodeGenerator, Config};
 use bluejay_core::definition::{
     prelude::*, BaseInputTypeReference, EnumTypeDefinition, InputTypeReference,
     ScalarTypeDefinition, SchemaDefinition,
 };
 use bluejay_core::{AsIter, Directive};
-use proc_macro2::Span;
 use std::collections::HashSet;
 use syn::parse_quote;
 
-pub(crate) struct InputObjectTypeDefinitionBuilder<'a, S: SchemaDefinition> {
-    config: &'a Config<'a, S>,
+pub(crate) struct InputObjectTypeDefinitionBuilder<'a, S: SchemaDefinition, C: CodeGenerator> {
+    config: &'a Config<'a, S, C>,
     input_object_type_definition: &'a S::InputObjectTypeDefinition,
 }
 
-impl<'a, S: SchemaDefinition> InputObjectTypeDefinitionBuilder<'a, S> {
+impl<'a, S: SchemaDefinition, C: CodeGenerator> InputObjectTypeDefinitionBuilder<'a, S, C> {
     pub(crate) fn build(
         input_object_type_definition: &'a S::InputObjectTypeDefinition,
-        config: &'a Config<'a, S>,
+        config: &'a Config<'a, S, C>,
     ) -> Vec<syn::Item> {
         let instance = Self {
             config,
@@ -42,145 +41,126 @@ impl<'a, S: SchemaDefinition> InputObjectTypeDefinitionBuilder<'a, S> {
     }
 
     fn build_enum(&self) -> Vec<syn::Item> {
-        let attributes = self.attributes();
+        let attributes = self.attributes_for_enum();
         let name_ident = self.name_ident();
-        let variant_idents = self.variant_idents();
-        let field_description_attributes = self.field_description_attributes();
-        let variant_type_paths = self.variant_type_paths();
-        let field_serde_rename_attributes = self.field_serde_rename_attributes();
-        let field_serde_borrow_attributes = self.field_serde_borrow_attributes();
         let lifetime = self.lifetime(self.input_object_type_definition);
 
-        vec![parse_quote! {
+        let variants: Vec<syn::Variant> = self
+            .input_object_type_definition
+            .input_field_definitions()
+            .iter()
+            .map(|ivd| {
+                let variant_ident = enum_variant_ident(ivd.name());
+                let variant_type = self.variant_type(ivd);
+                let description_attribute = ivd.description().map(doc_string);
+                let variant_attributes = self
+                    .config
+                    .code_generator()
+                    .attributes_for_one_of_input_object_field(ivd, false);
+
+                parse_quote! {
+                    #description_attribute
+                    #(#variant_attributes)*
+                    #variant_ident(#variant_type)
+                }
+            })
+            .collect();
+
+        let mut items = vec![parse_quote! {
             #(#attributes)*
             pub enum #name_ident #lifetime {
                 #(
-                    #field_description_attributes
-                    #field_serde_rename_attributes
-                    #field_serde_borrow_attributes
-                    #variant_idents(#variant_type_paths),
+                    #variants,
                 )*
             }
-        }]
+        }];
+
+        items.extend(
+            self.config
+                .code_generator()
+                .additional_impls_for_one_of_input_object(self.input_object_type_definition)
+                .into_iter()
+                .map(Into::into),
+        );
+
+        items
     }
 
     fn build_struct(&self) -> Vec<syn::Item> {
-        let attributes = self.attributes();
+        let attributes = self.attributes_for_struct();
         let name_ident = self.name_ident();
-        let field_idents = self.field_idents();
-        let field_description_attributes = self.field_description_attributes();
-        let field_type_paths = self.field_type_paths();
-        let field_serde_rename_attributes = self.field_serde_rename_attributes();
-        let field_serde_borrow_attributes = self.field_serde_borrow_attributes();
         let lifetime = self.lifetime(self.input_object_type_definition);
 
-        vec![parse_quote! {
+        let fields: Vec<syn::Field> = self
+            .input_object_type_definition
+            .input_field_definitions()
+            .iter()
+            .map(|ivd| {
+                let field_ident = field_ident(ivd.name());
+                let field_type = self
+                    .type_for_input_value_definition(self.input_object_type_definition.name(), ivd);
+                let description_attribute = ivd.description().map(doc_string);
+                let field_attributes = self
+                    .config
+                    .code_generator()
+                    .attributes_for_input_object_field(
+                        ivd,
+                        self.contains_reference_types(ivd.r#type(), &mut HashSet::new()),
+                    );
+
+                parse_quote! {
+                    #description_attribute
+                    #(#field_attributes)*
+                    pub #field_ident: #field_type
+                }
+            })
+            .collect();
+
+        let mut items = vec![parse_quote! {
             #(#attributes)*
             pub struct #name_ident #lifetime {
-                #(
-                    #field_description_attributes
-                    #field_serde_rename_attributes
-                    #field_serde_borrow_attributes
-                    pub #field_idents: #field_type_paths,
-                )*
+                #(#fields,)*
             }
-        }]
+        }];
+
+        items.extend(
+            self.config
+                .code_generator()
+                .additional_impls_for_input_object(self.input_object_type_definition)
+                .into_iter()
+                .map(Into::into),
+        );
+
+        items
     }
 
     fn name_ident(&self) -> syn::Ident {
         type_ident(self.input_object_type_definition.name())
     }
 
-    fn attributes(&self) -> Vec<syn::Attribute> {
-        let mut attributes = Vec::new();
-        attributes.extend(
-            self.input_object_type_definition
-                .description()
-                .map(doc_string),
-        );
-        attributes.push(parse_quote! { #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::fmt::Debug, ::bluejay_typegen::serde::Serialize)] });
-        attributes.push(parse_quote! { #[serde(crate = "bluejay_typegen::serde")] });
-
-        attributes
-    }
-
-    fn variant_idents(&self) -> Vec<syn::Ident> {
+    fn attributes_for_struct(&self) -> Vec<syn::Attribute> {
         self.input_object_type_definition
-            .input_field_definitions()
-            .iter()
-            .map(|ivd| enum_variant_ident(ivd.name()))
+            .description()
+            .map(doc_string)
+            .into_iter()
+            .chain(
+                self.config
+                    .code_generator()
+                    .attributes_for_input_object(self.input_object_type_definition),
+            )
             .collect()
     }
 
-    fn field_idents(&self) -> Vec<syn::Ident> {
+    fn attributes_for_enum(&self) -> Vec<syn::Attribute> {
         self.input_object_type_definition
-            .input_field_definitions()
-            .iter()
-            .map(|ivd| field_ident(ivd.name()))
-            .collect()
-    }
-
-    fn field_description_attributes(&self) -> Vec<Option<syn::Attribute>> {
-        self.input_object_type_definition
-            .input_field_definitions()
-            .iter()
-            .map(|ivd| ivd.description().map(doc_string))
-            .collect()
-    }
-
-    fn field_type_paths(&self) -> Vec<syn::TypePath> {
-        self.input_object_type_definition
-            .input_field_definitions()
-            .iter()
-            .map(|ivd| {
-                self.type_for_input_value_definition(self.input_object_type_definition.name(), ivd)
-            })
-            .collect()
-    }
-
-    fn variant_type_paths(&self) -> Vec<syn::TypePath> {
-        self.input_object_type_definition
-            .input_field_definitions()
-            .iter()
-            .map(|ivd| {
-                // since we're building a oneOf enum, all types are optional, but we need to make
-                // them required for the enum variant
-                let required_type = match ivd.r#type().as_ref(self.config.schema_definition()) {
-                    InputTypeReference::Base(base, _) => InputTypeReference::Base(base, true),
-                    InputTypeReference::List(inner, _) => InputTypeReference::List(inner, true),
-                };
-                self.type_for_input_type(
-                    required_type,
-                    Some(self.input_object_type_definition.name()),
-                    None,
-                )
-            })
-            .collect()
-    }
-
-    fn field_serialized_as(&self) -> Vec<syn::LitStr> {
-        self.input_object_type_definition
-            .input_field_definitions()
-            .iter()
-            .map(|ivd| syn::LitStr::new(ivd.name(), Span::call_site()))
-            .collect()
-    }
-
-    fn field_serde_rename_attributes(&self) -> Vec<syn::Attribute> {
-        self.field_serialized_as()
-            .iter()
-            .map(|serialized_as| parse_quote!(#[serde(rename = #serialized_as)]))
-            .collect()
-    }
-
-    fn field_serde_borrow_attributes(&self) -> Vec<Option<syn::Attribute>> {
-        self.input_object_type_definition
-            .input_field_definitions()
-            .iter()
-            .map(|ivd| {
-                self.contains_reference_types(ivd.r#type(), &mut HashSet::new())
-                    .then(|| parse_quote!(#[serde(borrow)]))
-            })
+            .description()
+            .map(doc_string)
+            .into_iter()
+            .chain(
+                self.config
+                    .code_generator()
+                    .attributes_for_one_of_input_object(self.input_object_type_definition),
+            )
             .collect()
     }
 
@@ -254,12 +234,11 @@ impl<'a, S: SchemaDefinition> InputObjectTypeDefinitionBuilder<'a, S> {
             .any(|ivd| self.contains_reference_types(ivd.r#type(), visited))
     }
 
-    fn type_for_base_input_type(
-        &self,
-        base: BaseInputTypeReference<S::InputType>,
-    ) -> syn::TypePath {
+    fn type_for_base_input_type(&self, base: BaseInputTypeReference<S::InputType>) -> syn::Type {
         match base {
-            BaseInputTypeReference::BuiltinScalar(bstd) => builtin_scalar_type(bstd, self.config),
+            BaseInputTypeReference::BuiltinScalar(bstd) => {
+                builtin_scalar_type(bstd, self.config.borrow())
+            }
             BaseInputTypeReference::InputObject(iotd) => {
                 let ident = type_ident(iotd.name());
                 let lifetime = self.lifetime(iotd);
@@ -267,7 +246,7 @@ impl<'a, S: SchemaDefinition> InputObjectTypeDefinitionBuilder<'a, S> {
             }
             BaseInputTypeReference::Enum(etd) => {
                 if self.config.enum_as_str(etd) {
-                    types::string(self.config)
+                    types::string(self.config.borrow())
                 } else {
                     let ident = type_ident(etd.name());
                     parse_quote! { #ident }
@@ -289,7 +268,7 @@ impl<'a, S: SchemaDefinition> InputObjectTypeDefinitionBuilder<'a, S> {
         ty: InputTypeReference<S::InputType>,
         parent_type_name: Option<&str>,
         has_default_value: Option<bool>,
-    ) -> syn::TypePath {
+    ) -> syn::Type {
         let required = has_default_value.map_or_else(
             || ty.is_required(),
             |has_default_value| !has_default_value && ty.is_required(),
@@ -327,11 +306,25 @@ impl<'a, S: SchemaDefinition> InputObjectTypeDefinitionBuilder<'a, S> {
         &self,
         parent_type_name: &str,
         ivd: &S::InputValueDefinition,
-    ) -> syn::TypePath {
+    ) -> syn::Type {
         self.type_for_input_type(
             ivd.r#type().as_ref(self.config.schema_definition()),
             Some(parent_type_name),
             Some(ivd.default_value().is_some()),
+        )
+    }
+
+    fn variant_type(&self, ivd: &S::InputValueDefinition) -> syn::Type {
+        // since we're building a oneOf enum, all types are optional, but we need to make
+        // them required for the enum variant
+        let required_type = match ivd.r#type().as_ref(self.config.schema_definition()) {
+            InputTypeReference::Base(base, _) => InputTypeReference::Base(base, true),
+            InputTypeReference::List(inner, _) => InputTypeReference::List(inner, true),
+        };
+        self.type_for_input_type(
+            required_type,
+            Some(self.input_object_type_definition.name()),
+            None,
         )
     }
 }
