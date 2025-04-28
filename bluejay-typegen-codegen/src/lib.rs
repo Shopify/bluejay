@@ -84,6 +84,8 @@ pub fn generate_schema(
         enums_as_str,
     } = input;
 
+    let borrow = borrow.is_some_and(|lit| lit.value());
+
     let (schema_contents, schema_path) = schema.read_to_string_and_path()?;
 
     let definition_document: DefinitionDocument = DefinitionDocument::parse(&schema_contents)
