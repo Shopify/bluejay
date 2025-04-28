@@ -1,4 +1,4 @@
-error: Error: bluejay_typegen requires the inline fragments in a selection set have unique type conditions
+error: Error: typegen requires the inline fragments in a selection set have unique type conditions
           ╭─[ <unknown>:1:7 ]
           │
         1 │ { foo { __typename ...on Bar { bar } ...on Bar { bar } } }

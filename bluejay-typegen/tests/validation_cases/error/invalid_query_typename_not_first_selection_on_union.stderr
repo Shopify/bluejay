@@ -1,4 +1,4 @@
-error: Error: bluejay_typegen requires unaliased selection of `__typename` on union types to properly deserialize, and for that to be the first in the selection set
+error: Error: typegen requires unaliased selection of `__typename` on union types to properly deserialize, and for that to be the first in the selection set
           ╭─[ <unknown>:1:7 ]
           │
         1 │ { foo { ...on Bar { bar } __typename ...on Baz { baz } } }
@@ -6,7 +6,7 @@ error: Error: bluejay_typegen requires unaliased selection of `__typename` on un
           │                                ╰────────────────────────── Selection set does not contain an unaliased `__typename` selection as the first selection
        ───╯
 
-       Error: bluejay_typegen does not allow field selections directly on union types, with the exception of unaliased `__typename` as the first selection in the set
+       Error: typegen does not allow field selections directly on union types, with the exception of unaliased `__typename` as the first selection in the set
           ╭─[ <unknown>:1:27 ]
           │
         1 │ { foo { ...on Bar { bar } __typename ...on Baz { baz } } }

@@ -1,4 +1,4 @@
-error: Error: bluejay_typegen requires a fragment spread to be the only selection in the set
+error: Error: typegen requires a fragment spread to be the only selection in the set
           ╭─[ <unknown>:1:1 ]
           │
         1 │ { foo ...MyFragment } fragment MyFragment on Query { foo }
