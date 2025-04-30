@@ -1,4 +1,7 @@
-use bluejay_core::{executable::ExecutableDocument, Indexable};
+use bluejay_core::{
+    executable::{ExecutableDocument, FragmentDefinition, OperationDefinition},
+    Indexable,
+};
 use std::cmp::{Eq, Ord, Ordering, PartialEq, PartialOrd};
 use std::hash::{Hash, Hasher};
 
@@ -33,11 +36,24 @@ impl<'a, E: ExecutableDocument> Path<'a, E> {
         clone.members.push(selection);
         clone
     }
+
+    pub fn members(&self) -> &[&'a E::Selection] {
+        &self.members
+    }
 }
 
 pub enum PathRoot<'a, E: ExecutableDocument> {
     Operation(&'a E::OperationDefinition),
     Fragment(&'a E::FragmentDefinition),
+}
+
+impl<'a, E: ExecutableDocument + 'a> PathRoot<'a, E> {
+    pub fn name(&self) -> Option<&'a str> {
+        match self {
+            Self::Operation(o) => o.as_ref().name(),
+            Self::Fragment(f) => Some(f.name()),
+        }
+    }
 }
 
 impl<E: ExecutableDocument> Clone for PathRoot<'_, E> {

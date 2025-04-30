@@ -4,21 +4,26 @@ schema {
 }
 
 """
-Exactly one field of input must be provided, and all others omitted.
+Scale the Functions resource limits based on the field's length.
+"""
+directive @scaleLimits(rate: Float!) on FIELD_DEFINITION
+
+"""
+Requires that exactly one field must be supplied and that field must not be `null`.
 """
 directive @oneOf on INPUT_OBJECT
 
 """
-Represents a generic custom attribute.
+Represents a generic custom attribute, such as whether an order is a customer's first.
 """
 type Attribute {
   """
-  Key or name of the attribute.
+  The key or name of the attribute. For example, `"customersFirstOrder"`.
   """
   key: String!
 
   """
-  Value of the attribute.
+  The value of the attribute. For example, `"true"`.
   """
   value: String
 }
@@ -90,7 +95,17 @@ type Cart {
   """
   A list of lines containing information about the items the customer intends to purchase.
   """
-  lines: [CartLine!]!
+  lines: [CartLine!]! @scaleLimits(rate: 0.005)
+
+  """
+  The localized fields available for the cart.
+  """
+  localizedFields(
+    """
+    The keys of the localized fields to retrieve.
+    """
+    keys: [LocalizedFieldKey!]! = []
+  ): [LocalizedField!]!
 }
 
 """
@@ -125,7 +140,7 @@ type CartDeliveryGroup {
   """
   A list of cart lines for the delivery group.
   """
-  cartLines: [CartLine!]!
+  cartLines: [CartLine!]! @scaleLimits(rate: 0.005)
 
   """
   The destination address for the delivery group.
@@ -175,7 +190,7 @@ type CartDeliveryOption {
   """
   The unique identifier of the delivery option.
   """
-  handle: String!
+  handle: Handle!
 
   """
   The title of the delivery option.
@@ -236,7 +251,8 @@ type CartLineCost {
   amountPerQuantity: MoneyV2!
 
   """
-  The compare at amount of the merchandise line.
+  The compare at amount of the merchandise line. This value varies depending on
+  the buyer's identity, and is null when the value is hidden to buyers.
   """
   compareAtAmountPerQuantity: MoneyV2
 
@@ -249,6 +265,24 @@ type CartLineCost {
   The total cost of the merchandise line.
   """
   totalAmount: MoneyV2!
+}
+
+"""
+A discount [Target](https://shopify.dev/api/functions/reference/product-discounts/graphql/common-objects/target) that applies to a specific cart line, up to an optional quantity limit.
+"""
+input CartLineTarget {
+  """
+  The ID of the targeted cart line.
+  """
+  id: ID!
+
+  """
+  The number of line items that are being discounted.
+  The default value is `null`, which represents the quantity of the matching line items.
+
+  The value is validated against: > 0.
+  """
+  quantity: Int
 }
 
 """
@@ -1508,7 +1542,7 @@ enum CountryCode {
   TO
 
   """
-  Turkey.
+  Türkiye.
   """
   TR
 
@@ -2390,7 +2424,7 @@ enum CurrencyCode {
   VEF @deprecated(reason: "`VEF` is deprecated. Use `VES` available from version `2020-10` onwards instead.")
 
   """
-  Venezuelan Bolivares (VES).
+  Venezuelan Bolivares Soberanos (VES).
   """
   VES
 
@@ -2501,6 +2535,11 @@ type Customer implements HasMetafields {
   email: String
 
   """
+  The customer's first name.
+  """
+  firstName: String
+
+  """
   Whether the customer has any of the given tags.
   """
   hasAnyTag(
@@ -2524,6 +2563,11 @@ type Customer implements HasMetafields {
   A unique identifier for the customer.
   """
   id: ID!
+
+  """
+  The customer's last name.
+  """
+  lastName: String
 
   """
   Returns a metafield by namespace and key that belongs to the resource.
@@ -2652,6 +2696,8 @@ input Discount {
 
   """
   The targets of the discount.
+
+  This argument accepts a collection of either `ProductVariantTarget`s or `CartLineTarget`s, but not both.
   """
   targets: [Target!]!
 
@@ -2665,6 +2711,11 @@ input Discount {
 The strategy that's applied to the list of discounts.
 """
 enum DiscountApplicationStrategy {
+  """
+  Apply all discounts with conditions that are satisfied. This does not override discount combination or stacking rules.
+  """
+  ALL
+
   """
   Only apply the first discount with conditions that are satisfied.
   """
@@ -2717,7 +2768,7 @@ input FixedAmount {
 }
 
 """
-The result of the function. This type is deprecated in favor of `FunctionRunResult`.
+The run target result. In API versions 2023-10 and beyond, this type is deprecated in favor of `FunctionRunResult`.
 """
 input FunctionResult {
   """
@@ -2732,7 +2783,7 @@ input FunctionResult {
 }
 
 """
-The result of the function.
+The run target result.
 """
 input FunctionRunResult {
   """
@@ -2745,6 +2796,13 @@ input FunctionRunResult {
   """
   discounts: [Discount!]!
 }
+
+"""
+A function-scoped handle to a refer a resource.
+The Handle type appears in a JSON response as a String, but it is not intended to be human-readable.
+Example value: `"10079785100"`
+"""
+scalar Handle
 
 """
 Represents information about the metafields associated to the specified resource.
@@ -2820,6 +2878,23 @@ type Input {
 }
 
 """
+A [JSON](https://www.json.org/json-en.html) object.
+
+Example value:
+`{
+  "product": {
+    "id": "gid://shopify/Product/1346443542550",
+    "title": "White T-shirt",
+    "options": [{
+      "name": "Size",
+      "values": ["M", "L"]
+    }]
+  }
+}`
+"""
+scalar JSON
+
+"""
 A language.
 """
 type Language {
@@ -2830,7 +2905,7 @@ type Language {
 }
 
 """
-ISO 639-1 language codes supported by Shopify.
+Language codes supported by Shopify.
 """
 enum LanguageCode {
   """
@@ -2907,6 +2982,11 @@ enum LanguageCode {
   Chechen.
   """
   CE
+
+  """
+  Central Kurdish.
+  """
+  CKB
 
   """
   Czech.
@@ -2987,6 +3067,11 @@ enum LanguageCode {
   Finnish.
   """
   FI
+
+  """
+  Filipino.
+  """
+  FIL
 
   """
   Faroese.
@@ -3339,6 +3424,16 @@ enum LanguageCode {
   RW
 
   """
+  Sanskrit.
+  """
+  SA
+
+  """
+  Sardinian.
+  """
+  SC
+
+  """
   Sindhi.
   """
   SD
@@ -3620,6 +3715,219 @@ type Localization {
 }
 
 """
+Represents the value captured by a localized field. Localized fields are
+additional fields required by certain countries on international orders. For
+example, some countries require additional fields for customs information or tax
+identification numbers.
+"""
+type LocalizedField {
+  """
+  The key of the localized field.
+  """
+  key: LocalizedFieldKey!
+
+  """
+  The title of the localized field.
+  """
+  title: String!
+
+  """
+  The value of the localized field.
+  """
+  value: String
+}
+
+"""
+Unique key identifying localized fields.
+"""
+enum LocalizedFieldKey {
+  """
+  Localized field key 'shipping_credential_br' for country BR.
+  """
+  SHIPPING_CREDENTIAL_BR
+
+  """
+  Localized field key 'shipping_credential_cl' for country CL.
+  """
+  SHIPPING_CREDENTIAL_CL
+
+  """
+  Localized field key 'shipping_credential_cn' for country CN.
+  """
+  SHIPPING_CREDENTIAL_CN
+
+  """
+  Localized field key 'shipping_credential_co' for country CO.
+  """
+  SHIPPING_CREDENTIAL_CO
+
+  """
+  Localized field key 'shipping_credential_cr' for country CR.
+  """
+  SHIPPING_CREDENTIAL_CR
+
+  """
+  Localized field key 'shipping_credential_ec' for country EC.
+  """
+  SHIPPING_CREDENTIAL_EC
+
+  """
+  Localized field key 'shipping_credential_es' for country ES.
+  """
+  SHIPPING_CREDENTIAL_ES
+
+  """
+  Localized field key 'shipping_credential_gt' for country GT.
+  """
+  SHIPPING_CREDENTIAL_GT
+
+  """
+  Localized field key 'shipping_credential_id' for country ID.
+  """
+  SHIPPING_CREDENTIAL_ID
+
+  """
+  Localized field key 'shipping_credential_kr' for country KR.
+  """
+  SHIPPING_CREDENTIAL_KR
+
+  """
+  Localized field key 'shipping_credential_mx' for country MX.
+  """
+  SHIPPING_CREDENTIAL_MX
+
+  """
+  Localized field key 'shipping_credential_my' for country MY.
+  """
+  SHIPPING_CREDENTIAL_MY
+
+  """
+  Localized field key 'shipping_credential_pe' for country PE.
+  """
+  SHIPPING_CREDENTIAL_PE
+
+  """
+  Localized field key 'shipping_credential_pt' for country PT.
+  """
+  SHIPPING_CREDENTIAL_PT
+
+  """
+  Localized field key 'shipping_credential_py' for country PY.
+  """
+  SHIPPING_CREDENTIAL_PY
+
+  """
+  Localized field key 'shipping_credential_tr' for country TR.
+  """
+  SHIPPING_CREDENTIAL_TR
+
+  """
+  Localized field key 'shipping_credential_tw' for country TW.
+  """
+  SHIPPING_CREDENTIAL_TW
+
+  """
+  Localized field key 'shipping_credential_type_co' for country CO.
+  """
+  SHIPPING_CREDENTIAL_TYPE_CO
+
+  """
+  Localized field key 'tax_credential_br' for country BR.
+  """
+  TAX_CREDENTIAL_BR
+
+  """
+  Localized field key 'tax_credential_cl' for country CL.
+  """
+  TAX_CREDENTIAL_CL
+
+  """
+  Localized field key 'tax_credential_co' for country CO.
+  """
+  TAX_CREDENTIAL_CO
+
+  """
+  Localized field key 'tax_credential_cr' for country CR.
+  """
+  TAX_CREDENTIAL_CR
+
+  """
+  Localized field key 'tax_credential_ec' for country EC.
+  """
+  TAX_CREDENTIAL_EC
+
+  """
+  Localized field key 'tax_credential_es' for country ES.
+  """
+  TAX_CREDENTIAL_ES
+
+  """
+  Localized field key 'tax_credential_gt' for country GT.
+  """
+  TAX_CREDENTIAL_GT
+
+  """
+  Localized field key 'tax_credential_id' for country ID.
+  """
+  TAX_CREDENTIAL_ID
+
+  """
+  Localized field key 'tax_credential_it' for country IT.
+  """
+  TAX_CREDENTIAL_IT
+
+  """
+  Localized field key 'tax_credential_mx' for country MX.
+  """
+  TAX_CREDENTIAL_MX
+
+  """
+  Localized field key 'tax_credential_my' for country MY.
+  """
+  TAX_CREDENTIAL_MY
+
+  """
+  Localized field key 'tax_credential_pe' for country PE.
+  """
+  TAX_CREDENTIAL_PE
+
+  """
+  Localized field key 'tax_credential_pt' for country PT.
+  """
+  TAX_CREDENTIAL_PT
+
+  """
+  Localized field key 'tax_credential_py' for country PY.
+  """
+  TAX_CREDENTIAL_PY
+
+  """
+  Localized field key 'tax_credential_tr' for country TR.
+  """
+  TAX_CREDENTIAL_TR
+
+  """
+  Localized field key 'tax_credential_type_co' for country CO.
+  """
+  TAX_CREDENTIAL_TYPE_CO
+
+  """
+  Localized field key 'tax_credential_type_mx' for country MX.
+  """
+  TAX_CREDENTIAL_TYPE_MX
+
+  """
+  Localized field key 'tax_credential_use_mx' for country MX.
+  """
+  TAX_CREDENTIAL_USE_MX
+
+  """
+  Localized field key 'tax_email_it' for country IT.
+  """
+  TAX_EMAIL_IT
+}
+
+"""
 Represents a mailing address.
 """
 type MailingAddress {
@@ -3684,7 +3992,7 @@ type MailingAddress {
   phone: String
 
   """
-  The two-letter code for the region. For example, ON.
+  The alphanumeric code for the region. For example, ON.
   """
   provinceCode: String
 
@@ -3706,7 +4014,7 @@ type Market implements HasMetafields {
   """
   A human-readable unique string for the market automatically generated from its title.
   """
-  handle: String!
+  handle: Handle!
 
   """
   A globally-unique identifier.
@@ -3774,13 +4082,18 @@ For more information about the Shopify resources that you can attach metafields 
 """
 type Metafield {
   """
+  The data stored in the metafield in JSON format.
+  """
+  jsonValue: JSON!
+
+  """
   The type of data that the metafield stores in the `value` field.
   Refer to the list of [supported types](https://shopify.dev/apps/metafields/types).
   """
   type: String!
 
   """
-  The data to store in the metafield. The data is always stored as a string, regardless of the metafield's type.
+  The data stored in the metafield. Always stored as a string, regardless of the metafield's type.
   """
   value: String!
 }
@@ -3832,7 +4145,7 @@ input Percentage {
   """
   The percentage value.
 
-  The value is validated against: >= 0.
+  The value is validated against: >= 0 and <= 100.
   """
   value: Decimal!
 }
@@ -3844,7 +4157,7 @@ type Product implements HasMetafields {
   """
   A unique human-friendly string of the product's title.
   """
-  handle: String!
+  handle: Handle!
 
   """
   Whether the product has any of the given tags.
@@ -3983,17 +4296,18 @@ type ProductVariant implements HasMetafields {
 }
 
 """
-The target product variant.
+A discount [Target](https://shopify.dev/api/functions/reference/product-discounts/graphql/common-objects/target) that can apply to any cart lines for a specific product variant, up to an
+optional quantity limit.
 """
 input ProductVariantTarget {
   """
-  The ID of the target product variant.
+  The ID of the targeted product variant.
   """
   id: ID!
 
   """
-  The number of line items that are being discounted.
-  The default value is `null`, which represents the quantity of the matching line items.
+  The maximum number of line item units to be discounted.
+  The default value is `null`, which represents the total quantity of the matching line items.
 
   The value is validated against: > 0.
   """
@@ -4023,7 +4337,7 @@ type PurchasingCompany {
 """
 Represents how products and variants can be sold and purchased.
 """
-type SellingPlan {
+type SellingPlan implements HasMetafields {
   """
   The description of the selling plan.
   """
@@ -4033,6 +4347,21 @@ type SellingPlan {
   A globally-unique identifier.
   """
   id: ID!
+
+  """
+  Returns a metafield by namespace and key that belongs to the resource.
+  """
+  metafield(
+    """
+    The key for the metafield.
+    """
+    key: String!
+
+    """
+    The container the metafield belongs to. If omitted, the app-reserved namespace will be used.
+    """
+    namespace: String
+  ): Metafield
 
   """
   The name of the selling plan. For example, '6 weeks of prepaid granola, delivered weekly'.
@@ -4114,11 +4443,24 @@ type Shop implements HasMetafields {
 }
 
 """
-The target of the discount.
+A target of a discount, which determines which cart line(s) the discount will affect.
+
+A discount can have a collection of either `ProductVariantTarget`s or `CartLineTarget`s, but not both.
+
+Multiple targets with the same type and ID are the same as a single target of that type and ID with their
+quantities added together, or `null` if any of those targets have a quantity of `null`.
+
+See the [Product Discount API reference](https://shopify.dev/docs/api/functions/reference/product-discounts/graphql#functionrunresult) for examples.
 """
 input Target @oneOf {
   """
-  The target product variant.
+  A discount [Target](https://shopify.dev/api/functions/reference/product-discounts/graphql/common-objects/target) that applies to a specific cart line, up to an optional quantity limit.
+  """
+  cartLine: CartLineTarget
+
+  """
+  A discount [Target](https://shopify.dev/api/functions/reference/product-discounts/graphql/common-objects/target) that can apply to any cart lines for a specific product variant, up to an
+  optional quantity limit.
   """
   productVariant: ProductVariantTarget
 }

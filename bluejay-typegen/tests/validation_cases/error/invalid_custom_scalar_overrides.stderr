@@ -1,0 +1,5 @@
+error: Custom scalar overrides must correspond to a path in the query that is a custom scalar type
+  --> tests/validation_cases/error/invalid_custom_scalar_overrides.rs:13:36
+   |
+13 |     ], custom_scalar_overrides = { "MyQuery.myField" => super::MyScalarOverride })]
+   |                                    ^^^^^^^^^^^^^^^^^

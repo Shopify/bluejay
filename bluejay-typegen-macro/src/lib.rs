@@ -31,9 +31,32 @@ use syn::{parse_macro_input, parse_quote};
 /// ### Usage
 ///
 /// Must be used with a module. Inside the module, type aliases must be defined for any custom scalars in the schema.
+///
+/// #### Queries
+///
 /// To use a query, define a module within the aforementioned module, and annotate it with
 /// `#[query("path/to/query.graphql")]`, where the argument is a string literal path to the query document, or the
 /// query contents enclosed in square brackets.
+///
+/// ##### Custom scalar overrides
+///
+/// To override the type of a custom scalar for a path within a query, use the `custom_scalar_overrides` named argument
+/// inside of the `#[query(...)]` attribute. The argument is a map from a path to a type, where the path is a string literal
+/// path to the field in the query, and the type is the type to override the field with.
+///
+/// For example, with the following query:
+/// ```graphql
+/// query MyQuery {
+///     myField: myScalar!
+/// }
+/// ```
+/// do something like the following:
+/// ```ignore
+/// #[query("path/to/query.graphql", custom_scalar_overrides = {
+///     "MyQuery.myField" => ::std::primitive::i32,
+/// })]
+/// ```
+/// Any type path that does not start with `::` is assumed to be relative to the schema definition module.
 ///
 /// ### Naming
 ///

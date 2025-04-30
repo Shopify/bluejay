@@ -1,6 +1,13 @@
 use std::error::Error;
 use std::io::Write;
 
+#[derive(bluejay_typegen::serde::Deserialize, Clone, Debug, PartialEq)]
+#[serde(crate = "bluejay_typegen::serde")]
+#[serde(rename_all = "camelCase")]
+struct Configuration {
+    threshold_quantity: i32,
+}
+
 #[bluejay_typegen::typegen("examples/schema.graphql")]
 #[allow(dead_code)]
 pub mod schema {
@@ -8,15 +15,29 @@ pub mod schema {
     type DateTime = String;
     type DateTimeWithoutTimezone = String;
     type Decimal = String;
+    type Handle = String;
     type Id = String;
+    type Json = serde_json::Value;
     type TimeWithoutTimezone = String;
     type Void = ();
 
-    #[query("examples/input.graphql")]
+    #[query(
+        "examples/input.graphql",
+        custom_scalar_overrides = {
+            "Input.discountNode.configuration.jsonValue" => super::Configuration,
+        }
+    )]
     pub mod input {}
 }
 
 pub fn function(input: schema::input::Input) -> schema::FunctionRunResult {
+    let threshold_quantity = input
+        .discount_node
+        .configuration
+        .map_or(1, |configuration| {
+            configuration.json_value.threshold_quantity
+        });
+
     schema::FunctionRunResult {
         discount_application_strategy: schema::DiscountApplicationStrategy::Maximum,
         discounts: vec![schema::Discount {
@@ -26,12 +47,12 @@ pub fn function(input: schema::input::Input) -> schema::FunctionRunResult {
                 .lines
                 .into_iter()
                 .filter_map(|cart_line| {
-                    (cart_line.quantity > 1).then_some(schema::Target::ProductVariant(
-                        schema::ProductVariantTarget {
+                    (cart_line.quantity > threshold_quantity).then_some(
+                        schema::Target::ProductVariant(schema::ProductVariantTarget {
                             id: cart_line.id,
                             quantity: Some(cart_line.quantity),
-                        },
-                    ))
+                        }),
+                    )
                 })
                 .collect(),
             value: schema::Value::Percentage(schema::Percentage {
