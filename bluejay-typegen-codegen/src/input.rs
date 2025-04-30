@@ -63,7 +63,7 @@ impl DocumentInput {
 
 pub struct Input {
     pub(crate) schema: DocumentInput,
-    pub(crate) borrow: bool,
+    pub borrow: Option<syn::LitBool>,
     pub enums_as_str: syn::punctuated::Punctuated<syn::LitStr, syn::Token![,]>,
 }
 
@@ -90,7 +90,6 @@ impl Parse for Input {
             }
         }
 
-        let borrow = borrow.is_some_and(|borrow| borrow.value);
         let enums_as_str = enums_as_str.unwrap_or_default();
 
         Ok(Self {
