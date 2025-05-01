@@ -29,7 +29,6 @@ mod kw {
 }
 
 pub(crate) struct CustomScalarOverride {
-    #[allow(unused)]
     graphql_path_token: syn::LitStr,
     graphql_path: Vec<String>,
     type_token: syn::Type,
