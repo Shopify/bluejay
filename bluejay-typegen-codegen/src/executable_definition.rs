@@ -60,14 +60,16 @@ impl CustomScalarOverride {
     }
 
     fn type_borrows(ty: &syn::Type) -> syn::Result<bool> {
-        let syn::Type::Path(path) = ty else {
-            // in the future, we could support arrays and tuples, but it is complex to
-            // resolve the relative path with composite types like these so for simplicity
-            // we don't support them
-            return Err(syn::Error::new(
-                ty.span(),
-                "Unsupported type for custom scalar overrides",
-            ));
+        let path = match ty {
+            syn::Type::Path(path) => path,
+            // allow the `()` type
+            syn::Type::Tuple(tuple) if tuple.elems.is_empty() => return Ok(false),
+            _ => {
+                return Err(syn::Error::new(
+                    ty.span(),
+                    "Unsupported type for custom scalar overrides",
+                ));
+            }
         };
 
         let Some(last_segment) = path.path.segments.last() else {
