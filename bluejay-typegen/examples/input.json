@@ -6,5 +6,12 @@
         "quantity": 2
       }
     ]
+  },
+  "discountNode": {
+    "configuration": {
+      "jsonValue": {
+        "thresholdQuantity": 1
+      }
+    }
   }
 }

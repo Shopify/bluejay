@@ -78,9 +78,9 @@ impl Parse for Input {
             input.parse::<syn::Token![,]>()?;
             let lookahead = input.lookahead1();
             if lookahead.peek(kw::borrow) {
-                Self::parse_key_value(input, &mut borrow)?;
+                parse_key_value(input, &mut borrow)?;
             } else if lookahead.peek(kw::enums_as_str) {
-                Self::parse_key_value_with(input, &mut enums_as_str, |input| {
+                parse_key_value_with(input, &mut enums_as_str, |input| {
                     let content;
                     syn::bracketed!(content in input);
                     syn::punctuated::Punctuated::parse_separated_nonempty(&content)
@@ -100,30 +100,28 @@ impl Parse for Input {
     }
 }
 
-impl Input {
-    fn parse_key_value<V: syn::parse::Parse>(
-        input: syn::parse::ParseStream,
-        value: &mut Option<V>,
-    ) -> syn::Result<()> {
-        Self::parse_key_value_with(input, value, syn::parse::Parse::parse)
+fn parse_key_value<V: syn::parse::Parse>(
+    input: syn::parse::ParseStream,
+    value: &mut Option<V>,
+) -> syn::Result<()> {
+    parse_key_value_with(input, value, syn::parse::Parse::parse)
+}
+
+pub(crate) fn parse_key_value_with<V>(
+    input: syn::parse::ParseStream,
+    value: &mut Option<V>,
+    parser: fn(syn::parse::ParseStream<'_>) -> syn::Result<V>,
+) -> syn::Result<()> {
+    let key: syn::Ident = input.parse()?;
+
+    if value.is_some() {
+        return Err(syn::Error::new(
+            key.span(),
+            format!("Duplicate entry for `{}`", key),
+        ));
     }
 
-    fn parse_key_value_with<V>(
-        input: syn::parse::ParseStream,
-        value: &mut Option<V>,
-        parser: fn(syn::parse::ParseStream<'_>) -> syn::Result<V>,
-    ) -> syn::Result<()> {
-        let key: syn::Ident = input.parse()?;
-
-        if value.is_some() {
-            return Err(syn::Error::new(
-                key.span(),
-                format!("Duplicate entry for `{}`", key),
-            ));
-        }
-
-        input.parse::<syn::Token![=]>()?;
-        *value = Some(parser(input)?);
-        Ok(())
-    }
+    input.parse::<syn::Token![=]>()?;
+    *value = Some(parser(input)?);
+    Ok(())
 }
