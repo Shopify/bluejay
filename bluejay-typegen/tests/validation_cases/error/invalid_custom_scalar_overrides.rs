@@ -9,8 +9,12 @@ mod schema {
     #[query([
         query MyQuery {
             myField
+            myOtherField: myField
         }
-    ], custom_scalar_overrides = { "MyQuery.myField" => super::MyScalarOverride })]
+    ], custom_scalar_overrides = {
+        "MyQuery.myField" => super::MyScalarOverride,
+        "MyQuery.myOtherField" => ::std::primitive::i32,
+    })]
     mod query {}
 }
 

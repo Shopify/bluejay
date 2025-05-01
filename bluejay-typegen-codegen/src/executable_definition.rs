@@ -196,11 +196,19 @@ pub(crate) fn generate_executable_definition<S: SchemaDefinition, C: CodeGenerat
             .into_iter()
             .partition(|c| paths_with_custom_scalar_type.contains(&c.graphql_path));
 
-    if let Some(invalid_custom_scalar_override) = invalid_custom_scalar_overrides.first() {
-        return Err(syn::Error::new(
-            invalid_custom_scalar_override.graphql_path_token.span(),
+    if let Some((first, rest)) = invalid_custom_scalar_overrides.split_first() {
+        let first_error = syn::Error::new(
+            first.graphql_path_token.span(),
             "Custom scalar overrides must correspond to a path in the query that is a custom scalar type",
-        ));
+        );
+        let combined_error = rest.iter().fold(first_error, |mut acc, error| {
+            acc.combine(syn::Error::new(
+                error.graphql_path_token.span(),
+                "Custom scalar overrides must correspond to a path in the query that is a custom scalar type",
+            ));
+            acc
+        });
+        return Err(combined_error);
     }
 
     let executable_types = ExecutableType::for_executable_document(
