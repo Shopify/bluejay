@@ -57,6 +57,9 @@ use syn::{parse_macro_input, parse_quote};
 /// })]
 /// ```
 /// Any type path that does not start with `::` is assumed to be relative to the schema definition module.
+/// Types may have a single lifetime parameter, which must be named `a`. Generic types are not supported.
+/// If you need to use a generic type, use an alias for the type to remove the generic parameters.
+/// Arrays and tuples are not supported.
 ///
 /// ### Naming
 ///

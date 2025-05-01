@@ -8,6 +8,7 @@ use bluejay_validator::executable::{
     document::{BuiltinRulesValidator, Orchestrator},
     Cache,
 };
+use itertools::{Either, Itertools};
 use syn::{parse::Parse, parse2, spanned::Spanned};
 
 mod executable_enum_builder;
@@ -42,7 +43,7 @@ impl Parse for CustomScalarOverride {
         input.parse::<syn::Token![=>]>()?;
         let type_token = input.parse()?;
 
-        let borrows = Self::path_borrows(&type_token)?;
+        let borrows = Self::type_borrows(&type_token)?;
 
         Ok(Self {
             graphql_path_token,
@@ -58,9 +59,15 @@ impl CustomScalarOverride {
         lit_str.value().split('.').map(|s| s.to_string()).collect()
     }
 
-    fn path_borrows(path: &syn::Type) -> syn::Result<bool> {
-        let syn::Type::Path(path) = path else {
-            return Ok(false);
+    fn type_borrows(ty: &syn::Type) -> syn::Result<bool> {
+        let syn::Type::Path(path) = ty else {
+            // in the future, we could support arrays and tuples, but it is complex to
+            // resolve the relative path with composite types like these so for simplicity
+            // we don't support them
+            return Err(syn::Error::new(
+                ty.span(),
+                "Unsupported type for custom scalar overrides",
+            ));
         };
 
         let Some(last_segment) = path.path.segments.last() else {
@@ -84,12 +91,12 @@ impl CustomScalarOverride {
         if path_arguments.args.len() != 1
             || !matches!(
                 path_arguments.args.first(),
-                Some(syn::GenericArgument::Lifetime(lifetime)) if lifetime.ident != "a"
+                Some(syn::GenericArgument::Lifetime(lifetime)) if lifetime.ident != "'a"
             )
         {
             return Err(syn::Error::new(
-                path.span(),
-                "Paths for custom scalar overrides with generic arguments must contain a single lifetime parameter",
+                ty.span(),
+                "Paths for custom scalar overrides with generic arguments must contain a single lifetime parameter 'a",
             ));
         }
 
@@ -190,23 +197,35 @@ pub(crate) fn generate_executable_definition<S: SchemaDefinition, C: CodeGenerat
         .map(|c| c.into_iter().collect())
         .unwrap_or_default();
 
-    let (valid_custom_scalar_overrides, invalid_custom_scalar_overrides): (Vec<_>, Vec<_>) =
+    let (valid_custom_scalar_overrides, custom_scalar_override_errors): (Vec<_>, Vec<syn::Error>) =
         custom_scalar_overrides
             .into_iter()
-            .partition(|c| paths_with_custom_scalar_type.contains(&c.graphql_path));
+            .partition_map(|c| {
+                if paths_with_custom_scalar_type.contains(&c.graphql_path) {
+                    if c.borrows && !config.borrow() {
+                        Either::Right(syn::Error::new(
+                            c.type_token.span(),
+                            "Custom scalar overrides must not borrow if the `borrow` option is not enabled",
+                        ))
+                    } else {
+                        Either::Left(c)
+                    }
+                } else {
+                    Either::Right(syn::Error::new(
+                        c.graphql_path_token.span(),
+                        "Custom scalar overrides must correspond to a path in the query that is a custom scalar type",
+                    ))
+                }
+            });
 
-    if let Some((first, rest)) = invalid_custom_scalar_overrides.split_first() {
-        let first_error = syn::Error::new(
-            first.graphql_path_token.span(),
-            "Custom scalar overrides must correspond to a path in the query that is a custom scalar type",
-        );
-        let combined_error = rest.iter().fold(first_error, |mut acc, error| {
-            acc.combine(syn::Error::new(
-                error.graphql_path_token.span(),
-                "Custom scalar overrides must correspond to a path in the query that is a custom scalar type",
-            ));
-            acc
-        });
+    if let Some(combined_error) =
+        custom_scalar_override_errors
+            .into_iter()
+            .reduce(|mut acc, error| {
+                acc.combine(error);
+                acc
+            })
+    {
         return Err(combined_error);
     }
 
