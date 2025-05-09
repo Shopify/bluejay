@@ -230,7 +230,7 @@ fn custom_scalar_borrows(
                         };
                     let ident = quote::format_ident!("{}", name);
                     let alias: syn::ItemType = parse_quote! {
-                        type #ident #lifetime = #ty;
+                        pub type #ident #lifetime = #ty;
                     };
                     if let Some((_, items)) = module.content.as_mut() {
                         items.push(alias.into());
