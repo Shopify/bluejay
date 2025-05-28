@@ -231,11 +231,14 @@ mod tests {
 
     fn analyze_input_size(query: &str, variables: serde_json::Value) -> Vec<Offender> {
         let definition_document: DefinitionDocument<'_, DefaultContext> =
-            DefinitionDocument::parse(TEST_SCHEMA).expect("Schema had parse errors");
+            DefinitionDocument::parse(TEST_SCHEMA)
+                .expect("Schema had parse errors")
+                .into_parsed();
         let schema_definition =
             ParserSchemaDefinition::try_from(&definition_document).expect("Schema had errors");
         let executable_document = ParserExecutableDocument::parse(query)
-            .unwrap_or_else(|_| panic!("Document had parse errors"));
+            .unwrap_or_else(|_| panic!("Document had parse errors"))
+            .into_parsed();
         let cache = Cache::new(&executable_document, &schema_definition);
         let variables = variables.as_object().expect("Variables must be an object");
         Orchestrator::<_, _, JsonMap<String, JsonValue>, InputSize<_, _>>::analyze(

@@ -309,15 +309,19 @@ mod tests {
         }
     "#;
 
-    static TEST_DEFINITION_DOCUMENT: Lazy<DefinitionDocument<'static>> =
-        Lazy::new(|| DefinitionDocument::parse(TEST_SCHEMA_SDL).unwrap());
+    static TEST_DEFINITION_DOCUMENT: Lazy<DefinitionDocument<'static>> = Lazy::new(|| {
+        DefinitionDocument::parse(TEST_SCHEMA_SDL)
+            .unwrap()
+            .into_parsed()
+    });
 
     static TEST_SCHEMA_DEFINITION: Lazy<ParserSchemaDefinition<'static>> =
         Lazy::new(|| ParserSchemaDefinition::try_from(&*TEST_DEFINITION_DOCUMENT).unwrap());
 
     fn validate_deprecations(query: &str, variables: serde_json::Value, expected: Vec<Offender>) {
         let executable_document = ParserExecutableDocument::parse(query)
-            .unwrap_or_else(|_| panic!("Document had parse errors"));
+            .unwrap_or_else(|_| panic!("Document had parse errors"))
+            .into_parsed();
         let cache = Cache::new(&executable_document, &*TEST_SCHEMA_DEFINITION);
         let variables = variables.as_object().expect("Variables must be an object");
         let deprecations = DeprecationAnalyzer::analyze(

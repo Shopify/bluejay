@@ -45,8 +45,11 @@ fn build_query_string(repetitions: u64) -> String {
     s
 }
 
-static DEFINITION_DOCUMENT: Lazy<DefinitionDocument<'static>> =
-    Lazy::new(|| DefinitionDocument::parse(SCHEMA).expect("Schema had parse errors"));
+static DEFINITION_DOCUMENT: Lazy<DefinitionDocument<'static>> = Lazy::new(|| {
+    DefinitionDocument::parse(SCHEMA)
+        .expect("Schema had parse errors")
+        .into_parsed()
+});
 static SCHEMA_DEFINITION: Lazy<SchemaDefinition<'static>> =
     Lazy::new(|| SchemaDefinition::try_from(&*DEFINITION_DOCUMENT).expect("Schema had errors"));
 
@@ -66,7 +69,8 @@ static EXECUTABLE_DOCUMENTS: Lazy<Vec<(u64, ExecutableDocument<'static>)>> = Laz
             (
                 *repetitions,
                 ExecutableDocument::parse(query_string.as_str())
-                    .expect("Document had parse errors"),
+                    .expect("Document had parse errors")
+                    .into_parsed(),
             )
         })
         .collect::<Vec<_>>()

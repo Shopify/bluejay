@@ -145,7 +145,8 @@ fn test_visibility() {
                     path.display(),
                     Error::format_errors(&input, path.file_name().and_then(|f| f.to_str()), errors)
                 )
-            });
+            })
+            .into_parsed();
         let schema_definition = ParserSchemaDefinition::try_from(&definition_document)
             .unwrap_or_else(|errors| {
                 panic!(
@@ -177,13 +178,14 @@ fn test_fields_definition_get() {
         }
     ";
 
-    let definition_document: DefinitionDocument =
-        DefinitionDocument::parse(schema).unwrap_or_else(|errors| {
+    let definition_document: DefinitionDocument = DefinitionDocument::parse(schema)
+        .unwrap_or_else(|errors| {
             panic!(
                 "Schema had parse errors:\n{}",
                 Error::format_errors(schema, None, errors)
             )
-        });
+        })
+        .into_parsed();
     let schema_definition =
         ParserSchemaDefinition::try_from(&definition_document).unwrap_or_else(|errors| {
             panic!(

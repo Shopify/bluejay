@@ -41,7 +41,9 @@ impl BuiltinDirectiveDefinition {
 
 impl<C: Context> From<BuiltinDirectiveDefinition> for DirectiveDefinition<'_, C> {
     fn from(value: BuiltinDirectiveDefinition) -> Self {
-        let mut definition = DirectiveDefinition::parse(value.definition()).unwrap();
+        let mut definition = DirectiveDefinition::parse(value.definition())
+            .unwrap()
+            .into_parsed();
 
         definition.is_builtin = true;
         definition
