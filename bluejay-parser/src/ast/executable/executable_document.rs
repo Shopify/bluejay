@@ -4,8 +4,8 @@ use crate::ast::executable::{
     VariableDefinition, VariableDefinitions, VariableType,
 };
 use crate::ast::{
-    Argument, Arguments, DepthLimiter, Directive, Directives, Parse, ParseError, Tokens,
-    TryFromTokens, Value,
+    Argument, Arguments, DepthLimiter, Directive, Directives, Parse, ParseDetails, ParseError,
+    Tokens, TryFromTokens, Value,
 };
 use crate::Error;
 
@@ -45,7 +45,7 @@ impl<'a> Parse<'a> for ExecutableDocument<'a> {
     fn parse_from_tokens(
         mut tokens: impl Tokens<'a>,
         max_depth: usize,
-    ) -> Result<Self, Vec<Error>> {
+    ) -> Result<(Self, ParseDetails), Vec<Error>> {
         let mut instance: Self = Self::new(Vec::new(), Vec::new());
         let mut errors = Vec::new();
         let mut last_pass_had_error = false;
@@ -85,6 +85,7 @@ impl<'a> Parse<'a> for ExecutableDocument<'a> {
             }
         }
 
+        let token_count = tokens.token_count();
         let lex_errors = tokens.into_errors();
 
         let errors = if lex_errors.is_empty() {
@@ -98,7 +99,7 @@ impl<'a> Parse<'a> for ExecutableDocument<'a> {
         };
 
         if errors.is_empty() {
-            Ok(instance)
+            Ok((instance, ParseDetails { token_count }))
         } else {
             Err(errors)
         }
@@ -185,6 +186,7 @@ mod tests {
             ParseOptions {
                 graphql_ruby_compatibility: false,
                 max_depth: 2,
+                max_tokens: None,
             },
         )
         .unwrap_err();
@@ -198,6 +200,7 @@ mod tests {
             ParseOptions {
                 graphql_ruby_compatibility: false,
                 max_depth: 3,
+                max_tokens: None,
             },
         )
         .unwrap();
