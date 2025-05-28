@@ -25,6 +25,7 @@ pub trait Tokens<'a>: Iterator<Item = LexicalToken<'a>> {
     fn peek_string_value(&mut self, n: usize) -> bool;
     fn peek_punctuator_matches(&mut self, n: usize, punctuator_type: PunctuatorType) -> bool;
     fn into_errors(self) -> Vec<(LexError, Span)>;
+    fn token_count(&self) -> usize;
 }
 
 pub struct LexerTokens<'a, T: Lexer<'a>> {
@@ -41,6 +42,11 @@ impl<'a, T: Lexer<'a>> LexerTokens<'a, T> {
             errors: Vec::new(),
             buffer: VecDeque::new(),
         }
+    }
+
+    #[inline]
+    pub fn token_count(&self) -> usize {
+        self.lexer.token_count()
     }
 
     #[inline]
@@ -308,5 +314,10 @@ impl<'a, T: Lexer<'a>> Tokens<'a> for LexerTokens<'a, T> {
     #[inline]
     fn into_errors(self) -> Vec<(LexError, Span)> {
         self.errors
+    }
+
+    #[inline]
+    fn token_count(&self) -> usize {
+        self.token_count()
     }
 }
