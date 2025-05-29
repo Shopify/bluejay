@@ -91,7 +91,8 @@ pub fn generate_schema(
     let definition_document: DefinitionDocument = DefinitionDocument::parse(&schema_contents)
         .map_err(|errors| {
             map_parser_errors(schema, &schema_contents, schema_path.as_deref(), errors)
-        })?;
+        })?
+        .into_parsed();
     let schema_definition =
         ParserSchemaDefinition::try_from(&definition_document).map_err(|errors| {
             map_parser_errors(schema, &schema_contents, schema_path.as_deref(), errors)

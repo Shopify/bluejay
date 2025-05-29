@@ -5,7 +5,7 @@ use crate::ast::definition::{
     InputValueDefinition, InterfaceImplementations, InterfaceTypeDefinition, ObjectTypeDefinition,
     SchemaDefinition, TypeDefinition, UnionTypeDefinition,
 };
-use crate::ast::{DepthLimiter, FromTokens, Parse, ParseError, Tokens};
+use crate::ast::{DepthLimiter, FromTokens, Parse, ParseError, ParseResult, Tokens};
 use crate::Error;
 use bluejay_core::definition::{prelude::*, HasDirectives};
 use bluejay_core::{
@@ -42,7 +42,7 @@ impl<'a, C: Context> Parse<'a> for DefinitionDocument<'a, C> {
     fn parse_from_tokens(
         mut tokens: impl Tokens<'a>,
         max_depth: usize,
-    ) -> Result<Self, Vec<Error>> {
+    ) -> Result<ParseResult<Self>, Vec<Error>> {
         let mut instance: Self = Self::new();
         let mut errors = Vec::new();
         let mut last_pass_had_error = false;
@@ -134,6 +134,7 @@ impl<'a, C: Context> Parse<'a> for DefinitionDocument<'a, C> {
             }
         }
 
+        let token_count = tokens.token_count();
         let lex_errors = tokens.into_errors();
 
         let errors = if lex_errors.is_empty() {
@@ -150,7 +151,10 @@ impl<'a, C: Context> Parse<'a> for DefinitionDocument<'a, C> {
             instance.insert_builtin_scalar_definitions();
             instance.insert_builtin_directive_definitions();
             instance.add_query_root_fields();
-            Ok(instance)
+            Ok(ParseResult {
+                parsed: instance,
+                token_count,
+            })
         } else {
             Err(errors)
         }
@@ -807,7 +811,7 @@ mod tests {
         .to_string();
 
         let owned_definition_document = OwnedDefinitionDocument::new(source, |source| {
-            DefinitionDocument::parse(source).unwrap()
+            DefinitionDocument::parse(source).unwrap().into_parsed()
         });
 
         let owned_schema_definition =
@@ -831,7 +835,7 @@ mod tests {
         }
         "#;
 
-        let document: DefinitionDocument = DefinitionDocument::parse(s).unwrap();
+        let document: DefinitionDocument = DefinitionDocument::parse(s).unwrap().into_parsed();
 
         assert_eq!(1, document.definition_count());
     }
@@ -850,8 +854,9 @@ mod tests {
         }
         "#;
 
-        let document: DefinitionDocument =
-            DefinitionDocument::parse(s).expect("Document had parse errors");
+        let document: DefinitionDocument = DefinitionDocument::parse(s)
+            .expect("Document had parse errors")
+            .into_parsed();
 
         let schema_definition = SchemaDefinition::try_from(&document)
             .expect("Could not convert document to schema definition");

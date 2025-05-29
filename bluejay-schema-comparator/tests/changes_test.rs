@@ -41,8 +41,10 @@ fn test_safe_field_changes() {
         }
     "#;
 
-    let document_a: DefinitionDocument = DefinitionDocument::parse(old_schema).unwrap();
-    let document_b: DefinitionDocument = DefinitionDocument::parse(new_schema).unwrap();
+    let document_a: DefinitionDocument =
+        DefinitionDocument::parse(old_schema).unwrap().into_parsed();
+    let document_b: DefinitionDocument =
+        DefinitionDocument::parse(new_schema).unwrap().into_parsed();
 
     let schema_definition_a = SchemaDefinition::try_from(&document_a).unwrap();
     let schema_definition_b = SchemaDefinition::try_from(&document_b).unwrap();
@@ -118,8 +120,10 @@ fn test_safe_input_field_changes() {
         }
     "#;
 
-    let document_a: DefinitionDocument = DefinitionDocument::parse(old_schema).unwrap();
-    let document_b: DefinitionDocument = DefinitionDocument::parse(new_schema).unwrap();
+    let document_a: DefinitionDocument =
+        DefinitionDocument::parse(old_schema).unwrap().into_parsed();
+    let document_b: DefinitionDocument =
+        DefinitionDocument::parse(new_schema).unwrap().into_parsed();
 
     let schema_definition_a = SchemaDefinition::try_from(&document_a).unwrap();
     let schema_definition_b = SchemaDefinition::try_from(&document_b).unwrap();
