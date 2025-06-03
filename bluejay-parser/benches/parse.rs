@@ -2,7 +2,8 @@ use bluejay_parser::ast::{
     definition::{DefaultContext, DefinitionDocument},
     Parse,
 };
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use criterion::{criterion_group, criterion_main, Criterion};
+use std::hint::black_box;
 
 fn parse(c: &mut Criterion) {
     let s = std::fs::read_to_string("../data/schema.docs.graphql").unwrap();
