@@ -123,58 +123,66 @@ fn parse_float<'a>(lexer: &mut logos::Lexer<'a, Token<'a>>) -> Result<f64, LexEr
     })
 }
 
-#[repr(transparent)]
-pub struct LogosLexer<'a>(logos::Lexer<'a, Token<'a>>);
+pub struct LogosLexer<'a> {
+    inner: logos::Lexer<'a, Token<'a>>,
+    token_count: usize,
+    max_tokens: Option<usize>,
+    exceeded_max_tokens: bool,
+}
 
 impl<'a> Iterator for LogosLexer<'a> {
     type Item = Result<LexicalToken<'a>, (LexError, Span)>;
 
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
-        self.0.next().map(|result| {
-            result
-                .map(|token| {
-                    let span = Span::new(self.0.span());
-                    match token {
-                        Token::Bang => punctuator(PunctuatorType::Bang, span),
-                        Token::Ampersand => punctuator(PunctuatorType::Ampersand, span),
-                        Token::OpenRoundBracket => {
-                            punctuator(PunctuatorType::OpenRoundBracket, span)
-                        }
-                        Token::CloseRoundBracket => {
-                            punctuator(PunctuatorType::CloseRoundBracket, span)
-                        }
-                        Token::Ellipse => punctuator(PunctuatorType::Ellipse, span),
-                        Token::Colon => punctuator(PunctuatorType::Colon, span),
-                        Token::Equals => punctuator(PunctuatorType::Equals, span),
-                        Token::At => punctuator(PunctuatorType::At, span),
-                        Token::OpenSquareBracket => {
-                            punctuator(PunctuatorType::OpenSquareBracket, span)
-                        }
-                        Token::CloseSquareBracket => {
-                            punctuator(PunctuatorType::CloseSquareBracket, span)
-                        }
-                        Token::OpenBrace => punctuator(PunctuatorType::OpenBrace, span),
-                        Token::CloseBrace => punctuator(PunctuatorType::CloseBrace, span),
-                        Token::Pipe => punctuator(PunctuatorType::Pipe, span),
-                        Token::VariableName(s) => {
-                            LexicalToken::VariableName(Variable::new(s, span))
-                        }
-                        Token::Name(s) => LexicalToken::Name(Name::new(s, span)),
-                        Token::IntValue(val) => LexicalToken::IntValue(IntValue::new(val, span)),
-                        Token::FloatValue(val) => {
-                            LexicalToken::FloatValue(FloatValue::new(val, span))
-                        }
-                        Token::StringValue(val) => {
-                            LexicalToken::StringValue(StringValue::new(val, span))
-                        }
-                        Token::BlockStringValue(val) => {
-                            LexicalToken::StringValue(StringValue::new(val, span))
-                        }
+        if self.exceeded_max_tokens {
+            return None;
+        }
+
+        match self.inner.next() {
+            Some(Ok(token)) => {
+                self.token_count += 1;
+                let span = Span::new(self.inner.span());
+
+                if let Some(max) = self.max_tokens {
+                    if self.token_count > max {
+                        self.exceeded_max_tokens = true;
+                        return Some(Err((LexError::MaxTokensExceeded { limit: max }, span)));
                     }
-                })
-                .map_err(|err| (err, Span::new(self.0.span())))
-        })
+                }
+
+                let lexical_token = match token {
+                    Token::Bang => punctuator(PunctuatorType::Bang, span),
+                    Token::Ampersand => punctuator(PunctuatorType::Ampersand, span),
+                    Token::OpenRoundBracket => punctuator(PunctuatorType::OpenRoundBracket, span),
+                    Token::CloseRoundBracket => punctuator(PunctuatorType::CloseRoundBracket, span),
+                    Token::Ellipse => punctuator(PunctuatorType::Ellipse, span),
+                    Token::Colon => punctuator(PunctuatorType::Colon, span),
+                    Token::Equals => punctuator(PunctuatorType::Equals, span),
+                    Token::At => punctuator(PunctuatorType::At, span),
+                    Token::OpenSquareBracket => punctuator(PunctuatorType::OpenSquareBracket, span),
+                    Token::CloseSquareBracket => {
+                        punctuator(PunctuatorType::CloseSquareBracket, span)
+                    }
+                    Token::OpenBrace => punctuator(PunctuatorType::OpenBrace, span),
+                    Token::CloseBrace => punctuator(PunctuatorType::CloseBrace, span),
+                    Token::Pipe => punctuator(PunctuatorType::Pipe, span),
+                    Token::VariableName(s) => LexicalToken::VariableName(Variable::new(s, span)),
+                    Token::Name(s) => LexicalToken::Name(Name::new(s, span)),
+                    Token::IntValue(val) => LexicalToken::IntValue(IntValue::new(val, span)),
+                    Token::FloatValue(val) => LexicalToken::FloatValue(FloatValue::new(val, span)),
+                    Token::StringValue(val) => {
+                        LexicalToken::StringValue(StringValue::new(val, span))
+                    }
+                    Token::BlockStringValue(val) => {
+                        LexicalToken::StringValue(StringValue::new(val, span))
+                    }
+                };
+                Some(Ok(lexical_token))
+            }
+            Some(Err(err)) => Some(Err((err, Span::new(self.inner.span())))),
+            None => None,
+        }
     }
 }
 
@@ -185,18 +193,32 @@ fn punctuator<'a>(pt: PunctuatorType, span: Span) -> LexicalToken<'a> {
 
 impl<'a> Lexer<'a> for LogosLexer<'a> {
     fn empty_span(&self) -> Span {
-        let n = self.0.span().start;
+        let n = self.inner.span().start;
         Span::new(n..n)
+    }
+
+    fn token_count(&self) -> usize {
+        self.token_count
     }
 }
 
 impl<'a> LogosLexer<'a> {
     pub fn new(s: &'a <Token<'a> as Logos<'a>>::Source) -> Self {
-        Self(Token::lexer(s))
+        Self {
+            inner: Token::lexer(s),
+            token_count: 0,
+            max_tokens: None,
+            exceeded_max_tokens: false,
+        }
     }
 
     pub fn with_graphql_ruby_compatibility(mut self, enabled: bool) -> Self {
-        self.0.extras.graphql_ruby_compatibility = enabled;
+        self.inner.extras.graphql_ruby_compatibility = enabled;
+        self
+    }
+
+    pub fn with_max_tokens(mut self, max_tokens: Option<usize>) -> Self {
+        self.max_tokens = max_tokens;
         self
     }
 }

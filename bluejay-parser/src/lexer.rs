@@ -7,4 +7,5 @@ pub use logos_lexer::LogosLexer;
 
 pub trait Lexer<'a>: Iterator<Item = Result<LexicalToken<'a>, (LexError, Span)>> {
     fn empty_span(&self) -> Span;
+    fn token_count(&self) -> usize;
 }
