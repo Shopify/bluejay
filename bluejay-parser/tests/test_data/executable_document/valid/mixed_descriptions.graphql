@@ -1,0 +1,30 @@
+"Fetch user data with detailed information"
+query GetUserDetails(
+  "The user's unique identifier"
+  $userId: ID!
+  
+  "Include extended profile information"
+  $includeProfile: Boolean = false
+) {
+  user(id: $userId) {
+    ...BaseUserFields
+    
+    profile @include(if: $includeProfile) {
+      ...ProfileFields
+    }
+  }
+}
+
+"Basic user information fragment"
+fragment BaseUserFields on User {
+  id
+  name
+  email
+}
+
+"Extended profile information"  
+fragment ProfileFields on Profile {
+  bio
+  avatar
+  joinedDate
+}

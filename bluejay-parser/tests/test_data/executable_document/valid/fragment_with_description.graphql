@@ -1,0 +1,12 @@
+query GetUserWithFragment {
+  user {
+    ...UserFields
+  }
+}
+
+"This fragment contains common user fields"
+fragment UserFields on User {
+  id
+  name
+  email
+}

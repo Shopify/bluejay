@@ -1,11 +1,12 @@
 use crate::ast::executable::{SelectionSet, TypeCondition};
 use crate::ast::try_from_tokens::TryFromTokens;
 use crate::ast::{DepthLimiter, FromTokens, IsMatch, ParseError, Tokens, VariableDirectives};
-use crate::lexical_token::Name;
+use crate::lexical_token::{Name, StringValue};
 use crate::{HasSpan, Span};
 
 #[derive(Debug)]
 pub struct FragmentDefinition<'a> {
+    description: Option<StringValue<'a>>,
     name: Name<'a>,
     type_condition: TypeCondition<'a>,
     directives: Option<VariableDirectives<'a>>,
@@ -17,6 +18,7 @@ impl<'a> IsMatch<'a> for FragmentDefinition<'a> {
     #[inline]
     fn is_match(tokens: &mut impl Tokens<'a>) -> bool {
         tokens.peek_name_matches(0, "fragment")
+            || (tokens.peek_string_value(0) && tokens.peek_name_matches(1, "fragment"))
     }
 }
 
@@ -26,6 +28,7 @@ impl<'a> FromTokens<'a> for FragmentDefinition<'a> {
         tokens: &mut impl Tokens<'a>,
         depth_limiter: DepthLimiter,
     ) -> Result<Self, ParseError> {
+        let description = tokens.next_if_string_value();
         let fragment_identifier_span = tokens.expect_name_value("fragment")?;
         let name = tokens.expect_name()?;
         if name.as_ref() == TypeCondition::ON {
@@ -36,8 +39,13 @@ impl<'a> FromTokens<'a> for FragmentDefinition<'a> {
         let directives =
             VariableDirectives::try_from_tokens(tokens, depth_limiter.bump()?).transpose()?;
         let selection_set = SelectionSet::from_tokens(tokens, depth_limiter.bump()?)?;
-        let span = fragment_identifier_span.merge(selection_set.span());
+        let span = if let Some(desc) = &description {
+            desc.span().merge(selection_set.span())
+        } else {
+            fragment_identifier_span.merge(selection_set.span())
+        };
         Ok(Self {
+            description,
             name,
             type_condition,
             directives,
@@ -72,6 +80,10 @@ impl bluejay_core::Indexable for FragmentDefinition<'_> {
 impl<'a> bluejay_core::executable::FragmentDefinition for FragmentDefinition<'a> {
     type Directives = VariableDirectives<'a>;
     type SelectionSet = SelectionSet<'a>;
+
+    fn description(&self) -> Option<&str> {
+        self.description.as_ref().map(AsRef::as_ref)
+    }
 
     fn name(&self) -> &str {
         self.name.as_ref()

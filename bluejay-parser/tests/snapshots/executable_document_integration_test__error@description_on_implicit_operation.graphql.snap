@@ -1,0 +1,12 @@
+---
+source: bluejay-parser/tests/executable_document_integration_test.rs
+expression: formatted_errors
+input_file: bluejay-parser/tests/test_data/executable_document/error/description_on_implicit_operation.graphql
+---
+Error: Unexpected token
+   ╭─[ description_on_implicit_operation.graphql:1:1 ]
+   │
+ 1 │ "This description is invalid because implicit operations cannot have descriptions"
+   │ ─────────────────────────────────────────┬────────────────────────────────────────  
+   │                                          ╰────────────────────────────────────────── Unexpected token
+───╯

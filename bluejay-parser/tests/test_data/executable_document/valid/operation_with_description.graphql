@@ -1,0 +1,23 @@
+"This is a query description"
+query GetUser {
+  user {
+    id
+    name
+  }
+}
+
+"This is a mutation description"
+mutation UpdateUser($id: ID!) {
+  updateUser(id: $id) {
+    id
+    name
+  }
+}
+
+"This is a subscription description"
+subscription OnUserUpdate {
+  userUpdated {
+    id
+    name
+  }
+}

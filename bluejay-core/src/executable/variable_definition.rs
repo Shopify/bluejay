@@ -6,6 +6,7 @@ pub trait VariableDefinition {
     type Directives: ConstDirectives;
     type Value: ConstValue;
 
+    fn description(&self) -> Option<&str>;
     fn variable(&self) -> &str;
     fn r#type(&self) -> &Self::VariableType;
     fn directives(&self) -> Option<&Self::Directives>;

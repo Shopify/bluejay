@@ -1,0 +1,30 @@
+query GetUserById(
+  "The user's unique identifier"
+  $id: ID!
+  
+  "Optional name filter"
+  $nameFilter: String
+) {
+  user(id: $id, nameFilter: $nameFilter) {
+    id
+    name
+    email
+  }
+}
+
+mutation UpdateUserInfo(
+  "User ID to update"
+  $userId: ID!
+  
+  "New name for the user"
+  $name: String!
+  
+  "Updated email address"
+  $email: String
+) {
+  updateUser(id: $userId, name: $name, email: $email) {
+    id
+    name
+    email
+  }
+}

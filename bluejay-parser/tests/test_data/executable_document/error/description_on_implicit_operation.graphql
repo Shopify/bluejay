@@ -1,0 +1,7 @@
+"This description is invalid because implicit operations cannot have descriptions"
+{
+  user {
+    id
+    name
+  }
+}
