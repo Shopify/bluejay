@@ -3,10 +3,11 @@ use crate::ast::DepthLimiter;
 use crate::ast::{
     executable::VariableType, ConstDirectives, ConstValue, FromTokens, ParseError, Tokens,
 };
-use crate::lexical_token::{PunctuatorType, Variable};
+use crate::lexical_token::{PunctuatorType, StringValue, Variable};
 
 #[derive(Debug)]
 pub struct VariableDefinition<'a> {
+    description: Option<StringValue<'a>>,
     variable: Variable<'a>,
     r#type: VariableType<'a>,
     default_value: Option<ConstValue<'a>>,
@@ -19,6 +20,7 @@ impl<'a> FromTokens<'a> for VariableDefinition<'a> {
         tokens: &mut impl Tokens<'a>,
         depth_limiter: DepthLimiter,
     ) -> Result<Self, ParseError> {
+        let description = tokens.next_if_string_value();
         let variable = tokens.expect_variable()?;
         tokens.expect_punctuator(PunctuatorType::Colon)?;
         let r#type = VariableType::from_tokens(tokens, depth_limiter.bump()?)?;
@@ -31,6 +33,7 @@ impl<'a> FromTokens<'a> for VariableDefinition<'a> {
         let directives =
             ConstDirectives::try_from_tokens(tokens, depth_limiter.bump()?).transpose()?;
         Ok(Self {
+            description,
             variable,
             r#type,
             default_value,
@@ -57,6 +60,10 @@ impl<'a> bluejay_core::executable::VariableDefinition for VariableDefinition<'a>
     type Value = ConstValue<'a>;
     type VariableType = VariableType<'a>;
     type Directives = ConstDirectives<'a>;
+
+    fn description(&self) -> Option<&str> {
+        self.description.as_ref().map(AsRef::as_ref)
+    }
 
     fn variable(&self) -> &str {
         self.variable.as_str()
