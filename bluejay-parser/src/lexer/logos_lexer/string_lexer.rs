@@ -1,6 +1,6 @@
 use super::Token as OuterToken;
 use crate::{
-    lexer::{LexError, StringValueLexError},
+    lexer::{string_builder::CowStringBuilder, LexError, StringValueLexError},
     Span,
 };
 use logos::{Lexer, Logos};
@@ -112,50 +112,50 @@ impl<'a> Token<'a> {
 
         // starting Quote should already have been parsed
 
-        let mut formatted = Cow::Borrowed("");
+        let mut builder = CowStringBuilder::new(s.len());
         let mut errors = Vec::new();
 
         for (result, span) in lexer.spanned() {
             match result {
                 Ok(token) => match token {
                     Self::SourceCharacters(s) => {
-                        formatted += s;
+                        builder.append_source(s);
                     }
                     Self::EscapedUnicode(c) | Self::FixedWidthEscapedUnicode(c) => match c {
-                        Some(c) => formatted.to_mut().push(c),
+                        Some(c) => builder.append_char(c),
                         None => errors.push(StringValueLexError::InvalidUnicodeEscapeSequence(
                             Span::from(span) + span_offset,
                         )),
                     },
                     Self::SurrogatePairEscapedUnicode(chars) => match chars {
-                        Ok((c, None)) => formatted.to_mut().push(c),
+                        Ok((c, None)) => builder.append_char(c),
                         Ok((leading, Some(trailing))) => {
-                            formatted.to_mut().push(leading);
-                            formatted.to_mut().push(trailing);
+                            builder.append_char(leading);
+                            builder.append_char(trailing);
                         }
                         Err(span) => errors.push(
                             StringValueLexError::InvalidUnicodeEscapeSequence(span + span_offset),
                         ),
                     },
-                    Self::EscapedQuote => formatted.to_mut().push('\"'),
-                    Self::EscapedBackslash => formatted.to_mut().push('\\'),
-                    Self::EscapedSlash => formatted.to_mut().push('/'),
-                    Self::EscapedBackspace => formatted.to_mut().push('\u{0008}'),
-                    Self::EscapedFormFeed => formatted.to_mut().push('\u{000C}'),
-                    Self::EscapedNewline => formatted.to_mut().push('\n'),
-                    Self::EscapedCarriageReturn => formatted.to_mut().push('\r'),
-                    Self::EscapedTab => formatted.to_mut().push('\t'),
+                    Self::EscapedQuote => builder.append_char('\"'),
+                    Self::EscapedBackslash => builder.append_char('\\'),
+                    Self::EscapedSlash => builder.append_char('/'),
+                    Self::EscapedBackspace => builder.append_char('\u{0008}'),
+                    Self::EscapedFormFeed => builder.append_char('\u{000C}'),
+                    Self::EscapedNewline => builder.append_char('\n'),
+                    Self::EscapedCarriageReturn => builder.append_char('\r'),
+                    Self::EscapedTab => builder.append_char('\t'),
                     Self::Quote => {
                         outer_lexer.bump(span.end);
                         return if errors.is_empty() {
-                            Ok(formatted)
+                            Ok(builder.finish())
                         } else {
                             Err(LexError::StringValueInvalid(errors))
                         };
                     }
                     Self::Newline => {
                         if outer_lexer.extras.graphql_ruby_compatibility {
-                            formatted.to_mut().push('\n');
+                            builder.append_char('\n');
                         } else {
                             errors.push(StringValueLexError::InvalidCharacters(
                                 Span::from(span) + span_offset,
@@ -164,7 +164,7 @@ impl<'a> Token<'a> {
                     }
                     Self::CarriageReturn => {
                         if outer_lexer.extras.graphql_ruby_compatibility {
-                            formatted.to_mut().push('\r');
+                            builder.append_char('\r');
                         } else {
                             errors.push(StringValueLexError::InvalidCharacters(
                                 Span::from(span) + span_offset,

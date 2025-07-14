@@ -2,6 +2,7 @@ use crate::lexical_token::LexicalToken;
 use crate::Span;
 mod lex_error;
 mod logos_lexer;
+mod string_builder;
 pub use lex_error::{LexError, StringValueLexError};
 pub use logos_lexer::LogosLexer;
 
