@@ -8,6 +8,9 @@ pub enum LexError {
     IntegerValueTooLarge,
     FloatValueTooLarge,
     StringValueInvalid(Vec<StringValueLexError>),
+    MaxTokensExceeded {
+        limit: usize,
+    },
 }
 
 impl From<Vec<StringValueLexError>> for LexError {
@@ -57,6 +60,14 @@ impl From<(LexError, Span)> for Error {
                         Annotation::new(message, span)
                     })
                     .collect(),
+            ),
+            LexError::MaxTokensExceeded { limit } => Self::new(
+                "Max tokens exceeded",
+                Some(Annotation::new(
+                    format!("Maximum token limit of {limit} exceeded"),
+                    span,
+                )),
+                Vec::new(),
             ),
         }
     }
