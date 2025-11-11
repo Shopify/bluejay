@@ -46,7 +46,7 @@ mod tests {
     #[test]
     fn test_directives() {
         let s = " @foo(a: 1, b: 2) @bar";
-        let parsed = Directives::<false>::parse(s).unwrap();
+        let parsed = Directives::<false>::parse(s).result.unwrap();
         assert_eq!(s, DirectivesPrinter::new(&parsed).to_string());
     }
 }

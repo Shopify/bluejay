@@ -155,6 +155,7 @@ pub(crate) fn generate_executable_definition<S: SchemaDefinition, C: CodeGenerat
     let (contents, path) = query.read_to_string_and_path()?;
 
     let executable_document = ExecutableDocument::parse(&contents)
+        .result
         .map_err(|errors| map_parser_errors(&query, &contents, path.as_deref(), errors))?;
     let validation_cache = Cache::new(&executable_document, config.schema_definition());
     let validation_errors: Vec<_> = BuiltinRulesValidator::validate(

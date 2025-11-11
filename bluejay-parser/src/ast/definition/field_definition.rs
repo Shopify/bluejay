@@ -21,7 +21,7 @@ impl<C: Context> FieldDefinition<'_, C> {
     const __TYPE_DEFINITION: &'static str = "__type(name: String!): __Type";
 
     fn builtin(s: &'static str) -> Self {
-        let mut definition = Self::parse(s).unwrap();
+        let mut definition = Self::parse(s).result.unwrap();
         definition.is_builtin = true;
         definition
     }

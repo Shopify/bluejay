@@ -12,6 +12,7 @@ fn test_error() {
     insta::glob!("test_data/definition/error/*.graphql", |path| {
         let input = std::fs::read_to_string(path).unwrap();
         let definition_document: DefinitionDocument = DefinitionDocument::parse(&input)
+            .result
             .unwrap_or_else(|_| panic!("Schema `{}` had parse errors", path.display()));
         let schema_definition = SchemaDefinition::try_from(&definition_document)
             .unwrap_or_else(|_| panic!("Schema `{}` had coercion errors", path.display()));
@@ -29,6 +30,7 @@ fn test_valid() {
     insta::glob!("test_data/definition/valid/*.graphql", |path| {
         let input = std::fs::read_to_string(path).unwrap();
         let definition_document: DefinitionDocument = DefinitionDocument::parse(&input)
+            .result
             .unwrap_or_else(|_| panic!("Schema `{}` had parse errors", path.display()));
         let schema_definition = SchemaDefinition::try_from(&definition_document)
             .unwrap_or_else(|_| panic!("Schema `{}` had coercion errors", path.display()));

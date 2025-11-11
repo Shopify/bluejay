@@ -58,7 +58,7 @@ mod tests {
     #[test]
     fn test_arguments() {
         let s = "(a: 1, b: 2)";
-        let parsed = Arguments::<false>::parse(s).unwrap();
+        let parsed = Arguments::<false>::parse(s).result.unwrap();
         assert_eq!(s, ArgumentsPrinter::new(&parsed).to_string());
     }
 }

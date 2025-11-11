@@ -1,6 +1,6 @@
 use bluejay_parser::{
     ast::{
-        definition::{DefinitionDocument, SchemaDefinition},
+        definition::{DefaultContext, DefinitionDocument, SchemaDefinition},
         Parse,
     },
     Error,
@@ -10,9 +10,8 @@ use bluejay_parser::{
 fn test_error() {
     insta::glob!("test_data/schema_definition/error/*.graphql", |path| {
         let input = std::fs::read_to_string(path).unwrap();
-        let definition_document: Result<DefinitionDocument, _> =
-            DefinitionDocument::parse(input.as_str());
-        let errors = match definition_document {
+        let definition_document = DefinitionDocument::<DefaultContext>::parse(input.as_str());
+        let errors = match definition_document.result {
             Ok(definition_document) => match SchemaDefinition::try_from(&definition_document) {
                 Ok(_) => panic!("Document did not have any errors"),
                 Err(errors) => errors.into_iter().map(Error::from).collect(),
@@ -32,10 +31,9 @@ fn test_error() {
 fn test_valid() {
     insta::glob!("test_data/schema_definition/valid/*.graphql", |path| {
         let input = std::fs::read_to_string(path).unwrap();
-        let executable_document: Result<DefinitionDocument, _> =
-            DefinitionDocument::parse(input.as_str());
-        assert!(executable_document.is_ok(), "Document had errors");
-        let executable_document = executable_document.unwrap();
+        let executable_document = DefinitionDocument::<DefaultContext>::parse(input.as_str());
+        assert!(executable_document.result.is_ok(), "Document had errors");
+        let executable_document = executable_document.result.unwrap();
         let schema_definition = SchemaDefinition::try_from(&executable_document);
         assert!(schema_definition.is_ok(), "Document had errors");
     });

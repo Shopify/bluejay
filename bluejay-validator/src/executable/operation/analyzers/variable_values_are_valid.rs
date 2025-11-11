@@ -168,7 +168,7 @@ mod tests {
     "#;
 
     static TEST_DEFINITION_DOCUMENT: Lazy<DefinitionDocument<'static>> =
-        Lazy::new(|| DefinitionDocument::parse(TEST_SCHEMA_SDL).unwrap());
+        Lazy::new(|| DefinitionDocument::parse(TEST_SCHEMA_SDL).result.unwrap());
 
     static TEST_SCHEMA_DEFINITION: Lazy<SchemaDefinition<'static>> =
         Lazy::new(|| SchemaDefinition::try_from(&*TEST_DEFINITION_DOCUMENT).unwrap());
@@ -179,7 +179,7 @@ mod tests {
         variable_values: &serde_json::Value,
         f: fn(Vec<String>),
     ) {
-        let executable_document = ExecutableDocument::parse(source).unwrap();
+        let executable_document = ExecutableDocument::parse(source).result.unwrap();
         let cache = Cache::new(&executable_document, &*TEST_SCHEMA_DEFINITION);
         f(
             Orchestrator::<_, _, _, VariableValuesAreValid<_, _, _>>::analyze(

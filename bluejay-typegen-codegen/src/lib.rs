@@ -89,6 +89,7 @@ pub fn generate_schema(
     let (schema_contents, schema_path) = schema.read_to_string_and_path()?;
 
     let definition_document: DefinitionDocument = DefinitionDocument::parse(&schema_contents)
+        .result
         .map_err(|errors| {
             map_parser_errors(schema, &schema_contents, schema_path.as_deref(), errors)
         })?;

@@ -310,13 +310,14 @@ mod tests {
     "#;
 
     static TEST_DEFINITION_DOCUMENT: Lazy<DefinitionDocument<'static>> =
-        Lazy::new(|| DefinitionDocument::parse(TEST_SCHEMA_SDL).unwrap());
+        Lazy::new(|| DefinitionDocument::parse(TEST_SCHEMA_SDL).result.unwrap());
 
     static TEST_SCHEMA_DEFINITION: Lazy<ParserSchemaDefinition<'static>> =
         Lazy::new(|| ParserSchemaDefinition::try_from(&*TEST_DEFINITION_DOCUMENT).unwrap());
 
     fn validate_deprecations(query: &str, variables: serde_json::Value, expected: Vec<Offender>) {
         let executable_document = ParserExecutableDocument::parse(query)
+            .result
             .unwrap_or_else(|_| panic!("Document had parse errors"));
         let cache = Cache::new(&executable_document, &*TEST_SCHEMA_DEFINITION);
         let variables = variables.as_object().expect("Variables must be an object");

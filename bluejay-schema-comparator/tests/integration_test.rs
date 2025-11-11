@@ -168,8 +168,8 @@ fn test_schema_compare() {
         ) on FIELD
     "#;
 
-    let document_a: DefinitionDocument = DefinitionDocument::parse(old_schema).unwrap();
-    let document_b: DefinitionDocument = DefinitionDocument::parse(new_schema).unwrap();
+    let document_a: DefinitionDocument = DefinitionDocument::parse(old_schema).result.unwrap();
+    let document_b: DefinitionDocument = DefinitionDocument::parse(new_schema).result.unwrap();
 
     let schema_definition_a = SchemaDefinition::try_from(&document_a).unwrap();
     let schema_definition_b = SchemaDefinition::try_from(&document_b).unwrap();

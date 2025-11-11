@@ -139,6 +139,7 @@ fn test_visibility() {
     insta::glob!("test_data/*.graphql", |path| {
         let input = std::fs::read_to_string(path).unwrap();
         let definition_document: DefinitionDocument = DefinitionDocument::parse(&input)
+            .result
             .unwrap_or_else(|errors| {
                 panic!(
                     "Schema `{}` had parse errors:\n{}",
@@ -177,8 +178,9 @@ fn test_fields_definition_get() {
         }
     ";
 
-    let definition_document: DefinitionDocument =
-        DefinitionDocument::parse(schema).unwrap_or_else(|errors| {
+    let definition_document: DefinitionDocument = DefinitionDocument::parse(schema)
+        .result
+        .unwrap_or_else(|errors| {
             panic!(
                 "Schema had parse errors:\n{}",
                 Error::format_errors(schema, None, errors)
