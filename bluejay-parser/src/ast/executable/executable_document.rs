@@ -7,7 +7,6 @@ use crate::ast::{
     Argument, Arguments, DepthLimiter, Directive, Directives, Parse, ParseDetails, ParseError,
     Tokens, TryFromTokens, Value,
 };
-use crate::Error;
 
 #[derive(Debug)]
 pub struct ExecutableDocument<'a> {
@@ -42,10 +41,7 @@ impl<'a> ExecutableDocument<'a> {
 
 impl<'a> Parse<'a> for ExecutableDocument<'a> {
     #[inline]
-    fn parse_from_tokens(
-        mut tokens: impl Tokens<'a>,
-        max_depth: usize,
-    ) -> Result<(Self, ParseDetails), Vec<Error>> {
+    fn parse_from_tokens(mut tokens: impl Tokens<'a>, max_depth: usize) -> ParseDetails<Self> {
         let mut instance: Self = Self::new(Vec::new(), Vec::new());
         let mut errors = Vec::new();
         let mut last_pass_had_error = false;
@@ -98,11 +94,13 @@ impl<'a> Parse<'a> for ExecutableDocument<'a> {
             lex_errors.into_iter().map(Into::into).collect()
         };
 
-        if errors.is_empty() {
-            Ok((instance, ParseDetails { token_count }))
+        let result = if errors.is_empty() {
+            Ok(instance)
         } else {
             Err(errors)
-        }
+        };
+
+        ParseDetails::new(result, token_count)
     }
 }
 
@@ -168,7 +166,7 @@ mod tests {
             }
         "#;
 
-        let defs = ExecutableDocument::parse(document).unwrap();
+        let defs = ExecutableDocument::parse(document).result.unwrap();
 
         assert_eq!(2, defs.fragment_definitions().len());
         assert_eq!(1, defs.operation_definitions().len());
@@ -189,6 +187,7 @@ mod tests {
                 max_tokens: None,
             },
         )
+        .result
         .unwrap_err();
 
         assert_eq!(1, errors.len(), "{:?}", errors);
@@ -203,6 +202,7 @@ mod tests {
                 max_tokens: None,
             },
         )
+        .result
         .unwrap();
         assert_eq!(1, executable_document.operation_definitions().len());
     }

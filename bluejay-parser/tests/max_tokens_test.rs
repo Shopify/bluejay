@@ -1,7 +1,4 @@
-use bluejay_parser::{
-    ast::{executable::ExecutableDefinition, Parse, ParseDetails, ParseOptions},
-    Error,
-};
+use bluejay_parser::ast::{executable::ExecutableDefinition, Parse, ParseDetails, ParseOptions};
 
 #[test]
 fn test_token_counting() {
@@ -12,13 +9,11 @@ fn test_token_counting() {
         ..Default::default()
     };
 
-    let result: Result<(ExecutableDefinition, ParseDetails), Vec<Error>> =
-        ExecutableDefinition::parse_with_details_and_options(query, options);
+    let result: ParseDetails<ExecutableDefinition> =
+        ExecutableDefinition::parse_with_options(query, options);
 
-    assert!(result.is_ok());
-    let (_, details) = result.unwrap();
-
-    assert_eq!(8, details.token_count);
+    assert!(result.result.is_ok());
+    assert_eq!(8, result.token_count);
 }
 
 #[test]
@@ -30,14 +25,15 @@ fn test_max_tokens_limit_exceeded() {
         ..Default::default()
     };
 
-    let result: Result<(ExecutableDefinition, ParseDetails), Vec<Error>> =
-        ExecutableDefinition::parse_with_details_and_options(query, options);
+    let result: ParseDetails<ExecutableDefinition> =
+        ExecutableDefinition::parse_with_options(query, options);
 
-    assert!(result.is_err());
-    let errors = result.unwrap_err();
+    assert!(result.result.is_err());
+    let errors = result.result.unwrap_err();
 
     assert_eq!(1, errors.len());
     assert_eq!("Max tokens exceeded", errors[0].message());
+    assert_eq!(4, result.token_count);
 }
 
 #[test]
@@ -49,13 +45,11 @@ fn test_max_tokens_limit_not_exceeded() {
         ..Default::default()
     };
 
-    let result: Result<(ExecutableDefinition, ParseDetails), Vec<Error>> =
-        ExecutableDefinition::parse_with_details_and_options(query, options);
+    let result: ParseDetails<ExecutableDefinition> =
+        ExecutableDefinition::parse_with_options(query, options);
 
-    assert!(result.is_ok());
-    let (_, details) = result.unwrap();
-
-    assert_eq!(8, details.token_count);
+    assert!(result.result.is_ok());
+    assert_eq!(8, result.token_count);
 }
 
 #[test]
@@ -67,13 +61,11 @@ fn test_max_tokens_limit_at_limit() {
         ..Default::default()
     };
 
-    let result: Result<(ExecutableDefinition, ParseDetails), Vec<Error>> =
-        ExecutableDefinition::parse_with_details_and_options(query, options);
+    let result: ParseDetails<ExecutableDefinition> =
+        ExecutableDefinition::parse_with_options(query, options);
 
-    assert!(result.is_ok());
-    let (_, details) = result.unwrap();
-
-    assert_eq!(8, details.token_count);
+    assert!(result.result.is_ok());
+    assert_eq!(8, result.token_count);
 }
 
 #[test]
@@ -86,9 +78,10 @@ fn test_lexer_stops_after_max_tokens_and_prevents_stack_overflows() {
         ..Default::default()
     };
 
-    let result = ExecutableDefinition::parse_with_details_and_options(&deeply_nested, options);
-    assert!(result.is_err());
+    let result = ExecutableDefinition::parse_with_options(&deeply_nested, options);
+    assert!(result.result.is_err());
 
-    let errors = result.unwrap_err();
+    let errors = result.result.unwrap_err();
     assert_eq!("Max tokens exceeded", errors[0].message());
+    assert_eq!(11, result.token_count);
 }

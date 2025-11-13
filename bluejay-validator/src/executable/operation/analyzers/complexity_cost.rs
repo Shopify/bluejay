@@ -454,10 +454,13 @@ mod tests {
         expected_complexity: usize,
     ) {
         let definition_document: DefinitionDocument<'_, DefaultContext> =
-            DefinitionDocument::parse(TEST_SCHEMA).expect("Schema had parse errors");
+            DefinitionDocument::parse(TEST_SCHEMA)
+                .result
+                .expect("Schema had parse errors");
         let schema_definition =
             SchemaDefinition::try_from(&definition_document).expect("Schema had errors");
         let executable_document = ExecutableDocument::parse(source)
+            .result
             .unwrap_or_else(|_| panic!("Document had parse errors"));
         let cache = Cache::new(&executable_document, &schema_definition);
         let variables = variables.as_object().expect("Variables must be an object");

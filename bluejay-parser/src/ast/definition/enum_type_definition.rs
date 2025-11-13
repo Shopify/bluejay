@@ -73,7 +73,7 @@ impl<'a, C: Context> EnumTypeDefinition<'a, C> {
     }
 
     fn builtin(s: &'static str) -> Self {
-        let mut definition = Self::parse(s).unwrap();
+        let mut definition = Self::parse(s).result.unwrap();
         definition.is_builtin = true;
         definition
     }

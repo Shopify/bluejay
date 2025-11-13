@@ -9,10 +9,10 @@ fn test_error() {
         let input = std::fs::read_to_string(path).unwrap();
         let executable_document = ExecutableDocument::parse(input.as_str());
         assert!(
-            executable_document.is_err(),
+            executable_document.result.is_err(),
             "Document did not have any errors"
         );
-        let errors = executable_document.unwrap_err();
+        let errors = executable_document.result.unwrap_err();
         let formatted_errors = Error::format_errors(
             input.as_str(),
             path.file_name().and_then(|f| f.to_str()),
@@ -27,7 +27,7 @@ fn test_valid() {
     insta::glob!("test_data/executable_document/valid/*.graphql", |path| {
         let input = std::fs::read_to_string(path).unwrap();
         let executable_document = ExecutableDocument::parse(input.as_str());
-        assert!(executable_document.is_ok(), "Document had errors");
+        assert!(executable_document.result.is_ok(), "Document had errors");
     });
 }
 
@@ -44,7 +44,7 @@ fn test_graphql_ruby_valid() {
                     ..Default::default()
                 },
             );
-            assert!(executable_document.is_ok(), "Document had errors");
+            assert!(executable_document.result.is_ok(), "Document had errors");
         }
     );
 }

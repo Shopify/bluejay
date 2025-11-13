@@ -64,11 +64,11 @@ mod tests {
 
     macro_rules! assert_prints {
         ($val:literal) => {
-            let parsed = VariableValue::parse($val).unwrap();
+            let parsed = VariableValue::parse($val).result.unwrap();
             assert_eq!($val, ValuePrinter::new(&parsed).to_string());
         };
         ($out:literal, $in:literal) => {
-            let parsed = VariableValue::parse($in).unwrap();
+            let parsed = VariableValue::parse($in).result.unwrap();
             assert_eq!($out, ValuePrinter::new(&parsed).to_string());
         };
     }
