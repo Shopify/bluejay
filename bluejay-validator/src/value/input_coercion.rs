@@ -193,6 +193,14 @@ fn coerce_custom_scalar_value<'a, const CONST: bool, V: Value<CONST>>(
     value: &'a V,
     path: Path<'a>,
 ) -> Result<(), Vec<Error<'a, CONST, V>>> {
+    if matches!(value.as_ref(), ValueReference::Enum(_)) {
+        return Err(vec![Error::NoImplicitConversion {
+            value,
+            input_type_name: cstd.name().to_string(),
+            path,
+        }]);
+    }
+
     cstd.coerce_input(value).map_err(|message| {
         vec![Error::CustomScalarInvalidValue {
             value,

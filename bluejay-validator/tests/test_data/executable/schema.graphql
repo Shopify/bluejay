@@ -9,7 +9,10 @@ type Query {
   oneOf(oneOfArg: OneOfInput!): String
   oneOfList(oneOfListArg: [OneOfInput]!): String
   nestedOneOf(nestedOneOfArg: NestedOneOfInput!): String
+  customScalarField(customScalarArg: CustomScalar!): String
 }
+
+scalar CustomScalar
 
 input OneOfInput @oneOf {
   oneOfField: String

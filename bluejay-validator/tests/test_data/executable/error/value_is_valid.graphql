@@ -16,3 +16,13 @@ query inputFieldDoesNotExist {
 query duplicateInputField {
   findDog(complex: { name: "Fido", name: "Fido" }) { name }
 }
+
+query enumLiteralForBuiltinScalar {
+  arguments {
+    intArgField(intArg: SomeEnumValue)
+  }
+}
+
+query enumLiteralForCustomScalar {
+  customScalarField(customScalarArg: SomeEnumValue)
+}

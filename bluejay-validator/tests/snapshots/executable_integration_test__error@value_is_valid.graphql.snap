@@ -29,6 +29,22 @@ Error: Object with multiple entries for field name
     │                                      ╰─── Entry for field
 ────╯
 
+Error: No implicit conversion of enum to Int
+    ╭─[ value_is_valid.graphql:22:25 ]
+    │
+ 22 │     intArgField(intArg: SomeEnumValue)
+    │                         ──────┬──────  
+    │                               ╰──────── No implicit conversion to Int
+────╯
+
+Error: No implicit conversion of enum to CustomScalar
+    ╭─[ value_is_valid.graphql:27:38 ]
+    │
+ 27 │   customScalarField(customScalarArg: SomeEnumValue)
+    │                                      ──────┬──────  
+    │                                            ╰──────── No implicit conversion to CustomScalar
+────╯
+
 Error: No implicit conversion of string to Int
    ╭─[ value_is_valid.graphql:2:23 ]
    │
