@@ -11,7 +11,7 @@ description = "A GraphQL parser"
 
 [dependencies]
 logos = { version = "0.15" }
-enum-as-inner = "0.6"
+enum-as-inner = "0.7"
 ariadne = { version = "0.5.0" }
 serde = { version = "1.0.203", optional = true }
 bluejay-core = { workspace = true }
