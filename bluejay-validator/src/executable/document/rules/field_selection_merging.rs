@@ -13,6 +13,7 @@ use bluejay_core::executable::{
 use bluejay_core::{Arguments, AsIter, Indexed};
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::ops::Not;
+use std::rc::Rc;
 
 pub struct FieldSelectionMerging<'a, E: ExecutableDocument, S: SchemaDefinition> {
     cache: &'a Cache<'a, E, S>,
@@ -231,7 +232,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> FieldSelectionMer
             selection_set.iter(),
             &mut fields,
             parent_type,
-            &HashSet::new(),
+            Rc::new(HashSet::new()),
         );
         fields
     }
@@ -255,7 +256,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> FieldSelectionMer
                             selection_set.iter(),
                             &mut fields,
                             parent_type,
-                            &field_context.parent_fragments,
+                            Rc::clone(&field_context.parent_fragments),
                         );
                     }
                 }
@@ -269,7 +270,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> FieldSelectionMer
         selections: impl Iterator<Item = &'a E::Selection>,
         fields: &mut HashMap<&'a str, Vec<FieldContext<'a, E, S>>>,
         parent_type: TypeDefinitionReference<'a, S::TypeDefinition>,
-        parent_fragments: &HashSet<&'a str>,
+        parent_fragments: Rc<HashSet<&'a str>>,
     ) {
         selections.for_each(|selection| match selection.as_ref() {
             SelectionReference::Field(field) => {
@@ -284,7 +285,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> FieldSelectionMer
                             field,
                             field_definition,
                             parent_type,
-                            parent_fragments: parent_fragments.to_owned(),
+                            parent_fragments: Rc::clone(&parent_fragments),
                         });
                 }
             }
@@ -301,14 +302,15 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> FieldSelectionMer
                                 fragment_definition.selection_set(),
                                 parent_type,
                             ) {
-                                let mut new_parent_fragments = HashSet::new();
-                                new_parent_fragments.clone_from(parent_fragments);
+                                let mut new_parent_fragments =
+                                    HashSet::with_capacity(parent_fragments.len() + 1);
+                                new_parent_fragments.extend(parent_fragments.iter().copied());
                                 new_parent_fragments.insert(fragment_name);
                                 self.visit_selections_for_fields(
                                     fragment_definition.selection_set().iter(),
                                     fields,
                                     scoped_type,
-                                    &new_parent_fragments,
+                                    Rc::new(new_parent_fragments),
                                 );
                             }
                         }
@@ -328,7 +330,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> FieldSelectionMer
                             i.selection_set().iter(),
                             fields,
                             scoped_type,
-                            parent_fragments,
+                            Rc::clone(&parent_fragments),
                         );
                     }
                 }
@@ -380,5 +382,5 @@ struct FieldContext<'a, E: ExecutableDocument, S: SchemaDefinition> {
     field: &'a E::Field,
     field_definition: &'a S::FieldDefinition,
     parent_type: TypeDefinitionReference<'a, S::TypeDefinition>,
-    parent_fragments: HashSet<&'a str>,
+    parent_fragments: Rc<HashSet<&'a str>>,
 }
