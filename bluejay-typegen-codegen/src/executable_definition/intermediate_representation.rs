@@ -219,11 +219,11 @@ impl ExecutableStruct<'_> {
 
     fn prefix_for_schema_definition_module(&self) -> impl Iterator<Item = syn::Token![super]> {
         // root is one level higher than the executable/query module
-        std::iter::repeat(Default::default()).take(self.depth + 1)
+        std::iter::repeat_n(Default::default(), self.depth + 1)
     }
 
     fn prefix_for_executable_document_module(&self) -> impl Iterator<Item = syn::Token![super]> {
-        std::iter::repeat(Default::default()).take(self.depth)
+        std::iter::repeat_n(Default::default(), self.depth)
     }
 }
 
@@ -257,7 +257,7 @@ impl ExecutableEnum<'_> {
 
 pub enum WrappedExecutableType<'a> {
     /// a required type, unless wrapped in an `Optional`
-    Base(ExecutableType<'a>),
+    Base(Box<ExecutableType<'a>>),
     /// an optional type
     Optional(Box<WrappedExecutableType<'a>>),
     /// a list type, required unless wrapped in an `Optional`
@@ -533,13 +533,13 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, C: CodeGenerator>
                 }
             }
             OutputTypeReference::Base(inner, required) => {
-                let base_type = WrappedExecutableType::Base(self.build_base_type(
+                let base_type = WrappedExecutableType::Base(Box::new(self.build_base_type(
                     field.response_name(),
                     field.selection_set(),
                     inner,
                     depth,
                     path,
-                ));
+                )));
                 if required {
                     base_type
                 } else {

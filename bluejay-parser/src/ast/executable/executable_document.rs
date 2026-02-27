@@ -192,7 +192,7 @@ mod tests {
         .result
         .unwrap_err();
 
-        assert_eq!(1, errors.len(), "{:?}", errors);
+        assert_eq!(1, errors.len(), "{errors:?}");
 
         assert_eq!("Max depth exceeded", errors[0].message());
 

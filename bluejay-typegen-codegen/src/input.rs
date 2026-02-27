@@ -57,7 +57,7 @@ impl DocumentInput {
         let file_path = base_path.join(filename.value());
 
         std::fs::read_to_string(file_path)
-            .map_err(|err| syn::Error::new(filename.span(), format!("{}", err)))
+            .map_err(|err| syn::Error::new(filename.span(), format!("{err}")))
     }
 }
 
@@ -117,7 +117,7 @@ pub(crate) fn parse_key_value_with<V>(
     if value.is_some() {
         return Err(syn::Error::new(
             key.span(),
-            format!("Duplicate entry for `{}`", key),
+            format!("Duplicate entry for `{key}`"),
         ));
     }
 

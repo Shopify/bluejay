@@ -4,6 +4,7 @@ members = [
     "bluejay-parser",
     "bluejay-printer",
     "bluejay-schema-comparator",
+    "bluejay-operation-normalizer",
     "bluejay-typegen",
     "bluejay-typegen-codegen",
     "bluejay-typegen-macro",
@@ -27,6 +28,7 @@ bluejay-typegen = { path = "./bluejay-typegen", version = "=0.3.1" }
 bluejay-typegen-codegen = { path = "./bluejay-typegen-codegen", version = "=0.3.1" }
 bluejay-typegen-macro = { path = "./bluejay-typegen-macro", version = "=0.3.1" }
 bluejay-validator = { path = "./bluejay-validator", version = "=0.3.1" }
+bluejay-operation-normalizer = { path = "./bluejay-operation-normalizer", version = "=0.3.1" }
 bluejay-visibility = { path = "./bluejay-visibility", version = "=0.3.1" }
 
 [profile.shopify-function]
