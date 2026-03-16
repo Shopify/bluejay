@@ -6,3 +6,4 @@
 {"run":5,"commit":"1d91d89","metric":2648,"metrics":{"schema_µs":2638,"kitchen_sink_µs":10},"status":"keep","description":"Add Copy to DepthLimiter + preallocate Vec capacity in DefinitionDocument","timestamp":1773693753683,"segment":0}
 {"type":"config","name":"Optimizing bluejay-parser executable document parsing (runtime hot path)","metricName":"exec_µs","metricUnit":"µs","bestDirection":"lower"}
 {"run":1,"commit":"c208067","metric":49,"metrics":{"schema_µs":2631,"kitchen_sink_µs":5},"status":"keep","description":"Baseline: new exec_µs metric with large_executable.graphql (912 lines, ExecutableDocument::parse)","timestamp":1773693890755,"segment":0}
+{"run":2,"commit":"b29508d","metric":48,"metrics":{"schema_µs":2586,"kitchen_sink_µs":5},"status":"keep","description":"Field: consume-then-check for alias instead of peek(1), avoids buffering 2 tokens","timestamp":1773694009716,"segment":0}
