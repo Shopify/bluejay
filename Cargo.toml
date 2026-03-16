@@ -29,9 +29,6 @@ bluejay-typegen-macro = { path = "./bluejay-typegen-macro", version = "=0.3.1" }
 bluejay-validator = { path = "./bluejay-validator", version = "=0.3.1" }
 bluejay-visibility = { path = "./bluejay-visibility", version = "=0.3.1" }
 
-[profile.release]
-lto = "thin"
-
 [profile.shopify-function]
 inherits = "release"
 lto = true
