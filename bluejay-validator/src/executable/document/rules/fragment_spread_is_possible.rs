@@ -10,7 +10,6 @@ use bluejay_core::executable::{
     ExecutableDocument, FragmentDefinition, FragmentSpread, InlineFragment,
 };
 use bluejay_core::AsIter;
-use std::collections::HashSet;
 
 pub struct FragmentSpreadIsPossible<'a, E: ExecutableDocument, S: SchemaDefinition> {
     errors: Vec<Error<'a, E, S>>,
@@ -70,44 +69,78 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> Visitor<'a, E, S>
 }
 
 impl<'a, E: ExecutableDocument, S: SchemaDefinition> FragmentSpreadIsPossible<'a, E, S> {
-    fn get_possible_types(
-        &self,
-        t: TypeDefinitionReference<'a, S::TypeDefinition>,
-    ) -> Option<HashSet<&'a str>> {
-        match t {
-            TypeDefinitionReference::Object(_) => Some(HashSet::from([t.name()])),
-            TypeDefinitionReference::Interface(itd) => Some(HashSet::from_iter(
-                self.schema_definition
-                    .get_interface_implementors(itd)
-                    .map(ObjectTypeDefinition::name),
-            )),
-            TypeDefinitionReference::Union(utd) => Some(HashSet::from_iter(
-                utd.union_member_types()
-                    .iter()
-                    .map(|union_member| union_member.name()),
-            )),
-            TypeDefinitionReference::BuiltinScalar(_)
-            | TypeDefinitionReference::CustomScalar(_)
-            | TypeDefinitionReference::Enum(_)
-            | TypeDefinitionReference::InputObject(_) => None,
-        }
-    }
-
     fn spread_is_not_possible(
         &self,
         parent_type: TypeDefinitionReference<'a, S::TypeDefinition>,
         fragment_type: TypeDefinitionReference<'a, S::TypeDefinition>,
     ) -> bool {
-        let parent_type_possible_types = self.get_possible_types(parent_type);
-        let fragment_possible_types = self.get_possible_types(fragment_type);
+        // Fast path: if either type is not a composite type, spread is not applicable
+        if !Self::is_composite(parent_type) || !Self::is_composite(fragment_type) {
+            return false;
+        }
 
+        // Fast path: same type name means definitely possible
+        if parent_type.name() == fragment_type.name() {
+            return false;
+        }
+
+        // Fast path: if both are object types, they can only overlap if they're the same (already checked)
+        if matches!(parent_type, TypeDefinitionReference::Object(_))
+            && matches!(fragment_type, TypeDefinitionReference::Object(_))
+        {
+            return true;
+        }
+
+        // For mixed cases, check intersection of possible types
+        !self.types_have_overlap(parent_type, fragment_type)
+    }
+
+    fn is_composite(t: TypeDefinitionReference<'a, S::TypeDefinition>) -> bool {
         matches!(
-            (parent_type_possible_types, fragment_possible_types),
-            (Some(parent_type_possible_types), Some(fragment_possible_types)) if parent_type_possible_types
-                .intersection(&fragment_possible_types)
-                .next()
-                .is_none(),
+            t,
+            TypeDefinitionReference::Object(_)
+                | TypeDefinitionReference::Interface(_)
+                | TypeDefinitionReference::Union(_)
         )
+    }
+
+    fn type_contains_name(
+        &self,
+        t: TypeDefinitionReference<'a, S::TypeDefinition>,
+        name: &str,
+    ) -> bool {
+        match t {
+            TypeDefinitionReference::Object(_) => t.name() == name,
+            TypeDefinitionReference::Interface(itd) => self
+                .schema_definition
+                .get_interface_implementors(itd)
+                .any(|otd| ObjectTypeDefinition::name(otd) == name),
+            TypeDefinitionReference::Union(utd) => utd
+                .union_member_types()
+                .iter()
+                .any(|member| member.name() == name),
+            _ => false,
+        }
+    }
+
+    fn types_have_overlap(
+        &self,
+        a: TypeDefinitionReference<'a, S::TypeDefinition>,
+        b: TypeDefinitionReference<'a, S::TypeDefinition>,
+    ) -> bool {
+        // Iterate over possible types of `a` and check if any is in `b`
+        match a {
+            TypeDefinitionReference::Object(_) => self.type_contains_name(b, a.name()),
+            TypeDefinitionReference::Interface(itd) => self
+                .schema_definition
+                .get_interface_implementors(itd)
+                .any(|otd| self.type_contains_name(b, ObjectTypeDefinition::name(otd))),
+            TypeDefinitionReference::Union(utd) => utd
+                .union_member_types()
+                .iter()
+                .any(|member| self.type_contains_name(b, member.name())),
+            _ => false,
+        }
     }
 }
 
