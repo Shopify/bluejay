@@ -61,6 +61,9 @@ All files in `bluejay-validator/src/`:
 6. **Optimized duplicates() utility** (-5.3%) — skip BTreeMap allocation when no duplicates found (common case for arguments)
 7. **HashMap → linear scan in RequiredArguments** (-2.5%) — argument lists are small (1-5), avoid HashMap overhead
 8. **Fast path in same_for_common_parents_by_name** (-1.4%) — skip HashMap grouping when all fields share same parent type
+9. **Optimized duplicates() further** (-2.6%) — avoid intermediate key Vec allocation, compute keys on-the-fly
+10. **Arguments::equivalent linear scan** (bluejay-core, -0.7%) — replaced 2x HashMap allocation with O(n*m) scan
+11. **Reuse Cache in FragmentSpreadTargetDefined** (-1.0%) — use Cache's fragment HashMap instead of separate HashSet
 
 ### Dead Ends (discarded)
 - **Split cached_errors BTreeMap into HashMap + BTreeMap** — extra HashMap overhead worse than BTreeMap log(n) for small maps

@@ -26,6 +26,13 @@ pub trait Visitor<'a, E: ExecutableDocument, S: SchemaDefinition> {
     ) {
     }
 
+    fn visit_unknown_field(
+        &mut self,
+        _field: &'a E::Field,
+        _scoped_type: TypeDefinitionReference<'a, S::TypeDefinition>,
+    ) {
+    }
+
     fn visit_const_directive(
         &mut self,
         _directive: &'a E::Directive<true>,
@@ -129,6 +136,14 @@ macro_rules! impl_visitor {
                     path: &Path<'a, E>,
                 ) {
                     #(self.N.visit_field(field, field_definition, path);)*
+                }
+
+                fn visit_unknown_field(
+                    &mut self,
+                    field: &'a E::Field,
+                    scoped_type: TypeDefinitionReference<'a, S::TypeDefinition>,
+                ) {
+                    #(self.N.visit_unknown_field(field, scoped_type);)*
                 }
 
                 fn visit_const_directive(

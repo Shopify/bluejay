@@ -2,10 +2,8 @@ use crate::executable::{
     document::{Error, Rule, Visitor},
     Cache,
 };
-use bluejay_core::definition::{FieldsDefinition, SchemaDefinition, TypeDefinitionReference};
-use bluejay_core::executable::{ExecutableDocument, Field, Selection, SelectionReference};
-use bluejay_core::AsIter;
-use std::ops::Not;
+use bluejay_core::definition::{SchemaDefinition, TypeDefinitionReference};
+use bluejay_core::executable::{ExecutableDocument, Field};
 
 pub struct FieldSelections<'a, E: ExecutableDocument, S: SchemaDefinition> {
     errors: Vec<Error<'a, E, S>>,
@@ -18,25 +16,13 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Visitor<'a, E, S>
         Self { errors: Vec::new() }
     }
 
-    fn visit_selection_set(
+    fn visit_unknown_field(
         &mut self,
-        selection_set: &'a E::SelectionSet,
+        field: &'a E::Field,
         r#type: TypeDefinitionReference<'a, S::TypeDefinition>,
     ) {
-        if let Some(fields_definition) = r#type.fields_definition() {
-            self.errors
-                .extend(selection_set.iter().filter_map(|selection| {
-                    if let SelectionReference::Field(field) = selection.as_ref() {
-                        let name = field.name();
-                        fields_definition
-                            .contains_field(name)
-                            .not()
-                            .then_some(Error::FieldDoesNotExistOnType { field, r#type })
-                    } else {
-                        None
-                    }
-                }));
-        }
+        self.errors
+            .push(Error::FieldDoesNotExistOnType { field, r#type });
     }
 }
 

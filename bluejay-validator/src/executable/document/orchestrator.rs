@@ -126,12 +126,16 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, V: Visitor<'a, E, S>>
             let nested_path = path.with_selection(selection);
             match selection.as_ref() {
                 SelectionReference::Field(f) => {
-                    let field_definition = scoped_type
-                        .fields_definition()
-                        .and_then(|fields_definition| fields_definition.get(f.name()));
+                    let fields_definition = scoped_type.fields_definition();
+                    let field_definition = fields_definition
+                        .and_then(|fd| fd.get(f.name()));
 
                     if let Some(field_definition) = field_definition {
                         self.visit_field(f, field_definition, &nested_path);
+                    } else if fields_definition.is_some() {
+                        // Only report unknown field if the type has fields
+                        // (scalar/enum types are handled by LeafFieldSelections)
+                        self.visitor.visit_unknown_field(f, scoped_type);
                     }
                 }
                 SelectionReference::InlineFragment(i) => {
