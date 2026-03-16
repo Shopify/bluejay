@@ -2,32 +2,35 @@ use std::cmp::{Eq, Ord};
 use std::collections::BTreeMap;
 use std::hash::Hash;
 
-pub fn duplicates<T: Copy, I: Iterator<Item = T>, K: Hash + Ord + Eq>(
+pub fn duplicates<T: Copy, I: Iterator<Item = T>, K: Hash + Ord + Eq + Copy>(
     iter: I,
     key: fn(T) -> K,
 ) -> impl Iterator<Item = (K, Vec<T>)> {
-    // Fast path: collect into a small vec and check for duplicates with linear scan
-    // This avoids BTreeMap allocation for the common case (no duplicates, few items)
-    let items: Vec<(K, T)> = iter.map(|el| (key(el), el)).collect();
+    // Collect items first to check for duplicates without BTreeMap
+    let items: Vec<T> = iter.collect();
 
-    // If 0 or 1 items, no duplicates possible
+    // If 0 or 1 items, no duplicates possible — avoid any allocation
     if items.len() <= 1 {
         return Vec::new().into_iter();
     }
 
-    // Check if any duplicates exist before allocating the BTreeMap
-    let has_duplicates = items.iter().enumerate().any(|(i, (k1, _))| {
-        items[i + 1..].iter().any(|(k2, _)| k1 == k2)
+    // Quick O(n²) check for duplicates before allocating BTreeMap
+    let has_dupes = items.iter().enumerate().any(|(i, el)| {
+        let k = key(*el);
+        items[..i].iter().any(|prev| key(*prev) == k)
     });
 
-    if !has_duplicates {
+    if !has_dupes {
         return Vec::new().into_iter();
     }
 
     // Only allocate BTreeMap when we know there are duplicates
     let mut indexed = BTreeMap::new();
-    for (k, el) in items {
-        indexed.entry(k).or_insert_with(Vec::new).push(el);
+    for el in items {
+        indexed
+            .entry(key(el))
+            .or_insert_with(Vec::new)
+            .push(el);
     }
 
     indexed

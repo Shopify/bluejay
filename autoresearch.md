@@ -38,9 +38,11 @@ All files in `bluejay-validator/src/`:
 - `benches/field_selection_merging.rs` — Focused benchmark for the merging rule
 
 ## Off Limits
-- `bluejay-core/` trait definitions — public API, do not change signatures
 - Test snapshot files — must not be modified
 - Benchmark harness files — measurement methodology stays the same
+
+## Notes
+- `bluejay-core/` is in scope for small, non-breaking changes (no big refactors, no regressions)
 
 ## Constraints
 - All tests must pass (`cargo test -p bluejay-validator`)
@@ -49,4 +51,17 @@ All files in `bluejay-validator/src/`:
 - Changes should be safe Rust only
 
 ## What's Been Tried
-(Nothing yet — this is the initial baseline)
+
+### Wins (kept)
+1. **HashSet → Vec for parent_fragments** in FieldSelectionMerging (-5.2%) — cheaper clone, linear scan is faster for typical 0-3 items
+2. **Eliminated Path Vec allocation** (-6.8%) — `members()` was never called by any rule, made Path Copy
+3. **HashSet → Vec in fragment cycle detection** (-1.5%) — same pattern, small N benefits from Vec
+4. **Refactored error collection to &mut Vec** (-2.8%) — avoid creating/appending intermediate Vec allocations
+5. **Eliminated HashSet in FragmentSpreadIsPossible** (-1.1%) — iterator-based overlap check with fast paths
+6. **Optimized duplicates() utility** (-5.3%) — skip BTreeMap allocation when no duplicates found (common case for arguments)
+7. **HashMap → linear scan in RequiredArguments** (-2.5%) — argument lists are small (1-5), avoid HashMap overhead
+8. **Fast path in same_for_common_parents_by_name** (-1.4%) — skip HashMap grouping when all fields share same parent type
+
+### Dead Ends (discarded)
+- **Split cached_errors BTreeMap into HashMap + BTreeMap** — extra HashMap overhead worse than BTreeMap log(n) for small maps
+- **Replace BTreeMap cached_errors with HashSet+Vec** — better for large queries (fsm_128 -26.9%) but regression on small queries; might be worth revisiting for production workloads
