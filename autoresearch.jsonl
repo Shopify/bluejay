@@ -1,2 +1,3 @@
 {"type":"config","name":"bluejay-validator performance optimization","metricName":"total_ns","metricUnit":"ns","bestDirection":"lower"}
 {"run":1,"commit":"e595672","metric":38365,"metrics":{"validate_simple_ns":2904,"validate_fragments_ns":12263,"validate_complex_ns":23198,"fsm_128_ns":476158},"status":"keep","description":"Baseline: full validation pipeline (simple+fragments+complex)","timestamp":1773688287397,"segment":0}
+{"run":2,"commit":"a3d9a64","metric":36384,"metrics":{"validate_simple_ns":2713,"validate_fragments_ns":11654,"validate_complex_ns":22017,"fsm_128_ns":435353},"status":"keep","description":"Replace HashSet with Vec for parent_fragments in FieldSelectionMerging (cheaper clone, linear scan for small N)","timestamp":1773688638980,"segment":0}
