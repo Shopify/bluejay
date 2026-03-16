@@ -8,7 +8,7 @@ use bluejay_core::executable::{
     SelectionReference,
 };
 use bluejay_core::AsIter;
-use std::collections::{BTreeMap, HashSet};
+use std::collections::BTreeMap;
 
 pub struct FragmentSpreadsMustNotFormCycles<'a, E: ExecutableDocument, S: SchemaDefinition> {
     errors: Vec<Error<'a, E, S>>,
@@ -22,14 +22,15 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> FragmentSpreadsMustNotFormC
         >,
         target: &'a E::FragmentDefinition,
         fragment_definition_name: &'a str,
-        visited_fragment_definitions: &HashSet<&'a str>,
+        visited_fragment_definitions: &[&'a str],
     ) -> Option<Error<'a, E, S>> {
-        if visited_fragment_definitions.contains(fragment_definition_name) {
+        if visited_fragment_definitions.contains(&fragment_definition_name) {
             return None;
         }
         if let Some((_, spreads)) = spreads_by_fragment_definition.get(fragment_definition_name) {
-            let mut visited_fragment_definitions = visited_fragment_definitions.clone();
-            visited_fragment_definitions.insert(fragment_definition_name);
+            let mut new_visited = Vec::with_capacity(visited_fragment_definitions.len() + 1);
+            new_visited.extend_from_slice(visited_fragment_definitions);
+            new_visited.push(fragment_definition_name);
             spreads.iter().find_map(|&spread| {
                 if spread.name() == target.name() {
                     Some(Error::FragmentSpreadCycle {
@@ -41,7 +42,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> FragmentSpreadsMustNotFormC
                         spreads_by_fragment_definition,
                         target,
                         spread.name(),
-                        &visited_fragment_definitions,
+                        &new_visited,
                     )
                 }
             })
@@ -76,7 +77,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> Visitor<'a, E, S>
                     &spreads_by_fragment_definition,
                     target,
                     fragment_definition_name,
-                    &HashSet::new(),
+                    &[],
                 )
             })
             .collect();
