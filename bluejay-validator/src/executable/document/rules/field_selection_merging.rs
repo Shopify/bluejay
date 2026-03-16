@@ -11,15 +11,12 @@ use bluejay_core::executable::{
     SelectionReference,
 };
 use bluejay_core::{Arguments, AsIter, Indexed};
-use std::collections::{BTreeMap, HashMap, HashSet};
+use std::collections::{BTreeMap, HashMap};
 use std::ops::Not;
 
 pub struct FieldSelectionMerging<'a, E: ExecutableDocument, S: SchemaDefinition> {
     cache: &'a Cache<'a, E, S>,
     schema_definition: &'a S,
-    /// Track selection sets currently being processed (for cycle detection)
-    in_progress: HashSet<Indexed<'a, E::SelectionSet>>,
-    /// Final error results per selection set
     cached_errors: BTreeMap<Indexed<'a, E::SelectionSet>, Vec<Error<'a, E, S>>>,
 }
 
@@ -30,7 +27,6 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition> Visitor<'a, E, S>
         Self {
             cache,
             schema_definition,
-            in_progress: HashSet::new(),
             cached_errors: BTreeMap::new(),
         }
     }
@@ -50,26 +46,22 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> FieldSelectionMer
         selection_set: &'a E::SelectionSet,
         parent_type: TypeDefinitionReference<'a, S::TypeDefinition>,
     ) -> bool {
-        let key = Indexed(selection_set);
+        if let Some(errors) = self.cached_errors.get(&Indexed(selection_set)) {
+            errors.is_empty()
+        } else {
+            self.cached_errors
+                .insert(Indexed(selection_set), Vec::new());
 
-        // Already completed — return cached result
-        if let Some(errors) = self.cached_errors.get(&key) {
-            return errors.is_empty();
+            let grouped_fields = self.selection_set_contained_fields(selection_set, parent_type);
+
+            let errors = self.fields_in_set_can_merge(grouped_fields, selection_set);
+
+            let is_valid = errors.is_empty();
+
+            self.cached_errors.insert(Indexed(selection_set), errors);
+
+            is_valid
         }
-
-        // Currently in progress (cycle) — assume valid
-        if !self.in_progress.insert(key) {
-            return true;
-        }
-
-        let grouped_fields = self.selection_set_contained_fields(selection_set, parent_type);
-        let errors = self.fields_in_set_can_merge(grouped_fields, selection_set);
-        let is_valid = errors.is_empty();
-
-        self.in_progress.remove(&key);
-        self.cached_errors.insert(key, errors);
-
-        is_valid
     }
 
     fn fields_in_set_can_merge(
