@@ -1,1 +1,2 @@
 {"type":"config","name":"Optimizing bluejay-parser for fastest parsing","metricName":"total_µs","metricUnit":"µs","bestDirection":"lower"}
+{"run":1,"commit":"8fd1929","metric":2970,"metrics":{"schema_µs":2960,"kitchen_sink_µs":10},"status":"keep","description":"Baseline: bluejay-parser unmodified","timestamp":1773693310093,"segment":0}
