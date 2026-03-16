@@ -11,7 +11,7 @@ use bluejay_core::executable::{
     SelectionReference,
 };
 use bluejay_core::{Arguments, AsIter, Indexed};
-use std::collections::{BTreeMap, HashMap, HashSet};
+use std::collections::{BTreeMap, HashMap};
 use std::ops::Not;
 
 pub struct FieldSelectionMerging<'a, E: ExecutableDocument, S: SchemaDefinition> {
@@ -231,7 +231,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> FieldSelectionMer
             selection_set.iter(),
             &mut fields,
             parent_type,
-            &HashSet::new(),
+            &[],
         );
         fields
     }
@@ -269,7 +269,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> FieldSelectionMer
         selections: impl Iterator<Item = &'a E::Selection>,
         fields: &mut HashMap<&'a str, Vec<FieldContext<'a, E, S>>>,
         parent_type: TypeDefinitionReference<'a, S::TypeDefinition>,
-        parent_fragments: &HashSet<&'a str>,
+        parent_fragments: &[&'a str],
     ) {
         selections.for_each(|selection| match selection.as_ref() {
             SelectionReference::Field(field) => {
@@ -284,13 +284,13 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> FieldSelectionMer
                             field,
                             field_definition,
                             parent_type,
-                            parent_fragments: parent_fragments.to_owned(),
+                            parent_fragments: parent_fragments.to_vec(),
                         });
                 }
             }
             SelectionReference::FragmentSpread(fs) => {
                 let fragment_name = fs.name();
-                if !parent_fragments.contains(fragment_name) {
+                if !parent_fragments.contains(&fragment_name) {
                     if let Some(fragment_definition) = self.cache.fragment_definition(fragment_name)
                     {
                         let type_condition = fragment_definition.type_condition();
@@ -301,9 +301,9 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> FieldSelectionMer
                                 fragment_definition.selection_set(),
                                 parent_type,
                             ) {
-                                let mut new_parent_fragments = HashSet::new();
-                                new_parent_fragments.clone_from(parent_fragments);
-                                new_parent_fragments.insert(fragment_name);
+                                let mut new_parent_fragments = Vec::with_capacity(parent_fragments.len() + 1);
+                                new_parent_fragments.extend_from_slice(parent_fragments);
+                                new_parent_fragments.push(fragment_name);
                                 self.visit_selections_for_fields(
                                     fragment_definition.selection_set().iter(),
                                     fields,
@@ -380,5 +380,5 @@ struct FieldContext<'a, E: ExecutableDocument, S: SchemaDefinition> {
     field: &'a E::Field,
     field_definition: &'a S::FieldDefinition,
     parent_type: TypeDefinitionReference<'a, S::TypeDefinition>,
-    parent_fragments: HashSet<&'a str>,
+    parent_fragments: Vec<&'a str>,
 }
