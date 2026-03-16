@@ -7,7 +7,6 @@ use bluejay_core::definition::{
 };
 use bluejay_core::executable::{ExecutableDocument, Field};
 use bluejay_core::{Argument, AsIter, Directive};
-use std::collections::HashMap;
 
 pub struct RequiredArguments<'a, E: ExecutableDocument, S: SchemaDefinition> {
     schema_definition: &'a S,
@@ -51,26 +50,17 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> RequiredArguments
         build_error: F,
     ) {
         if let Some(arguments_definition) = arguments_definition {
-            let indexed_arguments = arguments
-                .map(|arguments| {
-                    arguments.iter().fold(
-                        HashMap::new(),
-                        |mut indexed_arguments: HashMap<&'a str, &'a E::Argument<CONST>>,
-                         argument| {
-                            indexed_arguments.insert(argument.name(), argument);
-                            indexed_arguments
-                        },
-                    )
-                })
-                .unwrap_or_default();
-            let missing_argument_definitions = arguments_definition
+            // Use linear scan instead of HashMap — argument lists are typically small (1-5 items)
+            let missing_argument_definitions: Vec<_> = arguments_definition
                 .iter()
                 .filter(|ivd| {
                     ivd.r#type().is_required()
                         && ivd.default_value().is_none()
-                        && !indexed_arguments.contains_key(ivd.name())
+                        && !arguments
+                            .map(|args| args.iter().any(|arg| arg.name() == ivd.name()))
+                            .unwrap_or(false)
                 })
-                .collect::<Vec<_>>();
+                .collect();
             if !missing_argument_definitions.is_empty() {
                 self.errors.push(build_error(missing_argument_definitions));
             }
