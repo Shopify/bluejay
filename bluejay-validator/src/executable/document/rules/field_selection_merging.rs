@@ -127,6 +127,24 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> FieldSelectionMer
             return;
         }
 
+        // Fast path: check if all fields share the same parent type (common case)
+        let all_same_parent = fields_for_name.windows(2).all(|w| {
+            match (&w[0].parent_type, &w[1].parent_type) {
+                (TypeDefinitionReference::Object(a), TypeDefinitionReference::Object(b)) => {
+                    a.name() == b.name()
+                }
+                (TypeDefinitionReference::Interface(_), TypeDefinitionReference::Interface(_)) => true,
+                _ => false,
+            }
+        });
+
+        if all_same_parent {
+            // All fields are from the same parent — treat as a single group
+            let refs: Vec<_> = fields_for_name.iter().collect();
+            self.check_common_parent_group(&refs, selection_set, errors);
+            return;
+        }
+
         type Group<'a, 'b, E, S> = Vec<&'b FieldContext<'a, E, S>>;
         type ConcreteGroups<'a, 'b, E, S> = HashMap<&'a str, Group<'a, 'b, E, S>>;
 
