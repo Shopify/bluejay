@@ -24,14 +24,14 @@ impl<'a> FromTokens<'a> for Field<'a> {
         tokens: &mut impl Tokens<'a>,
         depth_limiter: DepthLimiter,
     ) -> Result<Self, ParseError> {
-        let has_alias = tokens.peek_punctuator_matches(1, PunctuatorType::Colon);
-        let (alias, name) = if has_alias {
-            let alias = Some(tokens.expect_name()?);
-            tokens.expect_punctuator(PunctuatorType::Colon)?;
+        // Consume the first name, then check if followed by `:` (alias syntax).
+        // This avoids the peek(1) that requires buffering 2 tokens.
+        let first_name = tokens.expect_name()?;
+        let (alias, name) = if tokens.next_if_punctuator(PunctuatorType::Colon).is_some() {
             let name = tokens.expect_name()?;
-            (alias, name)
+            (Some(first_name), name)
         } else {
-            (None, tokens.expect_name()?)
+            (None, first_name)
         };
         let arguments =
             VariableArguments::try_from_tokens(tokens, depth_limiter.bump()?).transpose()?;
