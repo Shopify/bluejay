@@ -1,11 +1,17 @@
-# Optimization Ideas
+# Remaining Optimization Ideas
 
-- **HashSet+Vec for FieldSelectionMerging cache**: Replacing BTreeMap with HashSet visited + Vec errors showed -26.9% on fsm_128 benchmark but regression on small queries. Could be valuable for production with large schemas/queries.
-- **Pre-sized HashMap for grouped_fields**: In `selection_set_contained_fields`, pre-allocate HashMap based on selection set size to reduce rehashing.
-- **Arena allocator for FieldContext**: All FieldContext structs are short-lived within a single validation pass. An arena could eliminate per-field allocation overhead.
-- **Cache field definitions lookup**: The `fields_definition.get(name)` does a linear scan per field. Adding a HashMap index at parse time would make this O(1). Blocked by lifetime constraints on `FieldDefinition::name()` trait signature.
-- ~~**Combine FieldSelections + orchestrator**~~: Done via `visit_unknown_field` — saved one full iteration + linear scan per field.
-- **Vec-based GroupedFields**: Replacing HashMap in field_selection_merging with Vec-based multimap showed -32.5% on fsm_128 but flat on small queries. The `into_groups()` allocates per-group Vecs (same as HashMap). A true arena approach (bumpalo) would help by making all allocations nearly free.
-- **bumpalo arena for validation pass**: All validation state is scoped to `Orchestrator::validate()`. A `&'bump Bump` threaded through Visitor/Rule would allow all Vecs and FieldContexts to use bump allocation. Major refactor but highest potential ceiling.
-- **HashMap index on parser's FieldsDefinition**: Would need to change `FieldDefinition::name()` to return `&'a str` instead of `&str`, or use String keys.
-- **Ahash or FxHash for internal HashMaps**: Default SipHash is slower than needed for non-adversarial keys. Would require adding a dependency.
+## Still Promising (zero dependency)
+- **Share fragment_references across rules**: `AllVariableUsagesAllowed` and `AllVariableUsesDefined` build identical `HashMap<Indexed<FragmentDef>, BTreeSet<PathRoot>>` maps. Could precompute once in Cache by walking the AST for fragment spreads.
+- **Precompute field→field_definition mapping**: Build a `HashMap<(&type_name, &field_name), &FieldDefinition>` during `Cache::new()` so both the orchestrator and `FieldSelectionMerging` do O(1) lookups instead of O(n) linear scans via `FieldsDefinition::get()`. Blocked by lifetime constraints on the `FieldDefinition::name()` trait signature (returns `&str` not `&'a str`).
+
+## Promising (needs dependency)
+- **FxHash/ahash for internal HashMaps**: Default SipHash is ~2-5x slower than needed for non-adversarial short string keys like field names. Applies to all HashMaps in FieldSelectionMerging and Cache.
+- **bumpalo arena for validation pass**: All validation state is scoped to `Orchestrator::validate()`. Threading `&'bump Bump` through Visitor/Rule would allow bump-allocated Vecs and HashMaps. Major refactor but highest potential remaining ceiling (~15-18% of time is pure malloc/free).
+
+## Tried & Exhausted
+- Pre-sized HashMap with_capacity — over-allocates for small sets, regression
+- Vec-based GroupedFields / SoA — flat on small queries (-32.5% on fsm_128 only)
+- Separate HashSet for cycle detection — extra overhead outweighs savings
+- #[inline] hints on bluejay-core trait methods — compiler already inlines
+- Cache construction optimization — <1% of total time
+- Hoisting fields_definition() outside loop — compiler already optimizes

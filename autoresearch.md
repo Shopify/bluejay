@@ -65,6 +65,7 @@ All files in `bluejay-validator/src/`:
 10. **Arguments::equivalent linear scan** (bluejay-core, -0.7%) — replaced 2x HashMap allocation with O(n*m) scan
 11. **Reuse Cache in FragmentSpreadTargetDefined** (-1.0%) — use Cache's fragment HashMap instead of separate HashSet
 12. **visit_unknown_field in Visitor trait** (-0.8%) — eliminates redundant selection set iteration + contains_field linear scan
+13. **Rc<Vec> for parent_fragments** (-5.1% on fsm_128, flat on small queries) — share parent_fragments across all fields in same fragment scope via Rc::clone instead of per-field to_vec()
 
 ### Dead Ends (discarded)
 - **Split cached_errors BTreeMap into HashMap + BTreeMap** — extra HashMap overhead worse than BTreeMap log(n) for small maps
