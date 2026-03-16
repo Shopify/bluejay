@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:xnacly.me)",
+      "Bash(cargo bench:*)",
+      "Bash(rm:*)",
+      "Bash(RUSTFLAGS=\"-L/nix/store/fhza62gkyw0mp1h2zls6pl1832zjjf26-libiconv-109/lib\" cargo bench --bench parse)",
+      "Bash(cargo check:*)",
+      "Bash(RUSTFLAGS=\"-L/nix/store/fhza62gkyw0mp1h2zls6pl1832zjjf26-libiconv-109/lib\" cargo bench --bench parse --features simd)",
+      "Bash(cargo test)",
+      "Bash(cargo test --all-features)",
+      "Bash(cargo test:*)"
+    ],
+    "deny": []
+  }
+}

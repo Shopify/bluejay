@@ -1,0 +1,32 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(rm:*)",
+      "Bash(ls:*)",
+      "Bash(cargo check:*)",
+      "Bash(cargo test:*)",
+      "Bash(pkill:*)",
+      "Bash(cargo bench:*)",
+      "Bash(git checkout:*)",
+      "Bash(find:*)",
+      "Bash(git reset:*)",
+      "Bash(git restore:*)",
+      "WebFetch(domain:logos.maciej.codes)",
+      "Bash(rg:*)",
+      "Bash(grep:*)",
+      "Bash(rustc:*)",
+      "Bash(./test_max_tokens)",
+      "Bash(cargo build:*)",
+      "Bash(perl -i -pe:*)",
+      "Bash(1)",
+      "WebFetch(domain:www.apollographql.com)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebSearch",
+      "Bash(cargo clippy:*)",
+      "WebFetch(domain:docs.rs)",
+      "Bash(wc:*)"
+    ]
+  },
+  "enableAllProjectMcpServers": false
+}
