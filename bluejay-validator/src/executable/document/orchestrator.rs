@@ -122,11 +122,12 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, V: Visitor<'a, E, S>>
     ) {
         self.visitor.visit_selection_set(selection_set, scoped_type);
 
+        let fields_definition = scoped_type.fields_definition();
+
         selection_set.iter().for_each(|selection| {
             let nested_path = path.with_selection(selection);
             match selection.as_ref() {
                 SelectionReference::Field(f) => {
-                    let fields_definition = scoped_type.fields_definition();
                     let field_definition = fields_definition
                         .and_then(|fd| fd.get(f.name()));
 

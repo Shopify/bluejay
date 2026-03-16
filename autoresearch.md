@@ -64,7 +64,11 @@ All files in `bluejay-validator/src/`:
 9. **Optimized duplicates() further** (-2.6%) — avoid intermediate key Vec allocation, compute keys on-the-fly
 10. **Arguments::equivalent linear scan** (bluejay-core, -0.7%) — replaced 2x HashMap allocation with O(n*m) scan
 11. **Reuse Cache in FragmentSpreadTargetDefined** (-1.0%) — use Cache's fragment HashMap instead of separate HashSet
+12. **visit_unknown_field in Visitor trait** (-0.8%) — eliminates redundant selection set iteration + contains_field linear scan
 
 ### Dead Ends (discarded)
 - **Split cached_errors BTreeMap into HashMap + BTreeMap** — extra HashMap overhead worse than BTreeMap log(n) for small maps
 - **Replace BTreeMap cached_errors with HashSet+Vec** — better for large queries (fsm_128 -26.9%) but regression on small queries; might be worth revisiting for production workloads
+- **Vec-based GroupedFields for field grouping** — -32.5% on fsm_128 but flat on small queries; into_groups() allocates same as HashMap
+- **Pre-allocate HashMap with_capacity(8)** — over-allocates for small selection sets, significant regression
+- **Hoist fields_definition() outside selection loop** — compiler already optimizes this
