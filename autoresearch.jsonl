@@ -7,3 +7,4 @@
 {"type":"config","name":"Optimizing bluejay-parser executable document parsing (runtime hot path)","metricName":"exec_µs","metricUnit":"µs","bestDirection":"lower"}
 {"run":1,"commit":"c208067","metric":49,"metrics":{"schema_µs":2631,"kitchen_sink_µs":5},"status":"keep","description":"Baseline: new exec_µs metric with large_executable.graphql (912 lines, ExecutableDocument::parse)","timestamp":1773693890755,"segment":0}
 {"run":2,"commit":"b29508d","metric":48,"metrics":{"schema_µs":2586,"kitchen_sink_µs":5},"status":"keep","description":"Field: consume-then-check for alias instead of peek(1), avoids buffering 2 tokens","timestamp":1773694009716,"segment":0}
+{"run":3,"commit":"702acf3","metric":45,"metrics":{"schema_µs":2513,"kitchen_sink_µs":4},"status":"keep","description":"Compact Span: u32 start+len (8 bytes) instead of Range<usize> (16 bytes), add Copy","timestamp":1773694177755,"segment":0}

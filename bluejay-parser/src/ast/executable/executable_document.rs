@@ -176,14 +176,14 @@ mod tests {
     fn test_depth_limit() {
         // Depth is bumped to 1 entering the selection set (`{`)
         // Depth is bumped to 2 entering the field (`foo`)
-        // Depth is bumped to 3 checking for args on the field (`foo`)
+        // Depth is only bumped further when args/directives/sub-selections are present
         let document = r#"query { foo }"#;
 
         let errors = ExecutableDocument::parse_with_options(
             document,
             ParseOptions {
                 graphql_ruby_compatibility: false,
-                max_depth: 2,
+                max_depth: 1,
                 max_tokens: None,
             },
         )
@@ -198,7 +198,7 @@ mod tests {
             document,
             ParseOptions {
                 graphql_ruby_compatibility: false,
-                max_depth: 3,
+                max_depth: 2,
                 max_tokens: None,
             },
         )

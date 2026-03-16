@@ -33,12 +33,21 @@ impl<'a> FromTokens<'a> for Field<'a> {
         } else {
             (None, first_name)
         };
-        let arguments =
-            VariableArguments::try_from_tokens(tokens, depth_limiter.bump()?).transpose()?;
-        let directives =
-            VariableDirectives::try_from_tokens(tokens, depth_limiter.bump()?).transpose()?;
-        let selection_set =
-            SelectionSet::try_from_tokens(tokens, depth_limiter.bump()?).transpose()?;
+        let arguments = if VariableArguments::is_match(tokens) {
+            Some(VariableArguments::from_tokens(tokens, depth_limiter.bump()?)?)
+        } else {
+            None
+        };
+        let directives = if VariableDirectives::is_match(tokens) {
+            Some(VariableDirectives::from_tokens(tokens, depth_limiter.bump()?)?)
+        } else {
+            None
+        };
+        let selection_set = if SelectionSet::is_match(tokens) {
+            Some(SelectionSet::from_tokens(tokens, depth_limiter.bump()?)?)
+        } else {
+            None
+        };
         let start_span = alias.as_ref().unwrap_or(&name).span();
         let directives_span = directives.as_ref().and_then(|directives| directives.span());
         let end_span = if let Some(selection_set) = &selection_set {
