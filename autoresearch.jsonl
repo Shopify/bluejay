@@ -1,2 +1,4 @@
 {"type":"config","name":"Optimizing bluejay-parser for fastest parsing","metricName":"total_µs","metricUnit":"µs","bestDirection":"lower"}
 {"run":1,"commit":"8fd1929","metric":2970,"metrics":{"schema_µs":2960,"kitchen_sink_µs":10},"status":"keep","description":"Baseline: bluejay-parser unmodified","timestamp":1773693310093,"segment":0}
+{"run":2,"commit":"0c4335b","metric":2672,"metrics":{"schema_µs":2663,"kitchen_sink_µs":9},"status":"keep","description":"Rewrite block string parser: direct string processing instead of sub-lexer + Vec<Vec<Token>>","timestamp":1773693415983,"segment":0}
+{"run":3,"commit":"0c4335b","metric":2743,"metrics":{"schema_µs":2733,"kitchen_sink_µs":10},"status":"discard","description":"Replace VecDeque with inline 2-element buffer - regression (~2743 vs 2672)","timestamp":1773693525630,"segment":0}

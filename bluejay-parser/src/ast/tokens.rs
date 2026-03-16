@@ -139,11 +139,11 @@ impl<'a, T: Lexer<'a>> LexerTokens<'a, T> {
     where
         F: Fn(&LexicalToken) -> bool,
     {
-        match self.peek_next() {
+        self.compute_up_to(0);
+        match self.buffer.front() {
             Some(token) if f(token) => {
-                let span = token.span().clone();
-                self.next();
-                Some(span)
+                let token = self.buffer.pop_front().unwrap();
+                Some(token.into())
             }
             _ => None,
         }
@@ -151,36 +151,68 @@ impl<'a, T: Lexer<'a>> LexerTokens<'a, T> {
 
     #[inline]
     pub fn next_if_punctuator(&mut self, punctuator_type: PunctuatorType) -> Option<Span> {
-        self.next_if(|t| matches!(t, LexicalToken::Punctuator(p) if p.r#type() == punctuator_type))
+        self.compute_up_to(0);
+        match self.buffer.front() {
+            Some(LexicalToken::Punctuator(p)) if p.r#type() == punctuator_type => {
+                let token = self.buffer.pop_front().unwrap();
+                Some(token.into())
+            }
+            _ => None,
+        }
     }
 
     #[inline]
     pub fn next_if_int_value(&mut self) -> Option<IntValue> {
-        matches!(self.peek_next(), Some(LexicalToken::IntValue(_)))
-            .then(|| self.next().unwrap().into_int_value().unwrap())
+        self.compute_up_to(0);
+        match self.buffer.front() {
+            Some(LexicalToken::IntValue(_)) => {
+                self.buffer.pop_front().unwrap().into_int_value().ok()
+            }
+            _ => None,
+        }
     }
 
     #[inline]
     pub fn next_if_float_value(&mut self) -> Option<FloatValue> {
-        matches!(self.peek_next(), Some(LexicalToken::FloatValue(_)))
-            .then(|| self.next().unwrap().into_float_value().unwrap())
+        self.compute_up_to(0);
+        match self.buffer.front() {
+            Some(LexicalToken::FloatValue(_)) => {
+                self.buffer.pop_front().unwrap().into_float_value().ok()
+            }
+            _ => None,
+        }
     }
 
     #[inline]
     pub fn next_if_string_value(&mut self) -> Option<StringValue<'a>> {
-        matches!(self.peek_next(), Some(LexicalToken::StringValue(_)))
-            .then(|| self.next().unwrap().into_string_value().unwrap())
+        self.compute_up_to(0);
+        match self.buffer.front() {
+            Some(LexicalToken::StringValue(_)) => {
+                self.buffer.pop_front().unwrap().into_string_value().ok()
+            }
+            _ => None,
+        }
     }
 
     #[inline]
     pub fn next_if_name(&mut self) -> Option<Name<'a>> {
-        matches!(self.peek_next(), Some(LexicalToken::Name(_)))
-            .then(|| self.next().unwrap().into_name().unwrap())
+        self.compute_up_to(0);
+        match self.buffer.front() {
+            Some(LexicalToken::Name(_)) => self.buffer.pop_front().unwrap().into_name().ok(),
+            _ => None,
+        }
     }
 
     #[inline]
     pub fn next_if_name_matches(&mut self, name: &str) -> Option<Span> {
-        self.next_if(|t| matches!(t, LexicalToken::Name(n) if n.as_str() == name))
+        self.compute_up_to(0);
+        match self.buffer.front() {
+            Some(LexicalToken::Name(n)) if n.as_str() == name => {
+                let token = self.buffer.pop_front().unwrap();
+                Some(token.into())
+            }
+            _ => None,
+        }
     }
 
     #[inline]
