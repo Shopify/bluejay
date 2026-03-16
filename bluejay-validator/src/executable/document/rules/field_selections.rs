@@ -3,7 +3,7 @@ use crate::executable::{
     Cache,
 };
 use bluejay_core::definition::{SchemaDefinition, TypeDefinitionReference};
-use bluejay_core::executable::{ExecutableDocument, Field};
+use bluejay_core::executable::ExecutableDocument;
 
 pub struct FieldSelections<'a, E: ExecutableDocument, S: SchemaDefinition> {
     errors: Vec<Error<'a, E, S>>,
