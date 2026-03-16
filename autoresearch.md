@@ -72,3 +72,5 @@ All files in `bluejay-validator/src/`:
 - **Vec-based GroupedFields for field grouping** — -32.5% on fsm_128 but flat on small queries; into_groups() allocates same as HashMap
 - **Pre-allocate HashMap with_capacity(8)** — over-allocates for small selection sets, significant regression
 - **Hoist fields_definition() outside selection loop** — compiler already optimizes this
+- **#[inline] hints on hot bluejay-core trait methods** — compiler already inlines in release mode
+- **Separate HashSet for cycle detection** — extra overhead outweighs avoiding sentinel BTreeMap insert

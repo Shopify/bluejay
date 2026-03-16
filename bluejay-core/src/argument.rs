@@ -16,6 +16,7 @@ impl<T: Argument<false>> VariableArgument for T {}
 pub trait Arguments<const CONST: bool>: AsIter<Item = Self::Argument> {
     type Argument: Argument<CONST>;
 
+    #[inline]
     fn equivalent(optional_self: Option<&Self>, optional_other: Option<&Self>) -> bool {
         match (optional_self, optional_other) {
             (None, None) => true,

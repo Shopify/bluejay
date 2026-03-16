@@ -6,10 +6,12 @@ pub trait AsIter {
 
     fn iter(&self) -> Self::Iterator<'_>;
 
+    #[inline]
     fn is_empty(&self) -> bool {
         self.iter().next().is_none()
     }
 
+    #[inline]
     fn len(&self) -> usize {
         self.iter().count()
     }
