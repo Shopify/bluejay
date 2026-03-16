@@ -40,9 +40,8 @@ impl<'a> FromTokens<'a> for OperationType {
 impl<'a> IsMatch<'a> for OperationType {
     #[inline]
     fn is_match(tokens: &mut impl Tokens<'a>) -> bool {
-        matches!(
-            tokens.peek_name(0).map(|n| n.as_str()),
-            Some("query" | "mutation" | "subscription")
-        )
+        bluejay_core::OperationType::POSSIBLE_VALUES
+            .iter()
+            .any(|value| tokens.peek_name_matches(0, value))
     }
 }
