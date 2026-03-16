@@ -50,7 +50,24 @@ Schema parsing speed is a secondary concern (not runtime).
 - No block strings in typical executable documents (unlike schema definitions).
 
 ## What's Been Tried
-- Rewrote block_string_lexer: direct string processing instead of sub-lexer + Vec<Vec<Token>> (~10% schema improvement)
-- Optimized next_if_* methods: single buffer operation instead of peek-then-next
-- Added Copy to DepthLimiter + preallocated Vec capacity in DefinitionDocument
-- Tried replacing VecDeque with inline 2-element array buffer — regression, discarded
+
+### Kept (improvements)
+- **Rewrote block_string_lexer**: direct string processing instead of sub-lexer + Vec<Vec<Token>>. Eliminates ~9759 sub-lexer instantiations for the schema. (~10% schema improvement)
+- **Optimized next_if_* methods**: single buffer peek+consume operation instead of separate peek-then-next. Avoids redundant VecDeque lookups.
+- **Added Copy to DepthLimiter + preallocated Vec capacity** in DefinitionDocument.
+- **Compact Span**: u32 start+len (8 bytes, Copy) instead of Range<usize> (16 bytes, Clone). Shrinks LexicalToken from ~48 to 32 bytes. **Big exec win: 48→45µs.**
+- **Field alias: consume-then-check** instead of peek(1). Avoids buffering 2 tokens for the common no-alias case.
+- **Lazy depth_limiter.bump()**: only bump when optional elements (args/directives/selection_set) actually exist. Avoids unnecessary Result creation for fields without sub-elements. **exec: 45→43µs.**
+- **OperationType::is_match**: reverted hardcoded strings back to POSSIBLE_VALUES (no perf difference, keeps single source of truth).
+
+### Discarded (regressions or no improvement)
+- **Inline [Option<LexicalToken>; 2] buffer** replacing VecDeque — regression both times tried. VecDeque's ring buffer is well-optimized for this use case.
+- **Vec::with_capacity(4) in SelectionSet/Arguments** — regression. Most selection sets are consumed by fields that don't have sub-selections, wasting allocation.
+- **Name/Variable Copy** — no measurable improvement (Clone was already equivalent for these small types).
+- **LTO in Cargo.toml** — build config, not parser code.
+
+### Architecture insights
+- VecDeque is surprisingly hard to beat for a 0-2 element lookahead buffer. The ring buffer's index arithmetic is cheaper than Option discriminant checks.
+- Span size reduction has outsized impact because every token carries a Span, and smaller tokens mean better cache utilization in the VecDeque.
+- The logos DFA is already very fast; most remaining time is in lexing + token construction.
+- At ~28ns/token, we're approaching the theoretical minimum for a fully-featured GraphQL parser.
