@@ -3,3 +3,5 @@
 {"run":2,"commit":"0c4335b","metric":2672,"metrics":{"schema_µs":2663,"kitchen_sink_µs":9},"status":"keep","description":"Rewrite block string parser: direct string processing instead of sub-lexer + Vec<Vec<Token>>","timestamp":1773693415983,"segment":0}
 {"run":3,"commit":"0c4335b","metric":2743,"metrics":{"schema_µs":2733,"kitchen_sink_µs":10},"status":"discard","description":"Replace VecDeque with inline 2-element buffer - regression (~2743 vs 2672)","timestamp":1773693525630,"segment":0}
 {"run":4,"commit":"f86c88d","metric":2649,"metrics":{"schema_µs":2639,"kitchen_sink_µs":10},"status":"keep","description":"Optimize next_if_* methods: peek+consume in single buffer operation instead of peek then next","timestamp":1773693618257,"segment":0}
+{"run":5,"commit":"1d91d89","metric":2648,"metrics":{"schema_µs":2638,"kitchen_sink_µs":10},"status":"keep","description":"Add Copy to DepthLimiter + preallocate Vec capacity in DefinitionDocument","timestamp":1773693753683,"segment":0}
+{"type":"config","name":"Optimizing bluejay-parser executable document parsing (runtime hot path)","metricName":"exec_µs","metricUnit":"µs","bestDirection":"lower"}
