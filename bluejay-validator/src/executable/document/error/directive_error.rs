@@ -37,7 +37,7 @@ impl<'a, const CONST: bool, S: SchemaDefinition>
                 ),
                 Some(Annotation::new(
                     "No directive definition with this name",
-                    directive.name().span().clone(),
+                    *directive.name().span(),
                 )),
                 Vec::new(),
             ),
@@ -53,7 +53,7 @@ impl<'a, const CONST: bool, S: SchemaDefinition>
                 ),
                 Some(Annotation::new(
                     format!("Cannot be used at location {location}"),
-                    directive.span().clone(),
+                    *directive.span(),
                 )),
                 Vec::new(),
             ),
@@ -65,7 +65,7 @@ impl<'a, const CONST: bool, S: SchemaDefinition>
                 None,
                 directives.into_iter().map(|directive| Annotation::new(
                     "Usage of directive",
-                    directive.span().clone(),
+                    *directive.span(),
                 )).collect(),
             ),
         }

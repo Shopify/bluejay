@@ -1,5 +1,6 @@
 use bluejay_parser::ast::{
     definition::{DefaultContext, DefinitionDocument},
+    executable::ExecutableDocument,
     Parse,
 };
 use criterion::{criterion_group, criterion_main, Criterion};
@@ -13,7 +14,12 @@ fn parse(c: &mut Criterion) {
 
     let s = std::fs::read_to_string("../data/kitchen_sink.graphql").unwrap();
     c.bench_function("parse kitchen sink executable document", |b| {
-        b.iter(|| DefinitionDocument::<DefaultContext>::parse(black_box(s.as_str())))
+        b.iter(|| ExecutableDocument::parse(black_box(s.as_str())))
+    });
+
+    let s = std::fs::read_to_string("../data/large_executable.graphql").unwrap();
+    c.bench_function("parse large executable document", |b| {
+        b.iter(|| ExecutableDocument::parse(black_box(s.as_str())))
     });
 }
 

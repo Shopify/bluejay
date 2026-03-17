@@ -123,10 +123,7 @@ impl<'a, const CONST: bool> From<Error<'a, CONST, ParserValue<'a, CONST>>> for P
         match &error {
             Error::NullValueForRequiredType { value, .. } => Self::new(
                 error.message(),
-                Some(Annotation::new(
-                    "Expected non-null value",
-                    value.span().clone(),
-                )),
+                Some(Annotation::new("Expected non-null value", *value.span())),
                 Vec::new(),
             ),
             Error::NoImplicitConversion {
@@ -137,7 +134,7 @@ impl<'a, const CONST: bool> From<Error<'a, CONST, ParserValue<'a, CONST>>> for P
                 error.message(),
                 Some(Annotation::new(
                     format!("No implicit conversion to {input_type_name}"),
-                    value.span().clone(),
+                    *value.span(),
                 )),
                 Vec::new(),
             ),
@@ -149,7 +146,7 @@ impl<'a, const CONST: bool> From<Error<'a, CONST, ParserValue<'a, CONST>>> for P
                 error.message(),
                 Some(Annotation::new(
                     format!("No such member on enum {enum_type_name}"),
-                    value.span().clone(),
+                    *value.span(),
                 )),
                 Vec::new(),
             ),
@@ -161,7 +158,7 @@ impl<'a, const CONST: bool> From<Error<'a, CONST, ParserValue<'a, CONST>>> for P
                     error.message(),
                     Some(Annotation::new(
                         format!("No value for required fields: {joined_field_names}"),
-                        value.span().clone(),
+                        *value.span(),
                     )),
                     Vec::new(),
                 )
@@ -171,7 +168,7 @@ impl<'a, const CONST: bool> From<Error<'a, CONST, ParserValue<'a, CONST>>> for P
                 None,
                 Vec::from_iter(
                     keys.iter()
-                        .map(|key| Annotation::new("Entry for field", key.span().clone())),
+                        .map(|key| Annotation::new("Entry for field", *key.span())),
                 ),
             ),
             Error::NoInputFieldWithName {
@@ -182,13 +179,13 @@ impl<'a, const CONST: bool> From<Error<'a, CONST, ParserValue<'a, CONST>>> for P
                 error.message(),
                 Some(Annotation::new(
                     format!("No field with this name on input type {input_object_type_name}"),
-                    field.span().clone(),
+                    *field.span(),
                 )),
                 Vec::new(),
             ),
             Error::CustomScalarInvalidValue { value, message, .. } => Self::new(
                 message.clone(),
-                Some(Annotation::new(message.clone(), value.span().clone())),
+                Some(Annotation::new(message.clone(), *value.span())),
                 Vec::new(),
             ),
             #[cfg(feature = "one-of-input-objects")]
@@ -200,7 +197,7 @@ impl<'a, const CONST: bool> From<Error<'a, CONST, ParserValue<'a, CONST>>> for P
                 error.message(),
                 Some(Annotation::new(
                     "oneOf input object must not contain any null values",
-                    value.span().clone(),
+                    *value.span(),
                 )),
                 null_entries
                     .iter()
@@ -218,7 +215,7 @@ impl<'a, const CONST: bool> From<Error<'a, CONST, ParserValue<'a, CONST>>> for P
                 error.message(),
                 Some(Annotation::new(
                     "oneOf input object must contain single non-null",
-                    value.span().clone(),
+                    *value.span(),
                 )),
                 non_null_entries
                     .iter()

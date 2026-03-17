@@ -25,7 +25,7 @@ impl<'a, const CONST: bool> FromTokens<'a> for Directives<'a, CONST> {
         }
         let span = match directives.as_slice() {
             [] => None,
-            [first] => Some(first.span().clone()),
+            [first] => Some(*first.span()),
             [first, .., last] => Some(first.span().merge(last.span())),
         };
         Ok(Self { directives, span })

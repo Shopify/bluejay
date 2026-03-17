@@ -84,7 +84,7 @@ impl<C: Context> From<DefinitionDocumentError<'_, C>> for Error {
                         .map(|definition| {
                             Annotation::new(
                                 format!("Directive definition with name `@{name}`"),
-                                definition.name_token().span().clone(),
+                                *definition.name_token().span(),
                             )
                         })
                         .collect(),
@@ -101,7 +101,7 @@ impl<C: Context> From<DefinitionDocumentError<'_, C>> for Error {
                     .map(|rotd| {
                         Annotation::new(
                             format!("Root operation type definition for `{operation_type}`"),
-                            rotd.name_token().span().clone(),
+                            *rotd.name_token().span(),
                         )
                     })
                     .collect(),
@@ -115,7 +115,7 @@ impl<C: Context> From<DefinitionDocumentError<'_, C>> for Error {
                         .map(|definition| {
                             Annotation::new(
                                 "Schema definition",
-                                definition.schema_identifier_span().clone(),
+                                *definition.schema_identifier_span(),
                             )
                         })
                         .collect(),
@@ -140,7 +140,7 @@ impl<C: Context> From<DefinitionDocumentError<'_, C>> for Error {
                         .map(|definition| {
                             Annotation::new(
                                 format!("Type definition with name `{name}`"),
-                                definition.name_token().unwrap().span().clone(),
+                                *definition.name_token().unwrap().span(),
                             )
                         })
                         .collect(),
@@ -155,7 +155,7 @@ impl<C: Context> From<DefinitionDocumentError<'_, C>> for Error {
                 ),
                 Some(Annotation::new(
                     "No definition for referenced type",
-                    root_operation_type_definition.name_token().span().clone(),
+                    *root_operation_type_definition.name_token().span(),
                 )),
                 Vec::new(),
             ),
@@ -164,7 +164,7 @@ impl<C: Context> From<DefinitionDocumentError<'_, C>> for Error {
                     "Schema definition does not contain a query",
                     Some(Annotation::new(
                         "Does not contain a query",
-                        definition.root_operation_type_definitions_span().clone(),
+                        *definition.root_operation_type_definitions_span(),
                     )),
                     Vec::new(),
                 )
@@ -181,28 +181,28 @@ impl<C: Context> From<DefinitionDocumentError<'_, C>> for Error {
                 format!("Referenced type `{}` does not exist", name.as_ref()),
                 Some(Annotation::new(
                     "No definition for referenced type",
-                    name.span().clone(),
+                    *name.span(),
                 )),
                 Vec::new(),
             ),
             DefinitionDocumentError::ReferencedTypeIsNotAnInputType { name } => Error::new(
                 format!("Referenced type `{}` is not an input type", name.as_ref()),
-                Some(Annotation::new("Not an input type", name.span().clone())),
+                Some(Annotation::new("Not an input type", *name.span())),
                 Vec::new(),
             ),
             DefinitionDocumentError::ReferencedTypeIsNotAnInterface { name } => Error::new(
                 format!("Referenced type `{}` is not an interface", name.as_ref()),
-                Some(Annotation::new("Not an interface", name.span().clone())),
+                Some(Annotation::new("Not an interface", *name.span())),
                 Vec::new(),
             ),
             DefinitionDocumentError::ReferencedTypeIsNotAnOutputType { name } => Error::new(
                 format!("Referenced type `{}` is not an output type", name.as_ref()),
-                Some(Annotation::new("Not an output type", name.span().clone())),
+                Some(Annotation::new("Not an output type", *name.span())),
                 Vec::new(),
             ),
             DefinitionDocumentError::ReferencedUnionMemberTypeIsNotAnObject { name } => Error::new(
                 format!("Referenced type `{}` is not an object", name.as_ref()),
-                Some(Annotation::new("Not an object type", name.span().clone())),
+                Some(Annotation::new("Not an object type", *name.span())),
                 Vec::new(),
             ),
             DefinitionDocumentError::ImplicitRootOperationTypeNotAnObject { definition } => {
@@ -214,14 +214,14 @@ impl<C: Context> From<DefinitionDocumentError<'_, C>> for Error {
                     Some(Annotation::new(
                         "Not an object type",
                         // ok to unwrap because builtin scalar cannot be an implicit schema definition member
-                        definition.name_token().unwrap().span().clone(),
+                        *definition.name_token().unwrap().span(),
                     )),
                     Vec::new(),
                 )
             }
             DefinitionDocumentError::ExplicitRootOperationTypeNotAnObject { name } => Error::new(
                 format!("Referenced type `{}` is not an object", name.as_ref()),
-                Some(Annotation::new("Not an object type", name.span().clone())),
+                Some(Annotation::new("Not an object type", *name.span())),
                 Vec::new(),
             ),
             DefinitionDocumentError::ReferencedDirectiveDoesNotExist { directive } => Error::new(
@@ -231,7 +231,7 @@ impl<C: Context> From<DefinitionDocumentError<'_, C>> for Error {
                 ),
                 Some(Annotation::new(
                     "No definition for referenced directive",
-                    directive.span().clone(),
+                    *directive.span(),
                 )),
                 Vec::new(),
             ),

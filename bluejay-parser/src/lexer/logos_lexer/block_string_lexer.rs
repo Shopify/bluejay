@@ -1,116 +1,183 @@
 use super::Token as OuterToken;
 use crate::lexer::LexError;
-use logos::{Lexer, Logos};
+use logos::Lexer;
 use std::borrow::Cow;
-use std::cmp::min;
 
-#[derive(Logos, Debug)]
-pub(super) enum Token<'a> {
-    #[regex(r#"[^"\\\n\r \t][^"\\\n\r]*"#)]
-    #[token("\"")]
-    #[token("\\")]
-    BlockStringCharacters(&'a str),
+pub(super) struct Token;
 
-    #[token("\n")]
-    #[token("\r\n")]
-    #[token("\r")]
-    Newline,
-
-    #[token(" ")]
-    #[token("\t")]
-    Whitespace(&'a str),
-
-    #[token("\"\"\"")]
-    BlockQuote,
-
-    #[token("\\\"\"\"")]
-    EscapedBlockQuote,
-}
-
-impl<'a> Token<'a> {
-    /// Returns a result indicating if the string was parsed correctly.
-    /// Also bumps the outer lexer by the number of characters parsed.
-    pub(super) fn parse(
+impl Token {
+    /// Parse a block string value from the outer lexer.
+    /// The opening `"""` has already been consumed.
+    pub(super) fn parse<'a>(
         outer_lexer: &mut Lexer<'a, OuterToken<'a>>,
     ) -> Result<Cow<'a, str>, LexError> {
-        let mut lexer = Self::lexer(outer_lexer.remainder());
+        let remainder = outer_lexer.remainder();
+        let bytes = remainder.as_bytes();
+        let len = bytes.len();
 
-        // starting BlockQuote should already have been parsed
-
-        let mut lines = vec![Vec::new()];
-
-        while let Some(Ok(token)) = lexer.next() {
-            match token {
-                Self::BlockQuote => {
-                    outer_lexer.bump(lexer.span().end);
-                    return Ok(Self::block_string_value(lines));
+        // Find the closing """ (not preceded by \)
+        let mut i = 0;
+        let end_offset;
+        loop {
+            if i + 2 >= len {
+                outer_lexer.bump(len);
+                return Err(LexError::UnrecognizedToken);
+            }
+            if bytes[i] == b'"' && bytes[i + 1] == b'"' && bytes[i + 2] == b'"' {
+                // Check it's not escaped
+                if i > 0 && bytes[i - 1] == b'\\' {
+                    i += 3;
+                    continue;
                 }
-                Self::BlockStringCharacters(_) | Self::EscapedBlockQuote | Self::Whitespace(_) => {
-                    lines.last_mut().unwrap().push(token)
+                end_offset = i + 3;
+                break;
+            }
+            i += 1;
+        }
+
+        let raw = &remainder[..i];
+        outer_lexer.bump(end_offset);
+
+        // Check if there are any escaped block quotes
+        let has_escapes = raw.contains("\\\"\"\"");
+
+        // Normalize newlines: split on \r\n, \r, or \n
+        // Collect line start/end offsets to avoid allocating strings
+        let raw_bytes = raw.as_bytes();
+        let raw_len = raw_bytes.len();
+
+        // Count lines first for pre-allocation
+        let mut line_count = 1usize;
+        {
+            let mut j = 0;
+            while j < raw_len {
+                if raw_bytes[j] == b'\r' {
+                    line_count += 1;
+                    if j + 1 < raw_len && raw_bytes[j + 1] == b'\n' {
+                        j += 2;
+                    } else {
+                        j += 1;
+                    }
+                } else if raw_bytes[j] == b'\n' {
+                    line_count += 1;
+                    j += 1;
+                } else {
+                    j += 1;
                 }
-                Self::Newline => lines.push(Vec::new()),
             }
         }
 
-        outer_lexer.bump(lexer.span().end);
-        Err(LexError::UnrecognizedToken)
-    }
+        // Collect line ranges
+        let mut lines: Vec<(usize, usize)> = Vec::with_capacity(line_count);
+        {
+            let mut start = 0;
+            let mut j = 0;
+            while j < raw_len {
+                if raw_bytes[j] == b'\r' {
+                    lines.push((start, j));
+                    if j + 1 < raw_len && raw_bytes[j + 1] == b'\n' {
+                        j += 2;
+                    } else {
+                        j += 1;
+                    }
+                    start = j;
+                } else if raw_bytes[j] == b'\n' {
+                    lines.push((start, j));
+                    j += 1;
+                    start = j;
+                } else {
+                    j += 1;
+                }
+            }
+            lines.push((start, raw_len));
+        }
 
-    fn block_string_value(lines: Vec<Vec<Token<'a>>>) -> Cow<'a, str> {
+        // Compute common indent (skip first line)
         let common_indent = lines[1..]
             .iter()
-            .filter_map(|line| {
-                line.iter()
-                    .position(|token| !matches!(token, Self::Whitespace(_)))
+            .filter_map(|&(start, end)| {
+                let line = &raw[start..end];
+                let indent = line.len() - line.trim_start_matches([' ', '\t']).len();
+                // Only count lines that have non-whitespace content
+                if indent < line.len() {
+                    Some(indent)
+                } else {
+                    None // all-whitespace line
+                }
             })
             .min()
             .unwrap_or(0);
 
-        let front_offset = lines.iter().enumerate().position(|(idx, line)| {
+        // Find first non-blank line
+        let front_offset = lines.iter().enumerate().position(|(idx, &(start, end))| {
             let indent = if idx == 0 { 0 } else { common_indent };
-            line[min(line.len(), indent)..]
-                .iter()
-                .any(|token| !matches!(token, Token::Whitespace(_)))
+            let line = &raw[start..end];
+            let after_indent = if indent < line.len() {
+                &line[indent..]
+            } else {
+                ""
+            };
+            after_indent.chars().any(|c| c != ' ' && c != '\t')
         });
 
-        let end_offset = lines.iter().rev().position(|line| {
-            line[min(line.len(), common_indent)..]
-                .iter()
-                .any(|token| !matches!(token, Token::Whitespace(_)))
+        // Find last non-blank line
+        let end_offset_lines = lines.iter().rev().position(|&(start, end)| {
+            let line = &raw[start..end];
+            let after_indent = if common_indent < line.len() {
+                &line[common_indent..]
+            } else {
+                ""
+            };
+            after_indent.chars().any(|c| c != ' ' && c != '\t')
         });
 
-        let mut formatted = Cow::Borrowed("");
+        if let Some((front, end_off)) = front_offset.zip(end_offset_lines) {
+            let first = front;
+            let last = lines.len() - end_off; // exclusive
 
-        if let Some((front_offset, end_offset)) = front_offset.zip(end_offset) {
-            let start = front_offset;
-            let end = lines.len() - end_offset;
+            if !has_escapes && first + 1 == last && first == 0 {
+                // Single line, no escapes — can return borrowed
+                let (start, end) = lines[0];
+                let line = &raw[start..end];
+                return Ok(Cow::Borrowed(line));
+            }
 
-            lines[start..end]
-                .iter()
-                .enumerate()
-                .for_each(|(offset_idx, line)| {
-                    let actual_idx = start + offset_idx;
-                    let indent = if actual_idx == 0 { 0 } else { common_indent };
-                    if offset_idx != 0 {
-                        formatted += "\n";
-                    }
-                    line[min(line.len(), indent)..]
-                        .iter()
-                        .for_each(|token| match token {
-                            Self::BlockStringCharacters(s) => {
-                                formatted += *s;
-                            }
-                            Self::Whitespace(s) => {
-                                formatted += *s;
-                            }
-                            Self::EscapedBlockQuote => {
-                                formatted += "\"\"\"";
-                            }
-                            _ => {}
-                        });
-                });
+            // Check if we can return a borrowed slice (single content line from source, no escapes, not first line)
+            if !has_escapes && first + 1 == last && first > 0 {
+                let (start, end) = lines[first];
+                let line = &raw[start..end];
+                let after_indent = if common_indent < line.len() {
+                    &line[common_indent..]
+                } else {
+                    ""
+                };
+                return Ok(Cow::Borrowed(after_indent));
+            }
+
+            // Build the result string
+            let mut result = String::new();
+            for (offset_idx, line_idx) in (first..last).enumerate() {
+                let (start, end) = lines[line_idx];
+                let indent = if line_idx == 0 { 0 } else { common_indent };
+                if offset_idx != 0 {
+                    result.push('\n');
+                }
+                let line = &raw[start..end];
+                let after_indent = if indent < line.len() {
+                    &line[indent..]
+                } else {
+                    ""
+                };
+                if has_escapes {
+                    result.push_str(&after_indent.replace("\\\"\"\"", "\"\"\""));
+                } else {
+                    result.push_str(after_indent);
+                }
+            }
+
+            Ok(Cow::Owned(result))
+        } else {
+            Ok(Cow::Borrowed(""))
         }
-
-        formatted
     }
 }

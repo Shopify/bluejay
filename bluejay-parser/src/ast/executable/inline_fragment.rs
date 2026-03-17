@@ -1,7 +1,5 @@
 use crate::ast::executable::{SelectionSet, TypeCondition};
-use crate::ast::{
-    DepthLimiter, FromTokens, IsMatch, ParseError, Tokens, TryFromTokens, VariableDirectives,
-};
+use crate::ast::{DepthLimiter, FromTokens, IsMatch, ParseError, Tokens, VariableDirectives};
 use crate::lexical_token::PunctuatorType;
 use crate::{HasSpan, Span};
 
@@ -20,10 +18,19 @@ impl<'a> FromTokens<'a> for InlineFragment<'a> {
         depth_limiter: DepthLimiter,
     ) -> Result<Self, ParseError> {
         let ellipse_span = tokens.expect_punctuator(PunctuatorType::Ellipse)?;
-        let type_condition =
-            TypeCondition::try_from_tokens(tokens, depth_limiter.bump()?).transpose()?;
-        let directives =
-            VariableDirectives::try_from_tokens(tokens, depth_limiter.bump()?).transpose()?;
+        let type_condition = if TypeCondition::is_match(tokens) {
+            Some(TypeCondition::from_tokens(tokens, depth_limiter.bump()?)?)
+        } else {
+            None
+        };
+        let directives = if VariableDirectives::is_match(tokens) {
+            Some(VariableDirectives::from_tokens(
+                tokens,
+                depth_limiter.bump()?,
+            )?)
+        } else {
+            None
+        };
         let selection_set = SelectionSet::from_tokens(tokens, depth_limiter.bump()?)?;
         let span = ellipse_span.merge(selection_set.span());
         Ok(Self {

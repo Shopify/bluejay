@@ -37,7 +37,7 @@ impl<'a> From<Error<'a, ParserSchemaDefinition<'a>>> for ParserError {
                     .map(|ivd| {
                         Annotation::new(
                             format!("Input value definition with name `{name}`"),
-                            ivd.name_token().span().clone(),
+                            *ivd.name_token().span(),
                         )
                     })
                     .collect(),
@@ -53,7 +53,7 @@ impl<'a> From<Error<'a, ParserSchemaDefinition<'a>>> for ParserError {
                     .map(|evd| {
                         Annotation::new(
                             format!("Enum value definition with name `{name}`"),
-                            evd.name_token().span().clone(),
+                            *evd.name_token().span(),
                         )
                     })
                     .collect(),
@@ -69,14 +69,14 @@ impl<'a> From<Error<'a, ParserSchemaDefinition<'a>>> for ParserError {
                 ),
                 Some(Annotation::new(
                     "Input object type definition contains circular reference(s) through an unbroken chain of non-null singular fields, which is disallowed",
-                    input_object_type_definition.name_token().span().clone(),
+                    *input_object_type_definition.name_token().span(),
                 )),
                 circular_references
                     .into_iter()
                     .map(|circular_reference| {
                         Annotation::new(
                             "Occurence of circular reference",
-                            circular_reference.span().clone(),
+                            *circular_reference.span(),
                         )
                     })
                     .collect(),

@@ -72,7 +72,7 @@ impl<'a, const CONST: bool> FromTokens<'a> for Value<'a, CONST> {
             Some(LexicalToken::Punctuator(p))
                 if p.r#type() == PunctuatorType::OpenSquareBracket =>
             {
-                let open_span = p.span().clone();
+                let open_span = *p.span();
                 let mut list: Vec<Self> = Vec::new();
                 let close_span = loop {
                     if let Some(close_span) =
@@ -89,7 +89,7 @@ impl<'a, const CONST: bool> FromTokens<'a> for Value<'a, CONST> {
                 }))
             }
             Some(LexicalToken::Punctuator(p)) if p.r#type() == PunctuatorType::OpenBrace => {
-                let open_span = p.span().clone();
+                let open_span = *p.span();
                 let mut object: Vec<_> = Vec::new();
                 let close_span = loop {
                     if let Some(close_span) = tokens.next_if_punctuator(PunctuatorType::CloseBrace)

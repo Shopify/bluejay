@@ -113,7 +113,7 @@ impl Error {
                         error
                             .primary_annotation
                             .as_ref()
-                            .map(|a| a.span().clone().into())
+                            .map(|a| (*a.span()).into())
                             .unwrap_or(0..0),
                     ),
                 )
