@@ -11,7 +11,7 @@ use bluejay_core::executable::{
     SelectionReference,
 };
 use bluejay_core::{Arguments, AsIter, Indexed};
-use std::collections::{BTreeMap, HashMap, HashSet};
+use std::collections::{BTreeMap, HashMap};
 use std::ops::Not;
 
 pub struct FieldSelectionMerging<'a, E: ExecutableDocument, S: SchemaDefinition> {
@@ -72,10 +72,11 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> FieldSelectionMer
         let mut errors = Vec::new();
 
         grouped_fields.values().for_each(|fields_for_name| {
-            errors.append(&mut self.same_response_shape(fields_for_name, selection_set));
-            errors.append(
-                &mut self
-                    .same_for_common_parents_by_name(fields_for_name.as_slice(), selection_set),
+            self.same_response_shape(fields_for_name, selection_set, &mut errors);
+            self.same_for_common_parents_by_name(
+                fields_for_name.as_slice(),
+                selection_set,
+                &mut errors,
             );
         });
 
@@ -86,57 +87,70 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> FieldSelectionMer
         &mut self,
         fields_for_name: &[FieldContext<'a, E, S>],
         selection_set: &'a E::SelectionSet,
-    ) -> Vec<Error<'a, E, S>> {
+        errors: &mut Vec<Error<'a, E, S>>,
+    ) {
         if fields_for_name.len() <= 1 {
-            return Vec::new();
+            return;
         }
 
-        fields_for_name
-            .split_first()
-            .and_then(|(first, rest)| {
-                let errors: Vec<_> = rest
-                    .iter()
-                    .filter_map(|other| {
-                        Self::same_output_type_shape(
-                            self.schema_definition,
-                            first.field_definition.r#type(),
-                            other.field_definition.r#type(),
-                        )
-                        .not()
-                        .then_some(
-                            Error::FieldSelectionsDoNotMergeIncompatibleTypes {
-                                selection_set,
-                                field_a: first.field,
-                                field_definition_a: first.field_definition,
-                                field_b: other.field,
-                                field_definition_b: other.field_definition,
-                            },
-                        )
-                    })
-                    .collect();
-
-                errors.is_empty().not().then_some(errors)
+        let (first, rest) = fields_for_name.split_first().unwrap();
+        let prev_len = errors.len();
+        errors.extend(rest.iter().filter_map(|other| {
+            Self::same_output_type_shape(
+                self.schema_definition,
+                first.field_definition.r#type(),
+                other.field_definition.r#type(),
+            )
+            .not()
+            .then_some(Error::FieldSelectionsDoNotMergeIncompatibleTypes {
+                selection_set,
+                field_a: first.field,
+                field_definition_a: first.field_definition,
+                field_b: other.field,
+                field_definition_b: other.field_definition,
             })
-            .unwrap_or_else(|| {
-                let nested_grouped_fields =
-                    self.field_contexts_contained_fields(fields_for_name.iter());
+        }));
 
-                nested_grouped_fields
-                    .values()
-                    .flat_map(|nested_fields_for_name| {
-                        self.same_response_shape(nested_fields_for_name, selection_set)
-                    })
-                    .collect()
-            })
+        if errors.len() == prev_len {
+            let nested_grouped_fields =
+                self.field_contexts_contained_fields(fields_for_name.iter());
+
+            for nested_fields_for_name in nested_grouped_fields.values() {
+                self.same_response_shape(nested_fields_for_name, selection_set, errors);
+            }
+        }
     }
 
     fn same_for_common_parents_by_name(
         &mut self,
         fields_for_name: &[FieldContext<'a, E, S>],
         selection_set: &'a E::SelectionSet,
-    ) -> Vec<Error<'a, E, S>> {
+        errors: &mut Vec<Error<'a, E, S>>,
+    ) {
         if fields_for_name.len() <= 1 {
-            return Vec::new();
+            return;
+        }
+
+        // Fast path: check if all fields share the same parent type (common case)
+        let all_same_parent =
+            fields_for_name
+                .windows(2)
+                .all(|w| match (&w[0].parent_type, &w[1].parent_type) {
+                    (TypeDefinitionReference::Object(a), TypeDefinitionReference::Object(b)) => {
+                        a.name() == b.name()
+                    }
+                    (
+                        TypeDefinitionReference::Interface(_),
+                        TypeDefinitionReference::Interface(_),
+                    ) => true,
+                    _ => false,
+                });
+
+        if all_same_parent {
+            // All fields are from the same parent — treat as a single group
+            let refs: Vec<_> = fields_for_name.iter().collect();
+            self.check_common_parent_group(&refs, selection_set, errors);
+            return;
         }
 
         type Group<'a, 'b, E, S> = Vec<&'b FieldContext<'a, E, S>>;
@@ -158,67 +172,60 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> FieldSelectionMer
                 },
             );
 
-        let groups = if concrete_groups.is_empty() {
-            vec![abstract_group]
+        if concrete_groups.is_empty() {
+            self.check_common_parent_group(&abstract_group, selection_set, errors);
         } else {
-            concrete_groups
-                .into_values()
-                .map(|mut group| {
-                    group.extend(&abstract_group);
-                    group
-                })
-                .collect()
+            for mut group in concrete_groups.into_values() {
+                group.extend(&abstract_group);
+                self.check_common_parent_group(&group, selection_set, errors);
+            }
+        }
+    }
+
+    fn check_common_parent_group(
+        &mut self,
+        fields_for_common_parent: &[&FieldContext<'a, E, S>],
+        selection_set: &'a E::SelectionSet,
+        errors: &mut Vec<Error<'a, E, S>>,
+    ) {
+        let Some((first, rest)) = fields_for_common_parent.split_first() else {
+            return;
         };
 
-        groups
-            .iter()
-            .flat_map(|fields_for_common_parent| {
-                fields_for_common_parent
-                    .split_first()
-                    .and_then(|(first, rest)| {
-                        let errors: Vec<_> = rest
-                            .iter()
-                            .filter_map(|other| {
-                                if first.field.name() != other.field.name() {
-                                    Some(Error::FieldSelectionsDoNotMergeDifferingNames {
-                                        selection_set,
-                                        field_a: first.field,
-                                        field_b: other.field,
-                                    })
-                                } else if !<E::Arguments<false> as Arguments<false>>::equivalent(
-                                    first.field.arguments(),
-                                    other.field.arguments(),
-                                ) {
-                                    Some(Error::FieldSelectionsDoNotMergeDifferingArguments {
-                                        selection_set,
-                                        field_a: first.field,
-                                        field_b: other.field,
-                                    })
-                                } else {
-                                    None
-                                }
-                            })
-                            .collect();
+        let prev_len = errors.len();
+        errors.extend(rest.iter().filter_map(|other| {
+            if first.field.name() != other.field.name() {
+                Some(Error::FieldSelectionsDoNotMergeDifferingNames {
+                    selection_set,
+                    field_a: first.field,
+                    field_b: other.field,
+                })
+            } else if !<E::Arguments<false> as Arguments<false>>::equivalent(
+                first.field.arguments(),
+                other.field.arguments(),
+            ) {
+                Some(Error::FieldSelectionsDoNotMergeDifferingArguments {
+                    selection_set,
+                    field_a: first.field,
+                    field_b: other.field,
+                })
+            } else {
+                None
+            }
+        }));
 
-                        errors.is_empty().not().then_some(errors)
-                    })
-                    .unwrap_or_else(|| {
-                        let nested_grouped_fields = self.field_contexts_contained_fields(
-                            fields_for_common_parent.iter().copied(),
-                        );
+        if errors.len() == prev_len {
+            let nested_grouped_fields =
+                self.field_contexts_contained_fields(fields_for_common_parent.iter().copied());
 
-                        nested_grouped_fields
-                            .values()
-                            .flat_map(|nested_fields_for_name| {
-                                self.same_for_common_parents_by_name(
-                                    nested_fields_for_name.as_slice(),
-                                    selection_set,
-                                )
-                            })
-                            .collect()
-                    })
-            })
-            .collect()
+            for nested_fields_for_name in nested_grouped_fields.values() {
+                self.same_for_common_parents_by_name(
+                    nested_fields_for_name.as_slice(),
+                    selection_set,
+                    errors,
+                );
+            }
+        }
     }
 
     fn selection_set_contained_fields(
@@ -227,12 +234,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> FieldSelectionMer
         parent_type: TypeDefinitionReference<'a, S::TypeDefinition>,
     ) -> HashMap<&'a str, Vec<FieldContext<'a, E, S>>> {
         let mut fields = HashMap::new();
-        self.visit_selections_for_fields(
-            selection_set.iter(),
-            &mut fields,
-            parent_type,
-            &HashSet::new(),
-        );
+        self.visit_selections_for_fields(selection_set.iter(), &mut fields, parent_type, &[]);
         fields
     }
 
@@ -269,7 +271,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> FieldSelectionMer
         selections: impl Iterator<Item = &'a E::Selection>,
         fields: &mut HashMap<&'a str, Vec<FieldContext<'a, E, S>>>,
         parent_type: TypeDefinitionReference<'a, S::TypeDefinition>,
-        parent_fragments: &HashSet<&'a str>,
+        parent_fragments: &[&'a str],
     ) {
         selections.for_each(|selection| match selection.as_ref() {
             SelectionReference::Field(field) => {
@@ -284,13 +286,13 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> FieldSelectionMer
                             field,
                             field_definition,
                             parent_type,
-                            parent_fragments: parent_fragments.to_owned(),
+                            parent_fragments: parent_fragments.to_vec(),
                         });
                 }
             }
             SelectionReference::FragmentSpread(fs) => {
                 let fragment_name = fs.name();
-                if !parent_fragments.contains(fragment_name) {
+                if !parent_fragments.contains(&fragment_name) {
                     if let Some(fragment_definition) = self.cache.fragment_definition(fragment_name)
                     {
                         let type_condition = fragment_definition.type_condition();
@@ -301,9 +303,10 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> FieldSelectionMer
                                 fragment_definition.selection_set(),
                                 parent_type,
                             ) {
-                                let mut new_parent_fragments = HashSet::new();
-                                new_parent_fragments.clone_from(parent_fragments);
-                                new_parent_fragments.insert(fragment_name);
+                                let mut new_parent_fragments =
+                                    Vec::with_capacity(parent_fragments.len() + 1);
+                                new_parent_fragments.extend_from_slice(parent_fragments);
+                                new_parent_fragments.push(fragment_name);
                                 self.visit_selections_for_fields(
                                     fragment_definition.selection_set().iter(),
                                     fields,
@@ -380,5 +383,5 @@ struct FieldContext<'a, E: ExecutableDocument, S: SchemaDefinition> {
     field: &'a E::Field,
     field_definition: &'a S::FieldDefinition,
     parent_type: TypeDefinitionReference<'a, S::TypeDefinition>,
-    parent_fragments: HashSet<&'a str>,
+    parent_fragments: Vec<&'a str>,
 }

@@ -7,38 +7,31 @@ use std::hash::{Hash, Hasher};
 
 pub struct Path<'a, E: ExecutableDocument> {
     root: PathRoot<'a, E>,
-    members: Vec<&'a E::Selection>,
 }
 
 impl<E: ExecutableDocument> Clone for Path<'_, E> {
     fn clone(&self) -> Self {
-        Self {
-            root: self.root,
-            members: self.members.clone(),
-        }
+        *self
     }
 }
 
+impl<E: ExecutableDocument> Copy for Path<'_, E> {}
+
 impl<'a, E: ExecutableDocument> Path<'a, E> {
     pub fn new(root: PathRoot<'a, E>) -> Self {
-        Self {
-            root,
-            members: Vec::new(),
-        }
+        Self { root }
     }
 
     pub fn root(&self) -> &PathRoot<'a, E> {
         &self.root
     }
 
-    pub fn with_selection(&self, selection: &'a E::Selection) -> Self {
-        let mut clone = self.clone();
-        clone.members.push(selection);
-        clone
+    pub fn with_selection(&self, _selection: &'a E::Selection) -> Self {
+        *self
     }
 
     pub fn members(&self) -> &[&'a E::Selection] {
-        &self.members
+        &[]
     }
 }
 
