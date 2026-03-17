@@ -1,6 +1,6 @@
 use crate::changes::Change;
 use crate::diff::argument::ArgumentDiff;
-use crate::diff::directive::{common_directive_changes, directive_additions, directive_removals};
+use crate::diff::directive::diff_directives_into;
 use bluejay_core::definition::{
     DirectiveLocation, FieldDefinition, InputValueDefinition, OutputType, SchemaDefinition,
 };
@@ -25,9 +25,8 @@ impl<'a, S: SchemaDefinition + 'a> FieldDiff<'a, S> {
         }
     }
 
-    pub fn diff(&self) -> Vec<Change<'a, S>> {
-        let mut changes = Vec::new();
-
+    #[inline]
+    pub fn diff_into(&self, changes: &mut Vec<Change<'a, S>>) {
         if self.old_field_definition.description() != self.new_field_definition.description() {
             changes.push(Change::FieldDescriptionChanged {
                 type_name: self.type_name,
@@ -46,101 +45,67 @@ impl<'a, S: SchemaDefinition + 'a> FieldDiff<'a, S> {
             });
         }
 
-        changes.extend(self.argument_additions().map(|argument_definition| {
-            Change::FieldArgumentAdded {
-                type_name: self.type_name,
-                field_definition: self.new_field_definition,
-                argument_definition,
-            }
-        }));
+        let old_args = self.old_field_definition.arguments_definition();
+        let new_args = self.new_field_definition.arguments_definition();
 
-        changes.extend(self.argument_removals().map(|argument_definition| {
-            Change::FieldArgumentRemoved {
-                type_name: self.type_name,
-                field_definition: self.old_field_definition,
-                argument_definition,
-            }
-        }));
+        // Fast path: skip argument diffing when neither field has arguments
+        if old_args.is_some() || new_args.is_some() {
+            // Argument additions
+            new_args
+                .map(|ii| ii.iter())
+                .into_iter()
+                .flatten()
+                .for_each(|new_arg| {
+                    let found_in_old = old_args
+                        .map(|ii| ii.iter())
+                        .into_iter()
+                        .flatten()
+                        .any(|old_arg| old_arg.name() == new_arg.name());
+                    if !found_in_old {
+                        changes.push(Change::FieldArgumentAdded {
+                            type_name: self.type_name,
+                            field_definition: self.new_field_definition,
+                            argument_definition: new_arg,
+                        });
+                    }
+                });
 
-        // diff common arguments
-        self.old_field_definition
-            .arguments_definition()
-            .map(|ii| ii.iter())
-            .into_iter()
-            .flatten()
-            .for_each(|old_argument| {
-                let new_argument = self
-                    .new_field_definition
-                    .arguments_definition()
-                    .map(|ii| ii.iter())
-                    .into_iter()
-                    .flatten()
-                    .find(|new_argument| old_argument.name() == new_argument.name());
+            // Argument removals + common argument diffs in a single pass
+            old_args
+                .map(|ii| ii.iter())
+                .into_iter()
+                .flatten()
+                .for_each(|old_argument| {
+                    let new_argument = new_args
+                        .map(|ii| ii.iter())
+                        .into_iter()
+                        .flatten()
+                        .find(|new_argument| old_argument.name() == new_argument.name());
 
-                if let Some(new_argument) = new_argument {
-                    changes.extend(
+                    if let Some(new_argument) = new_argument {
                         ArgumentDiff::new(
                             self.type_name,
                             self.old_field_definition,
                             old_argument,
                             new_argument,
                         )
-                        .diff(),
-                    );
-                }
-            });
+                        .diff_into(changes);
+                    } else {
+                        changes.push(Change::FieldArgumentRemoved {
+                            type_name: self.type_name,
+                            field_definition: self.old_field_definition,
+                            argument_definition: old_argument,
+                        });
+                    }
+                });
+        }
 
-        changes.extend(
-            directive_additions::<S, _>(self.old_field_definition, self.new_field_definition).map(
-                |directive| Change::DirectiveAdded {
-                    directive,
-                    location: DirectiveLocation::FieldDefinition,
-                    member_name: self.old_field_definition.name(),
-                },
-            ),
-        );
-
-        changes.extend(
-            directive_removals::<S, _>(self.old_field_definition, self.new_field_definition).map(
-                |directive| Change::DirectiveRemoved {
-                    directive,
-                    location: DirectiveLocation::FieldDefinition,
-                    member_name: self.old_field_definition.name(),
-                },
-            ),
-        );
-
-        changes.extend(common_directive_changes(
+        diff_directives_into::<S, _>(
             self.old_field_definition,
             self.new_field_definition,
-        ));
-
-        changes
-    }
-
-    fn argument_additions(&self) -> impl Iterator<Item = &'a S::InputValueDefinition> {
-        self.new_field_definition
-            .arguments_definition()
-            .map(|ii| ii.iter())
-            .into_iter()
-            .flatten()
-            .filter(|new_arg| {
-                self.old_field_definition
-                    .arguments_definition()
-                    .is_none_or(|args| !args.iter().any(|old_arg| old_arg.name() == new_arg.name()))
-            })
-    }
-
-    fn argument_removals(&self) -> impl Iterator<Item = &'a S::InputValueDefinition> {
-        self.old_field_definition
-            .arguments_definition()
-            .map(|ii| ii.iter())
-            .into_iter()
-            .flatten()
-            .filter(|new_arg| {
-                self.new_field_definition
-                    .arguments_definition()
-                    .is_none_or(|args| !args.iter().any(|old_arg| old_arg.name() == new_arg.name()))
-            })
+            DirectiveLocation::FieldDefinition,
+            self.old_field_definition.name(),
+            changes,
+        );
     }
 }

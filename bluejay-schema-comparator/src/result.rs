@@ -7,7 +7,7 @@ pub struct ComparisonResult<'a, S: SchemaDefinition> {
 
 impl<'a, S: SchemaDefinition> ComparisonResult<'a, S> {
     pub fn new(mut changes: Vec<Change<'a, S>>) -> Self {
-        changes.sort_by_key(|b| std::cmp::Reverse(b.criticality()));
+        changes.sort_unstable_by_key(|b| std::cmp::Reverse(b.criticality_level()));
 
         Self { changes }
     }

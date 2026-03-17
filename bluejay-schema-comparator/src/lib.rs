@@ -3,7 +3,7 @@ mod diff;
 mod result;
 
 use bluejay_core::definition::SchemaDefinition;
-pub use changes::{Change, Criticality};
+pub use changes::{Change, Criticality, CriticalityLevel};
 pub use result::ComparisonResult;
 
 pub fn compare<'a, S: SchemaDefinition>(

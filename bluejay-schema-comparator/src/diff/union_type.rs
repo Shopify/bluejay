@@ -1,5 +1,5 @@
 use crate::changes::Change;
-use crate::diff::directive::{common_directive_changes, directive_additions, directive_removals};
+use crate::diff::directive::diff_directives_into;
 use bluejay_core::definition::{
     DirectiveLocation, SchemaDefinition, UnionMemberType, UnionMemberTypes, UnionTypeDefinition,
 };
@@ -15,9 +15,8 @@ impl<'a, S: SchemaDefinition + 'a> UnionTypeDiff<'a, S> {
         Self { old_type, new_type }
     }
 
-    pub fn diff(&self) -> Vec<Change<'a, S>> {
-        let mut changes = Vec::new();
-
+    #[inline]
+    pub fn diff_into(&self, changes: &mut Vec<Change<'a, S>>) {
         changes.extend(
             self.member_additions()
                 .map(|union_member_type| Change::UnionMemberAdded {
@@ -33,29 +32,13 @@ impl<'a, S: SchemaDefinition + 'a> UnionTypeDiff<'a, S> {
             }
         }));
 
-        changes.extend(
-            directive_additions::<S, _>(self.old_type, self.new_type).map(|directive| {
-                Change::DirectiveAdded {
-                    directive,
-                    location: DirectiveLocation::Union,
-                    member_name: self.old_type.name(),
-                }
-            }),
+        diff_directives_into::<S, _>(
+            self.old_type,
+            self.new_type,
+            DirectiveLocation::Union,
+            self.old_type.name(),
+            changes,
         );
-
-        changes.extend(
-            directive_removals::<S, _>(self.old_type, self.new_type).map(|directive| {
-                Change::DirectiveRemoved {
-                    directive,
-                    location: DirectiveLocation::Union,
-                    member_name: self.old_type.name(),
-                }
-            }),
-        );
-
-        changes.extend(common_directive_changes(self.old_type, self.new_type));
-
-        changes
     }
 
     fn member_removals(&self) -> impl Iterator<Item = &'a S::UnionMemberType> {

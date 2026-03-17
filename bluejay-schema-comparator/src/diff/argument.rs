@@ -1,5 +1,5 @@
 use crate::changes::Change;
-use crate::diff::directive::{common_directive_changes, directive_additions, directive_removals};
+use crate::diff::directive::diff_directives_into;
 use bluejay_core::definition::{
     DirectiveLocation, InputType, InputValueDefinition, SchemaDefinition,
 };
@@ -27,9 +27,8 @@ impl<'a, S: SchemaDefinition + 'a> ArgumentDiff<'a, S> {
         }
     }
 
-    pub fn diff(&self) -> Vec<Change<'a, S>> {
-        let mut changes = Vec::new();
-
+    #[inline]
+    pub fn diff_into(&self, changes: &mut Vec<Change<'a, S>>) {
         if self.old_argument_definition.description() != self.new_argument_definition.description()
         {
             changes.push(Change::FieldArgumentDescriptionChanged {
@@ -76,29 +75,12 @@ impl<'a, S: SchemaDefinition + 'a> ArgumentDiff<'a, S> {
             (None, None) => {}
         }
 
-        changes.extend(
-            directive_additions::<S, _>(self.old_argument_definition, self.new_argument_definition)
-                .map(|directive| Change::DirectiveAdded {
-                    directive,
-                    location: DirectiveLocation::ArgumentDefinition,
-                    member_name: self.old_argument_definition.name(),
-                }),
-        );
-
-        changes.extend(
-            directive_removals::<S, _>(self.old_argument_definition, self.new_argument_definition)
-                .map(|directive| Change::DirectiveRemoved {
-                    directive,
-                    location: DirectiveLocation::ArgumentDefinition,
-                    member_name: self.old_argument_definition.name(),
-                }),
-        );
-
-        changes.extend(common_directive_changes(
+        diff_directives_into::<S, _>(
             self.old_argument_definition,
             self.new_argument_definition,
-        ));
-
-        changes
+            DirectiveLocation::ArgumentDefinition,
+            self.old_argument_definition.name(),
+            changes,
+        );
     }
 }
