@@ -1,24 +1,24 @@
+use itertools::Itertools;
 use std::cmp::{Eq, Ord};
 use std::collections::BTreeMap;
 use std::hash::Hash;
 
 pub fn duplicates<T: Copy, I: Iterator<Item = T>, K: Hash + Ord + Eq + Copy>(
-    iter: I,
+    mut iter: I,
     key: fn(T) -> K,
 ) -> impl Iterator<Item = (K, Vec<T>)> {
-    // Collect items first to check for duplicates without BTreeMap
-    let items: Vec<T> = iter.collect();
-
     // If 0 or 1 items, no duplicates possible — avoid any allocation
-    if items.len() <= 1 {
+    let Some((first, second)) = iter.next().zip(iter.next()) else {
         return Vec::new().into_iter();
-    }
+    };
+
+    let items: Vec<T> = [first, second].into_iter().chain(iter).collect();
 
     // Quick O(n²) check for duplicates before allocating BTreeMap
-    let has_dupes = items.iter().enumerate().any(|(i, el)| {
-        let k = key(*el);
-        items[..i].iter().any(|prev| key(*prev) == k)
-    });
+    let has_dupes = items
+        .iter()
+        .array_combinations()
+        .any(|[a, b]| key(*a) == key(*b));
 
     if !has_dupes {
         return Vec::new().into_iter();

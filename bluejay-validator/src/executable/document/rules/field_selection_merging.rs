@@ -139,6 +139,8 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> FieldSelectionMer
                     (TypeDefinitionReference::Object(a), TypeDefinitionReference::Object(b)) => {
                         a.name() == b.name()
                     }
+                    // Interface fields are from the abstract type itself, not a specific
+                    // concrete type, so all interface parents are treated as the same group.
                     (
                         TypeDefinitionReference::Interface(_),
                         TypeDefinitionReference::Interface(_),
