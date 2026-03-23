@@ -25,14 +25,6 @@ impl<'a, E: ExecutableDocument> Path<'a, E> {
     pub fn root(&self) -> &PathRoot<'a, E> {
         &self.root
     }
-
-    pub fn with_selection(&self, _selection: &'a E::Selection) -> Self {
-        *self
-    }
-
-    pub fn members(&self) -> &[&'a E::Selection] {
-        &[]
-    }
 }
 
 pub enum PathRoot<'a, E: ExecutableDocument> {

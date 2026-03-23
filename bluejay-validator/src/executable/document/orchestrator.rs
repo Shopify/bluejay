@@ -122,26 +122,25 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, V: Visitor<'a, E, S>>
     ) {
         self.visitor.visit_selection_set(selection_set, scoped_type);
 
-        selection_set.iter().for_each(|selection| {
-            let nested_path = path.with_selection(selection);
-            match selection.as_ref() {
+        selection_set
+            .iter()
+            .for_each(|selection| match selection.as_ref() {
                 SelectionReference::Field(f) => {
                     let field_definition = scoped_type
                         .fields_definition()
                         .and_then(|fields_definition| fields_definition.get(f.name()));
 
                     if let Some(field_definition) = field_definition {
-                        self.visit_field(f, field_definition, &nested_path);
+                        self.visit_field(f, field_definition, path);
                     }
                 }
                 SelectionReference::InlineFragment(i) => {
-                    self.visit_inline_fragment(i, scoped_type, &nested_path)
+                    self.visit_inline_fragment(i, scoped_type, path)
                 }
                 SelectionReference::FragmentSpread(fs) => {
                     self.visit_fragment_spread(fs, scoped_type, path)
                 }
-            }
-        })
+            })
     }
 
     fn visit_field(
@@ -170,6 +169,8 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, V: Visitor<'a, E, S>>
                 self.visit_selection_set(selection_set, nested_type, path);
             }
         }
+
+        self.visitor.leave_field(field, field_definition);
     }
 
     fn visit_variable_directives(
