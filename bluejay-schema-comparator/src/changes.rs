@@ -10,11 +10,41 @@ use bluejay_printer::value::ValuePrinter;
 use std::borrow::Cow;
 use strum::AsRefStr;
 
-#[derive(Eq, Ord, PartialEq, PartialOrd)]
+#[derive(Eq, PartialEq)]
 pub enum Criticality {
     Breaking { reason: Cow<'static, str> },
     Dangerous { reason: Cow<'static, str> },
     Safe { reason: Cow<'static, str> },
+}
+
+/// Numeric ordering: Breaking(2) > Dangerous(1) > Safe(0)
+#[derive(Clone, Copy, Eq, Ord, PartialEq, PartialOrd)]
+pub enum CriticalityLevel {
+    Safe = 0,
+    Dangerous = 1,
+    Breaking = 2,
+}
+
+impl Criticality {
+    pub fn level(&self) -> CriticalityLevel {
+        match self {
+            Self::Breaking { .. } => CriticalityLevel::Breaking,
+            Self::Dangerous { .. } => CriticalityLevel::Dangerous,
+            Self::Safe { .. } => CriticalityLevel::Safe,
+        }
+    }
+}
+
+impl Ord for Criticality {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.level().cmp(&other.level())
+    }
+}
+
+impl PartialOrd for Criticality {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
 }
 
 impl Criticality {
@@ -239,15 +269,146 @@ pub enum Change<'a, S: SchemaDefinition> {
 
 impl<S: SchemaDefinition> Change<'_, S> {
     pub fn breaking(&self) -> bool {
-        matches!(self.criticality(), Criticality::Breaking { .. })
+        matches!(self.criticality_level(), CriticalityLevel::Breaking)
     }
 
     pub fn non_breaking(&self) -> bool {
-        matches!(self.criticality(), Criticality::Safe { .. })
+        matches!(self.criticality_level(), CriticalityLevel::Safe)
     }
 
     pub fn dangerous(&self) -> bool {
-        matches!(self.criticality(), Criticality::Dangerous { .. })
+        matches!(self.criticality_level(), CriticalityLevel::Dangerous)
+    }
+
+    /// Cheap criticality check without allocating reason strings.
+    pub fn criticality_level(&self) -> CriticalityLevel {
+        match self {
+            Self::TypeRemoved { .. } => CriticalityLevel::Breaking,
+            Self::TypeAdded { .. } => CriticalityLevel::Safe,
+            Self::TypeKindChanged { .. } => CriticalityLevel::Breaking,
+            Self::TypeDescriptionChanged { .. } => CriticalityLevel::Safe,
+            Self::FieldAdded { .. } => CriticalityLevel::Safe,
+            Self::FieldRemoved { .. } => CriticalityLevel::Breaking,
+            Self::FieldDescriptionChanged { .. } => CriticalityLevel::Safe,
+            Self::FieldTypeChanged {
+                type_name: _,
+                old_field_definition: old_field,
+                new_field_definition: new_field,
+            } => {
+                if is_change_safe_for_field::<S>(
+                    old_field.r#type().as_shallow_ref(),
+                    new_field.r#type().as_shallow_ref(),
+                ) {
+                    CriticalityLevel::Safe
+                } else {
+                    CriticalityLevel::Breaking
+                }
+            }
+            Self::FieldArgumentAdded {
+                type_name: _,
+                field_definition: _,
+                argument_definition: argument,
+            } => {
+                if argument.r#type().is_required() && argument.default_value().is_none() {
+                    CriticalityLevel::Breaking
+                } else {
+                    CriticalityLevel::Safe
+                }
+            }
+            Self::FieldArgumentRemoved { .. } => CriticalityLevel::Breaking,
+            Self::FieldArgumentDescriptionChanged { .. } => CriticalityLevel::Safe,
+            Self::FieldArgumentDefaultValueChanged { .. } => CriticalityLevel::Dangerous,
+            Self::FieldArgumentTypeChanged {
+                type_name: _,
+                field_definition: _,
+                old_argument_definition: old_argument,
+                new_argument_definition: new_argument,
+            } => {
+                if is_change_safe_for_input_value::<S>(
+                    old_argument.r#type().as_shallow_ref(),
+                    new_argument.r#type().as_shallow_ref(),
+                ) {
+                    CriticalityLevel::Safe
+                } else {
+                    CriticalityLevel::Breaking
+                }
+            }
+            Self::ObjectInterfaceAddition { .. } => CriticalityLevel::Dangerous,
+            Self::ObjectInterfaceRemoval { .. } => CriticalityLevel::Breaking,
+            Self::EnumValueAdded { .. } => CriticalityLevel::Dangerous,
+            Self::EnumValueRemoved { .. } => CriticalityLevel::Breaking,
+            Self::EnumValueDescriptionChanged { .. } => CriticalityLevel::Safe,
+            Self::UnionMemberAdded { .. } => CriticalityLevel::Dangerous,
+            Self::UnionMemberRemoved { .. } => CriticalityLevel::Breaking,
+            Self::InputFieldAdded {
+                input_object_type_definition: _,
+                added_field_definition: added_field,
+            } => {
+                if added_field.r#type().is_required() && added_field.default_value().is_none() {
+                    CriticalityLevel::Breaking
+                } else {
+                    CriticalityLevel::Safe
+                }
+            }
+            Self::InputFieldRemoved { .. } => CriticalityLevel::Breaking,
+            Self::InputFieldDescriptionChanged { .. } => CriticalityLevel::Safe,
+            Self::InputFieldTypeChanged {
+                input_object_type_definition: _,
+                old_field_definition: old_field,
+                new_field_definition: new_field,
+            } => {
+                if is_change_safe_for_input_value::<S>(
+                    old_field.r#type().as_shallow_ref(),
+                    new_field.r#type().as_shallow_ref(),
+                ) {
+                    CriticalityLevel::Safe
+                } else {
+                    CriticalityLevel::Breaking
+                }
+            }
+            Self::InputFieldDefaultValueChanged { .. } => CriticalityLevel::Dangerous,
+            Self::DirectiveDefinitionAdded { .. } => CriticalityLevel::Safe,
+            Self::DirectiveDefinitionRemoved { .. } => CriticalityLevel::Breaking,
+            Self::DirectiveDefinitionLocationAdded { .. } => CriticalityLevel::Safe,
+            Self::DirectiveDefinitionLocationRemoved { .. } => CriticalityLevel::Breaking,
+            Self::DirectiveDefinitionDescriptionChanged { .. } => CriticalityLevel::Safe,
+            Self::DirectiveDefinitionArgumentAdded {
+                directive_definition: _,
+                argument_definition,
+            } => {
+                if argument_definition.is_required()
+                    && argument_definition.default_value().is_none()
+                {
+                    CriticalityLevel::Breaking
+                } else {
+                    CriticalityLevel::Safe
+                }
+            }
+            Self::DirectiveDefinitionArgumentRemoved { .. } => CriticalityLevel::Breaking,
+            Self::DirectiveDefinitionArgumentDescriptionChanged { .. } => CriticalityLevel::Safe,
+            Self::DirectiveDefinitionArgumentTypeChanged {
+                directive_definition: _,
+                old_argument_definition,
+                new_argument_definition,
+            } => {
+                if is_change_safe_for_input_value::<S>(
+                    old_argument_definition.r#type().as_shallow_ref(),
+                    new_argument_definition.r#type().as_shallow_ref(),
+                ) {
+                    CriticalityLevel::Safe
+                } else {
+                    CriticalityLevel::Breaking
+                }
+            }
+            Self::DirectiveDefinitionArgumentDefaultValueChanged { .. } => {
+                CriticalityLevel::Dangerous
+            }
+            Self::DirectiveAdded { .. } => CriticalityLevel::Safe,
+            Self::DirectiveRemoved { .. } => CriticalityLevel::Breaking,
+            Self::DirectiveArgumentAdded { .. } => CriticalityLevel::Safe,
+            Self::DirectiveArgumentRemoved { .. } => CriticalityLevel::Safe,
+            Self::DirectiveArgumentValueChanged { .. } => CriticalityLevel::Safe,
+        }
     }
 
     pub fn criticality(&self) -> Criticality {
@@ -358,7 +519,7 @@ impl<S: SchemaDefinition> Change<'_, S> {
                 Criticality::safe(None)
             },
             Self::DirectiveDefinitionArgumentAdded { directive_definition: _, argument_definition } => {
-                if argument_definition.is_required() {
+                if argument_definition.is_required() && argument_definition.default_value().is_none() {
                     Criticality::breaking(None)
                 } else {
                     Criticality::safe(None)

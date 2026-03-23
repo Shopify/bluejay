@@ -1,5 +1,5 @@
 use crate::changes::Change;
-use crate::diff::directive::{common_directive_changes, directive_additions, directive_removals};
+use crate::diff::directive::diff_directives_into;
 use bluejay_core::definition::{
     DirectiveLocation, InputType, InputValueDefinition, SchemaDefinition,
 };
@@ -7,7 +7,6 @@ use bluejay_core::Value;
 
 pub struct InputFieldDiff<'a, S: SchemaDefinition> {
     old_type_definition: &'a S::InputObjectTypeDefinition,
-    new_type_definition: &'a S::InputObjectTypeDefinition,
     old_field_definition: &'a S::InputValueDefinition,
     new_field_definition: &'a S::InputValueDefinition,
 }
@@ -15,21 +14,19 @@ pub struct InputFieldDiff<'a, S: SchemaDefinition> {
 impl<'a, S: SchemaDefinition + 'a> InputFieldDiff<'a, S> {
     pub fn new(
         old_type_definition: &'a S::InputObjectTypeDefinition,
-        new_type_definition: &'a S::InputObjectTypeDefinition,
+        _new_type_definition: &'a S::InputObjectTypeDefinition,
         old_field_definition: &'a S::InputValueDefinition,
         new_field_definition: &'a S::InputValueDefinition,
     ) -> Self {
         Self {
             old_type_definition,
-            new_type_definition,
             old_field_definition,
             new_field_definition,
         }
     }
 
-    pub fn diff(&self) -> Vec<Change<'a, S>> {
-        let mut changes = Vec::new();
-
+    #[inline]
+    pub fn diff_into(&self, changes: &mut Vec<Change<'a, S>>) {
         if self.old_field_definition.description() != self.new_field_definition.description() {
             changes.push(Change::InputFieldDescriptionChanged {
                 input_object_type_definition: self.old_type_definition,
@@ -61,14 +58,7 @@ impl<'a, S: SchemaDefinition + 'a> InputFieldDiff<'a, S> {
                     });
                 }
             }
-            (Some(_), None) => {
-                changes.push(Change::InputFieldDefaultValueChanged {
-                    input_object_type_definition: self.old_type_definition,
-                    old_field_definition: self.old_field_definition,
-                    new_field_definition: self.new_field_definition,
-                });
-            }
-            (None, Some(_)) => {
+            (Some(_), None) | (None, Some(_)) => {
                 changes.push(Change::InputFieldDefaultValueChanged {
                     input_object_type_definition: self.old_type_definition,
                     old_field_definition: self.old_field_definition,
@@ -78,31 +68,12 @@ impl<'a, S: SchemaDefinition + 'a> InputFieldDiff<'a, S> {
             (None, None) => {}
         }
 
-        changes.extend(
-            directive_additions::<S, _>(self.old_type_definition, self.new_type_definition).map(
-                |directive| Change::DirectiveAdded {
-                    directive,
-                    location: DirectiveLocation::InputFieldDefinition,
-                    member_name: self.old_field_definition.name(),
-                },
-            ),
-        );
-
-        changes.extend(
-            directive_removals::<S, _>(self.old_type_definition, self.new_type_definition).map(
-                |directive| Change::DirectiveRemoved {
-                    directive,
-                    location: DirectiveLocation::InputFieldDefinition,
-                    member_name: self.old_field_definition.name(),
-                },
-            ),
-        );
-
-        changes.extend(common_directive_changes(
+        diff_directives_into::<S, _>(
             self.old_field_definition,
             self.new_field_definition,
-        ));
-
-        changes
+            DirectiveLocation::InputFieldDefinition,
+            self.old_field_definition.name(),
+            changes,
+        );
     }
 }

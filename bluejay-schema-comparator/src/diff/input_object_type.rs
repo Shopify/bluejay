@@ -1,11 +1,14 @@
 use crate::changes::Change;
-use crate::diff::directive::{common_directive_changes, directive_additions, directive_removals};
+use crate::diff::directive::diff_directives_into;
 use crate::diff::input_field::InputFieldDiff;
 use bluejay_core::definition::{
     DirectiveLocation, InputFieldsDefinition, InputObjectTypeDefinition, InputValueDefinition,
     SchemaDefinition,
 };
 use bluejay_core::AsIter;
+use std::collections::HashMap;
+
+const HASHMAP_THRESHOLD: usize = 64;
 
 pub struct InputObjectTypeDiff<'a, S: SchemaDefinition> {
     old_type_definition: &'a S::InputObjectTypeDefinition,
@@ -23,96 +26,123 @@ impl<'a, S: SchemaDefinition + 'a> InputObjectTypeDiff<'a, S> {
         }
     }
 
-    pub fn diff(&self) -> Vec<Change<'a, S>> {
-        let mut changes = Vec::new();
+    #[inline]
+    pub fn diff_into(&self, changes: &mut Vec<Change<'a, S>>) {
+        let old_hint = self
+            .old_type_definition
+            .input_field_definitions()
+            .iter()
+            .size_hint()
+            .0;
+        let new_hint = self
+            .new_type_definition
+            .input_field_definitions()
+            .iter()
+            .size_hint()
+            .0;
 
-        changes.extend(self.input_field_additions().map(|input_value_definition| {
-            Change::InputFieldAdded {
-                added_field_definition: input_value_definition,
-                input_object_type_definition: self.new_type_definition,
-            }
-        }));
-        changes.extend(self.input_field_removals().map(|input_value_definition| {
-            Change::InputFieldRemoved {
-                removed_field_definition: input_value_definition,
-                input_object_type_definition: self.old_type_definition,
-            }
-        }));
+        if old_hint >= HASHMAP_THRESHOLD || new_hint >= HASHMAP_THRESHOLD {
+            self.diff_fields_hashmap(changes);
+        } else {
+            self.diff_fields_linear(changes);
+        }
 
+        diff_directives_into::<S, _>(
+            self.old_type_definition,
+            self.new_type_definition,
+            DirectiveLocation::InputObject,
+            self.old_type_definition.name(),
+            changes,
+        );
+    }
+
+    #[cold]
+    #[inline(never)]
+    fn diff_fields_hashmap(&self, changes: &mut Vec<Change<'a, S>>) {
+        let old_fields: HashMap<&str, &'a S::InputValueDefinition> = self
+            .old_type_definition
+            .input_field_definitions()
+            .iter()
+            .map(|f| (f.name(), f))
+            .collect();
+        let new_fields: HashMap<&str, &'a S::InputValueDefinition> = self
+            .new_type_definition
+            .input_field_definitions()
+            .iter()
+            .map(|f| (f.name(), f))
+            .collect();
+
+        for (&name, &field) in &new_fields {
+            if !old_fields.contains_key(name) {
+                changes.push(Change::InputFieldAdded {
+                    added_field_definition: field,
+                    input_object_type_definition: self.new_type_definition,
+                });
+            }
+        }
+
+        for (&name, &old_field) in &old_fields {
+            if let Some(&new_field) = new_fields.get(name) {
+                InputFieldDiff::new(
+                    self.old_type_definition,
+                    self.new_type_definition,
+                    old_field,
+                    new_field,
+                )
+                .diff_into(changes);
+            } else {
+                changes.push(Change::InputFieldRemoved {
+                    removed_field_definition: old_field,
+                    input_object_type_definition: self.old_type_definition,
+                });
+            }
+        }
+    }
+
+    #[inline]
+    fn diff_fields_linear(&self, changes: &mut Vec<Change<'a, S>>) {
+        // Additions
         changes.extend(
-            directive_additions::<S, _>(self.old_type_definition, self.new_type_definition).map(
-                |directive| Change::DirectiveAdded {
-                    directive,
-                    location: DirectiveLocation::InputObject,
-                    member_name: self.old_type_definition.name(),
-                },
-            ),
+            self.new_type_definition
+                .input_field_definitions()
+                .iter()
+                .filter(|new_field| {
+                    self.old_type_definition
+                        .input_field_definitions()
+                        .get(new_field.name())
+                        .is_none()
+                })
+                .map(|input_value_definition| Change::InputFieldAdded {
+                    added_field_definition: input_value_definition,
+                    input_object_type_definition: self.new_type_definition,
+                }),
         );
 
-        changes.extend(
-            directive_removals::<S, _>(self.old_type_definition, self.new_type_definition).map(
-                |directive| Change::DirectiveRemoved {
-                    directive,
-                    location: DirectiveLocation::InputObject,
-                    member_name: self.old_type_definition.name(),
-                },
-            ),
-        );
-
-        // diff common input fields
+        // Removals + common field diffs in a single pass
         self.old_type_definition
             .input_field_definitions()
             .iter()
             .for_each(
                 |old_field: &'a <S as SchemaDefinition>::InputValueDefinition| {
-                    let new_field: Option<&'a <S as SchemaDefinition>::InputValueDefinition> = self
+                    if let Some(new_field) = self
                         .new_type_definition
                         .input_field_definitions()
-                        .get(old_field.name());
-
-                    if let Some(new_field) = new_field {
-                        changes.extend(
-                            InputFieldDiff::new(
-                                self.old_type_definition,
-                                self.new_type_definition,
-                                old_field,
-                                new_field,
-                            )
-                            .diff(),
-                        );
+                        .get(old_field.name())
+                    {
+                        InputFieldDiff::new(
+                            self.old_type_definition,
+                            self.new_type_definition,
+                            old_field,
+                            new_field,
+                        )
+                        .diff_into(changes);
+                    } else {
+                        changes.push(Change::InputFieldRemoved {
+                            removed_field_definition: old_field,
+                            input_object_type_definition: self.old_type_definition,
+                        });
                     }
                 },
             );
-
-        changes.extend(common_directive_changes(
-            self.old_type_definition,
-            self.new_type_definition,
-        ));
-
-        changes
-    }
-
-    fn input_field_additions(&self) -> impl Iterator<Item = &'a S::InputValueDefinition> {
-        self.new_type_definition
-            .input_field_definitions()
-            .iter()
-            .filter(|new_input_field| {
-                self.old_type_definition
-                    .input_field_definitions()
-                    .get(new_input_field.name())
-                    .is_none()
-            })
-    }
-
-    fn input_field_removals(&self) -> impl Iterator<Item = &'a S::InputValueDefinition> {
-        self.old_type_definition
-            .input_field_definitions()
-            .iter()
-            .filter(|old_input_field| {
-                self.new_type_definition
-                    .input_field_definitions()
-                    .get(old_input_field.name())
-                    .is_none()
-            })
     }
 }

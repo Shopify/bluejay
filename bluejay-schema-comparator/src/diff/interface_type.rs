@@ -1,7 +1,5 @@
-use std::ops::Not;
-
 use crate::changes::Change;
-use crate::diff::directive::{common_directive_changes, directive_additions, directive_removals};
+use crate::diff::directive::diff_directives_into;
 use crate::diff::field::FieldDiff;
 use bluejay_core::definition::{
     DirectiveLocation, FieldDefinition, FieldsDefinition, InterfaceTypeDefinition, SchemaDefinition,
@@ -24,95 +22,51 @@ impl<'a, S: SchemaDefinition + 'a> InterfaceTypeDiff<'a, S> {
         }
     }
 
-    pub fn diff(&self) -> Vec<Change<'a, S>> {
-        let mut changes: Vec<Change<'a, S>> = Vec::new();
-
+    #[inline]
+    pub fn diff_into(&self, changes: &mut Vec<Change<'a, S>>) {
+        // Field additions
         changes.extend(
-            self.field_additions()
+            self.new_interface_definition
+                .fields_definition()
+                .iter()
+                .filter(|field| {
+                    !self
+                        .old_interface_definition
+                        .fields_definition()
+                        .contains_field(field.name())
+                })
                 .map(|field_definition| Change::FieldAdded {
                     added_field_definition: field_definition,
                     type_name: self.old_interface_definition.name(),
                 }),
         );
-        changes.extend(
-            self.field_removals()
-                .map(|field_definition| Change::FieldRemoved {
-                    removed_field_definition: field_definition,
-                    type_name: self.new_interface_definition.name(),
-                }),
-        );
 
-        changes.extend(
-            directive_additions::<S, _>(
-                self.old_interface_definition,
-                self.new_interface_definition,
-            )
-            .map(|directive| Change::DirectiveAdded {
-                directive,
-                location: DirectiveLocation::Interface,
-                member_name: self.old_interface_definition.name(),
-            }),
-        );
-
-        changes.extend(
-            directive_removals::<S, _>(
-                self.old_interface_definition,
-                self.new_interface_definition,
-            )
-            .map(|directive| Change::DirectiveRemoved {
-                directive,
-                location: DirectiveLocation::Interface,
-                member_name: self.old_interface_definition.name(),
-            }),
-        );
-
-        // diff common fields
+        // Field removals + common field diffs in a single pass
         self.old_interface_definition
             .fields_definition()
             .iter()
             .for_each(|old_field: &'a <S as SchemaDefinition>::FieldDefinition| {
-                let new_field: Option<&'a <S as SchemaDefinition>::FieldDefinition> = self
+                if let Some(new_field) = self
                     .new_interface_definition
                     .fields_definition()
-                    .get(old_field.name());
-
-                if let Some(new_field) = new_field {
-                    changes.extend(
-                        FieldDiff::new(self.new_interface_definition.name(), old_field, new_field)
-                            .diff(),
-                    );
+                    .get(old_field.name())
+                {
+                    FieldDiff::new(self.new_interface_definition.name(), old_field, new_field)
+                        .diff_into(changes);
+                } else {
+                    changes.push(Change::FieldRemoved {
+                        removed_field_definition: old_field,
+                        type_name: self.new_interface_definition.name(),
+                    });
                 }
             });
 
-        changes.extend(common_directive_changes(
+        diff_directives_into::<S, _>(
             self.old_interface_definition,
             self.new_interface_definition,
-        ));
-
-        changes
-    }
-
-    fn field_additions(&self) -> impl Iterator<Item = &'a S::FieldDefinition> {
-        self.new_interface_definition
-            .fields_definition()
-            .iter()
-            .filter(|field| {
-                self.old_interface_definition
-                    .fields_definition()
-                    .contains_field(field.name())
-                    .not()
-            })
-    }
-
-    fn field_removals(&self) -> impl Iterator<Item = &'a S::FieldDefinition> {
-        self.old_interface_definition
-            .fields_definition()
-            .iter()
-            .filter(|field| {
-                self.new_interface_definition
-                    .fields_definition()
-                    .contains_field(field.name())
-                    .not()
-            })
+            DirectiveLocation::Interface,
+            self.old_interface_definition.name(),
+            changes,
+        );
     }
 }

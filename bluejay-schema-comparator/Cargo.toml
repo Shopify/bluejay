@@ -16,6 +16,11 @@ bluejay-printer = { workspace = true }
 
 [dev-dependencies]
 bluejay-parser = { workspace = true }
+criterion = "0.7"
+
+[[bench]]
+name = "compare"
+harness = false
 
 [lints]
 workspace = true

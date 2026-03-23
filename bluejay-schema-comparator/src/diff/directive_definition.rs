@@ -21,9 +21,8 @@ impl<'a, S: SchemaDefinition + 'a> DirectiveDefinitionDiff<'a, S> {
         }
     }
 
-    pub fn diff(&self) -> Vec<Change<'a, S>> {
-        let mut changes: Vec<Change<'a, S>> = Vec::new();
-
+    #[inline]
+    pub fn diff_into(&self, changes: &mut Vec<Change<'a, S>>) {
         if self.old_directive_definition.description()
             != self.new_directive_definition.description()
         {
@@ -47,6 +46,7 @@ impl<'a, S: SchemaDefinition + 'a> DirectiveDefinitionDiff<'a, S> {
             }
         }));
 
+        // Argument additions
         changes.extend(self.argument_additions().map(|argument_definition| {
             Change::DirectiveDefinitionArgumentAdded {
                 directive_definition: self.new_directive_definition,
@@ -54,14 +54,7 @@ impl<'a, S: SchemaDefinition + 'a> DirectiveDefinitionDiff<'a, S> {
             }
         }));
 
-        changes.extend(self.argument_removals().map(|argument_definition| {
-            Change::DirectiveDefinitionArgumentRemoved {
-                directive_definition: self.new_directive_definition,
-                argument_definition,
-            }
-        }));
-
-        // diff common directives
+        // Argument removals + common argument diffs in a single pass
         self.old_directive_definition
             .arguments_definition()
             .map(|ii| ii.iter())
@@ -78,19 +71,20 @@ impl<'a, S: SchemaDefinition + 'a> DirectiveDefinitionDiff<'a, S> {
                             .find(|new_argument| old_argument.name() == new_argument.name());
 
                     if let Some(new_argument) = new_argument {
-                        changes.extend(
-                            DirectiveDefinitionArgumentDiff::new(
-                                self.new_directive_definition,
-                                old_argument,
-                                new_argument,
-                            )
-                            .diff(),
-                        );
+                        DirectiveDefinitionArgumentDiff::new(
+                            self.new_directive_definition,
+                            old_argument,
+                            new_argument,
+                        )
+                        .diff_into(changes);
+                    } else {
+                        changes.push(Change::DirectiveDefinitionArgumentRemoved {
+                            directive_definition: self.new_directive_definition,
+                            argument_definition: old_argument,
+                        });
                     }
                 },
             );
-
-        changes
     }
 
     fn location_removals(&self) -> impl Iterator<Item = &'a DirectiveLocation> {
@@ -114,23 +108,6 @@ impl<'a, S: SchemaDefinition + 'a> DirectiveDefinitionDiff<'a, S> {
                     .locations()
                     .iter()
                     .all(|old_location| old_location != new_location)
-            })
-    }
-
-    fn argument_removals(&self) -> impl Iterator<Item = &'a S::InputValueDefinition> {
-        self.old_directive_definition
-            .arguments_definition()
-            .map(|ii| ii.iter())
-            .into_iter()
-            .flatten()
-            .filter(|old_argument| {
-                self.new_directive_definition
-                    .arguments_definition()
-                    .is_some_and(|args| {
-                        !args
-                            .iter()
-                            .any(|new_argument| old_argument.name() == new_argument.name())
-                    })
             })
     }
 

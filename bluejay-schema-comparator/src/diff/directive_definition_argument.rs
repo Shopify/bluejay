@@ -1,5 +1,8 @@
 use crate::changes::Change;
-use bluejay_core::definition::{InputType, InputValueDefinition, SchemaDefinition};
+use crate::diff::directive::diff_directives_into;
+use bluejay_core::definition::{
+    DirectiveLocation, InputType, InputValueDefinition, SchemaDefinition,
+};
 use bluejay_core::Value;
 
 pub struct DirectiveDefinitionArgumentDiff<'a, S: SchemaDefinition> {
@@ -21,9 +24,8 @@ impl<'a, S: SchemaDefinition + 'a> DirectiveDefinitionArgumentDiff<'a, S> {
         }
     }
 
-    pub fn diff(&self) -> Vec<Change<'a, S>> {
-        let mut changes = Vec::new();
-
+    #[inline]
+    pub fn diff_into(&self, changes: &mut Vec<Change<'a, S>>) {
         if self.old_argument_definition.description() != self.new_argument_definition.description()
         {
             changes.push(Change::DirectiveDefinitionArgumentDescriptionChanged {
@@ -66,6 +68,12 @@ impl<'a, S: SchemaDefinition + 'a> DirectiveDefinitionArgumentDiff<'a, S> {
             _ => {}
         }
 
-        changes
+        diff_directives_into::<S, _>(
+            self.old_argument_definition,
+            self.new_argument_definition,
+            DirectiveLocation::ArgumentDefinition,
+            self.old_argument_definition.name(),
+            changes,
+        );
     }
 }

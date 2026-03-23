@@ -1,5 +1,5 @@
 use crate::changes::Change;
-use crate::diff::directive::{directive_additions, directive_removals};
+use crate::diff::directive::diff_directives_into;
 use crate::diff::directive_definition::DirectiveDefinitionDiff;
 use crate::diff::enum_type::EnumTypeDiff;
 use crate::diff::input_object_type::InputObjectTypeDiff;
@@ -24,14 +24,9 @@ impl<'a, S: SchemaDefinition> SchemaDiff<'a, S> {
     }
 
     pub fn diff(&self) -> Vec<Change<'a, S>> {
-        let mut changes: Vec<Change<'a, S>> = Vec::new();
+        let mut changes: Vec<Change<'a, S>> = Vec::with_capacity(256);
 
-        changes.extend(
-            self.removed_types()
-                .map(|removed_type_definition| Change::TypeRemoved {
-                    removed_type_definition,
-                }),
-        );
+        // Type additions
         changes.extend(
             self.added_types()
                 .map(|added_type_definition| Change::TypeAdded {
@@ -39,24 +34,23 @@ impl<'a, S: SchemaDefinition> SchemaDiff<'a, S> {
                 }),
         );
 
+        // Type removals + common type diffs in a single pass over old types
         self.old_schema_definition
             .type_definitions()
             .for_each(|old_type| {
-                let new_type = self
+                if let Some(new_type) = self
                     .new_schema_definition
-                    .get_type_definition(old_type.name());
-
-                if let Some(new_type) = new_type {
-                    changes.extend(self.changes_in_type(old_type, new_type));
+                    .get_type_definition(old_type.name())
+                {
+                    self.changes_in_type(old_type, new_type, &mut changes);
+                } else {
+                    changes.push(Change::TypeRemoved {
+                        removed_type_definition: old_type,
+                    });
                 }
             });
 
-        changes.extend(
-            self.removed_directive_definitions()
-                .map(|directive_definition| Change::DirectiveDefinitionRemoved {
-                    directive_definition,
-                }),
-        );
+        // Directive definition additions
         changes.extend(
             self.added_directive_definitions()
                 .map(|directive_definition| Change::DirectiveDefinitionAdded {
@@ -64,36 +58,31 @@ impl<'a, S: SchemaDefinition> SchemaDiff<'a, S> {
                 }),
         );
 
-        changes.extend(
-            directive_additions::<'a, S, _>(self.old_schema_definition, self.new_schema_definition)
-                .map(|directive| Change::DirectiveAdded {
-                    directive,
-                    location: DirectiveLocation::Schema,
-                    member_name: "",
-                }),
-        );
-
-        changes.extend(
-            directive_removals::<'a, S, _>(self.old_schema_definition, self.new_schema_definition)
-                .map(|directive| Change::DirectiveRemoved {
-                    directive,
-                    location: DirectiveLocation::Schema,
-                    member_name: "",
-                }),
-        );
-
+        // Directive definition removals + common diffs in a single pass
         self.old_schema_definition
             .directive_definitions()
             .for_each(|old_directive| {
-                let new_directive = self
+                if let Some(new_directive) = self
                     .new_schema_definition
-                    .get_directive_definition(old_directive.name());
-
-                if let Some(new_directive) = new_directive {
-                    changes
-                        .extend(DirectiveDefinitionDiff::new(old_directive, new_directive).diff());
+                    .get_directive_definition(old_directive.name())
+                {
+                    DirectiveDefinitionDiff::new(old_directive, new_directive)
+                        .diff_into(&mut changes);
+                } else {
+                    changes.push(Change::DirectiveDefinitionRemoved {
+                        directive_definition: old_directive,
+                    });
                 }
             });
+
+        // Schema-level directive additions, removals, and changes
+        diff_directives_into::<S, _>(
+            self.old_schema_definition,
+            self.new_schema_definition,
+            DirectiveLocation::Schema,
+            "",
+            &mut changes,
+        );
 
         changes
     }
@@ -102,36 +91,35 @@ impl<'a, S: SchemaDefinition> SchemaDiff<'a, S> {
         &self,
         old_type: TypeDefinitionReference<'a, S::TypeDefinition>,
         new_type: TypeDefinitionReference<'a, S::TypeDefinition>,
-    ) -> Vec<Change<'a, S>> {
-        let mut changes: Vec<Change<'a, S>> = Vec::new();
-
+        changes: &mut Vec<Change<'a, S>>,
+    ) {
         match (old_type, new_type) {
             (
                 TypeDefinitionReference::Object(old_type),
                 TypeDefinitionReference::Object(new_type),
             ) => {
-                changes.extend(ObjectTypeDiff::new(old_type, new_type).diff());
+                ObjectTypeDiff::new(old_type, new_type).diff_into(changes);
             }
             (TypeDefinitionReference::Enum(old_type), TypeDefinitionReference::Enum(new_type)) => {
-                changes.extend(EnumTypeDiff::new(old_type, new_type).diff());
+                EnumTypeDiff::new(old_type, new_type).diff_into(changes);
             }
             (
                 TypeDefinitionReference::Union(old_type),
                 TypeDefinitionReference::Union(new_type),
             ) => {
-                changes.extend(UnionTypeDiff::new(old_type, new_type).diff());
+                UnionTypeDiff::new(old_type, new_type).diff_into(changes);
             }
             (
                 TypeDefinitionReference::Interface(old_type),
                 TypeDefinitionReference::Interface(new_type),
             ) => {
-                changes.extend(InterfaceTypeDiff::new(old_type, new_type).diff());
+                InterfaceTypeDiff::new(old_type, new_type).diff_into(changes);
             }
             (
                 TypeDefinitionReference::InputObject(old_type),
                 TypeDefinitionReference::InputObject(new_type),
             ) => {
-                changes.extend(InputObjectTypeDiff::new(old_type, new_type).diff());
+                InputObjectTypeDiff::new(old_type, new_type).diff_into(changes);
             }
             (
                 TypeDefinitionReference::BuiltinScalar(_),
@@ -155,20 +143,6 @@ impl<'a, S: SchemaDefinition> SchemaDiff<'a, S> {
                 new_type_definition: new_type,
             });
         }
-
-        changes
-    }
-
-    fn removed_types(
-        &self,
-    ) -> impl Iterator<Item = TypeDefinitionReference<'a, S::TypeDefinition>> {
-        self.old_schema_definition
-            .type_definitions()
-            .filter(|old_type| {
-                self.new_schema_definition
-                    .get_type_definition(old_type.name())
-                    .is_none()
-            })
     }
 
     fn added_types(&self) -> impl Iterator<Item = TypeDefinitionReference<'a, S::TypeDefinition>> {
@@ -177,16 +151,6 @@ impl<'a, S: SchemaDefinition> SchemaDiff<'a, S> {
             .filter(|new_type| {
                 self.old_schema_definition
                     .get_type_definition(new_type.name())
-                    .is_none()
-            })
-    }
-
-    fn removed_directive_definitions(&self) -> impl Iterator<Item = &'a S::DirectiveDefinition> {
-        self.old_schema_definition
-            .directive_definitions()
-            .filter(|old_directive| {
-                self.new_schema_definition
-                    .get_directive_definition(old_directive.name())
                     .is_none()
             })
     }
