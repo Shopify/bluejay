@@ -52,14 +52,12 @@ impl<'a> FromTokens<'a> for OperationDefinition<'a> {
         depth_limiter: DepthLimiter,
     ) -> Result<Self, ParseError> {
         let description = tokens.next_if_string_value();
-        if let Some(operation_type) =
-            OperationType::try_from_tokens(tokens, depth_limiter.bump()?).transpose()?
+        if let Some(operation_type) = OperationType::try_from_tokens(tokens, depth_limiter.bump()?)?
         {
             let name = tokens.next_if_name();
             let variable_definitions =
-                VariableDefinitions::try_from_tokens(tokens, depth_limiter.bump()?).transpose()?;
-            let directives =
-                VariableDirectives::try_from_tokens(tokens, depth_limiter.bump()?).transpose()?;
+                VariableDefinitions::try_from_tokens(tokens, depth_limiter.bump()?)?;
+            let directives = VariableDirectives::try_from_tokens(tokens, depth_limiter.bump()?)?;
             let selection_set = SelectionSet::from_tokens(tokens, depth_limiter.bump()?)?;
             let span = if let Some(desc) = &description {
                 desc.span().merge(selection_set.span())
@@ -77,7 +75,7 @@ impl<'a> FromTokens<'a> for OperationDefinition<'a> {
             }))
         } else if description.is_none() {
             if let Some(selection_set) =
-                SelectionSet::try_from_tokens(tokens, depth_limiter.bump()?).transpose()?
+                SelectionSet::try_from_tokens(tokens, depth_limiter.bump()?)?
             {
                 Ok(Self::Implicit(ImplicitOperationDefinition {
                     selection_set,

@@ -8,7 +8,11 @@ impl<'a, T: FromTokens<'a> + IsMatch<'a>> TryFromTokens<'a> for T {
     fn try_from_tokens(
         tokens: &mut impl Tokens<'a>,
         depth_limiter: DepthLimiter,
-    ) -> Option<Result<Self, ParseError>> {
-        Self::is_match(tokens).then(|| Self::from_tokens(tokens, depth_limiter))
+    ) -> Result<Option<Self>, ParseError> {
+        if Self::is_match(tokens) {
+            Ok(Some(Self::from_tokens(tokens, depth_limiter)?))
+        } else {
+            Ok(None)
+        }
     }
 }

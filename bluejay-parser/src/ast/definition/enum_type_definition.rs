@@ -95,8 +95,7 @@ impl<'a, C: Context> FromTokens<'a> for EnumTypeDefinition<'a, C> {
         let description = tokens.next_if_string_value();
         tokens.expect_name_value(Self::ENUM_IDENTIFIER)?;
         let name = tokens.expect_name()?;
-        let directives =
-            ConstDirectives::try_from_tokens(tokens, depth_limiter.bump()?).transpose()?;
+        let directives = ConstDirectives::try_from_tokens(tokens, depth_limiter.bump()?)?;
         let enum_value_definitions =
             EnumValueDefinitions::from_tokens(tokens, depth_limiter.bump()?)?;
         Ok(Self {

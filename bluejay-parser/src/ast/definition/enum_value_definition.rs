@@ -46,8 +46,7 @@ impl<'a, C: Context> FromTokens<'a> for EnumValueDefinition<'a, C> {
             });
         }
 
-        let directives =
-            ConstDirectives::try_from_tokens(tokens, depth_limiter.bump()?).transpose()?;
+        let directives = ConstDirectives::try_from_tokens(tokens, depth_limiter.bump()?)?;
         Ok(Self {
             description,
             name,

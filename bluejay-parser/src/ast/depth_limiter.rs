@@ -4,7 +4,6 @@ pub const DEFAULT_MAX_DEPTH: usize = 2000;
 
 /// A depth limiter is used to limit the depth of the AST. This is useful to prevent stack overflows.
 /// This intentionally does not implement `Clone` or `Copy` to prevent passing this down the call stack without bumping.
-#[derive(Clone, Copy)]
 pub struct DepthLimiter {
     max_depth: usize,
     current_depth: usize,

@@ -36,8 +36,7 @@ impl<'a> FromTokens<'a> for FragmentDefinition<'a> {
             return Err(ParseError::UnexpectedToken { span: name.into() });
         }
         let type_condition = TypeCondition::from_tokens(tokens, depth_limiter.bump()?)?;
-        let directives =
-            VariableDirectives::try_from_tokens(tokens, depth_limiter.bump()?).transpose()?;
+        let directives = VariableDirectives::try_from_tokens(tokens, depth_limiter.bump()?)?;
         let selection_set = SelectionSet::from_tokens(tokens, depth_limiter.bump()?)?;
         let span = if let Some(desc) = &description {
             desc.span().merge(selection_set.span())

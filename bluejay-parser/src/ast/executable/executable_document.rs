@@ -47,37 +47,39 @@ impl<'a> Parse<'a> for ExecutableDocument<'a> {
         let mut last_pass_had_error = false;
 
         loop {
-            last_pass_had_error = if let Some(res) =
-                ExecutableDefinition::try_from_tokens(&mut tokens, DepthLimiter::new(max_depth))
-            {
-                match res {
-                    Ok(ExecutableDefinition::Operation(operation_definition)) => {
-                        instance.operation_definitions.push(operation_definition);
-                        false
-                    }
-                    Ok(ExecutableDefinition::Fragment(fragment_definition)) => {
-                        instance.fragment_definitions.push(fragment_definition);
-                        false
-                    }
-                    Err(ParseError::MaxDepthExceeded) => {
-                        errors.push(ParseError::MaxDepthExceeded);
-                        // no sense in continuing to parse if we've hit the depth limit
-                        break;
-                    }
-                    Err(err) => {
+            last_pass_had_error = match ExecutableDefinition::try_from_tokens(
+                &mut tokens,
+                DepthLimiter::new(max_depth),
+            ) {
+                Ok(Some(ExecutableDefinition::Operation(operation_definition))) => {
+                    instance.operation_definitions.push(operation_definition);
+                    false
+                }
+                Ok(Some(ExecutableDefinition::Fragment(fragment_definition))) => {
+                    instance.fragment_definitions.push(fragment_definition);
+                    false
+                }
+                Ok(None) => {
+                    if let Some(token) = tokens.next() {
                         if !last_pass_had_error {
-                            errors.push(err);
+                            errors.push(ParseError::UnexpectedToken { span: token.into() });
                         }
                         true
+                    } else {
+                        break;
                     }
                 }
-            } else if let Some(token) = tokens.next() {
-                if !last_pass_had_error {
-                    errors.push(ParseError::UnexpectedToken { span: token.into() });
+                Err(ParseError::MaxDepthExceeded) => {
+                    errors.push(ParseError::MaxDepthExceeded);
+                    // no sense in continuing to parse if we've hit the depth limit
+                    break;
                 }
-                true
-            } else {
-                break;
+                Err(err) => {
+                    if !last_pass_had_error {
+                        errors.push(err);
+                    }
+                    true
+                }
             }
         }
 

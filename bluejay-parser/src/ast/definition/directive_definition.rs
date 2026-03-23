@@ -113,7 +113,7 @@ impl<'a, C: Context> FromTokens<'a> for DirectiveDefinition<'a, C> {
         tokens.expect_punctuator(PunctuatorType::At)?;
         let name = tokens.expect_name()?;
         let arguments_definition =
-            ArgumentsDefinition::try_from_tokens(tokens, depth_limiter.bump()?).transpose()?;
+            ArgumentsDefinition::try_from_tokens(tokens, depth_limiter.bump()?)?;
         let is_repeatable = tokens
             .next_if_name_matches(Self::REPEATABLE_IDENTIFIER)
             .is_some();

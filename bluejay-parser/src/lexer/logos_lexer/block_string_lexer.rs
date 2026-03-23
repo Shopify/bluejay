@@ -5,6 +5,15 @@ use std::borrow::Cow;
 
 pub(super) struct Token;
 
+#[inline]
+fn after_indent(line: &str, indent: usize) -> &str {
+    if indent < line.len() {
+        &line[indent..]
+    } else {
+        ""
+    }
+}
+
 impl Token {
     /// Parse a block string value from the outer lexer.
     /// The opening `"""` has already been consumed.
@@ -17,6 +26,7 @@ impl Token {
 
         // Find the closing """ (not preceded by \)
         let mut i = 0;
+        let mut has_escapes = false;
         let end_offset;
         loop {
             if i + 2 >= len {
@@ -26,6 +36,7 @@ impl Token {
             if bytes[i] == b'"' && bytes[i + 1] == b'"' && bytes[i + 2] == b'"' {
                 // Check it's not escaped
                 if i > 0 && bytes[i - 1] == b'\\' {
+                    has_escapes = true;
                     i += 3;
                     continue;
                 }
@@ -37,9 +48,6 @@ impl Token {
 
         let raw = &remainder[..i];
         outer_lexer.bump(end_offset);
-
-        // Check if there are any escaped block quotes
-        let has_escapes = raw.contains("\\\"\"\"");
 
         // Normalize newlines: split on \r\n, \r, or \n
         // Collect line start/end offsets to avoid allocating strings
@@ -96,14 +104,9 @@ impl Token {
         let common_indent = lines[1..]
             .iter()
             .filter_map(|&(start, end)| {
-                let line = &raw[start..end];
-                let indent = line.len() - line.trim_start_matches([' ', '\t']).len();
-                // Only count lines that have non-whitespace content
-                if indent < line.len() {
-                    Some(indent)
-                } else {
-                    None // all-whitespace line
-                }
+                let line_bytes = raw[start..end].as_bytes();
+                let indent = line_bytes.iter().position(|&b| b != b' ' && b != b'\t');
+                indent // None means all-whitespace, filtered out
             })
             .min()
             .unwrap_or(0);
@@ -112,30 +115,26 @@ impl Token {
         let front_offset = lines.iter().enumerate().position(|(idx, &(start, end))| {
             let indent = if idx == 0 { 0 } else { common_indent };
             let line = &raw[start..end];
-            let after_indent = if indent < line.len() {
-                &line[indent..]
-            } else {
-                ""
-            };
-            after_indent.chars().any(|c| c != ' ' && c != '\t')
+            after_indent(line, indent)
+                .as_bytes()
+                .iter()
+                .any(|&b| b != b' ' && b != b'\t')
         });
 
         // Find last non-blank line
         let end_offset_lines = lines.iter().rev().position(|&(start, end)| {
             let line = &raw[start..end];
-            let after_indent = if common_indent < line.len() {
-                &line[common_indent..]
-            } else {
-                ""
-            };
-            after_indent.chars().any(|c| c != ' ' && c != '\t')
+            after_indent(line, common_indent)
+                .as_bytes()
+                .iter()
+                .any(|&b| b != b' ' && b != b'\t')
         });
 
         if let Some((front, end_off)) = front_offset.zip(end_offset_lines) {
             let first = front;
             let last = lines.len() - end_off; // exclusive
 
-            if !has_escapes && first + 1 == last && first == 0 {
+            if !has_escapes && first == 0 && last == 1 {
                 // Single line, no escapes — can return borrowed
                 let (start, end) = lines[0];
                 let line = &raw[start..end];
@@ -146,12 +145,7 @@ impl Token {
             if !has_escapes && first + 1 == last && first > 0 {
                 let (start, end) = lines[first];
                 let line = &raw[start..end];
-                let after_indent = if common_indent < line.len() {
-                    &line[common_indent..]
-                } else {
-                    ""
-                };
-                return Ok(Cow::Borrowed(after_indent));
+                return Ok(Cow::Borrowed(after_indent(line, common_indent)));
             }
 
             // Build the result string
@@ -163,15 +157,11 @@ impl Token {
                     result.push('\n');
                 }
                 let line = &raw[start..end];
-                let after_indent = if indent < line.len() {
-                    &line[indent..]
-                } else {
-                    ""
-                };
+                let trimmed = after_indent(line, indent);
                 if has_escapes {
-                    result.push_str(&after_indent.replace("\\\"\"\"", "\"\"\""));
+                    result.push_str(&trimmed.replace("\\\"\"\"", "\"\"\""));
                 } else {
-                    result.push_str(after_indent);
+                    result.push_str(trimmed);
                 }
             }
 

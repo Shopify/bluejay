@@ -49,8 +49,7 @@ impl<'a, C: Context> FromTokens<'a> for ExplicitSchemaDefinition<'a, C> {
 
         let schema_identifier_span = tokens.expect_name_value(Self::SCHEMA_IDENTIFIER)?;
 
-        let directives =
-            ConstDirectives::try_from_tokens(tokens, depth_limiter.bump()?).transpose()?;
+        let directives = ConstDirectives::try_from_tokens(tokens, depth_limiter.bump()?)?;
 
         let mut root_operation_type_definitions = Vec::new();
 

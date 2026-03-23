@@ -53,8 +53,7 @@ impl<'a, C: Context> FromTokens<'a> for CustomScalarTypeDefinition<'a, C> {
         let description = tokens.next_if_string_value();
         let scalar_identifier_span = tokens.expect_name_value(Self::SCALAR_IDENTIFIER)?;
         let name = tokens.expect_name()?;
-        let directives =
-            ConstDirectives::try_from_tokens(tokens, depth_limiter.bump()?).transpose()?;
+        let directives = ConstDirectives::try_from_tokens(tokens, depth_limiter.bump()?)?;
         Ok(Self {
             description,
             _scalar_identifier_span: scalar_identifier_span,

@@ -145,9 +145,8 @@ impl<'a, C: Context> FromTokens<'a> for ObjectTypeDefinition<'a, C> {
         tokens.expect_name_value(Self::TYPE_IDENTIFIER)?;
         let name = tokens.expect_name()?;
         let interface_implementations =
-            InterfaceImplementations::try_from_tokens(tokens, depth_limiter.bump()?).transpose()?;
-        let directives =
-            ConstDirectives::try_from_tokens(tokens, depth_limiter.bump()?).transpose()?;
+            InterfaceImplementations::try_from_tokens(tokens, depth_limiter.bump()?)?;
+        let directives = ConstDirectives::try_from_tokens(tokens, depth_limiter.bump()?)?;
         let fields_definition = FieldsDefinition::from_tokens(tokens, depth_limiter.bump()?)?;
         Ok(Self {
             description,

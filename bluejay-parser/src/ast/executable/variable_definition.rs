@@ -30,8 +30,7 @@ impl<'a> FromTokens<'a> for VariableDefinition<'a> {
             } else {
                 None
             };
-        let directives =
-            ConstDirectives::try_from_tokens(tokens, depth_limiter.bump()?).transpose()?;
+        let directives = ConstDirectives::try_from_tokens(tokens, depth_limiter.bump()?)?;
         Ok(Self {
             description,
             variable,
