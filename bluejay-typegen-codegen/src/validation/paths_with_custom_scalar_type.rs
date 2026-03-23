@@ -11,7 +11,7 @@ use std::collections::HashSet;
 pub(crate) struct PathsWithCustomScalarType<'a, S: SchemaDefinition> {
     schema_definition: &'a S,
     paths: HashSet<Vec<String>>,
-    field_stack: Vec<String>,
+    field_stack: Vec<&'a str>,
 }
 
 impl<'a, E: ExecutableDocument, S: SchemaDefinition> Visitor<'a, E, S>
@@ -31,7 +31,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> Visitor<'a, E, S>
         field_definition: &'a <S as SchemaDefinition>::FieldDefinition,
         path: &Path<'a, E>,
     ) {
-        self.field_stack.push(field.response_name().to_string());
+        self.field_stack.push(field.response_name());
 
         if matches!(
             field_definition.r#type().base(self.schema_definition),
@@ -39,8 +39,9 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> Visitor<'a, E, S>
         ) {
             if let Some(root_name) = path.root().name() {
                 self.paths.insert(
-                    std::iter::once(root_name.to_string())
-                        .chain(self.field_stack.iter().cloned())
+                    std::iter::once(root_name)
+                        .chain(self.field_stack.iter().copied())
+                        .map(String::from)
                         .collect(),
                 );
             }
