@@ -158,19 +158,21 @@ impl<'a, C: Context> Parse<'a> for DefinitionDocument<'a, C> {
 
 impl<'a, C: Context> DefinitionDocument<'a, C> {
     fn new() -> Self {
+        let mut type_definitions = Vec::with_capacity(64);
+        type_definitions.extend([
+            ObjectTypeDefinition::__schema().into(),
+            ObjectTypeDefinition::__type().into(),
+            ObjectTypeDefinition::__field().into(),
+            ObjectTypeDefinition::__input_value().into(),
+            ObjectTypeDefinition::__enum_value().into(),
+            ObjectTypeDefinition::__directive().into(),
+            EnumTypeDefinition::__type_kind().into(),
+            EnumTypeDefinition::__directive_location().into(),
+        ]);
         Self {
             schema_definitions: Vec::new(),
-            directive_definitions: Vec::new(),
-            type_definitions: vec![
-                ObjectTypeDefinition::__schema().into(),
-                ObjectTypeDefinition::__type().into(),
-                ObjectTypeDefinition::__field().into(),
-                ObjectTypeDefinition::__input_value().into(),
-                ObjectTypeDefinition::__enum_value().into(),
-                ObjectTypeDefinition::__directive().into(),
-                EnumTypeDefinition::__type_kind().into(),
-                EnumTypeDefinition::__directive_location().into(),
-            ],
+            directive_definitions: Vec::with_capacity(8),
+            type_definitions,
         }
     }
 

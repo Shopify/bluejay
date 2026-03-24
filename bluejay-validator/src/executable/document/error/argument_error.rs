@@ -49,7 +49,7 @@ impl<'a, const CONST: bool, S: SchemaDefinition>
                     .map(|argument| {
                         Annotation::new(
                             format!("Argument with name `{name}`"),
-                            argument.name().span().clone(),
+                            *argument.name().span(),
                         )
                     })
                     .collect(),
@@ -65,7 +65,7 @@ impl<'a, const CONST: bool, S: SchemaDefinition>
                 ),
                 Some(Annotation::new(
                     "No argument definition with this name",
-                    argument.name().span().clone(),
+                    *argument.name().span(),
                 )),
                 Vec::new(),
             ),
@@ -80,7 +80,7 @@ impl<'a, const CONST: bool, S: SchemaDefinition>
                 ),
                 Some(Annotation::new(
                     "No argument definition with this name",
-                    argument.name().span().clone(),
+                    *argument.name().span(),
                 )),
                 Vec::new(),
             ),
@@ -100,7 +100,7 @@ impl<'a, const CONST: bool, S: SchemaDefinition>
                     ),
                     Some(Annotation::new(
                         format!("Missing argument(s): {missing_argument_names}"),
-                        directive.span().clone(),
+                        *directive.span(),
                     )),
                     Vec::new(),
                 )
@@ -116,7 +116,7 @@ impl<'a, const CONST: bool, S: SchemaDefinition>
                     .join(", ");
                 let span = match field.arguments() {
                     Some(arguments) => field.name().span().merge(arguments.span()),
-                    None => field.name().span().clone(),
+                    None => *field.name().span(),
                 };
                 Self::new(
                     format!(

@@ -72,11 +72,10 @@ impl<'a, C: Context> FromTokens<'a> for FieldDefinition<'a, C> {
         let description = tokens.next_if_string_value();
         let name = tokens.expect_name()?;
         let arguments_definition =
-            ArgumentsDefinition::try_from_tokens(tokens, depth_limiter.bump()?).transpose()?;
+            ArgumentsDefinition::try_from_tokens(tokens, depth_limiter.bump()?)?;
         tokens.expect_punctuator(PunctuatorType::Colon)?;
         let r#type = OutputType::from_tokens(tokens, depth_limiter.bump()?)?;
-        let directives =
-            ConstDirectives::try_from_tokens(tokens, depth_limiter.bump()?).transpose()?;
+        let directives = ConstDirectives::try_from_tokens(tokens, depth_limiter.bump()?)?;
         Ok(Self {
             description,
             name,

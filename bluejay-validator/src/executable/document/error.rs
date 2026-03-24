@@ -140,7 +140,7 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                         operation.name().map(|operation_name| {
                             Annotation::new(
                                 format!("Operation definition with name `{name}`"),
-                                operation_name.span().clone(),
+                                *operation_name.span(),
                             )
                         })
                     })
@@ -156,7 +156,7 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                     .map(|operation| {
                         Annotation::new(
                             "Anonymous operation definition",
-                            operation.as_ref().selection_set().span().clone(),
+                            *operation.as_ref().selection_set().span(),
                         )
                     })
                     .collect(),
@@ -165,7 +165,7 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                 "Subscription root is not a single field",
                 Some(Annotation::new(
                     "Selection set contains multiple fields",
-                    operation.as_ref().selection_set().span().clone(),
+                    *operation.as_ref().selection_set().span(),
                 )),
                 Vec::new(),
             ),
@@ -177,7 +177,7 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                 ),
                 Some(Annotation::new(
                     format!("Field does not exist on type `{}`", r#type.name()),
-                    field.name().span().clone(),
+                    *field.name().span(),
                 )),
                 Vec::new(),
             ),
@@ -191,7 +191,7 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                         "Schema does not define a {} root",
                         OperationType::from(operation.operation_type()),
                     ),
-                    operation.operation_type().span().clone(),
+                    *operation.operation_type().span(),
                 )),
                 Vec::new(),
             ),
@@ -205,7 +205,7 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                 ),
                 Some(Annotation::new(
                     "Selection set on field of leaf type must be empty",
-                    selection_set.span().clone(),
+                    *selection_set.span(),
                 )),
                 Vec::new(),
             ),
@@ -216,7 +216,7 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                 ),
                 Some(Annotation::new(
                     "Fields of non-leaf types must have a selection",
-                    field.name().span().clone(),
+                    *field.name().span(),
                 )),
                 Vec::new(),
             ),
@@ -231,7 +231,7 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                     .map(|fragment_definition| {
                         Annotation::new(
                             format!("Fragment definition with name `{name}`"),
-                            fragment_definition.name().span().clone(),
+                            *fragment_definition.name().span(),
                         )
                     })
                     .collect(),
@@ -245,11 +245,10 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                 ),
                 Some(Annotation::new(
                     "No type with this name",
-                    fragment_definition
+                    *fragment_definition
                         .type_condition()
                         .named_type()
-                        .span()
-                        .clone(),
+                        .span(),
                 )),
                 Vec::new(),
             ),
@@ -262,7 +261,7 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                         .unwrap_or_default()
                 ),
                 inline_fragment.type_condition().map(|tc| {
-                    Annotation::new("No type with this name", tc.named_type().span().clone())
+                    Annotation::new("No type with this name", *tc.named_type().span())
                 }),
                 Vec::new(),
             ),
@@ -275,11 +274,10 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                 ),
                 Some(Annotation::new(
                     "Fragment definition target types must be composite types",
-                    fragment_definition
+                    *fragment_definition
                         .type_condition()
                         .named_type()
-                        .span()
-                        .clone(),
+                        .span(),
                 )),
                 Vec::new(),
             ),
@@ -294,7 +292,7 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                 inline_fragment.type_condition().map(|tc| {
                     Annotation::new(
                         "Inline fragment target types must be composite types",
-                        tc.named_type().span().clone(),
+                        *tc.named_type().span(),
                     )
                 }),
                 Vec::new(),
@@ -308,7 +306,7 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                 ),
                 Some(Annotation::new(
                     "Fragment definition is unused",
-                    fragment_definition.name().span().clone(),
+                    *fragment_definition.name().span(),
                 )),
                 Vec::new(),
             ),
@@ -319,7 +317,7 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                 ),
                 Some(Annotation::new(
                     "No fragment defined with this name",
-                    fragment_spread.name().span().clone(),
+                    *fragment_spread.name().span(),
                 )),
                 Vec::new(),
             ),
@@ -333,11 +331,11 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                 ),
                 Some(Annotation::new(
                     "Cycle introduced by fragment spread",
-                    fragment_spread.name().span().clone(),
+                    *fragment_spread.name().span(),
                 )),
                 vec![Annotation::new(
                     "Affected fragment definition",
-                    fragment_definition.name().span().clone(),
+                    *fragment_definition.name().span(),
                 )],
             ),
             Error::FieldSelectionsDoNotMergeDifferingArguments {
@@ -348,11 +346,11 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                 "Fields in selection set do not merge due to unequal arguments",
                 Some(Annotation::new(
                     "Fields in selection set do not merge",
-                    selection_set.span().clone(),
+                    *selection_set.span(),
                 )),
                 vec![
-                    Annotation::new("First field", field_a.name().span().clone()),
-                    Annotation::new("Second field", field_b.name().span().clone()),
+                    Annotation::new("First field", *field_a.name().span()),
+                    Annotation::new("Second field", *field_b.name().span()),
                 ],
             ),
             Error::FieldSelectionsDoNotMergeDifferingNames {
@@ -363,11 +361,11 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                 "Fields in selection set do not merge due to unequal field names",
                 Some(Annotation::new(
                     "Fields in selection set do not merge",
-                    selection_set.span().clone(),
+                    *selection_set.span(),
                 )),
                 vec![
-                    Annotation::new("First field", field_a.name().span().clone()),
-                    Annotation::new("Second field", field_b.name().span().clone()),
+                    Annotation::new("First field", *field_a.name().span()),
+                    Annotation::new("Second field", *field_b.name().span()),
                 ],
             ),
             Error::FieldSelectionsDoNotMergeIncompatibleTypes {
@@ -380,7 +378,7 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                 "Fields in selection set do not merge due to incompatible types",
                 Some(Annotation::new(
                     "Fields in selection set do not merge",
-                    selection_set.span().clone(),
+                    *selection_set.span(),
                 )),
                 vec![
                     Annotation::new(
@@ -388,14 +386,14 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                             "First field has type {}",
                             field_definition_a.r#type().display_name(),
                         ),
-                        field_a.name().span().clone(),
+                        *field_a.name().span(),
                     ),
                     Annotation::new(
                         format!(
                             "Second field has type {}",
                             field_definition_b.r#type().display_name(),
                         ),
-                        field_b.name().span().clone(),
+                        *field_b.name().span(),
                     ),
                 ],
             ),
@@ -410,7 +408,7 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                 ),
                 Some(Annotation::new(
                     format!("Cannot be spread for type {}", parent_type.name()),
-                    fragment_spread.name().span().clone(),
+                    *fragment_spread.name().span(),
                 )),
                 Vec::new(),
             ),
@@ -428,7 +426,7 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                 ),
                 Some(Annotation::new(
                     format!("Cannot be spread for type {}", parent_type.name()),
-                    inline_fragment.span().clone(),
+                    *inline_fragment.span(),
                 )),
                 Vec::new(),
             ),
@@ -449,7 +447,7 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                     .map(|variable_definition| {
                         Annotation::new(
                             format!("Variable definition with name ${name}"),
-                            variable_definition.variable().span().clone(),
+                            *variable_definition.variable().span(),
                         )
                     })
                     .collect(),
@@ -464,7 +462,7 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                 ),
                 Some(Annotation::new(
                     "Not an input type",
-                    variable_definition.r#type().span().clone(),
+                    *variable_definition.r#type().span(),
                 )),
                 Vec::new(),
             ),
@@ -485,7 +483,7 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                         format!(
                             "No variable definition with this name defined in {operation_name}",
                         ),
-                        variable.span().clone(),
+                        *variable.span(),
                     )),
                     Vec::new(),
                 )
@@ -499,7 +497,7 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                 ),
                 Some(Annotation::new(
                     "Variable definition not used",
-                    variable_definition.variable().span().clone(),
+                    *variable_definition.variable().span(),
                 )),
                 Vec::new(),
             ),
@@ -520,7 +518,7 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                         variable_type.as_ref().display_name(),
                         location_type.display_name(),
                     ),
-                    variable.span().clone(),
+                    *variable.span(),
                 )),
                 Vec::new(),
             ),
@@ -542,7 +540,7 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                         variable_type.as_ref().display_name(),
                         parent_type_name,
                     ),
-                    variable.span().clone(),
+                    *variable.span(),
                 )),
                 Vec::new(),
             ),

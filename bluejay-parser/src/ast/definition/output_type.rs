@@ -122,7 +122,7 @@ impl<'a, C: Context + 'a> FromTokens<'a> for OutputType<'a, C> {
             let span = if let Some(bang_span) = &bang_span {
                 base_name.span().merge(bang_span)
             } else {
-                base_name.span().clone()
+                *base_name.span()
             };
             let base = BaseOutputType::new(base_name);
             Ok(Self::Base(base, bang_span.is_some(), span))

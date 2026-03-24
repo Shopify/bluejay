@@ -45,8 +45,7 @@ impl<'a, C: Context> FromTokens<'a> for InputObjectTypeDefinition<'a, C> {
         let description = tokens.next_if_string_value();
         tokens.expect_name_value(Self::INPUT_IDENTIFIER)?;
         let name = tokens.expect_name()?;
-        let directives =
-            ConstDirectives::try_from_tokens(tokens, depth_limiter.bump()?).transpose()?;
+        let directives = ConstDirectives::try_from_tokens(tokens, depth_limiter.bump()?)?;
         let input_fields_definition =
             InputFieldsDefinition::from_tokens(tokens, depth_limiter.bump()?)?;
         Ok(Self {

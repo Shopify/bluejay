@@ -57,18 +57,18 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                 ),
                 Some(Annotation::new(
                     "Selection set contains a fragment spread and other selections",
-                    selection_set.span().clone(),
+                    *selection_set.span(),
                 )),
                 vec![Annotation::new(
                     "Fragment spread",
-                    fragment_spread.span().clone(),
+                    *fragment_spread.span(),
                 )],
             ),
             Error::InlineFragmentOnObject { inline_fragment } => Self::new(
                 format!("{MACRO_NAME} does not allow inline fragments on objects"),
                 Some(Annotation::new(
                     "Inline fragment on object type",
-                    inline_fragment.span().clone(),
+                    *inline_fragment.span(),
                 )),
                 Vec::new(),
             ),
@@ -76,7 +76,7 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                 format!("{MACRO_NAME} does not allow inline fragments on interfaces"),
                 Some(Annotation::new(
                     "Inline fragment on interface type",
-                    inline_fragment.span().clone(),
+                    *inline_fragment.span(),
                 )),
                 Vec::new(),
             ),
@@ -84,7 +84,7 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                 format!("{MACRO_NAME} requires unaliased selection of `__typename` on union types to properly deserialize, and for that to be the first in the selection set"),
                 Some(Annotation::new(
                     "Selection set does not contain an unaliased `__typename` selection as the first selection",
-                    selection_set.span().clone(),
+                    *selection_set.span(),
                 )),
                 Vec::new(),
             ),
@@ -96,7 +96,7 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                         inline_fragment.type_condition().map_or(union_type_definition.name(), |tc| tc.named_type().as_ref()),
                         union_type_definition.name(),
                     ),
-                    inline_fragment.span().clone(),
+                    *inline_fragment.span(),
                 )),
                 Vec::new(),
             ),
@@ -104,18 +104,18 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                 format!("{MACRO_NAME} requires the inline fragments in a selection set have unique type conditions"),
                 Some(Annotation::new(
                     format!("Selection set contains multiple inline fragments targeting {type_condition}"),
-                    selection_set.span().clone(),
+                    *selection_set.span(),
                 )),
                 inline_fragments.into_iter().map(|inline_fragment| Annotation::new(
                     format!("Inline fragment targeting {type_condition}"),
-                    inline_fragment.span().clone(),
+                    *inline_fragment.span(),
                 )).collect(),
             ),
             Error::FieldSelectionOnUnion { field } => Self::new(
                 format!("{MACRO_NAME} does not allow field selections directly on union types, with the exception of unaliased `__typename` as the first selection in the set"),
                 Some(Annotation::new(
                     "Field selection on union type",
-                    field.name().span().clone(),
+                    *field.name().span(),
                 )),
                 Vec::new(),
             ),
@@ -123,7 +123,7 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                 format!("{MACRO_NAME} requires fragment spreads on interfaces to target either the interface or one of the interfaces it implements"),
                 Some(Annotation::new(
                     "Fragment spread on interface type",
-                    fragment_spread.span().clone(),
+                    *fragment_spread.span(),
                 )),
                 Vec::new(),
             ),
@@ -131,12 +131,12 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                 format!("{MACRO_NAME} requires fragment and operation names to be unique, but encountered a clash with name `{}`", fragment_definition.name().as_ref()),
                 Some(Annotation::new(
                     "Fragment definition name collides with operation definition name",
-                    fragment_definition.span().clone(),
+                    *fragment_definition.span(),
                 )),
                 vec![
                     Annotation::new(
                         "Operation definition",
-                        operation_definition.span().clone(),
+                        *operation_definition.span(),
                     ),
                 ],
             ),

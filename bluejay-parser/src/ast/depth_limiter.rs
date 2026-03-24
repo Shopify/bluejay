@@ -26,6 +26,7 @@ impl DepthLimiter {
         }
     }
 
+    #[inline]
     pub fn bump(&self) -> Result<Self, ParseError> {
         if self.current_depth >= self.max_depth {
             Err(ParseError::MaxDepthExceeded)

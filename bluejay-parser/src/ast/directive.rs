@@ -27,7 +27,7 @@ impl<'a, const CONST: bool> FromTokens<'a> for Directive<'a, CONST> {
     ) -> Result<Self, ParseError> {
         let at_span = tokens.expect_punctuator(PunctuatorType::At)?;
         let name = tokens.expect_name()?;
-        let arguments = Arguments::try_from_tokens(tokens, depth_limiter.bump()?).transpose()?;
+        let arguments = Arguments::try_from_tokens(tokens, depth_limiter.bump()?)?;
         let span = match &arguments {
             Some(arguments) => at_span.merge(arguments.span()),
             None => at_span.merge(name.span()),

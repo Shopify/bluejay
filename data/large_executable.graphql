@@ -1,0 +1,912 @@
+query GetProducts($first: Int!, $after: String, $query: String, $sortKey: ProductSortKeys, $reverse: Boolean) {
+  products(first: $first, after: $after, query: $query, sortKey: $sortKey, reverse: $reverse) {
+    edges {
+      cursor
+      node {
+        id
+        title
+        handle
+        description
+        descriptionHtml
+        vendor
+        productType
+        tags
+        status
+        createdAt
+        updatedAt
+        publishedAt
+        onlineStoreUrl
+        options {
+          id
+          name
+          values
+        }
+        variants(first: 10) {
+          edges {
+            node {
+              id
+              title
+              sku
+              barcode
+              price
+              compareAtPrice
+              availableForSale
+              inventoryQuantity
+              weight
+              weightUnit
+              selectedOptions {
+                name
+                value
+              }
+              image {
+                id
+                url
+                altText
+                width
+                height
+              }
+            }
+          }
+        }
+        images(first: 5) {
+          edges {
+            node {
+              id
+              url
+              altText
+              width
+              height
+            }
+          }
+        }
+        priceRange {
+          minVariantPrice {
+            amount
+            currencyCode
+          }
+          maxVariantPrice {
+            amount
+            currencyCode
+          }
+        }
+        compareAtPriceRange {
+          minVariantPrice {
+            amount
+            currencyCode
+          }
+          maxVariantPrice {
+            amount
+            currencyCode
+          }
+        }
+        seo {
+          title
+          description
+        }
+        media(first: 10) {
+          edges {
+            node {
+              ... on MediaImage {
+                id
+                image {
+                  url
+                  altText
+                  width
+                  height
+                }
+              }
+              ... on Video {
+                id
+                sources {
+                  url
+                  mimeType
+                  format
+                  height
+                  width
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    pageInfo {
+      hasNextPage
+      hasPreviousPage
+      startCursor
+      endCursor
+    }
+  }
+}
+
+query GetProduct($id: ID!, $selectedOptions: [SelectedOptionInput!]!) {
+  product(id: $id) {
+    id
+    title
+    handle
+    description
+    descriptionHtml
+    vendor
+    productType
+    tags
+    status
+    createdAt
+    updatedAt
+    publishedAt
+    onlineStoreUrl
+    totalInventory
+    tracksInventory
+    options {
+      id
+      name
+      values
+    }
+    selectedVariant: variantBySelectedOptions(selectedOptions: $selectedOptions) {
+      id
+      title
+      sku
+      barcode
+      price
+      compareAtPrice
+      availableForSale
+      inventoryQuantity
+      weight
+      weightUnit
+      selectedOptions {
+        name
+        value
+      }
+      image {
+        id
+        url
+        altText
+        width
+        height
+      }
+    }
+    variants(first: 250) {
+      edges {
+        node {
+          id
+          title
+          sku
+          barcode
+          price
+          compareAtPrice
+          availableForSale
+          inventoryQuantity
+          weight
+          weightUnit
+          selectedOptions {
+            name
+            value
+          }
+          image {
+            id
+            url
+            altText
+            width
+            height
+          }
+        }
+      }
+    }
+    images(first: 20) {
+      edges {
+        node {
+          id
+          url
+          altText
+          width
+          height
+        }
+      }
+    }
+    collections(first: 5) {
+      edges {
+        node {
+          id
+          title
+          handle
+        }
+      }
+    }
+    metafields(first: 20) {
+      edges {
+        node {
+          id
+          namespace
+          key
+          value
+          type
+          description
+        }
+      }
+    }
+    priceRange {
+      minVariantPrice {
+        amount
+        currencyCode
+      }
+      maxVariantPrice {
+        amount
+        currencyCode
+      }
+    }
+    compareAtPriceRange {
+      minVariantPrice {
+        amount
+        currencyCode
+      }
+      maxVariantPrice {
+        amount
+        currencyCode
+      }
+    }
+    seo {
+      title
+      description
+    }
+  }
+}
+
+query GetCollection($id: ID!, $first: Int!, $after: String, $filters: [ProductFilter!], $sortKey: ProductCollectionSortKeys, $reverse: Boolean) {
+  collection(id: $id) {
+    id
+    title
+    handle
+    description
+    descriptionHtml
+    updatedAt
+    image {
+      id
+      url
+      altText
+      width
+      height
+    }
+    seo {
+      title
+      description
+    }
+    products(first: $first, after: $after, filters: $filters, sortKey: $sortKey, reverse: $reverse) {
+      edges {
+        cursor
+        node {
+          id
+          title
+          handle
+          vendor
+          productType
+          tags
+          availableForSale
+          priceRange {
+            minVariantPrice {
+              amount
+              currencyCode
+            }
+            maxVariantPrice {
+              amount
+              currencyCode
+            }
+          }
+          compareAtPriceRange {
+            minVariantPrice {
+              amount
+              currencyCode
+            }
+            maxVariantPrice {
+              amount
+              currencyCode
+            }
+          }
+          images(first: 1) {
+            edges {
+              node {
+                id
+                url
+                altText
+                width
+                height
+              }
+            }
+          }
+          variants(first: 3) {
+            edges {
+              node {
+                id
+                title
+                price
+                compareAtPrice
+                availableForSale
+                selectedOptions {
+                  name
+                  value
+                }
+              }
+            }
+          }
+        }
+      }
+      filters {
+        id
+        label
+        type
+        values {
+          id
+          label
+          count
+          input
+        }
+      }
+      pageInfo {
+        hasNextPage
+        hasPreviousPage
+        startCursor
+        endCursor
+      }
+    }
+  }
+}
+
+query GetCart($id: ID!) {
+  cart(id: $id) {
+    id
+    createdAt
+    updatedAt
+    checkoutUrl
+    totalQuantity
+    note
+    buyerIdentity {
+      email
+      phone
+      countryCode
+      customer {
+        id
+        email
+        firstName
+        lastName
+      }
+    }
+    lines(first: 100) {
+      edges {
+        node {
+          id
+          quantity
+          merchandise {
+            ... on ProductVariant {
+              id
+              title
+              sku
+              price
+              compareAtPrice
+              availableForSale
+              selectedOptions {
+                name
+                value
+              }
+              image {
+                id
+                url
+                altText
+                width
+                height
+              }
+              product {
+                id
+                title
+                handle
+                vendor
+                productType
+              }
+            }
+          }
+          attributes {
+            key
+            value
+          }
+          cost {
+            totalAmount {
+              amount
+              currencyCode
+            }
+            subtotalAmount {
+              amount
+              currencyCode
+            }
+            amountPerQuantity {
+              amount
+              currencyCode
+            }
+            compareAtAmountPerQuantity {
+              amount
+              currencyCode
+            }
+          }
+          discountAllocations {
+            discountedAmount {
+              amount
+              currencyCode
+            }
+          }
+        }
+      }
+    }
+    attributes {
+      key
+      value
+    }
+    cost {
+      totalAmount {
+        amount
+        currencyCode
+      }
+      subtotalAmount {
+        amount
+        currencyCode
+      }
+      totalTaxAmount {
+        amount
+        currencyCode
+      }
+      totalDutyAmount {
+        amount
+        currencyCode
+      }
+    }
+    discountCodes {
+      code
+      applicable
+    }
+    discountAllocations {
+      discountedAmount {
+        amount
+        currencyCode
+      }
+    }
+  }
+}
+
+mutation CartCreate($input: CartInput!) {
+  cartCreate(input: $input) {
+    cart {
+      id
+      createdAt
+      updatedAt
+      checkoutUrl
+      totalQuantity
+      lines(first: 100) {
+        edges {
+          node {
+            id
+            quantity
+            merchandise {
+              ... on ProductVariant {
+                id
+                title
+                price
+                product {
+                  id
+                  title
+                  handle
+                }
+              }
+            }
+          }
+        }
+      }
+      cost {
+        totalAmount {
+          amount
+          currencyCode
+        }
+        subtotalAmount {
+          amount
+          currencyCode
+        }
+      }
+    }
+    userErrors {
+      field
+      message
+      code
+    }
+  }
+}
+
+mutation CartLinesAdd($cartId: ID!, $lines: [CartLineInput!]!) {
+  cartLinesAdd(cartId: $cartId, lines: $lines) {
+    cart {
+      id
+      totalQuantity
+      lines(first: 100) {
+        edges {
+          node {
+            id
+            quantity
+            merchandise {
+              ... on ProductVariant {
+                id
+                title
+                price
+                product {
+                  id
+                  title
+                  handle
+                }
+              }
+            }
+          }
+        }
+      }
+      cost {
+        totalAmount {
+          amount
+          currencyCode
+        }
+        subtotalAmount {
+          amount
+          currencyCode
+        }
+      }
+    }
+    userErrors {
+      field
+      message
+      code
+    }
+  }
+}
+
+mutation CartLinesUpdate($cartId: ID!, $lines: [CartLineUpdateInput!]!) {
+  cartLinesUpdate(cartId: $cartId, lines: $lines) {
+    cart {
+      id
+      totalQuantity
+      lines(first: 100) {
+        edges {
+          node {
+            id
+            quantity
+            merchandise {
+              ... on ProductVariant {
+                id
+                title
+                price
+                product {
+                  id
+                  title
+                  handle
+                }
+              }
+            }
+          }
+        }
+      }
+      cost {
+        totalAmount {
+          amount
+          currencyCode
+        }
+        subtotalAmount {
+          amount
+          currencyCode
+        }
+      }
+    }
+    userErrors {
+      field
+      message
+      code
+    }
+  }
+}
+
+query GetCustomer($customerAccessToken: String!) {
+  customer(customerAccessToken: $customerAccessToken) {
+    id
+    firstName
+    lastName
+    email
+    phone
+    acceptsMarketing
+    createdAt
+    updatedAt
+    tags
+    defaultAddress {
+      id
+      firstName
+      lastName
+      company
+      address1
+      address2
+      city
+      province
+      provinceCode
+      country
+      countryCodeV2
+      zip
+      phone
+      formatted
+    }
+    addresses(first: 10) {
+      edges {
+        node {
+          id
+          firstName
+          lastName
+          company
+          address1
+          address2
+          city
+          province
+          provinceCode
+          country
+          countryCodeV2
+          zip
+          phone
+          formatted
+        }
+      }
+    }
+    orders(first: 20, sortKey: PROCESSED_AT, reverse: true) {
+      edges {
+        node {
+          id
+          name
+          orderNumber
+          processedAt
+          financialStatus
+          fulfillmentStatus
+          currentTotalPrice {
+            amount
+            currencyCode
+          }
+          currentSubtotalPrice {
+            amount
+            currencyCode
+          }
+          currentTotalTax {
+            amount
+            currencyCode
+          }
+          totalShippingPrice {
+            amount
+            currencyCode
+          }
+          lineItems(first: 50) {
+            edges {
+              node {
+                title
+                quantity
+                originalTotalPrice {
+                  amount
+                  currencyCode
+                }
+                discountedTotalPrice {
+                  amount
+                  currencyCode
+                }
+                variant {
+                  id
+                  title
+                  sku
+                  price
+                  image {
+                    url
+                    altText
+                    width
+                    height
+                  }
+                  selectedOptions {
+                    name
+                    value
+                  }
+                  product {
+                    id
+                    handle
+                  }
+                }
+              }
+            }
+          }
+          shippingAddress {
+            firstName
+            lastName
+            address1
+            address2
+            city
+            province
+            country
+            zip
+          }
+          discountApplications(first: 5) {
+            edges {
+              node {
+                ... on DiscountCodeApplication {
+                  code
+                  applicable
+                  value {
+                    ... on MoneyV2 {
+                      amount
+                      currencyCode
+                    }
+                    ... on PricingPercentageValue {
+                      percentage
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      pageInfo {
+        hasNextPage
+        hasPreviousPage
+        startCursor
+        endCursor
+      }
+    }
+  }
+}
+
+query SearchProducts($query: String!, $first: Int!, $after: String, $productFilters: [ProductFilter!], $sortKey: SearchSortKeys, $reverse: Boolean) {
+  search(query: $query, first: $first, after: $after, productFilters: $productFilters, sortKey: $sortKey, reverse: $reverse, types: [PRODUCT]) {
+    edges {
+      cursor
+      node {
+        ... on Product {
+          id
+          title
+          handle
+          vendor
+          productType
+          tags
+          availableForSale
+          priceRange {
+            minVariantPrice {
+              amount
+              currencyCode
+            }
+            maxVariantPrice {
+              amount
+              currencyCode
+            }
+          }
+          images(first: 1) {
+            edges {
+              node {
+                id
+                url
+                altText
+                width
+                height
+              }
+            }
+          }
+          variants(first: 3) {
+            edges {
+              node {
+                id
+                title
+                price
+                compareAtPrice
+                availableForSale
+                selectedOptions {
+                  name
+                  value
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    totalCount
+    pageInfo {
+      hasNextPage
+      hasPreviousPage
+      startCursor
+      endCursor
+    }
+  }
+}
+
+fragment MoneyFields on MoneyV2 {
+  amount
+  currencyCode
+}
+
+fragment ImageFields on Image {
+  id
+  url
+  altText
+  width
+  height
+}
+
+fragment AddressFields on MailingAddress {
+  id
+  firstName
+  lastName
+  company
+  address1
+  address2
+  city
+  province
+  provinceCode
+  country
+  countryCodeV2
+  zip
+  phone
+  formatted
+}
+
+fragment VariantFields on ProductVariant {
+  id
+  title
+  sku
+  barcode
+  price
+  compareAtPrice
+  availableForSale
+  inventoryQuantity
+  weight
+  weightUnit
+  selectedOptions {
+    name
+    value
+  }
+  image {
+    ...ImageFields
+  }
+}
+
+fragment ProductCardFields on Product {
+  id
+  title
+  handle
+  vendor
+  productType
+  tags
+  availableForSale
+  priceRange {
+    minVariantPrice {
+      ...MoneyFields
+    }
+    maxVariantPrice {
+      ...MoneyFields
+    }
+  }
+  compareAtPriceRange {
+    minVariantPrice {
+      ...MoneyFields
+    }
+    maxVariantPrice {
+      ...MoneyFields
+    }
+  }
+  images(first: 1) {
+    edges {
+      node {
+        ...ImageFields
+      }
+    }
+  }
+  variants(first: 3) {
+    edges {
+      node {
+        id
+        title
+        price
+        compareAtPrice
+        availableForSale
+        selectedOptions {
+          name
+          value
+        }
+      }
+    }
+  }
+}

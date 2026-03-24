@@ -41,13 +41,12 @@ impl<'a, C: Context> FromTokens<'a> for EnumValueDefinition<'a, C> {
         let name = tokens.expect_name()?;
         if matches!(name.as_str(), "null" | "true" | "false") {
             return Err(ParseError::InvalidEnumValue {
-                span: name.span().clone(),
+                span: *name.span(),
                 value: name.as_str().to_string(),
             });
         }
 
-        let directives =
-            ConstDirectives::try_from_tokens(tokens, depth_limiter.bump()?).transpose()?;
+        let directives = ConstDirectives::try_from_tokens(tokens, depth_limiter.bump()?)?;
         Ok(Self {
             description,
             name,

@@ -20,8 +20,7 @@ impl<'a> FromTokens<'a> for FragmentSpread<'a> {
         let ellipse_span = tokens.expect_punctuator(PunctuatorType::Ellipse)?;
         let name = tokens.expect_name()?;
         assert_ne!(TypeCondition::ON, name.as_ref());
-        let directives =
-            VariableDirectives::try_from_tokens(tokens, depth_limiter.bump()?).transpose()?;
+        let directives = VariableDirectives::try_from_tokens(tokens, depth_limiter.bump()?)?;
         let span = ellipse_span.merge(name.span());
         Ok(Self {
             name,
