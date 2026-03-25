@@ -1,5 +1,4 @@
 use bluejay_core::OperationType;
-use std::fmt::Write;
 
 use crate::ir::{
     NormalizedDirective, NormalizedField, NormalizedInlineFragment, NormalizedSelection,
@@ -7,17 +6,21 @@ use crate::ir::{
 
 pub(crate) fn serialize(
     op_type: OperationType,
-    directives: &[NormalizedDirective<'_>],
-    selections: &[NormalizedSelection<'_>],
+    directives: &[NormalizedDirective<'_, '_>],
+    selections: &[NormalizedSelection<'_, '_>],
 ) -> String {
     let mut out = String::with_capacity(256);
-    write!(out, "{op_type}").unwrap();
+    out.push_str(match op_type {
+        OperationType::Query => "query",
+        OperationType::Mutation => "mutation",
+        OperationType::Subscription => "subscription",
+    });
     write_directives(&mut out, directives);
     write_selection_set(&mut out, selections);
     out
 }
 
-fn write_selection_set(out: &mut String, selections: &[NormalizedSelection<'_>]) {
+fn write_selection_set(out: &mut String, selections: &[NormalizedSelection<'_, '_>]) {
     out.push('{');
     for (i, sel) in selections.iter().enumerate() {
         if i > 0 {
@@ -31,7 +34,7 @@ fn write_selection_set(out: &mut String, selections: &[NormalizedSelection<'_>])
     out.push('}');
 }
 
-fn write_field(out: &mut String, field: &NormalizedField<'_>) {
+fn write_field(out: &mut String, field: &NormalizedField<'_, '_>) {
     out.push_str(field.name);
     write_arguments(out, &field.arg_names);
     write_directives(out, &field.directives);
@@ -40,7 +43,7 @@ fn write_field(out: &mut String, field: &NormalizedField<'_>) {
     }
 }
 
-fn write_inline_fragment(out: &mut String, inf: &NormalizedInlineFragment<'_>) {
+fn write_inline_fragment(out: &mut String, inf: &NormalizedInlineFragment<'_, '_>) {
     out.push_str("...");
     if let Some(tc) = inf.type_condition {
         out.push_str("on ");
@@ -50,7 +53,7 @@ fn write_inline_fragment(out: &mut String, inf: &NormalizedInlineFragment<'_>) {
     write_selection_set(out, &inf.selections);
 }
 
-fn write_directives(out: &mut String, directives: &[NormalizedDirective<'_>]) {
+fn write_directives(out: &mut String, directives: &[NormalizedDirective<'_, '_>]) {
     for dir in directives {
         out.push('@');
         out.push_str(dir.name);

@@ -1,7 +1,6 @@
 mod build;
 mod ir;
 mod normalize;
-mod normalize_ir;
 mod serialize;
 
 use bluejay_core::executable::ExecutableDocument;

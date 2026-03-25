@@ -11,6 +11,7 @@ description = "GraphQL operation normalization and signature hashing"
 [dependencies]
 bluejay-core = { workspace = true }
 blake3 = "1"
+bumpalo = { version = "3", features = ["collections"] }
 
 [dev-dependencies]
 bluejay-parser = { workspace = true }

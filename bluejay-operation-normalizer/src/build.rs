@@ -3,18 +3,22 @@ use bluejay_core::executable::{
     SelectionReference,
 };
 use bluejay_core::{Argument, AsIter, Directive};
-use std::collections::{HashMap, HashSet};
+use bumpalo::collections::Vec as BVec;
+use bumpalo::Bump;
+use std::cmp::Ordering;
 
 use crate::ir::{
     NormalizedDirective, NormalizedField, NormalizedInlineFragment, NormalizedSelection,
 };
 
-pub(crate) fn build_selections<'a, E: ExecutableDocument + 'a>(
+/// Build and normalize selections in a single recursive pass.
+pub(crate) fn build_selections<'a, 'bump, E: ExecutableDocument + 'a>(
     selection_set: &'a E::SelectionSet,
-    fragment_defs: &HashMap<&'a str, &'a E::FragmentDefinition>,
-    expanding: &mut HashSet<&'a str>,
-) -> Vec<NormalizedSelection<'a>> {
-    let mut result = Vec::with_capacity(selection_set.len());
+    fragment_defs: &[(&'a str, &'a E::FragmentDefinition)],
+    expanding: &mut Vec<&'a str>,
+    bump: &'bump Bump,
+) -> BVec<'bump, NormalizedSelection<'a, 'bump>> {
+    let mut result = BVec::with_capacity_in(selection_set.len(), bump);
 
     for selection in selection_set.iter() {
         match selection.as_ref() {
@@ -23,31 +27,29 @@ pub(crate) fn build_selections<'a, E: ExecutableDocument + 'a>(
                     field,
                     fragment_defs,
                     expanding,
+                    bump,
                 )));
             }
             SelectionReference::FragmentSpread(spread) => {
                 let name = spread.name();
-                if expanding.contains(name) {
-                    continue; // cycle — skip
+                if expanding.contains(&name) {
+                    continue;
                 }
-                if let Some(frag_def) = fragment_defs.get(name) {
-                    expanding.insert(name);
+                if let Some((_, frag_def)) = fragment_defs.iter().find(|(n, _)| *n == name) {
+                    expanding.push(name);
 
-                    // Merge spread directives + fragment definition directives
-                    let mut directives =
-                        build_directives::<false, E>(spread.directives());
-                    directives.extend(build_directives::<false, E>(
-                        frag_def.directives(),
-                    ));
+                    let mut directives = build_directives::<false, E>(spread.directives(), bump);
+                    directives.extend(build_directives::<false, E>(frag_def.directives(), bump));
                     directives.sort_unstable();
 
                     let selections = build_selections::<E>(
                         frag_def.selection_set(),
                         fragment_defs,
                         expanding,
+                        bump,
                     );
 
-                    expanding.remove(name);
+                    expanding.pop();
 
                     result.push(NormalizedSelection::InlineFragment(
                         NormalizedInlineFragment {
@@ -59,76 +61,156 @@ pub(crate) fn build_selections<'a, E: ExecutableDocument + 'a>(
                 }
             }
             SelectionReference::InlineFragment(inline) => {
-                let directives =
-                    build_directives::<false, E>(inline.directives());
+                let directives = build_directives::<false, E>(inline.directives(), bump);
                 let selections =
-                    build_selections::<E>(inline.selection_set(), fragment_defs, expanding);
+                    build_selections::<E>(inline.selection_set(), fragment_defs, expanding, bump);
 
-                result.push(NormalizedSelection::InlineFragment(
-                    NormalizedInlineFragment {
-                        type_condition: inline.type_condition(),
-                        directives,
-                        selections,
-                    },
-                ));
+                // Flatten bare inline fragments (no type condition, no directives)
+                if inline.type_condition().is_none() && directives.is_empty() {
+                    result.extend(selections);
+                } else {
+                    result.push(NormalizedSelection::InlineFragment(
+                        NormalizedInlineFragment {
+                            type_condition: inline.type_condition(),
+                            directives,
+                            selections,
+                        },
+                    ));
+                }
             }
         }
     }
 
+    // Merge inline fragments with same (type_condition, directives) and sort
+    normalize_in_place(&mut result);
+
     result
 }
 
-fn build_field<'a, E: ExecutableDocument + 'a>(
+/// Merge matching inline fragments, then sort all selections.
+fn normalize_in_place<'a, 'bump>(selections: &mut BVec<'bump, NormalizedSelection<'a, 'bump>>) {
+    let mut if_count = 0u32;
+    for s in selections.iter() {
+        if matches!(s, NormalizedSelection::InlineFragment(_)) {
+            if_count += 1;
+            if if_count >= 2 {
+                break;
+            }
+        }
+    }
+
+    if if_count >= 2 {
+        let mut i = 0;
+        while i < selections.len() {
+            if let NormalizedSelection::InlineFragment(_) = &selections[i] {
+                let mut j = i + 1;
+                let mut merged = false;
+                while j < selections.len() {
+                    let should_merge = match (&selections[i], &selections[j]) {
+                        (
+                            NormalizedSelection::InlineFragment(a),
+                            NormalizedSelection::InlineFragment(b),
+                        ) => a.type_condition == b.type_condition && a.directives == b.directives,
+                        _ => false,
+                    };
+                    if should_merge {
+                        let removed = selections.swap_remove(j);
+                        if let NormalizedSelection::InlineFragment(inf) = removed {
+                            if let NormalizedSelection::InlineFragment(ref mut target) =
+                                selections[i]
+                            {
+                                target.selections.extend(inf.selections);
+                                merged = true;
+                            }
+                        }
+                    } else {
+                        j += 1;
+                    }
+                }
+                // Only re-sort if we actually merged something
+                if merged {
+                    if let NormalizedSelection::InlineFragment(ref mut target) = selections[i] {
+                        target
+                            .selections
+                            .sort_unstable_by(|a, b| cmp_selections(a, b));
+                    }
+                }
+            }
+            i += 1;
+        }
+    }
+
+    selections.sort_unstable_by(|a, b| cmp_selections(a, b));
+}
+
+fn cmp_selections(a: &NormalizedSelection<'_, '_>, b: &NormalizedSelection<'_, '_>) -> Ordering {
+    match (a, b) {
+        (NormalizedSelection::Field(af), NormalizedSelection::Field(bf)) => af.name.cmp(bf.name),
+        (NormalizedSelection::Field(_), NormalizedSelection::InlineFragment(_)) => Ordering::Less,
+        (NormalizedSelection::InlineFragment(_), NormalizedSelection::Field(_)) => {
+            Ordering::Greater
+        }
+        (NormalizedSelection::InlineFragment(ai), NormalizedSelection::InlineFragment(bi)) => ai
+            .type_condition
+            .cmp(&bi.type_condition)
+            .then_with(|| ai.directives.cmp(&bi.directives)),
+    }
+}
+
+fn build_field<'a, 'bump, E: ExecutableDocument + 'a>(
     field: &'a E::Field,
-    fragment_defs: &HashMap<&'a str, &'a E::FragmentDefinition>,
-    expanding: &mut HashSet<&'a str>,
-) -> NormalizedField<'a> {
-    let arg_names = build_arg_names::<false, E>(field.arguments());
-    let directives = build_directives::<false, E>(field.directives());
+    fragment_defs: &[(&'a str, &'a E::FragmentDefinition)],
+    expanding: &mut Vec<&'a str>,
+    bump: &'bump Bump,
+) -> NormalizedField<'a, 'bump> {
+    let arg_names = build_arg_names::<false, E>(field.arguments(), bump);
+    let directives = build_directives::<false, E>(field.directives(), bump);
     let selections = match field.selection_set() {
-        Some(ss) => build_selections::<E>(ss, fragment_defs, expanding),
-        None => Vec::new(),
+        Some(ss) => build_selections::<E>(ss, fragment_defs, expanding, bump),
+        None => BVec::new_in(bump),
     };
 
     NormalizedField {
-        name: field.name(), // alias dropped
+        name: field.name(),
         arg_names,
         directives,
         selections,
     }
 }
 
-fn build_arg_names<'a, const CONST: bool, E: ExecutableDocument + 'a>(
+fn build_arg_names<'a, 'bump, const CONST: bool, E: ExecutableDocument + 'a>(
     args: Option<&'a E::Arguments<CONST>>,
-) -> Vec<&'a str> {
+    bump: &'bump Bump,
+) -> BVec<'bump, &'a str> {
     let Some(args) = args else {
-        return Vec::new();
+        return BVec::new_in(bump);
     };
-    let mut names: Vec<&str> = args.iter().map(|a| a.name()).collect();
+    let mut names: BVec<'bump, &'a str> = BVec::from_iter_in(args.iter().map(|a| a.name()), bump);
     names.sort_unstable();
     names
 }
 
-pub(crate) fn build_directives<'a, const CONST: bool, E: ExecutableDocument + 'a>(
+pub(crate) fn build_directives<'a, 'bump, const CONST: bool, E: ExecutableDocument + 'a>(
     directives: Option<&'a E::Directives<CONST>>,
-) -> Vec<NormalizedDirective<'a>> {
+    bump: &'bump Bump,
+) -> BVec<'bump, NormalizedDirective<'a, 'bump>> {
     let Some(directives) = directives else {
-        return Vec::new();
+        return BVec::new_in(bump);
     };
-    let mut result: Vec<_> = directives
-        .iter()
-        .map(|d| NormalizedDirective {
+    let mut result: BVec<'bump, _> = BVec::from_iter_in(
+        directives.iter().map(|d| NormalizedDirective {
             name: d.name(),
             arg_names: {
-                let mut names: Vec<&str> = match d.arguments() {
-                    Some(args) => args.iter().map(|a| a.name()).collect(),
-                    None => Vec::new(),
+                let mut names: BVec<'bump, &str> = match d.arguments() {
+                    Some(args) => BVec::from_iter_in(args.iter().map(|a| a.name()), bump),
+                    None => BVec::new_in(bump),
                 };
                 names.sort_unstable();
                 names
             },
-        })
-        .collect();
+        }),
+        bump,
+    );
     result.sort_unstable();
     result
 }
