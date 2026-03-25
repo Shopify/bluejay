@@ -1,6 +1,8 @@
-mod fragments;
+mod build;
+mod ir;
 mod normalize;
-mod sort;
+mod normalize_ir;
+mod serialize;
 
 use bluejay_core::executable::ExecutableDocument;
 
@@ -49,6 +51,8 @@ mod tests {
         ParserDoc::parse(input).result.expect("parse error")
     }
 
+    // === Basic field sorting ===
+
     #[test]
     fn fields_sorted() {
         let doc = parse("{ z a m }");
@@ -56,90 +60,198 @@ mod tests {
     }
 
     #[test]
-    fn arguments_sorted() {
+    fn nested_selection_sorting() {
+        let doc = parse("{ parent { z a m } }");
+        assert_eq!(normalize(&doc, None).unwrap(), "query{parent{a m z}}");
+    }
+
+    #[test]
+    fn duplicate_fields_preserved() {
+        let doc = parse("{ a a a }");
+        assert_eq!(normalize(&doc, None).unwrap(), "query{a a a}");
+    }
+
+    // === Argument handling (all values become $_) ===
+
+    #[test]
+    fn arguments_sorted_and_values_replaced() {
         let doc = parse("{ field(z: 1, a: 2, m: 3) }");
-        assert_eq!(normalize(&doc, None).unwrap(), "query{field(a:0,m:0,z:0)}");
+        assert_eq!(
+            normalize(&doc, None).unwrap(),
+            "query{field(a:$_,m:$_,z:$_)}"
+        );
     }
 
     #[test]
-    fn variables_sorted() {
+    fn all_value_types_replaced() {
+        let doc = parse(r#"{ field(a: 42, b: 3.14, c: "hello", d: true, e: false, f: null, g: ENUM, h: [1,2], i: {x: 1}, j: $var) }"#);
+        assert_eq!(
+            normalize(&doc, None).unwrap(),
+            "query{field(a:$_,b:$_,c:$_,d:$_,e:$_,f:$_,g:$_,h:$_,i:$_,j:$_)}"
+        );
+    }
+
+    // === Variable definitions and operation names dropped ===
+
+    #[test]
+    fn variable_definitions_dropped() {
         let doc = parse("query Foo($z: String, $a: Int, $m: Boolean) { field }");
+        assert_eq!(normalize(&doc, None).unwrap(), "query{field}");
+    }
+
+    #[test]
+    fn operation_name_dropped() {
+        let doc = parse("query MyQuery { field }");
+        assert_eq!(normalize(&doc, None).unwrap(), "query{field}");
+    }
+
+    // === Aliases removed ===
+
+    #[test]
+    fn alias_removed() {
+        let doc = parse("{ myAlias: someField }");
+        assert_eq!(normalize(&doc, None).unwrap(), "query{someField}");
+    }
+
+    #[test]
+    fn aliased_fields_sorted_by_field_name() {
+        // After alias removal, sort by the actual field name
+        let doc = parse("{ z: fieldZ a: fieldA m: fieldM }");
         assert_eq!(
             normalize(&doc, None).unwrap(),
-            "query Foo($a:Int,$m:Boolean,$z:String){field}"
+            "query{fieldA fieldM fieldZ}"
         );
     }
 
-    #[test]
-    fn string_value_normalized() {
-        let doc = parse(r#"{ field(arg: "hello world") }"#);
-        assert_eq!(normalize(&doc, None).unwrap(), r#"query{field(arg:"")}"#);
-    }
+    // === Fragment expansion ===
 
     #[test]
-    fn numeric_values_normalized() {
-        let doc = parse("{ field(a: 42, b: 3.14) }");
-        assert_eq!(normalize(&doc, None).unwrap(), "query{field(a:0,b:0)}");
-    }
-
-    #[test]
-    fn object_value_normalized() {
-        let doc = parse(r#"{ field(arg: { z: "hello", a: 42, m: true }) }"#);
-        assert_eq!(
-            normalize(&doc, None).unwrap(),
-            r#"query{field(arg:{a:0,m:true,z:""})}"#
-        );
-    }
-
-    #[test]
-    fn list_value_normalized() {
-        let doc = parse("{ field(arg: [1, 2, 3]) }");
-        assert_eq!(normalize(&doc, None).unwrap(), "query{field(arg:[])}");
-    }
-
-    #[test]
-    fn preserved_values() {
-        let doc = parse("{ field(a: true, b: false, c: null, d: SOME_ENUM) }");
-        assert_eq!(
-            normalize(&doc, None).unwrap(),
-            "query{field(a:true,b:false,c:null,d:SOME_ENUM)}"
-        );
-    }
-
-    #[test]
-    fn variable_reference_preserved() {
-        let doc = parse("query($x: String) { field(arg: $x) }");
-        assert_eq!(
-            normalize(&doc, None).unwrap(),
-            "query($x:String){field(arg:$x)}"
-        );
-    }
-
-    #[test]
-    fn fragment_ordering() {
+    fn fragment_expanded_to_inline() {
         let doc = parse(
-            "query { ...Z ...A }
-            fragment Z on Query { z }
-            fragment A on Query { a }",
+            "query { ...F }
+            fragment F on Query { a }",
         );
         assert_eq!(
             normalize(&doc, None).unwrap(),
-            "fragment A on Query{a}fragment Z on Query{z}query{...A ...Z}"
+            "query{...on Query{a}}"
         );
     }
 
     #[test]
-    fn unused_fragments_excluded() {
+    fn same_type_fragments_merged() {
+        // Two fragments on same type get merged into one InlineFragment
+        let doc = parse(
+            "query { ...A ...B }
+            fragment A on Query { a }
+            fragment B on Query { b }",
+        );
+        assert_eq!(
+            normalize(&doc, None).unwrap(),
+            "query{...on Query{a b}}"
+        );
+    }
+
+    #[test]
+    fn different_type_fragments_not_merged() {
+        let doc = parse(
+            "query { ...A ...B }
+            fragment A on TypeA { a }
+            fragment B on TypeB { b }",
+        );
+        assert_eq!(
+            normalize(&doc, None).unwrap(),
+            "query{...on TypeA{a} ...on TypeB{b}}"
+        );
+    }
+
+    #[test]
+    fn transitive_fragments_expanded() {
+        let doc = parse(
+            "query { ...A }
+            fragment A on T { ...B a }
+            fragment B on T { ...C b }
+            fragment C on T { c }",
+        );
+        // A expands to: ... on T { ... on T { ... on T { c } b } a }
+        // Inner ... on T merges with parent ... on T recursively
+        // After flattening same-type IFs and sorting:
+        let result = normalize(&doc, None).unwrap();
+        assert!(result.contains("...on T{"));
+        assert!(!result.contains("fragment"));
+        assert!(!result.contains("...A"));
+    }
+
+    #[test]
+    fn unused_fragments_naturally_excluded() {
         let doc = parse(
             "query { ...Used }
             fragment Used on Query { a }
             fragment Unused on Query { b }",
         );
+        let result = normalize(&doc, None).unwrap();
+        assert!(!result.contains("Unused"));
+        assert!(!result.contains("b"));
+    }
+
+    #[test]
+    fn fragment_spread_directives_merged_with_def_directives() {
+        let doc = parse(
+            "query { ...F @skip(if: true) }
+            fragment F on T @deprecated { a }",
+        );
+        // Spread @skip + fragment def @deprecated both go on the InlineFragment
+        let result = normalize(&doc, None).unwrap();
+        assert!(result.contains("@deprecated"));
+        assert!(result.contains("@skip"));
+    }
+
+    // === Inline fragment handling ===
+
+    #[test]
+    fn bare_inline_fragment_flattened() {
+        // InlineFragment with no type condition and no directives → flattened
+        let doc = parse("{ ... { field } }");
+        assert_eq!(normalize(&doc, None).unwrap(), "query{field}");
+    }
+
+    #[test]
+    fn inline_fragment_with_directive_preserved() {
+        // Has directive → not flattened even without type condition
+        let doc = parse("{ ... @include(if: true) { field } }");
         assert_eq!(
             normalize(&doc, None).unwrap(),
-            "fragment Used on Query{a}query{...Used}"
+            "query{...@include(if:$_){field}}"
         );
     }
+
+    #[test]
+    fn inline_fragment_with_type_condition_preserved() {
+        let doc = parse("{ ... on Query { field } }");
+        assert_eq!(
+            normalize(&doc, None).unwrap(),
+            "query{...on Query{field}}"
+        );
+    }
+
+    #[test]
+    fn same_type_inline_fragments_merged() {
+        let doc = parse("query { ... on Query { a } ... on Query { b } }");
+        assert_eq!(
+            normalize(&doc, None).unwrap(),
+            "query{...on Query{a b}}"
+        );
+    }
+
+    #[test]
+    fn different_directive_inline_fragments_not_merged() {
+        let doc = parse("query { ... on T @a { x } ... on T @b { y } }");
+        assert_eq!(
+            normalize(&doc, None).unwrap(),
+            "query{...on T@a{x} ...on T@b{y}}"
+        );
+    }
+
+    // === Sort order: fields first, then inline fragments ===
 
     #[test]
     fn selection_sort_order() {
@@ -147,16 +259,20 @@ mod tests {
             "query {
                 ... on Query { inlined }
                 ...Frag
-                aliased: field
+                field
                 regular
             }
             fragment Frag on Query { x }",
         );
+        // Fields first (alpha), then InlineFragments (alpha by TC)
+        // Frag expands to ... on Query { x }, merges with ... on Query { inlined }
         assert_eq!(
             normalize(&doc, None).unwrap(),
-            "fragment Frag on Query{x}query{aliased:field regular ...Frag ... on Query{inlined}}"
+            "query{field regular ...on Query{inlined x}}"
         );
     }
+
+    // === Directives ===
 
     #[test]
     fn directive_sorting() {
@@ -165,10 +281,29 @@ mod tests {
     }
 
     #[test]
-    fn alias_format() {
-        let doc = parse("{ myAlias: someField }");
-        assert_eq!(normalize(&doc, None).unwrap(), "query{myAlias:someField}");
+    fn directive_arguments_sorted() {
+        let doc = parse("{ field @custom(z: 1, a: 2) }");
+        assert_eq!(
+            normalize(&doc, None).unwrap(),
+            "query{field@custom(a:$_,z:$_)}"
+        );
     }
+
+    // === Operation types ===
+
+    #[test]
+    fn mutation() {
+        let doc = parse("mutation { doThing }");
+        assert_eq!(normalize(&doc, None).unwrap(), "mutation{doThing}");
+    }
+
+    #[test]
+    fn subscription() {
+        let doc = parse("subscription { onEvent }");
+        assert_eq!(normalize(&doc, None).unwrap(), "subscription{onEvent}");
+    }
+
+    // === Error cases ===
 
     #[test]
     fn error_operation_not_found() {
@@ -189,20 +324,18 @@ mod tests {
     }
 
     #[test]
-    fn named_operation_selection() {
-        let doc = parse("query A { a } query B { b }");
-        assert_eq!(normalize(&doc, Some("B")).unwrap(), "query B{b}");
+    fn error_no_operations() {
+        let doc = parse("fragment F on Query { a }");
+        assert_eq!(normalize(&doc, None), Err(SignatureError::NoOperations));
     }
 
     #[test]
-    fn idempotency() {
-        let input = "query Foo($a: Int, $b: String) @dir { b a field(x: 1) }";
-        let doc1 = parse(input);
-        let normalized1 = normalize(&doc1, None).unwrap();
-        let doc2 = parse(&normalized1);
-        let normalized2 = normalize(&doc2, None).unwrap();
-        assert_eq!(normalized1, normalized2);
+    fn named_operation_selection() {
+        let doc = parse("query A { a } query B { b }");
+        assert_eq!(normalize(&doc, Some("B")).unwrap(), "query{b}");
     }
+
+    // === Signature hash ===
 
     #[test]
     fn signature_hash() {
@@ -214,155 +347,67 @@ mod tests {
         assert_eq!(sig, expected);
     }
 
+    // === Idempotency ===
+
     #[test]
-    fn nested_selection_sorting() {
-        let doc = parse("{ parent { z a m } }");
-        assert_eq!(normalize(&doc, None).unwrap(), "query{parent{a m z}}");
+    fn idempotency() {
+        let input = "query @dir { b a field(x: 1) }";
+        let doc1 = parse(input);
+        let normalized1 = normalize(&doc1, None).unwrap();
+        let doc2 = parse(&normalized1);
+        let normalized2 = normalize(&doc2, None).unwrap();
+        assert_eq!(normalized1, normalized2);
     }
 
-    #[test]
-    fn default_value_normalization() {
-        let doc = parse(r#"query($x: String = "hello", $y: Int = 42) { field }"#);
-        assert_eq!(
-            normalize(&doc, None).unwrap(),
-            r#"query($x:String="",$y:Int=0){field}"#
-        );
-    }
+    // === Canonical form: different representations → same hash ===
 
     #[test]
-    fn mutation() {
-        let doc = parse("mutation { doThing }");
-        assert_eq!(normalize(&doc, None).unwrap(), "mutation{doThing}");
-    }
-
-    #[test]
-    fn subscription() {
-        let doc = parse("subscription { onEvent }");
-        assert_eq!(normalize(&doc, None).unwrap(), "subscription{onEvent}");
-    }
-
-    #[test]
-    fn transitive_fragments() {
-        let doc = parse(
-            "query { ...A }
-            fragment A on Query { ...B a }
-            fragment B on Query { ...C b }
-            fragment C on Query { c }
-            fragment Unused on Query { unused }",
-        );
-        let result = normalize(&doc, None).unwrap();
-        assert!(result.contains("fragment A on Query"));
-        assert!(result.contains("fragment B on Query"));
-        assert!(result.contains("fragment C on Query"));
-        assert!(!result.contains("Unused"));
-    }
-
-    #[test]
-    fn inline_fragment_no_type_condition() {
-        let doc = parse("{ ... @include(if: true) { field } }");
-        assert_eq!(
-            normalize(&doc, None).unwrap(),
-            "query{...@include(if:true){field}}"
-        );
-    }
-
-    #[test]
-    fn complex_variable_types() {
-        let doc = parse("query($a: [String!]!, $b: [[Int]]) { field }");
-        assert_eq!(
-            normalize(&doc, None).unwrap(),
-            "query($a:[String!]!,$b:[[Int]]){field}"
-        );
-    }
-
-    #[test]
-    fn directive_with_arguments() {
-        let doc = parse("{ field @custom(z: 1, a: 2) }");
-        assert_eq!(
-            normalize(&doc, None).unwrap(),
-            "query{field@custom(a:0,z:0)}"
-        );
-    }
-
-    #[test]
-    fn multiple_aliased_fields_sorted_by_alias() {
-        let doc = parse("{ z: field1 a: field2 m: field3 }");
-        assert_eq!(
-            normalize(&doc, None).unwrap(),
-            "query{a:field2 m:field3 z:field1}"
-        );
-    }
-
-    #[test]
-    fn mixed_aliased_and_non_aliased() {
-        let doc = parse("{ z: field1 b a: field2 c }");
-        assert_eq!(
-            normalize(&doc, None).unwrap(),
-            "query{a:field2 b c z:field1}"
-        );
-    }
-
-    #[test]
-    fn inline_fragment_tie_breaker_is_canonical() {
-        let a_then_b = parse("query { ... on Query { a } ... on Query { b } }");
-        let b_then_a = parse("query { ... on Query { b } ... on Query { a } }");
-
-        assert_eq!(normalize(&a_then_b, None), normalize(&b_then_a, None));
-    }
-
-    #[test]
-    fn aliased_field_tie_breaker_is_canonical() {
-        let first = parse("query { x: b x: a }");
-        let second = parse("query { x: a x: b }");
-
-        assert_eq!(normalize(&first, None), normalize(&second, None));
-    }
-
-    #[test]
-    fn error_no_operations() {
-        let doc = parse("fragment F on Query { a }");
-        assert_eq!(normalize(&doc, None), Err(SignatureError::NoOperations));
-    }
-
-    #[test]
-    fn float_normalized_to_zero() {
-        let doc = parse("{ field(arg: 3.14) }");
-        assert_eq!(normalize(&doc, None).unwrap(), "query{field(arg:0)}");
-    }
-
-    #[test]
-    fn fragment_with_directives() {
-        let doc = parse(
+    fn fragments_vs_inline_same_hash() {
+        let with_fragment = parse(
             "query { ...F }
-            fragment F on Query @deprecated { a }",
+            fragment F on T { a b }",
         );
+        let with_inline = parse("query { ... on T { a b } }");
         assert_eq!(
-            normalize(&doc, None).unwrap(),
-            "fragment F on Query@deprecated{a}query{...F}"
+            normalize(&with_fragment, None).unwrap(),
+            normalize(&with_inline, None).unwrap(),
         );
     }
 
     #[test]
-    fn variable_definition_directives() {
-        let doc = parse("query($x: String @deprecated) { field }");
+    fn alias_vs_no_alias_same_hash() {
+        let with_alias = parse("{ myAlias: field }");
+        let without_alias = parse("{ field }");
         assert_eq!(
-            normalize(&doc, None).unwrap(),
-            "query($x:String@deprecated){field}"
+            normalize(&with_alias, None).unwrap(),
+            normalize(&without_alias, None).unwrap(),
         );
     }
 
     #[test]
-    fn duplicate_fields_preserved() {
-        let doc = parse("{ a a a }");
-        assert_eq!(normalize(&doc, None).unwrap(), "query{a a a}");
+    fn different_values_same_hash() {
+        let a = parse(r#"{ field(arg: "hello") }"#);
+        let b = parse(r#"{ field(arg: "world") }"#);
+        assert_eq!(
+            normalize(&a, None).unwrap(),
+            normalize(&b, None).unwrap(),
+        );
     }
 
     #[test]
-    fn nested_object_default_value() {
-        let doc = parse(r#"query($x: Input = { nested: { key: "val" } }) { field }"#);
+    fn different_variable_names_same_hash() {
+        let a = parse("query($foo: String) { field(arg: $foo) }");
+        let b = parse("query($bar: String) { field(arg: $bar) }");
         assert_eq!(
-            normalize(&doc, None).unwrap(),
-            r#"query($x:Input={nested:{key:""}}){field}"#
+            normalize(&a, None).unwrap(),
+            normalize(&b, None).unwrap(),
         );
+    }
+
+    #[test]
+    fn reordered_inline_fragments_same_hash() {
+        let a = parse("query { ... on Query { a } ... on Query { b } }");
+        let b = parse("query { ... on Query { b } ... on Query { a } }");
+        assert_eq!(normalize(&a, None), normalize(&b, None));
     }
 }
