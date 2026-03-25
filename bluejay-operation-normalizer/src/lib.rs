@@ -18,21 +18,52 @@
 //!
 //!    a. **Fields** — collect the field name (dropping any alias), sorted argument names,
 //!       sorted directives, and recursively normalized child selections.
+//!       ```graphql
+//!       # input
+//!       { myAlias: field(z: 1, a: 2) }
+//!       # normalized
+//!       query{field(a:$_,z:$_)}
+//!       ```
 //!
 //!    b. **Fragment spreads** — expand inline: replace `...FragName` with
 //!       `... on <TypeCondition> { <selections> }`, merging directives from both the spread
 //!       and the fragment definition. Unused fragments are naturally excluded. Cycles are
 //!       detected via a stack of currently-expanding fragment names.
+//!       ```graphql
+//!       # input
+//!       { ...F }
+//!       fragment F on User { name }
+//!       # normalized — spread replaced with inline fragment, named fragment dropped
+//!       query{...on User{name}}
+//!       ```
 //!
 //!    c. **Inline fragments** — if bare (no type condition, no directives), flatten their
 //!       children directly into the parent selection set. Otherwise, keep as-is.
+//!       ```graphql
+//!       # input — bare inline fragment (no type condition, no directives)
+//!       { ... { name email } }
+//!       # normalized — children flattened into parent
+//!       query{email name}
+//!       ```
 //!
 //!    d. **Merge inline fragments** — at each level, merge inline fragments that share the
 //!       same `(type_condition, directives)` pair into a single inline fragment, combining
 //!       their child selections.
+//!       ```graphql
+//!       # input — two inline fragments on same type
+//!       { ... on User { name } ... on User { email } }
+//!       # normalized — merged into one
+//!       query{...on User{email name}}
+//!       ```
 //!
 //!    e. **Sort selections** — fields first (alphabetically by field name), then inline
 //!       fragments (by type condition, then by directives).
+//!       ```graphql
+//!       # input
+//!       { z a ... on User { b } m }
+//!       # normalized — fields sorted first, then inline fragments
+//!       query{a m z ...on User{b}}
+//!       ```
 //!
 //! 3. **Serialize** the normalized IR to a compact canonical string:
 //!    - Operation type keyword (`query`, `mutation`, `subscription`) with no name.
@@ -41,6 +72,14 @@
 //!    - No whitespace except single spaces separating selections within `{ }`.
 //!    - Argument names are sorted alphabetically within each argument list.
 //!    - Directive names are sorted alphabetically.
+//!    ```graphql
+//!    # input
+//!    query MyQuery($id: ID!) @z @a {
+//!      user(id: $id) { name email }
+//!    }
+//!    # normalized — name dropped, vars dropped, directives sorted, values → $_
+//!    query@a@z{user(id:$_){email name}}
+//!    ```
 //!
 //! 4. **Signature** — optionally hash the canonical string with BLAKE3 to produce a
 //!    stable hex digest.
