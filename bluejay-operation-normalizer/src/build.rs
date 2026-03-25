@@ -170,7 +170,11 @@ fn normalize_in_place(selections: &mut BVec<'_, NormalizedSelection<'_, '_>>) {
 /// fragments (by type condition, then by directives).
 fn cmp_selections(a: &NormalizedSelection<'_, '_>, b: &NormalizedSelection<'_, '_>) -> Ordering {
     match (a, b) {
-        (NormalizedSelection::Field(af), NormalizedSelection::Field(bf)) => af.name.cmp(bf.name),
+        (NormalizedSelection::Field(af), NormalizedSelection::Field(bf)) => af
+            .name
+            .cmp(bf.name)
+            .then_with(|| af.arg_names.as_slice().cmp(bf.arg_names.as_slice()))
+            .then_with(|| af.directives.cmp(&bf.directives)),
         (NormalizedSelection::Field(_), NormalizedSelection::InlineFragment(_)) => Ordering::Less,
         (NormalizedSelection::InlineFragment(_), NormalizedSelection::Field(_)) => {
             Ordering::Greater

@@ -191,7 +191,7 @@ mod tests {
 
     #[test]
     fn variable_definitions_dropped() {
-        let doc = parse("query Foo($z: String, $a: Int, $m: Boolean) { field }");
+        let doc = parse("query ($z: String, $a: Int, $m: Boolean) { field }");
         assert_eq!(normalize(&doc, None).unwrap(), "query{field}");
     }
 
@@ -262,13 +262,8 @@ mod tests {
             fragment B on T { ...C b }
             fragment C on T { c }",
         );
-        // A expands to: ... on T { ... on T { ... on T { c } b } a }
-        // Inner ... on T merges with parent ... on T recursively
-        // After flattening same-type IFs and sorting:
         let result = normalize(&doc, None).unwrap();
-        assert!(result.contains("...on T{"));
-        assert!(!result.contains("fragment"));
-        assert!(!result.contains("...A"));
+        assert_eq!(result, "query{...on T{a ...on T{b ...on T{c}}}}");
     }
 
     #[test]
@@ -289,10 +284,10 @@ mod tests {
             "query { ...F @skip(if: true) }
             fragment F on T @deprecated { a }",
         );
-        // Spread @skip + fragment def @deprecated both go on the InlineFragment
-        let result = normalize(&doc, None).unwrap();
-        assert!(result.contains("@deprecated"));
-        assert!(result.contains("@skip"));
+        assert_eq!(
+            normalize(&doc, None).unwrap(),
+            "query{...on T@deprecated@skip(if:$_){a}}"
+        );
     }
 
     // === Inline fragment handling ===
@@ -353,6 +348,30 @@ mod tests {
         assert_eq!(
             normalize(&doc, None).unwrap(),
             "query{field regular ...on Query{inlined x}}"
+        );
+    }
+
+    #[test]
+    fn field_without_directive_before_field_with_directive() {
+        let doc = parse("query { name @uppercase name }");
+        assert_eq!(normalize(&doc, None).unwrap(), "query{name name@uppercase}");
+    }
+
+    #[test]
+    fn fields_tiebreak_by_arguments() {
+        let doc = parse("query { field(z: 1) field(a: 1) field }");
+        assert_eq!(
+            normalize(&doc, None).unwrap(),
+            "query{field field(a:$_) field(z:$_)}"
+        );
+    }
+
+    #[test]
+    fn fields_tiebreak_by_directives_after_arguments() {
+        let doc = parse("query { field(a: 1) @z field(a: 1) @a }");
+        assert_eq!(
+            normalize(&doc, None).unwrap(),
+            "query{field(a:$_)@a field(a:$_)@z}"
         );
     }
 
@@ -487,5 +506,82 @@ mod tests {
         let a = parse("query { ... on Query { a } ... on Query { b } }");
         let b = parse("query { ... on Query { b } ... on Query { a } }");
         assert_eq!(normalize(&a, None), normalize(&b, None));
+    }
+
+    // === Edge cases ===
+
+    #[test]
+    fn fragment_cycle_detected_and_skipped() {
+        let doc = parse(
+            "query { ...A }
+            fragment A on T { field ...B }
+            fragment B on T { other ...A }",
+        );
+        let result = normalize(&doc, None).unwrap();
+        // Second ...A is a cycle — silently skipped
+        assert_eq!(result, "query{...on T{field ...on T{other}}}");
+    }
+
+    #[test]
+    fn bare_inline_fragment_flattened_then_coexists_with_typed() {
+        let doc = parse("query { ... { a } ... on Query { b } }");
+        // Bare fragment flattened to field `a`, not merged with typed fragment
+        assert_eq!(normalize(&doc, None).unwrap(), "query{a ...on Query{b}}");
+    }
+
+    #[test]
+    fn expanded_fragment_merges_with_existing_inline() {
+        let doc = parse(
+            "query { ... on T @a { x } ...F }
+            fragment F on T @a { y }",
+        );
+        // F expands to ... on T @a { y }, merges with existing ... on T @a { x }
+        assert_eq!(normalize(&doc, None).unwrap(), "query{...on T@a{x y}}");
+    }
+
+    #[test]
+    fn operation_directives_with_arguments() {
+        let doc = parse("query @z(x: 1) @a(b: 2, c: 3) @m { field }");
+        assert_eq!(
+            normalize(&doc, None).unwrap(),
+            "query@a(b:$_,c:$_)@m@z(x:$_){field}"
+        );
+    }
+
+    #[test]
+    fn inline_fragment_with_multiple_directives() {
+        let doc = parse("query { ... on User @skip(if: true) @include(if: false) { name } }");
+        assert_eq!(
+            normalize(&doc, None).unwrap(),
+            "query{...on User@include(if:$_)@skip(if:$_){name}}"
+        );
+    }
+
+    #[test]
+    fn fragment_spread_multiple_directives_on_both_spread_and_def() {
+        let doc = parse(
+            "query { ...F @b @a }
+            fragment F on T @d @c { field }",
+        );
+        // Spread directives [@b, @a] + def directives [@d, @c] → merged and sorted
+        assert_eq!(
+            normalize(&doc, None).unwrap(),
+            "query{...on T@a@b@c@d{field}}"
+        );
+    }
+
+    #[test]
+    fn inline_fragment_sort_multiple_type_conditions() {
+        let doc = parse(
+            "query {
+                ... on Zebra { z }
+                ... on Admin { a }
+                ... on Middle { m }
+            }",
+        );
+        assert_eq!(
+            normalize(&doc, None).unwrap(),
+            "query{...on Admin{a} ...on Middle{m} ...on Zebra{z}}"
+        );
     }
 }

@@ -58,6 +58,7 @@ fn bench_complex(c: &mut Criterion) {
         r#"
         query ComplexQuery($userId: ID!, $includeEmail: Boolean = true, $limit: Int = 20, $offset: Int = 0) @cacheControl(maxAge: 300) {
             user(id: $userId) {
+                id
                 ...UserBasic
                 ...UserPosts
                 followers(limit: $limit, offset: $offset) {
@@ -278,30 +279,31 @@ fn bench_wide_reverse_sorted(c: &mut Criterion) {
             zones { id }
             yields { id }
             xrefs { id }
-            webhooks { id }
-            variants { id }
+            webhooks(topic: "orders/create", format: "json") { id }
+            variants(first: 50, after: "cursor123", sortKey: TITLE, reverse: true) { id }
             users { id }
-            transactions { id }
+            transactions(first: 10, after: "txn_cursor", query: "status:success AND amount:>100") { id }
             subscriptions { id }
             returns { id }
             quotas { id }
-            products { id }
+            products(first: 25, after: "prod_cursor", query: "status:active", sortKey: BEST_SELLING, reverse: false) { id }
             payments { id }
-            orders { id }
+            orders(first: 50, after: "order_cursor", query: "financial_status:paid", sortKey: CREATED_AT, reverse: true) { id }
             notifications { id }
-            metafields { id }
+            metafields(namespace: "custom", first: 10) { id }
             locations { id }
             inventoryLevels { id }
-            images { id }
+            images(first: 20, sortKey: POSITION, reverse: false) { id }
             hooks { id }
             giftCards { id }
-            fulfillments { id }
-            events { id }
-            discounts { id }
-            customers { id }
+            fulfillments(first: 10, after: "ful_cursor") { id }
+            events(first: 50, after: "evt_cursor", query: "verb:sale", sortKey: CREATED_AT, reverse: true) { id }
+            discounts(first: 25, query: "status:active", sortKey: CREATED_AT) { id }
+            customers(first: 100, after: "cust_cursor", query: "country:CA AND orders_count:>5", sortKey: LAST_ORDER_DATE, reverse: true) { id }
             collections { id }
             blogs { id }
             articles { id }
+            analytics(shopId: "1", startDate: "2024-01-01", endDate: "2024-12-31", granularity: "daily", metrics: ["views", "clicks"], dimensions: ["source", "medium"], filters: {status: "active"}, sortBy: "views", sortOrder: "desc", limit: 100, offset: 0, timezone: "UTC") { id }
         }
         "#,
     );
