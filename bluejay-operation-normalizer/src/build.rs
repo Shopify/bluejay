@@ -111,7 +111,7 @@ pub(crate) fn build_selections<'a, 'bump, E: ExecutableDocument + 'a>(
 /// Steps 2d–2e: merge inline fragments with matching `(type_condition, directives)`,
 /// then sort all selections (fields first by name, then inline fragments by type
 /// condition and directives).
-fn normalize_in_place<'a, 'bump>(selections: &mut BVec<'bump, NormalizedSelection<'a, 'bump>>) {
+fn normalize_in_place(selections: &mut BVec<'_, NormalizedSelection<'_, '_>>) {
     let mut if_count = 0u32;
     for s in selections.iter() {
         if matches!(s, NormalizedSelection::InlineFragment(_)) {

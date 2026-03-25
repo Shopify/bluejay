@@ -4,8 +4,8 @@
 //! 2. Delegates to [`build::build_selections`] for IR construction + normalization.
 //! 3. Delegates to [`serialize::serialize`] for canonical string output.
 
-use bumpalo::Bump;
 use bluejay_core::executable::{ExecutableDocument, FragmentDefinition, OperationDefinition};
+use bumpalo::Bump;
 
 use crate::build::{build_directives, build_selections};
 use crate::serialize::serialize;
@@ -27,8 +27,12 @@ pub(crate) fn normalize_doc<E: ExecutableDocument>(
     let op_directives = build_directives::<false, E>(op_ref.directives(), &bump);
 
     let mut expanding = Vec::new();
-    let selections =
-        build_selections::<E>(op_ref.selection_set(), &fragment_defs, &mut expanding, &bump);
+    let selections = build_selections::<E>(
+        op_ref.selection_set(),
+        &fragment_defs,
+        &mut expanding,
+        &bump,
+    );
 
     Ok(serialize(
         op_ref.operation_type(),

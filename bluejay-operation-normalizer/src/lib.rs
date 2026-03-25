@@ -178,7 +178,9 @@ mod tests {
 
     #[test]
     fn all_value_types_replaced() {
-        let doc = parse(r#"{ field(a: 42, b: 3.14, c: "hello", d: true, e: false, f: null, g: ENUM, h: [1,2], i: {x: 1}, j: $var) }"#);
+        let doc = parse(
+            r#"{ field(a: 42, b: 3.14, c: "hello", d: true, e: false, f: null, g: ENUM, h: [1,2], i: {x: 1}, j: $var) }"#,
+        );
         assert_eq!(
             normalize(&doc, None).unwrap(),
             "query{field(a:$_,b:$_,c:$_,d:$_,e:$_,f:$_,g:$_,h:$_,i:$_,j:$_)}"
@@ -225,10 +227,7 @@ mod tests {
             "query { ...F }
             fragment F on Query { a }",
         );
-        assert_eq!(
-            normalize(&doc, None).unwrap(),
-            "query{...on Query{a}}"
-        );
+        assert_eq!(normalize(&doc, None).unwrap(), "query{...on Query{a}}");
     }
 
     #[test]
@@ -239,10 +238,7 @@ mod tests {
             fragment A on Query { a }
             fragment B on Query { b }",
         );
-        assert_eq!(
-            normalize(&doc, None).unwrap(),
-            "query{...on Query{a b}}"
-        );
+        assert_eq!(normalize(&doc, None).unwrap(), "query{...on Query{a b}}");
     }
 
     #[test]
@@ -321,19 +317,13 @@ mod tests {
     #[test]
     fn inline_fragment_with_type_condition_preserved() {
         let doc = parse("{ ... on Query { field } }");
-        assert_eq!(
-            normalize(&doc, None).unwrap(),
-            "query{...on Query{field}}"
-        );
+        assert_eq!(normalize(&doc, None).unwrap(), "query{...on Query{field}}");
     }
 
     #[test]
     fn same_type_inline_fragments_merged() {
         let doc = parse("query { ... on Query { a } ... on Query { b } }");
-        assert_eq!(
-            normalize(&doc, None).unwrap(),
-            "query{...on Query{a b}}"
-        );
+        assert_eq!(normalize(&doc, None).unwrap(), "query{...on Query{a b}}");
     }
 
     #[test]
@@ -482,20 +472,14 @@ mod tests {
     fn different_values_same_hash() {
         let a = parse(r#"{ field(arg: "hello") }"#);
         let b = parse(r#"{ field(arg: "world") }"#);
-        assert_eq!(
-            normalize(&a, None).unwrap(),
-            normalize(&b, None).unwrap(),
-        );
+        assert_eq!(normalize(&a, None).unwrap(), normalize(&b, None).unwrap(),);
     }
 
     #[test]
     fn different_variable_names_same_hash() {
         let a = parse("query($foo: String) { field(arg: $foo) }");
         let b = parse("query($bar: String) { field(arg: $bar) }");
-        assert_eq!(
-            normalize(&a, None).unwrap(),
-            normalize(&b, None).unwrap(),
-        );
+        assert_eq!(normalize(&a, None).unwrap(), normalize(&b, None).unwrap(),);
     }
 
     #[test]
