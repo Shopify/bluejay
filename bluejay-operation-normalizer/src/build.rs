@@ -1,3 +1,10 @@
+//! Builds the normalized IR from a parsed AST in a single recursive pass.
+//!
+//! Implements algorithm steps 2a–2e: for each selection set, this module builds
+//! normalized fields and inline fragments, expands fragment spreads, flattens
+//! bare inline fragments, merges matching inline fragments, and sorts — all
+//! bottom-up so each level is fully normalized before being returned to the parent.
+
 use bluejay_core::executable::{
     ExecutableDocument, Field, FragmentDefinition, FragmentSpread, InlineFragment, Selection,
     SelectionReference,
@@ -11,7 +18,17 @@ use crate::ir::{
     NormalizedDirective, NormalizedField, NormalizedInlineFragment, NormalizedSelection,
 };
 
-/// Build and normalize selections in a single recursive pass.
+/// Build and normalize a selection set in a single recursive pass (steps 2a–2e).
+///
+/// For each selection in the set:
+/// - **Fields** (step 2a): collect name (alias dropped), sorted args, sorted directives,
+///   and recursively build child selections.
+/// - **Fragment spreads** (step 2b): expand to inline fragments with the fragment's type
+///   condition, merging directives from both spread and definition.
+/// - **Inline fragments** (step 2c): flatten bare ones (no type condition, no directives)
+///   into the parent; keep others as-is.
+///
+/// After collecting all selections, merge and sort (steps 2d–2e) via [`normalize_in_place`].
 pub(crate) fn build_selections<'a, 'bump, E: ExecutableDocument + 'a>(
     selection_set: &'a E::SelectionSet,
     fragment_defs: &[(&'a str, &'a E::FragmentDefinition)],
@@ -22,6 +39,7 @@ pub(crate) fn build_selections<'a, 'bump, E: ExecutableDocument + 'a>(
 
     for selection in selection_set.iter() {
         match selection.as_ref() {
+            // Step 2a: fields
             SelectionReference::Field(field) => {
                 result.push(NormalizedSelection::Field(build_field::<E>(
                     field,
@@ -30,8 +48,10 @@ pub(crate) fn build_selections<'a, 'bump, E: ExecutableDocument + 'a>(
                     bump,
                 )));
             }
+            // Step 2b: expand fragment spreads into inline fragments
             SelectionReference::FragmentSpread(spread) => {
                 let name = spread.name();
+                // Cycle detection: skip if this fragment is already being expanded
                 if expanding.contains(&name) {
                     continue;
                 }
@@ -60,6 +80,7 @@ pub(crate) fn build_selections<'a, 'bump, E: ExecutableDocument + 'a>(
                     ));
                 }
             }
+            // Step 2c: inline fragments — flatten bare ones, keep others
             SelectionReference::InlineFragment(inline) => {
                 let directives = build_directives::<false, E>(inline.directives(), bump);
                 let selections =
@@ -87,7 +108,9 @@ pub(crate) fn build_selections<'a, 'bump, E: ExecutableDocument + 'a>(
     result
 }
 
-/// Merge matching inline fragments, then sort all selections.
+/// Steps 2d–2e: merge inline fragments with matching `(type_condition, directives)`,
+/// then sort all selections (fields first by name, then inline fragments by type
+/// condition and directives).
 fn normalize_in_place<'a, 'bump>(selections: &mut BVec<'bump, NormalizedSelection<'a, 'bump>>) {
     let mut if_count = 0u32;
     for s in selections.iter() {
@@ -143,6 +166,8 @@ fn normalize_in_place<'a, 'bump>(selections: &mut BVec<'bump, NormalizedSelectio
     selections.sort_unstable_by(|a, b| cmp_selections(a, b));
 }
 
+/// Sort order for step 2e: fields first (alphabetically by name), then inline
+/// fragments (by type condition, then by directives).
 fn cmp_selections(a: &NormalizedSelection<'_, '_>, b: &NormalizedSelection<'_, '_>) -> Ordering {
     match (a, b) {
         (NormalizedSelection::Field(af), NormalizedSelection::Field(bf)) => af.name.cmp(bf.name),
@@ -157,6 +182,8 @@ fn cmp_selections(a: &NormalizedSelection<'_, '_>, b: &NormalizedSelection<'_, '
     }
 }
 
+/// Step 2a: build a normalized field — alias dropped, args/directives sorted,
+/// child selections recursively normalized.
 fn build_field<'a, 'bump, E: ExecutableDocument + 'a>(
     field: &'a E::Field,
     fragment_defs: &[(&'a str, &'a E::FragmentDefinition)],
@@ -178,6 +205,8 @@ fn build_field<'a, 'bump, E: ExecutableDocument + 'a>(
     }
 }
 
+/// Collect and sort argument names alphabetically. Values are erased during
+/// serialization (step 3) — only names matter for the canonical form.
 fn build_arg_names<'a, 'bump, const CONST: bool, E: ExecutableDocument + 'a>(
     args: Option<&'a E::Arguments<CONST>>,
     bump: &'bump Bump,
@@ -190,6 +219,8 @@ fn build_arg_names<'a, 'bump, const CONST: bool, E: ExecutableDocument + 'a>(
     names
 }
 
+/// Collect and sort directives by name (then by argument names). Each directive's
+/// argument names are also sorted. Used for fields, inline fragments, and operations.
 pub(crate) fn build_directives<'a, 'bump, const CONST: bool, E: ExecutableDocument + 'a>(
     directives: Option<&'a E::Directives<CONST>>,
     bump: &'bump Bump,

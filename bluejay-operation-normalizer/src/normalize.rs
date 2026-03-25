@@ -1,3 +1,9 @@
+//! Orchestrates the normalization pipeline (algorithm steps 1–3).
+//!
+//! 1. Resolves the target operation.
+//! 2. Delegates to [`build::build_selections`] for IR construction + normalization.
+//! 3. Delegates to [`serialize::serialize`] for canonical string output.
+
 use bumpalo::Bump;
 use bluejay_core::executable::{ExecutableDocument, FragmentDefinition, OperationDefinition};
 
@@ -5,6 +11,7 @@ use crate::build::{build_directives, build_selections};
 use crate::serialize::serialize;
 use crate::SignatureError;
 
+/// Entry point: resolve the operation, build normalized IR, serialize to canonical string.
 pub(crate) fn normalize_doc<E: ExecutableDocument>(
     doc: &E,
     op_name: Option<&str>,

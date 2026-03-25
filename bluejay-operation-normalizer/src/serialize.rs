@@ -1,9 +1,18 @@
+//! Serializes the normalized IR to a compact canonical string (algorithm step 3).
+//!
+//! Output format:
+//! - Operation type keyword, no operation name, no variable definitions.
+//! - All argument and directive values replaced with `$_`.
+//! - No whitespace except single spaces separating selections within `{ }`.
+//! - Example: `query{field(a:$_,b:$_)@dir{nested}}`
+
 use bluejay_core::OperationType;
 
 use crate::ir::{
     NormalizedDirective, NormalizedField, NormalizedInlineFragment, NormalizedSelection,
 };
 
+/// Serialize a normalized operation to its canonical string form (step 3).
 pub(crate) fn serialize(
     op_type: OperationType,
     directives: &[NormalizedDirective<'_, '_>],

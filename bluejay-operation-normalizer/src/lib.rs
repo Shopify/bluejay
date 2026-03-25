@@ -1,3 +1,59 @@
+//! # GraphQL Operation Normalizer
+//!
+//! Produces a **canonical string representation** of a GraphQL operation, suitable for
+//! generating stable signatures (hashes) that are identical for semantically equivalent
+//! operations regardless of cosmetic differences like whitespace, field ordering, alias
+//! names, or fragment style.
+//!
+//! ## Normalization Algorithm
+//!
+//! Given a parsed `ExecutableDocument` and an (optional) operation name:
+//!
+//! 1. **Resolve the operation** — find the target operation definition by name, or use the
+//!    sole operation if unnamed. Error if ambiguous or missing.
+//!
+//! 2. **Build a normalized IR** from the operation's selection set, recursively processing
+//!    each selection. This is a single bottom-up pass that builds and normalizes each level
+//!    before returning it to the parent:
+//!
+//!    a. **Fields** — collect the field name (dropping any alias), sorted argument names,
+//!       sorted directives, and recursively normalized child selections.
+//!
+//!    b. **Fragment spreads** — expand inline: replace `...FragName` with
+//!       `... on <TypeCondition> { <selections> }`, merging directives from both the spread
+//!       and the fragment definition. Unused fragments are naturally excluded. Cycles are
+//!       detected via a stack of currently-expanding fragment names.
+//!
+//!    c. **Inline fragments** — if bare (no type condition, no directives), flatten their
+//!       children directly into the parent selection set. Otherwise, keep as-is.
+//!
+//!    d. **Merge inline fragments** — at each level, merge inline fragments that share the
+//!       same `(type_condition, directives)` pair into a single inline fragment, combining
+//!       their child selections.
+//!
+//!    e. **Sort selections** — fields first (alphabetically by field name), then inline
+//!       fragments (by type condition, then by directives).
+//!
+//! 3. **Serialize** the normalized IR to a compact canonical string:
+//!    - Operation type keyword (`query`, `mutation`, `subscription`) with no name.
+//!    - Variable definitions are dropped entirely.
+//!    - All argument/directive values are replaced with `$_`.
+//!    - No whitespace except single spaces separating selections within `{ }`.
+//!    - Argument names are sorted alphabetically within each argument list.
+//!    - Directive names are sorted alphabetically.
+//!
+//! 4. **Signature** — optionally hash the canonical string with BLAKE3 to produce a
+//!    stable hex digest.
+//!
+//! ## Module Structure
+//!
+//! - [`ir`] — Normalized IR types. (Step 2 data structures)
+//! - [`build`] — Builds normalized IR from the parsed AST in a single recursive pass.
+//!   (Steps 2a–2e)
+//! - [`normalize`] — Entry point that orchestrates resolution, building, and serialization.
+//!   (Steps 1–3)
+//! - [`serialize`] — Writes the normalized IR to a canonical string. (Step 3)
+
 mod build;
 mod ir;
 mod normalize;
