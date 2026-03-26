@@ -1,0 +1,13 @@
+# No spreading itself within inline fragment
+query selfSpreadInInlineFragment {
+  dog {
+    ...inlineSelfFrag
+  }
+}
+
+fragment inlineSelfFrag on Dog {
+  ... on Dog {
+    name
+    ...inlineSelfFrag
+  }
+}

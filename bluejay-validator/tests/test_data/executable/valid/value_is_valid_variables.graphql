@@ -1,0 +1,21 @@
+# Valid default values
+query validDefaultValues($a: Int = 1, $b: String = "hello", $c: Boolean = true) {
+  arguments {
+    intArgField(intArg: $a)
+    stringArgField(stringArg: $b)
+    booleanArgField(booleanArg: $c)
+  }
+}
+
+# Valid default null values (nullable types)
+query validDefaultNull($a: Int = null, $b: String = null) {
+  arguments {
+    intArgField(intArg: $a)
+    stringArgField(stringArg: $b)
+  }
+}
+
+# Valid complex default value
+query validComplexDefault($a: ComplexInput = { name: "Fido" }) {
+  findDog(complex: $a) { name }
+}

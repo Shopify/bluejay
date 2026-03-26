@@ -1,0 +1,9 @@
+# Many duplicate input object fields
+query manyDuplicateFields {
+  findDog(complex: { name: "A", name: "B", name: "C" }) { name }
+}
+
+# Nested duplicate input object fields
+query nestedDuplicateFields {
+  withNestedInput(input: { inner: { name: "A", color: SIT, name: "B" }, id: 1 }) { name }
+}

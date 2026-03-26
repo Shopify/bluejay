@@ -1,0 +1,73 @@
+# Good int value
+query goodIntValue {
+  arguments {
+    intArgField(intArg: 2)
+  }
+}
+
+# Good negative int value
+query goodNegativeIntValue {
+  arguments {
+    intArgField(intArg: -2)
+  }
+}
+
+# Good float value
+query goodFloatValue {
+  arguments {
+    floatArgField(floatArg: 1.1)
+  }
+}
+
+# Good negative float value
+query goodNegativeFloatValue {
+  arguments {
+    floatArgField(floatArg: -1.1)
+  }
+}
+
+# Int into Float (spec allows this coercion)
+query intIntoFloat {
+  arguments {
+    floatArgField(floatArg: 1)
+  }
+}
+
+# Good boolean value
+query goodBooleanValue {
+  arguments {
+    booleanArgField(booleanArg: true)
+  }
+}
+
+# Good string value
+query goodStringValue {
+  arguments {
+    stringArgField(stringArg: "hello")
+  }
+}
+
+# Int into ID (spec allows)
+query intIntoID {
+  arguments {
+    idArgField(idArg: 1)
+  }
+}
+
+# String into ID (spec allows)
+query stringIntoID {
+  arguments {
+    idArgField(idArg: "abc123")
+  }
+}
+
+# Null into nullable type
+query nullIntoNullable {
+  arguments {
+    booleanArgField(booleanArg: null)
+    intArgField(intArg: null)
+    floatArgField(floatArg: null)
+    stringArgField(stringArg: null)
+    idArgField(idArg: null)
+  }
+}

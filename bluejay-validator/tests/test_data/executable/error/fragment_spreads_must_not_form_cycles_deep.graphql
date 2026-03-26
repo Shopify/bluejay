@@ -1,0 +1,19 @@
+# No spreading itself deeply — two paths
+query deepCycleTwoPaths {
+  dog {
+    ...deepFrag
+  }
+}
+
+fragment deepFrag on Dog {
+  ...midFragA
+  ...midFragB
+}
+
+fragment midFragA on Dog {
+  ...deepFrag
+}
+
+fragment midFragB on Dog {
+  ...deepFrag
+}

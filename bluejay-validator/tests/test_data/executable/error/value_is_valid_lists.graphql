@@ -1,0 +1,18 @@
+# Incorrect item type in list
+query incorrectListItemType {
+  arguments {
+    stringListArgField(stringListArg: ["one", 2])
+  }
+}
+
+# Single value of incorrect type into list
+query singleBadValueIntoList {
+  arguments {
+    stringListArgField(stringListArg: 2)
+  }
+}
+
+# Non-null list with null item
+query nullItemInNonNullList {
+  booleanList(booleanListArg: [true, null])
+}

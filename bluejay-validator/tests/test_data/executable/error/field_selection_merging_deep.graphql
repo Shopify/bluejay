@@ -1,0 +1,19 @@
+# Deep conflict — merged sub-selection has conflicting aliases
+query deepConflict {
+  dog {
+    x: owner {
+      y: name
+    }
+    x: owner {
+      y: pets { name }
+    }
+  }
+}
+
+# Same aliases with different field targets (direct)
+query aliasConflictOnDifferentFields {
+  dog {
+    x: name
+    x: nickname
+  }
+}

@@ -1,0 +1,148 @@
+---
+source: bluejay-validator/tests/executable_integration_test.rs
+expression: formatted_errors
+input_file: bluejay-validator/tests/test_data/executable/error/value_is_valid_scalars.graphql
+---
+Error: No implicit conversion of float to Int
+   ╭─[ value_is_valid_scalars.graphql:4:25 ]
+   │
+ 4 │     intArgField(intArg: 1.0)
+   │                         ─┬─  
+   │                          ╰─── No implicit conversion to Int
+───╯
+
+Error: No implicit conversion of string to Int
+    ╭─[ value_is_valid_scalars.graphql:10:25 ]
+    │
+ 10 │     intArgField(intArg: "3")
+    │                         ─┬─  
+    │                          ╰─── No implicit conversion to Int
+────╯
+
+Error: No implicit conversion of boolean to Int
+    ╭─[ value_is_valid_scalars.graphql:16:25 ]
+    │
+ 16 │     intArgField(intArg: true)
+    │                         ──┬─  
+    │                           ╰─── No implicit conversion to Int
+────╯
+
+Error: No implicit conversion of enum to Int
+    ╭─[ value_is_valid_scalars.graphql:22:25 ]
+    │
+ 22 │     intArgField(intArg: FOO)
+    │                         ─┬─  
+    │                          ╰─── No implicit conversion to Int
+────╯
+
+Error: No implicit conversion of string to Float
+    ╭─[ value_is_valid_scalars.graphql:29:29 ]
+    │
+ 29 │     floatArgField(floatArg: "3.0")
+    │                             ──┬──  
+    │                               ╰──── No implicit conversion to Float
+────╯
+
+Error: No implicit conversion of boolean to Float
+    ╭─[ value_is_valid_scalars.graphql:35:29 ]
+    │
+ 35 │     floatArgField(floatArg: true)
+    │                             ──┬─  
+    │                               ╰─── No implicit conversion to Float
+────╯
+
+Error: No implicit conversion of enum to Float
+    ╭─[ value_is_valid_scalars.graphql:41:29 ]
+    │
+ 41 │     floatArgField(floatArg: FOO)
+    │                             ─┬─  
+    │                              ╰─── No implicit conversion to Float
+────╯
+
+Error: No implicit conversion of integer to Boolean
+    ╭─[ value_is_valid_scalars.graphql:48:33 ]
+    │
+ 48 │     booleanArgField(booleanArg: 2)
+    │                                 ┬  
+    │                                 ╰── No implicit conversion to Boolean
+────╯
+
+Error: No implicit conversion of float to Boolean
+    ╭─[ value_is_valid_scalars.graphql:54:33 ]
+    │
+ 54 │     booleanArgField(booleanArg: 1.0)
+    │                                 ─┬─  
+    │                                  ╰─── No implicit conversion to Boolean
+────╯
+
+Error: No implicit conversion of string to Boolean
+    ╭─[ value_is_valid_scalars.graphql:60:33 ]
+    │
+ 60 │     booleanArgField(booleanArg: "true")
+    │                                 ───┬──  
+    │                                    ╰──── No implicit conversion to Boolean
+────╯
+
+Error: No implicit conversion of enum to Boolean
+    ╭─[ value_is_valid_scalars.graphql:66:33 ]
+    │
+ 66 │     booleanArgField(booleanArg: TRUE)
+    │                                 ──┬─  
+    │                                   ╰─── No implicit conversion to Boolean
+────╯
+
+Error: No implicit conversion of integer to String
+    ╭─[ value_is_valid_scalars.graphql:73:31 ]
+    │
+ 73 │     stringArgField(stringArg: 1)
+    │                               ┬  
+    │                               ╰── No implicit conversion to String
+────╯
+
+Error: No implicit conversion of float to String
+    ╭─[ value_is_valid_scalars.graphql:79:31 ]
+    │
+ 79 │     stringArgField(stringArg: 1.0)
+    │                               ─┬─  
+    │                                ╰─── No implicit conversion to String
+────╯
+
+Error: No implicit conversion of boolean to String
+    ╭─[ value_is_valid_scalars.graphql:85:31 ]
+    │
+ 85 │     stringArgField(stringArg: true)
+    │                               ──┬─  
+    │                                 ╰─── No implicit conversion to String
+────╯
+
+Error: No implicit conversion of enum to String
+    ╭─[ value_is_valid_scalars.graphql:91:31 ]
+    │
+ 91 │     stringArgField(stringArg: FOO)
+    │                               ─┬─  
+    │                                ╰─── No implicit conversion to String
+────╯
+
+Error: No implicit conversion of float to ID
+    ╭─[ value_is_valid_scalars.graphql:98:23 ]
+    │
+ 98 │     idArgField(idArg: 1.0)
+    │                       ─┬─  
+    │                        ╰─── No implicit conversion to ID
+────╯
+
+Error: No implicit conversion of boolean to ID
+     ╭─[ value_is_valid_scalars.graphql:104:23 ]
+     │
+ 104 │     idArgField(idArg: true)
+     │                       ──┬─  
+     │                         ╰─── No implicit conversion to ID
+─────╯
+
+Error: No implicit conversion of enum to ID
+     ╭─[ value_is_valid_scalars.graphql:110:23 ]
+     │
+ 110 │     idArgField(idArg: FOO)
+     │                       ─┬─  
+     │                        ╰─── No implicit conversion to ID
+─────╯

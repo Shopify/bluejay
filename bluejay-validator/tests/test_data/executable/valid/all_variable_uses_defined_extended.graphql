@@ -1,0 +1,25 @@
+# All variables deeply in inline fragments defined
+query deeplyInInlineFragments($atOtherHomes: Boolean) {
+  dog {
+    ... on Dog {
+      isHouseTrained(atOtherHomes: $atOtherHomes)
+    }
+  }
+}
+
+# Variable within single fragment defined in multiple operations
+query op1($atOtherHomes: Boolean) {
+  dog {
+    ...sharedFrag
+  }
+}
+
+query op2($atOtherHomes: Boolean) {
+  dog {
+    ...sharedFrag
+  }
+}
+
+fragment sharedFrag on Dog {
+  isHouseTrained(atOtherHomes: $atOtherHomes)
+}

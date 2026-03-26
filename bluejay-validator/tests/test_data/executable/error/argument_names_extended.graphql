@@ -1,0 +1,19 @@
+# Unknown args amongst known args
+query unknownAmongstKnown {
+  arguments {
+    multipleRequirements(x: 1, y: 2, z: 3)
+  }
+}
+
+# Unknown args deeply
+query unknownArgsDeeply {
+  dog {
+    owner {
+      pets {
+        ... on Dog {
+          doesKnowCommand(unknown: SIT, dogCommand: SIT)
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,10 @@
+# Fragment on input object type (invalid)
+fragment fragOnInput on ComplexInput {
+  name
+}
+
+{
+  dog {
+    ...fragOnInput
+  }
+}

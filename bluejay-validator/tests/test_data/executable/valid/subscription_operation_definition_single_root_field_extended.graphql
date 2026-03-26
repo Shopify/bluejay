@@ -1,0 +1,11 @@
+# Valid subscription with fragment
+subscription subWithFragment {
+  ...messageFrag
+}
+
+fragment messageFrag on Subscription {
+  newMessage {
+    body
+    sender
+  }
+}

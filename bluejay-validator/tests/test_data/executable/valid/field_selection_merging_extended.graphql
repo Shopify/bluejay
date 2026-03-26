@@ -1,0 +1,95 @@
+# Unique fields (no overlap)
+query uniqueFields {
+  dog {
+    name
+    nickname
+  }
+}
+
+# Different args with different aliases (no conflict)
+query differentArgsWithDifferentAliases {
+  dog {
+    knowsSit: doesKnowCommand(dogCommand: SIT)
+    knowsDown: doesKnowCommand(dogCommand: DOWN)
+  }
+}
+
+# Different skip/include directives accepted
+query differentSkipInclude {
+  dog {
+    name @include(if: true)
+    name @include(if: false)
+  }
+}
+
+# Same aliases allowed on non-overlapping types
+query sameAliasNonOverlapping {
+  catOrDog {
+    ... on Dog {
+      name
+    }
+    ... on Cat {
+      name
+    }
+  }
+}
+
+# Alias masking direct field access (same field, compatible)
+query aliasMaskingDirectFieldAccess {
+  dog {
+    name
+    name
+  }
+}
+
+# Identical fields with identical directives
+query identicalFieldsWithDirectives {
+  dog {
+    name @include(if: true)
+    name @include(if: true)
+  }
+}
+
+# Different args, second adds an argument (non-overlapping types)
+query differentArgsNonOverlapping {
+  pet {
+    ... on Dog {
+      doesKnowCommand(dogCommand: SIT)
+    }
+    ... on Cat {
+      doesKnowCommand(catCommand: JUMP)
+    }
+  }
+}
+
+# Allows inline fragments without type condition
+query inlineFragmentWithoutTypeCondition {
+  dog {
+    ... {
+      name
+    }
+    ... {
+      name
+    }
+  }
+}
+
+# Deep fields that are compatible
+query deepCompatibleFields {
+  dog {
+    owner {
+      name
+    }
+    owner {
+      name
+    }
+  }
+}
+
+# Allows different order of args
+query differentArgOrder {
+  arguments {
+    multipleRequirements(x: 1, y: 2)
+    multipleRequirements(y: 2, x: 1)
+  }
+}

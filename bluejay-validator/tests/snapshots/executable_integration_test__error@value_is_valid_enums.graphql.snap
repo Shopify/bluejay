@@ -1,0 +1,52 @@
+---
+source: bluejay-validator/tests/executable_integration_test.rs
+expression: formatted_errors
+input_file: bluejay-validator/tests/test_data/executable/error/value_is_valid_enums.graphql
+---
+Error: No implicit conversion of integer to DogCommand
+   ╭─[ value_is_valid_enums.graphql:4:27 ]
+   │
+ 4 │     enumArgField(enumArg: 2)
+   │                           ┬  
+   │                           ╰── No implicit conversion to DogCommand
+───╯
+
+Error: No implicit conversion of float to DogCommand
+    ╭─[ value_is_valid_enums.graphql:11:27 ]
+    │
+ 11 │     enumArgField(enumArg: 1.0)
+    │                           ─┬─  
+    │                            ╰─── No implicit conversion to DogCommand
+────╯
+
+Error: No implicit conversion of string to DogCommand
+    ╭─[ value_is_valid_enums.graphql:18:27 ]
+    │
+ 18 │     enumArgField(enumArg: "SIT")
+    │                           ──┬──  
+    │                             ╰──── No implicit conversion to DogCommand
+────╯
+
+Error: No implicit conversion of boolean to DogCommand
+    ╭─[ value_is_valid_enums.graphql:25:27 ]
+    │
+ 25 │     enumArgField(enumArg: true)
+    │                           ──┬─  
+    │                             ╰─── No implicit conversion to DogCommand
+────╯
+
+Error: No member `UNKNOWN_VALUE` on enum DogCommand
+    ╭─[ value_is_valid_enums.graphql:32:27 ]
+    │
+ 32 │     enumArgField(enumArg: UNKNOWN_VALUE)
+    │                           ──────┬──────  
+    │                                 ╰──────── No such member on enum DogCommand
+────╯
+
+Error: No member `sit` on enum DogCommand
+    ╭─[ value_is_valid_enums.graphql:39:27 ]
+    │
+ 39 │     enumArgField(enumArg: sit)
+    │                           ─┬─  
+    │                            ╰─── No such member on enum DogCommand
+────╯

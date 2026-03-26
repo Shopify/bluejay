@@ -1,0 +1,24 @@
+# Multiple variables not defined
+query multipleUndefined {
+  dog {
+    isHouseTrained(atOtherHomes: $a)
+    doesKnowCommand(dogCommand: $b)
+  }
+}
+
+# Variable in fragment used by other operation (not defined in that operation)
+query definesVar($atOtherHomes: Boolean) {
+  dog {
+    name
+  }
+}
+
+query usesFragWithoutDefining {
+  dog {
+    ...houseTrainedFrag
+  }
+}
+
+fragment houseTrainedFrag on Dog {
+  isHouseTrained(atOtherHomes: $atOtherHomes)
+}

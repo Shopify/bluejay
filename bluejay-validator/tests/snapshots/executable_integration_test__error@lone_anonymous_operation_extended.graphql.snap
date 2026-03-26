@@ -1,0 +1,20 @@
+---
+source: bluejay-validator/tests/executable_integration_test.rs
+expression: formatted_errors
+input_file: bluejay-validator/tests/test_data/executable/error/lone_anonymous_operation_extended.graphql
+---
+Error: Anonymous operation not lone operation in document
+   ╭─[ lone_anonymous_operation_extended.graphql:1:1 ]
+   │
+ 2 │   ╭─▶ {
+   ┆   ┆   
+ 4 │   ├─▶ }
+   │   │       
+   │   ╰─────── Anonymous operation definition
+   │ 
+ 6 │ ╭───▶ {
+   ┆ ┆     
+ 8 │ ├───▶ }
+   │ │         
+   │ ╰───────── Anonymous operation definition
+───╯

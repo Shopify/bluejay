@@ -1,0 +1,40 @@
+---
+source: bluejay-validator/tests/executable_integration_test.rs
+expression: formatted_errors
+input_file: bluejay-validator/tests/test_data/executable/error/fragment_spreads_must_not_form_cycles_deep.graphql
+---
+Error: Cycle detected in fragment `deepFrag`
+    ╭─[ fragment_spreads_must_not_form_cycles_deep.graphql:14:6 ]
+    │
+  8 │ fragment deepFrag on Dog {
+    │          ────┬───  
+    │              ╰───── Affected fragment definition
+    │ 
+ 14 │   ...deepFrag
+    │      ────┬───  
+    │          ╰───── Cycle introduced by fragment spread
+────╯
+
+Error: Cycle detected in fragment `midFragA`
+    ╭─[ fragment_spreads_must_not_form_cycles_deep.graphql:9:6 ]
+    │
+  9 │   ...midFragA
+    │      ────┬───  
+    │          ╰───── Cycle introduced by fragment spread
+    │ 
+ 13 │ fragment midFragA on Dog {
+    │          ────┬───  
+    │              ╰───── Affected fragment definition
+────╯
+
+Error: Cycle detected in fragment `midFragB`
+    ╭─[ fragment_spreads_must_not_form_cycles_deep.graphql:10:6 ]
+    │
+ 10 │   ...midFragB
+    │      ────┬───  
+    │          ╰───── Cycle introduced by fragment spread
+    │ 
+ 17 │ fragment midFragB on Dog {
+    │          ────┬───  
+    │              ╰───── Affected fragment definition
+────╯

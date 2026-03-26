@@ -1,0 +1,20 @@
+---
+source: bluejay-validator/tests/executable_integration_test.rs
+expression: formatted_errors
+input_file: bluejay-validator/tests/test_data/executable/error/required_arguments_extended.graphql
+---
+Error: Field `multipleRequirements` missing argument(s): x, y
+   ╭─[ required_arguments_extended.graphql:4:5 ]
+   │
+ 4 │     multipleRequirements
+   │     ──────────┬─────────  
+   │               ╰─────────── Missing argument(s): x, y
+───╯
+
+Error: Directive `include` missing argument(s): if
+    ╭─[ required_arguments_extended.graphql:11:10 ]
+    │
+ 11 │     name @include
+    │          ────┬───  
+    │              ╰───── Missing argument(s): if
+────╯

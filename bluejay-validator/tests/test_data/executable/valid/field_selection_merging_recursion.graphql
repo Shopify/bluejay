@@ -1,0 +1,40 @@
+# Fragment with field named after fragment (not recursive)
+query fieldNamedAfterFragment {
+  dog {
+    ...nameFragment
+  }
+}
+
+fragment nameFragment on Dog {
+  name
+  barkVolume
+}
+
+# Multiple fragments that don't conflict
+query multipleFragmentsNoConflict {
+  dog {
+    ...fragA
+    ...fragB
+  }
+}
+
+fragment fragA on Dog {
+  name
+}
+
+fragment fragB on Dog {
+  nickname
+  barkVolume
+}
+
+# Fragment spread on interface with overlapping fields
+query fragmentOnInterface {
+  pet {
+    ...petNameFrag
+    ...petNameFrag
+  }
+}
+
+fragment petNameFrag on Pet {
+  name
+}

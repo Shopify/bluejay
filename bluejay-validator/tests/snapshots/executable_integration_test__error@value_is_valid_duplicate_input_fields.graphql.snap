@@ -1,0 +1,26 @@
+---
+source: bluejay-validator/tests/executable_integration_test.rs
+expression: formatted_errors
+input_file: bluejay-validator/tests/test_data/executable/error/value_is_valid_duplicate_input_fields.graphql
+---
+Error: Object with multiple entries for field name
+   ╭─[ value_is_valid_duplicate_input_fields.graphql:1:1 ]
+   │
+ 3 │   findDog(complex: { name: "A", name: "B", name: "C" }) { name }
+   │                      ──┬─       ──┬─       ──┬─  
+   │                        ╰───────────────────────── Entry for field
+   │                                   │          │   
+   │                                   ╰────────────── Entry for field
+   │                                              │   
+   │                                              ╰─── Entry for field
+───╯
+
+Error: Object with multiple entries for field name
+   ╭─[ value_is_valid_duplicate_input_fields.graphql:1:1 ]
+   │
+ 8 │   withNestedInput(input: { inner: { name: "A", color: SIT, name: "B" }, id: 1 }) { name }
+   │                                     ──┬─                   ──┬─  
+   │                                       ╰────────────────────────── Entry for field
+   │                                                              │   
+   │                                                              ╰─── Entry for field
+───╯

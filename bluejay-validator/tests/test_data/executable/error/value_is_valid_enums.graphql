@@ -1,0 +1,41 @@
+# Int into enum
+query intIntoEnum {
+  arguments {
+    enumArgField(enumArg: 2)
+  }
+}
+
+# Float into enum
+query floatIntoEnum {
+  arguments {
+    enumArgField(enumArg: 1.0)
+  }
+}
+
+# String into enum (quoted)
+query stringIntoEnum {
+  arguments {
+    enumArgField(enumArg: "SIT")
+  }
+}
+
+# Boolean into enum
+query booleanIntoEnum {
+  arguments {
+    enumArgField(enumArg: true)
+  }
+}
+
+# Unknown enum value
+query unknownEnumValue {
+  arguments {
+    enumArgField(enumArg: UNKNOWN_VALUE)
+  }
+}
+
+# Different case enum value
+query differentCaseEnumValue {
+  arguments {
+    enumArgField(enumArg: sit)
+  }
+}

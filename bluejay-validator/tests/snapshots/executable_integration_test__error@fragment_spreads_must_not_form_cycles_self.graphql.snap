@@ -1,0 +1,16 @@
+---
+source: bluejay-validator/tests/executable_integration_test.rs
+expression: formatted_errors
+input_file: bluejay-validator/tests/test_data/executable/error/fragment_spreads_must_not_form_cycles_self.graphql
+---
+Error: Cycle detected in fragment `selfFrag`
+    ╭─[ fragment_spreads_must_not_form_cycles_self.graphql:10:6 ]
+    │
+  8 │ fragment selfFrag on Dog {
+    │          ────┬───  
+    │              ╰───── Affected fragment definition
+    │ 
+ 10 │   ...selfFrag
+    │      ────┬───  
+    │          ╰───── Cycle introduced by fragment spread
+────╯

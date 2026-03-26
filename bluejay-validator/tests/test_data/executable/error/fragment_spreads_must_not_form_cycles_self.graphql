@@ -1,0 +1,11 @@
+# No spreading itself directly
+query selfSpread {
+  dog {
+    ...selfFrag
+  }
+}
+
+fragment selfFrag on Dog {
+  name
+  ...selfFrag
+}

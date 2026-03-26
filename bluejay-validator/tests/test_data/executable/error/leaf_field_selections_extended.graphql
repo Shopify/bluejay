@@ -1,0 +1,17 @@
+# Scalar selection not allowed on Boolean with args
+query scalarWithArgs {
+  dog {
+    isHouseTrained(atOtherHomes: true) {
+      sinceWhen
+    }
+  }
+}
+
+# Scalar selection not allowed on enum
+query scalarOnEnum {
+  dog {
+    doesKnowCommand(dogCommand: SIT) {
+      something
+    }
+  }
+}

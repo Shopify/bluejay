@@ -1,0 +1,11 @@
+# Conflicting return types on differing non-overlapping types
+query conflictingReturnTypes {
+  pet {
+    ... on Dog {
+      someValue: barkVolume
+    }
+    ... on Cat {
+      someValue: name
+    }
+  }
+}

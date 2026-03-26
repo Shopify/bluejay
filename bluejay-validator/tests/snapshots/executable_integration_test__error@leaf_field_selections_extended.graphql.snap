@@ -1,0 +1,24 @@
+---
+source: bluejay-validator/tests/executable_integration_test.rs
+expression: formatted_errors
+input_file: bluejay-validator/tests/test_data/executable/error/leaf_field_selections_extended.graphql
+---
+Error: Selection on field of leaf type `Boolean!` was not empty
+   ╭─[ leaf_field_selections_extended.graphql:4:40 ]
+   │
+ 4 │ ╭─▶     isHouseTrained(atOtherHomes: true) {
+   ┆ ┆   
+ 6 │ ├─▶     }
+   │ │           
+   │ ╰─────────── Selection set on field of leaf type must be empty
+───╯
+
+Error: Selection on field of leaf type `Boolean!` was not empty
+    ╭─[ leaf_field_selections_extended.graphql:13:38 ]
+    │
+ 13 │ ╭─▶     doesKnowCommand(dogCommand: SIT) {
+    ┆ ┆   
+ 15 │ ├─▶     }
+    │ │           
+    │ ╰─────────── Selection set on field of leaf type must be empty
+────╯

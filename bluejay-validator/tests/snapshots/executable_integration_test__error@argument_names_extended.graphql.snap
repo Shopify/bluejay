@@ -1,0 +1,20 @@
+---
+source: bluejay-validator/tests/executable_integration_test.rs
+expression: formatted_errors
+input_file: bluejay-validator/tests/test_data/executable/error/argument_names_extended.graphql
+---
+Error: Field `multipleRequirements` does not define an argument named `z`
+   ╭─[ argument_names_extended.graphql:4:38 ]
+   │
+ 4 │     multipleRequirements(x: 1, y: 2, z: 3)
+   │                                      ┬  
+   │                                      ╰── No argument definition with this name
+───╯
+
+Error: Field `doesKnowCommand` does not define an argument named `unknown`
+    ╭─[ argument_names_extended.graphql:14:27 ]
+    │
+ 14 │           doesKnowCommand(unknown: SIT, dogCommand: SIT)
+    │                           ───┬───  
+    │                              ╰───── No argument definition with this name
+────╯

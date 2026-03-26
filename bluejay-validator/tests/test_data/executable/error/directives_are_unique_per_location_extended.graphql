@@ -1,0 +1,9 @@
+# Many duplicate directives in one location
+query ($a: Boolean = true, $b: Boolean = false, $c: Boolean = true) {
+  dog @skip(if: $a) @skip(if: $b) @skip(if: $c) { name }
+}
+
+# Different duplicate directives in one location
+query differentDuplicates($a: Boolean = true) {
+  dog @skip(if: $a) @include(if: $a) @skip(if: $a) @include(if: $a) { name }
+}

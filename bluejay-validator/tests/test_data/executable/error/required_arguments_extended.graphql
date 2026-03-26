@@ -1,0 +1,13 @@
+# Missing multiple non-nullable arguments
+query missingMultipleRequiredArgs {
+  arguments {
+    multipleRequirements
+  }
+}
+
+# Missing directive required argument
+query missingDirectiveArg {
+  dog {
+    name @include
+  }
+}
