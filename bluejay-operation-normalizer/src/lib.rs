@@ -191,7 +191,7 @@ mod tests {
 
     #[test]
     fn variable_definitions_dropped() {
-        let doc = parse("query ($z: String, $a: Int, $m: Boolean) { field }");
+        let doc = parse("query($z: String, $a: Int, $m: Boolean) { field }");
         assert_eq!(normalize(&doc, None).unwrap(), "query{field}");
     }
 
@@ -262,8 +262,10 @@ mod tests {
             fragment B on T { ...C b }
             fragment C on T { c }",
         );
-        let result = normalize(&doc, None).unwrap();
-        assert_eq!(result, "query{...on T{a ...on T{b ...on T{c}}}}");
+        assert_eq!(
+            normalize(&doc, None).unwrap(),
+            "query{...on T{a ...on T{b ...on T{c}}}}"
+        );
     }
 
     #[test]
@@ -273,9 +275,7 @@ mod tests {
             fragment Used on Query { a }
             fragment Unused on Query { b }",
         );
-        let result = normalize(&doc, None).unwrap();
-        assert!(!result.contains("Unused"));
-        assert!(!result.contains("b"));
+        assert_eq!(normalize(&doc, None).unwrap(), "query{...on Query{a}}");
     }
 
     #[test]
@@ -392,6 +392,17 @@ mod tests {
         );
     }
 
+    #[test]
+    fn repeated_directives_preserved() {
+        let doc = parse(
+            r#"query { products @filter(field: "price", op: "gt", value: "10") @filter(field: "category", op: "eq", value: "electronics") { id } }"#,
+        );
+        assert_eq!(
+            normalize(&doc, None).unwrap(),
+            "query{products@filter(field:$_,op:$_,value:$_)@filter(field:$_,op:$_,value:$_){id}}"
+        );
+    }
+
     // === Operation types ===
 
     #[test]
@@ -497,7 +508,7 @@ mod tests {
     #[test]
     fn different_variable_names_same_hash() {
         let a = parse("query($foo: String) { field(arg: $foo) }");
-        let b = parse("query($bar: String) { field(arg: $bar) }");
+        let b = parse(r#"query($bar: String! = "Thing") { field(arg: $bar) }"#);
         assert_eq!(normalize(&a, None).unwrap(), normalize(&b, None).unwrap(),);
     }
 
@@ -567,6 +578,29 @@ mod tests {
         assert_eq!(
             normalize(&doc, None).unwrap(),
             "query{...on T@a@b@c@d{field}}"
+        );
+    }
+
+    #[test]
+    fn three_same_type_inline_fragments_merged() {
+        let doc = parse("query { ... on T { a } ... on T { b } ... on T { c } }");
+        assert_eq!(normalize(&doc, None).unwrap(), "query{...on T{a b c}}");
+    }
+
+    #[test]
+    fn three_same_type_fragments_with_interleaved_other() {
+        // IF_A, IF_B, IF_A2, IF_A3 — tests swap_remove doesn't skip elements
+        let doc = parse(
+            "query {
+                ... on T { a }
+                ... on Other { x }
+                ... on T { b }
+                ... on T { c }
+            }",
+        );
+        assert_eq!(
+            normalize(&doc, None).unwrap(),
+            "query{...on Other{x} ...on T{a b c}}"
         );
     }
 
