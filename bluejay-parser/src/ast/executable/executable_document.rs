@@ -147,6 +147,50 @@ mod tests {
     use super::{ExecutableDocument, Parse};
     use crate::ast::ParseOptions;
 
+    /// Verifies that the ExecutableDefinitionsRule from the GraphQL spec
+    /// (sec 5.1.1) is enforced at the parser level: type and schema definitions
+    /// are rejected when parsing as an ExecutableDocument.
+    #[test]
+    fn rejects_type_definition() {
+        let doc = r#"
+            type Foo {
+                bar: String
+            }
+        "#;
+        let result = ExecutableDocument::parse(doc).result;
+        assert!(
+            result.is_err(),
+            "Expected parse error for type definition in executable document"
+        );
+    }
+
+    #[test]
+    fn rejects_schema_definition() {
+        let doc = r#"
+            schema {
+                query: Query
+            }
+        "#;
+        let result = ExecutableDocument::parse(doc).result;
+        assert!(
+            result.is_err(),
+            "Expected parse error for schema definition in executable document"
+        );
+    }
+
+    #[test]
+    fn rejects_mixed_executable_and_type_definitions() {
+        let doc = r#"
+            query { foo }
+            type Bar { baz: Int }
+        "#;
+        let result = ExecutableDocument::parse(doc).result;
+        assert!(
+            result.is_err(),
+            "Expected parse error when mixing executable and type definitions"
+        );
+    }
+
     #[test]
     fn test_success() {
         let document = r#"
