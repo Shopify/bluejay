@@ -20,11 +20,7 @@ pub(crate) fn serialize(
     selections: &[NormalizedSelection<'_, '_>],
 ) -> String {
     let mut out = String::with_capacity(256);
-    out.push_str(match op_type {
-        OperationType::Query => "query",
-        OperationType::Mutation => "mutation",
-        OperationType::Subscription => "subscription",
-    });
+    out.push_str(op_type.as_ref());
     write_directives(&mut out, directives);
     write_selection_set(&mut out, selections);
     out

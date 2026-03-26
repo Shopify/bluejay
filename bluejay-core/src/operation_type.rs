@@ -1,7 +1,7 @@
 use crate::definition::DirectiveLocation;
-use strum::{Display, EnumString, VariantNames};
+use strum::{AsRefStr, Display, EnumString, VariantNames};
 
-#[derive(Debug, Clone, Copy, PartialEq, EnumString, Display, VariantNames)]
+#[derive(Debug, Clone, Copy, PartialEq, EnumString, AsRefStr, Display, VariantNames)]
 #[strum(serialize_all = "camelCase")]
 pub enum OperationType {
     Query,

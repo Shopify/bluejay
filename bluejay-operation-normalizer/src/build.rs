@@ -138,25 +138,27 @@ fn normalize_in_place(selections: &mut BVec<'_, NormalizedSelection<'_, '_>>) {
                     };
                     if should_merge {
                         let removed = selections.swap_remove(j);
-                        if let NormalizedSelection::InlineFragment(inf) = removed {
-                            if let NormalizedSelection::InlineFragment(ref mut target) =
-                                selections[i]
-                            {
-                                target.selections.extend(inf.selections);
-                                merged = true;
-                            }
-                        }
+                        let NormalizedSelection::InlineFragment(inf) = removed else {
+                            unreachable!("should_merge guarantees InlineFragment");
+                        };
+                        let NormalizedSelection::InlineFragment(ref mut target) = selections[i]
+                        else {
+                            unreachable!("should_merge guarantees InlineFragment");
+                        };
+                        target.selections.extend(inf.selections);
+                        merged = true;
                     } else {
                         j += 1;
                     }
                 }
                 // Only re-sort if we actually merged something
                 if merged {
-                    if let NormalizedSelection::InlineFragment(ref mut target) = selections[i] {
-                        target
-                            .selections
-                            .sort_unstable_by(|a, b| cmp_selections(a, b));
-                    }
+                    let NormalizedSelection::InlineFragment(ref mut target) = selections[i] else {
+                        unreachable!("outer if let guarantees InlineFragment");
+                    };
+                    target
+                        .selections
+                        .sort_unstable_by(|a, b| cmp_selections(a, b));
                 }
             }
             i += 1;
