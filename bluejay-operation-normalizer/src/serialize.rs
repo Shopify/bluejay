@@ -2,9 +2,10 @@
 //!
 //! Output format:
 //! - Operation type keyword, no operation name, no variable definitions.
-//! - All argument and directive values replaced with `$_`.
+//! - Argument and directive values are omitted, leaving only `name:` (matching
+//!   the [ArgumentCoordinate](https://spec.graphql.org/draft/#ArgumentCoordinate) format).
 //! - No whitespace except single spaces separating selections within `{ }`.
-//! - Example: `query{field(a:$_,b:$_)@dir{nested}}`
+//! - Example: `query{field(a:,b:)@dir{nested}}`
 
 use bluejay_core::OperationType;
 
@@ -80,7 +81,7 @@ fn write_arguments(out: &mut String, arg_names: &[&str]) {
             out.push(',');
         }
         out.push_str(name);
-        out.push_str(":$_");
+        out.push(':');
     }
     out.push(')');
 }

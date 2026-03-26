@@ -28,7 +28,7 @@
 //!       # input
 //!       { myAlias: field(z: 1, a: 2) }
 //!       # normalized
-//!       query{field(a:$_,z:$_)}
+//!       query{field(a:,z:)}
 //!       ```
 //!
 //!    b. **Fragment spreads** — expand inline: replace `...FragName` with
@@ -74,7 +74,7 @@
 //! 3. **Serialize** the normalized IR to a compact canonical string:
 //!    - Operation type keyword (`query`, `mutation`, `subscription`) with no name.
 //!    - Variable definitions are dropped entirely.
-//!    - All argument/directive values are replaced with `$_`.
+//!    - Argument and directive values are omitted (only `name:` is kept).
 //!    - No whitespace except single spaces separating selections within `{ }`.
 //!    - Argument names are sorted alphabetically within each argument list.
 //!    - Directive names are sorted alphabetically.
@@ -83,8 +83,8 @@
 //!    query MyQuery($id: ID!) @z @a {
 //!      user(id: $id) { name email }
 //!    }
-//!    # normalized — name dropped, vars dropped, directives sorted, values → $_
-//!    query@a@z{user(id:$_){email name}}
+//!    # normalized — name dropped, vars dropped, directives sorted, values omitted
+//!    query@a@z{user(id:){email name}}
 //!    ```
 //!
 //! 4. **Signature** — optionally hash the canonical string with BLAKE3 to produce a
@@ -171,15 +171,12 @@ mod tests {
         assert_eq!(normalize(&doc, None).unwrap(), "query{a a a}");
     }
 
-    // === Argument handling (all values become $_) ===
+    // === Argument handling (values omitted) ===
 
     #[test]
     fn arguments_sorted_and_values_replaced() {
         let doc = parse("{ field(z: 1, a: 2, m: 3) }");
-        assert_eq!(
-            normalize(&doc, None).unwrap(),
-            "query{field(a:$_,m:$_,z:$_)}"
-        );
+        assert_eq!(normalize(&doc, None).unwrap(), "query{field(a:,m:,z:)}");
     }
 
     #[test]
@@ -189,7 +186,7 @@ mod tests {
         );
         assert_eq!(
             normalize(&doc, None).unwrap(),
-            "query{field(a:$_,b:$_,c:$_,d:$_,e:$_,f:$_,g:$_,h:$_,i:$_,j:$_)}"
+            "query{field(a:,b:,c:,d:,e:,f:,g:,h:,i:,j:)}"
         );
     }
 
@@ -292,7 +289,7 @@ mod tests {
         );
         assert_eq!(
             normalize(&doc, None).unwrap(),
-            "query{...on T@deprecated@skip(if:$_){a}}"
+            "query{...on T@deprecated@skip(if:){a}}"
         );
     }
 
@@ -311,7 +308,7 @@ mod tests {
         let doc = parse("{ ... @include(if: true) { field } }");
         assert_eq!(
             normalize(&doc, None).unwrap(),
-            "query{...@include(if:$_){field}}"
+            "query{...@include(if:){field}}"
         );
     }
 
@@ -368,7 +365,7 @@ mod tests {
         let doc = parse("query { field(z: 1) field(a: 1) field }");
         assert_eq!(
             normalize(&doc, None).unwrap(),
-            "query{field field(a:$_) field(z:$_)}"
+            "query{field field(a:) field(z:)}"
         );
     }
 
@@ -377,7 +374,7 @@ mod tests {
         let doc = parse("query { field(a: 1) @z field(a: 1) @a }");
         assert_eq!(
             normalize(&doc, None).unwrap(),
-            "query{field(a:$_)@a field(a:$_)@z}"
+            "query{field(a:)@a field(a:)@z}"
         );
     }
 
@@ -392,10 +389,7 @@ mod tests {
     #[test]
     fn directive_arguments_sorted() {
         let doc = parse("{ field @custom(z: 1, a: 2) }");
-        assert_eq!(
-            normalize(&doc, None).unwrap(),
-            "query{field@custom(a:$_,z:$_)}"
-        );
+        assert_eq!(normalize(&doc, None).unwrap(), "query{field@custom(a:,z:)}");
     }
 
     #[test]
@@ -405,7 +399,7 @@ mod tests {
         );
         assert_eq!(
             normalize(&doc, None).unwrap(),
-            "query{products@filter(field:$_,op:$_,value:$_)@filter(field:$_,op:$_,value:$_){id}}"
+            "query{products@filter(field:,op:,value:)@filter(field:,op:,value:){id}}"
         );
     }
 
@@ -470,13 +464,13 @@ mod tests {
     // === Idempotency ===
 
     #[test]
-    fn idempotency() {
+    fn deterministic() {
         let input = "query @dir { b a field(x: 1) }";
-        let doc1 = parse(input);
-        let normalized1 = normalize(&doc1, None).unwrap();
-        let doc2 = parse(&normalized1);
-        let normalized2 = normalize(&doc2, None).unwrap();
-        assert_eq!(normalized1, normalized2);
+        let doc = parse(input);
+        assert_eq!(
+            normalize(&doc, None).unwrap(),
+            normalize(&doc, None).unwrap()
+        );
     }
 
     // === Canonical form: different representations → same hash ===
@@ -561,7 +555,7 @@ mod tests {
         let doc = parse("query @z(x: 1) @a(b: 2, c: 3) @m { field }");
         assert_eq!(
             normalize(&doc, None).unwrap(),
-            "query@a(b:$_,c:$_)@m@z(x:$_){field}"
+            "query@a(b:,c:)@m@z(x:){field}"
         );
     }
 
@@ -570,7 +564,7 @@ mod tests {
         let doc = parse("query { ... on User @skip(if: true) @include(if: false) { name } }");
         assert_eq!(
             normalize(&doc, None).unwrap(),
-            "query{...on User@include(if:$_)@skip(if:$_){name}}"
+            "query{...on User@include(if:)@skip(if:){name}}"
         );
     }
 

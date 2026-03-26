@@ -7,7 +7,7 @@
 use bumpalo::collections::Vec as BVec;
 
 /// A directive with its name and sorted argument names (step 2a).
-/// Argument values are irrelevant — all serialize as `$_`.
+/// Argument values are omitted during serialization.
 #[derive(Clone, Debug)]
 pub(crate) struct NormalizedDirective<'a, 'bump> {
     pub name: &'a str,
