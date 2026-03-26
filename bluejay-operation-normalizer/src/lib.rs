@@ -1,9 +1,15 @@
 //! # GraphQL Operation Normalizer
 //!
 //! Produces a **canonical string representation** of a GraphQL operation, suitable for
-//! generating stable signatures (hashes) that are identical for semantically equivalent
-//! operations regardless of cosmetic differences like whitespace, field ordering, alias
-//! names, or fragment style.
+//! generating stable signatures (hashes) that group operations by structure rather than
+//! syntax. Two operations that differ only in whitespace, field ordering, alias names,
+//! fragment style, argument values, or variable definitions will produce the same
+//! signature.
+//!
+//! The normalizer eliminates the most common sources of trivial divergence while keeping
+//! the implementation simple. It does **not** attempt full semantic equivalence — for
+//! example, duplicate fields are not merged, and inline fragments are only merged at the
+//! same nesting level, not across parent-child boundaries.
 //!
 //! ## Normalization Algorithm
 //!
