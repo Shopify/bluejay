@@ -11,5 +11,3 @@ query argsKnownDeeply {
   }
 }
 
-# Ignores args of unknown fields (caught by FieldSelections rule)
-# The argument rule should not additionally error on args of fields that don't exist

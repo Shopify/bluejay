@@ -3,16 +3,6 @@ source: bluejay-validator/tests/executable_integration_test.rs
 expression: formatted_errors
 input_file: bluejay-validator/tests/test_data/executable/error/subscription_operation_definition_single_root_field_extended.graphql
 ---
-Error: Anonymous operation not lone operation in document
-    ╭─[ subscription_operation_definition_single_root_field_extended.graphql:1:1 ]
-    │
-  9 │ ╭─▶ subscription {
-    ┆ ┆   
- 12 │ ├─▶ }
-    │ │       
-    │ ╰─────── Anonymous operation definition
-────╯
-
 Error: Subscription root is not a single field
    ╭─[ subscription_operation_definition_single_root_field_extended.graphql:2:29 ]
    │
@@ -22,13 +12,3 @@ Error: Subscription root is not a single field
    │ │       
    │ ╰─────── Selection set contains multiple fields
 ───╯
-
-Error: Subscription root is not a single field
-    ╭─[ subscription_operation_definition_single_root_field_extended.graphql:9:14 ]
-    │
-  9 │ ╭─▶ subscription {
-    ┆ ┆   
- 12 │ ├─▶ }
-    │ │       
-    │ ╰─────── Selection set contains multiple fields
-────╯

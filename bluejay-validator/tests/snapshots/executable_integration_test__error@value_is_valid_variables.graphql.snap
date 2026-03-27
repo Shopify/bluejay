@@ -34,19 +34,3 @@ Error: No implicit conversion of integer to String
     │                                                     ┬  
     │                                                     ╰── No implicit conversion to String
 ────╯
-
-Error: Got null when non-null value of type Boolean! was expected
-    ╭─[ value_is_valid_variables.graphql:30:47 ]
-    │
- 30 │     nonNullBooleanArgField(nonNullBooleanArg: null)
-    │                                               ──┬─  
-    │                                                 ╰─── Expected non-null value
-────╯
-
-Error: Got null when non-null value of type Int! was expected
-    ╭─[ value_is_valid_variables.graphql:31:39 ]
-    │
- 31 │     nonNullIntArgField(nonNullIntArg: null)
-    │                                       ──┬─  
-    │                                         ╰─── Expected non-null value
-────╯

@@ -5,8 +5,7 @@ query stringOverBoolean($a: String) {
   }
 }
 
-# String => [String] (scalar into list position — depends on spec interpretation)
-# But [String] => [String!] is invalid (nullable inner into non-null inner)
+# [Boolean] => [Boolean!] is invalid (nullable inner into non-null inner)
 query nullableInnerIntoNonNullInner($a: [Boolean]) {
   arguments {
     nonNullBooleanListField(nonNullBooleanListArg: $a)

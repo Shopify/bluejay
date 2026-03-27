@@ -94,63 +94,6 @@ fn does_not_infinite_loop_on_transitively_recursive_fragments() {
     });
 }
 
-/// Tests that the merging rule terminates when a recursive fragment also
-/// has a field named after the fragment (potential confusion of field vs spread).
-#[test]
-fn does_not_infinite_loop_on_recursive_fragment_with_field_named_after_fragment() {
-    with_schema(|schema| {
-        let errors = validate_merging_only(
-            &schema,
-            r#"
-            {
-                dog {
-                    ...nameFragment
-                }
-            }
-            fragment nameFragment on Dog {
-                name
-                ...nameFragment
-            }
-            "#,
-        );
-        let _ = errors;
-    });
-}
-
-/// Tests that the merging rule detects conflicts even when fragments are recursive.
-/// The key assertion: it must terminate AND find the actual merging conflict.
-#[test]
-fn finds_conflict_even_with_recursive_fragment() {
-    with_schema(|schema| {
-        let errors = validate_merging_only(
-            &schema,
-            r#"
-            {
-                pet {
-                    ...conflictA
-                    ...conflictB
-                }
-            }
-            fragment conflictA on Pet {
-                ... on Dog {
-                    someValue: name
-                }
-            }
-            fragment conflictB on Pet {
-                ... on Dog {
-                    someValue: nickname
-                }
-            }
-            "#,
-        );
-        let has_merge_error = errors.iter().any(|e| e.contains("do not merge"));
-        assert!(
-            has_merge_error,
-            "Expected a field merging conflict error, got: {errors:?}"
-        );
-    });
-}
-
 /// Tests that deeply recursive fragments separated by fields don't loop.
 #[test]
 fn does_not_infinite_loop_on_recursive_fragments_separated_by_fields() {

@@ -12,25 +12,25 @@ Error: Variable $a of type String cannot be used here, where Boolean is expected
 ───╯
 
 Error: Variable $a of type [Boolean] cannot be used here, where [Boolean!] is expected
-    ╭─[ all_variable_usages_allowed_extended.graphql:12:52 ]
+    ╭─[ all_variable_usages_allowed_extended.graphql:11:52 ]
     │
- 12 │     nonNullBooleanListField(nonNullBooleanListArg: $a)
+ 11 │     nonNullBooleanListField(nonNullBooleanListArg: $a)
     │                                                    ─┬  
     │                                                     ╰── Cannot use variable of type [Boolean] where [Boolean!] is expected
 ────╯
 
 Error: Variable $a of type Int cannot be used here, where Int! is expected
-    ╭─[ all_variable_usages_allowed_extended.graphql:19:39 ]
+    ╭─[ all_variable_usages_allowed_extended.graphql:18:39 ]
     │
- 19 │     nonNullIntArgField(nonNullIntArg: $a)
+ 18 │     nonNullIntArgField(nonNullIntArg: $a)
     │                                       ─┬  
     │                                        ╰── Cannot use variable of type Int where Int! is expected
 ────╯
 
 Error: Variable $a of type Boolean cannot be used here, where Boolean! is expected
-    ╭─[ all_variable_usages_allowed_extended.graphql:25:20 ]
+    ╭─[ all_variable_usages_allowed_extended.graphql:24:20 ]
     │
- 25 │   dog @include(if: $a) {
+ 24 │   dog @include(if: $a) {
     │                    ─┬  
     │                     ╰── Cannot use variable of type Boolean where Boolean! is expected
 ────╯

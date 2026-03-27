@@ -23,11 +23,3 @@ query listInvalidItemDefault($a: [String] = ["one", 2]) {
     stringListArgField(stringListArg: $a)
   }
 }
-
-# Null into non-null argument
-query nullIntoNonNullArg {
-  arguments {
-    nonNullBooleanArgField(nonNullBooleanArg: null)
-    nonNullIntArgField(nonNullIntArg: null)
-  }
-}

@@ -1,5 +1,5 @@
 # Many duplicate directives in one location
-query ($a: Boolean = true, $b: Boolean = false, $c: Boolean = true) {
+query manyDuplicateDirectives($a: Boolean = true, $b: Boolean = false, $c: Boolean = true) {
   dog @skip(if: $a) @skip(if: $b) @skip(if: $c) { name }
 }
 

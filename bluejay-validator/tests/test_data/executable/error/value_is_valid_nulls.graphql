@@ -1,0 +1,7 @@
+# Null into non-null argument
+query nullIntoNonNullArg {
+  arguments {
+    nonNullBooleanArgField(nonNullBooleanArg: null)
+    nonNullIntArgField(nonNullIntArg: null)
+  }
+}
