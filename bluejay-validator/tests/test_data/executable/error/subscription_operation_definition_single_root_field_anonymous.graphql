@@ -1,0 +1,5 @@
+# Anonymous subscription with multiple root fields
+subscription {
+  newMessage { body }
+  a: newMessage { sender }
+}

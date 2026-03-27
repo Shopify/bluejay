@@ -9,6 +9,9 @@ type Query {
   oneOf(oneOfArg: OneOfInput!): String
   oneOfList(oneOfListArg: [OneOfInput]!): String
   nestedOneOf(nestedOneOfArg: NestedOneOfInput!): String
+  withRequiredInput(input: RequiredInput!): Dog
+  withNestedInput(input: NestedInput!): Dog
+  withOptionalInput(input: ComplexInput): Dog
 }
 
 input OneOfInput @oneOf {
@@ -86,11 +89,30 @@ type Arguments {
   nonNullBooleanListField(nonNullBooleanListArg: [Boolean!]): Boolean!
   booleanListArgField(booleanListArg: [Boolean]!): [Boolean]
   optionalNonNullBooleanArgField(optionalBooleanArg: Boolean! = false): Boolean!
+  stringArgField(stringArg: String): String
+  idArgField(idArg: ID): ID
+  enumArgField(enumArg: DogCommand): Boolean
+  nonNullIntArgField(nonNullIntArg: Int!): Int!
+  stringListArgField(stringListArg: [String]): [String]
+  nonNullStringArgField(nonNullStringArg: String!): String!
+  complexArgField(complexArg: ComplexInput): String
+  nonNullComplexArgField(complexArg: ComplexInput!): String
 }
 
 input ComplexInput {
   name: String
   owner: String
+}
+
+input RequiredInput {
+  name: String!
+  color: DogCommand!
+  owner: String
+}
+
+input NestedInput {
+  inner: RequiredInput!
+  id: Int
 }
 
 directive @repeatableDirective repeatable on FIELD

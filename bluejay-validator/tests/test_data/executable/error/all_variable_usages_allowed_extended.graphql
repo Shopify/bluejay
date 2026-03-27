@@ -1,0 +1,27 @@
+# String over Boolean (wrong type)
+query stringOverBoolean($a: String) {
+  arguments {
+    booleanArgField(booleanArg: $a)
+  }
+}
+
+# [Boolean] => [Boolean!] is invalid (nullable inner into non-null inner)
+query nullableInnerIntoNonNullInner($a: [Boolean]) {
+  arguments {
+    nonNullBooleanListField(nonNullBooleanListArg: $a)
+  }
+}
+
+# Int => Int! fails when variable provides null default value
+query intWithNullDefault($a: Int = null) {
+  arguments {
+    nonNullIntArgField(nonNullIntArg: $a)
+  }
+}
+
+# Boolean => Boolean! in directive (nullable into non-null directive arg)
+query nullableBooleanInDirective($a: Boolean) {
+  dog @include(if: $a) {
+    name
+  }
+}

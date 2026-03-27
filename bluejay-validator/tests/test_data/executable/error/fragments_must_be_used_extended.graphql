@@ -1,0 +1,14 @@
+# Multiple unused fragments
+fragment unusedA on Dog {
+  name
+}
+
+fragment unusedB on Dog {
+  nickname
+}
+
+{
+  dog {
+    name
+  }
+}

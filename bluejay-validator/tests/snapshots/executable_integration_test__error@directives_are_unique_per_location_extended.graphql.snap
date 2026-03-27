@@ -1,0 +1,36 @@
+---
+source: bluejay-validator/tests/executable_integration_test.rs
+expression: formatted_errors
+input_file: bluejay-validator/tests/test_data/executable/error/directives_are_unique_per_location_extended.graphql
+---
+Error: Directive @skip is not repeatable but was used multiple times in the same location
+   ╭─[ directives_are_unique_per_location_extended.graphql:1:1 ]
+   │
+ 3 │   dog @skip(if: $a) @skip(if: $b) @skip(if: $c) { name }
+   │       ──────┬────── ──────┬────── ──────┬──────  
+   │             ╰──────────────────────────────────── Usage of directive
+   │                           │             │        
+   │                           ╰────────────────────── Usage of directive
+   │                                         │        
+   │                                         ╰──────── Usage of directive
+───╯
+
+Error: Directive @include is not repeatable but was used multiple times in the same location
+   ╭─[ directives_are_unique_per_location_extended.graphql:1:1 ]
+   │
+ 8 │   dog @skip(if: $a) @include(if: $a) @skip(if: $a) @include(if: $a) { name }
+   │                     ────────┬───────               ────────┬───────  
+   │                             ╰──────────────────────────────────────── Usage of directive
+   │                                                            │         
+   │                                                            ╰───────── Usage of directive
+───╯
+
+Error: Directive @skip is not repeatable but was used multiple times in the same location
+   ╭─[ directives_are_unique_per_location_extended.graphql:1:1 ]
+   │
+ 8 │   dog @skip(if: $a) @include(if: $a) @skip(if: $a) @include(if: $a) { name }
+   │       ──────┬──────                  ──────┬──────  
+   │             ╰─────────────────────────────────────── Usage of directive
+   │                                            │        
+   │                                            ╰──────── Usage of directive
+───╯

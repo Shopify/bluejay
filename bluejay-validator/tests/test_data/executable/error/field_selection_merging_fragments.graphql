@@ -1,0 +1,19 @@
+# Conflict encountered in fragments
+query conflictInFragments {
+  pet {
+    ...conflictFieldsA
+    ...conflictFieldsB
+  }
+}
+
+fragment conflictFieldsA on Pet {
+  ... on Dog {
+    someValue: name
+  }
+}
+
+fragment conflictFieldsB on Pet {
+  ... on Dog {
+    someValue: nickname
+  }
+}

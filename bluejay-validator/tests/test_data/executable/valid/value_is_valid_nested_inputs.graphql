@@ -1,0 +1,10 @@
+# Multiple input objects in different args (similar field names ok)
+query multipleInputsWithSimilarFields {
+  findDog(complex: { name: "Fido" }) { name }
+  withOptionalInput(input: { name: "Rex" }) { name }
+}
+
+# Nested input objects with similar fields (ok — different objects)
+query nestedSimilarFields {
+  withNestedInput(input: { inner: { name: "Fido", color: SIT }, id: 1 }) { name }
+}

@@ -1,0 +1,31 @@
+# Multiple args in various orderings
+query multipleArgsOrder {
+  arguments {
+    multipleRequirements(y: 2, x: 1)
+  }
+}
+
+# No arg on multiple optional
+query noArgOnMultipleOptional {
+  arguments {
+    booleanArgField
+    intArgField
+    floatArgField
+    stringArgField
+  }
+}
+
+# One arg on multiple optional (only some provided)
+query partialOptionalArgs {
+  arguments {
+    booleanArgField(booleanArg: true)
+    intArgField
+  }
+}
+
+# Field with default non-null arg — no arg needed
+query nonNullArgWithDefault {
+  arguments {
+    optionalNonNullBooleanArgField
+  }
+}

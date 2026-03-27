@@ -1,0 +1,33 @@
+# Object is valid fragment type
+fragment fragOnObject on Dog {
+  name
+}
+
+# Interface is valid fragment type
+fragment fragOnInterface on Pet {
+  name
+}
+
+# Union is valid fragment type
+fragment fragOnUnion on CatOrDog {
+  ... on Dog {
+    name
+  }
+}
+
+# Inline fragment without type is valid
+query inlineFragNoType {
+  dog {
+    ... {
+      name
+    }
+  }
+}
+
+query usesFragments {
+  dog {
+    ...fragOnObject
+    ...fragOnInterface
+    ...fragOnUnion
+  }
+}

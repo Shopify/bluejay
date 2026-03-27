@@ -1,0 +1,36 @@
+---
+source: bluejay-validator/tests/executable_integration_test.rs
+expression: formatted_errors
+input_file: bluejay-validator/tests/test_data/executable/error/value_is_valid_variables.graphql
+---
+Error: Got null when non-null value of type Int! was expected
+   ╭─[ value_is_valid_variables.graphql:2:37 ]
+   │
+ 2 │ query invalidDefaultNull($a: Int! = null) {
+   │                                     ──┬─  
+   │                                       ╰─── Expected non-null value
+───╯
+
+Error: No implicit conversion of string to Int
+   ╭─[ value_is_valid_variables.graphql:9:37 ]
+   │
+ 9 │ query invalidDefaultValue($a: Int = "one") {
+   │                                     ──┬──  
+   │                                       ╰──── No implicit conversion to Int
+───╯
+
+Error: No implicit conversion of integer to String
+    ╭─[ value_is_valid_variables.graphql:16:56 ]
+    │
+ 16 │ query complexInvalidDefault($a: ComplexInput = { name: 123 }) {
+    │                                                        ─┬─  
+    │                                                         ╰─── No implicit conversion to String
+────╯
+
+Error: No implicit conversion of integer to String
+    ╭─[ value_is_valid_variables.graphql:21:53 ]
+    │
+ 21 │ query listInvalidItemDefault($a: [String] = ["one", 2]) {
+    │                                                     ┬  
+    │                                                     ╰── No implicit conversion to String
+────╯

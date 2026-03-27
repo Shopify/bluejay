@@ -1,0 +1,13 @@
+# Good enum value
+query goodEnumValue {
+  arguments {
+    enumArgField(enumArg: SIT)
+  }
+}
+
+# Null into nullable enum
+query nullIntoNullableEnum {
+  arguments {
+    enumArgField(enumArg: null)
+  }
+}

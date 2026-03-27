@@ -1,0 +1,32 @@
+# Good list value
+query goodListValue {
+  arguments {
+    stringListArgField(stringListArg: ["one", "two"])
+  }
+}
+
+# Empty list value
+query emptyListValue {
+  arguments {
+    stringListArgField(stringListArg: [])
+  }
+}
+
+# Null value into nullable list
+query nullListValue {
+  arguments {
+    stringListArgField(stringListArg: null)
+  }
+}
+
+# Single value coerced into list (spec allows this)
+query singleValueIntoList {
+  arguments {
+    stringListArgField(stringListArg: "one")
+  }
+}
+
+# Good boolean list value
+query goodBooleanListValue {
+  booleanList(booleanListArg: [true, false])
+}

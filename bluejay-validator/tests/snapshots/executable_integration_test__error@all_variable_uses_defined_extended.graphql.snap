@@ -1,0 +1,36 @@
+---
+source: bluejay-validator/tests/executable_integration_test.rs
+expression: formatted_errors
+input_file: bluejay-validator/tests/test_data/executable/error/all_variable_uses_defined_extended.graphql
+---
+Error: Variable $a not defined in operation multipleUndefined
+   ╭─[ all_variable_uses_defined_extended.graphql:4:34 ]
+   │
+ 4 │     isHouseTrained(atOtherHomes: $a)
+   │                                  ─┬  
+   │                                   ╰── No variable definition with this name defined in operation multipleUndefined
+───╯
+
+Error: Variable $b not defined in operation multipleUndefined
+   ╭─[ all_variable_uses_defined_extended.graphql:5:33 ]
+   │
+ 5 │     doesKnowCommand(dogCommand: $b)
+   │                                 ─┬  
+   │                                  ╰── No variable definition with this name defined in operation multipleUndefined
+───╯
+
+Error: Variable $atOtherHomes not defined in operation usesFragWithoutDefining
+    ╭─[ all_variable_uses_defined_extended.graphql:23:32 ]
+    │
+ 23 │   isHouseTrained(atOtherHomes: $atOtherHomes)
+    │                                ──────┬──────  
+    │                                      ╰──────── No variable definition with this name defined in operation usesFragWithoutDefining
+────╯
+
+Error: Variable definition $atOtherHomes not used
+    ╭─[ all_variable_uses_defined_extended.graphql:10:18 ]
+    │
+ 10 │ query definesVar($atOtherHomes: Boolean) {
+    │                  ──────┬──────  
+    │                        ╰──────── Variable definition not used
+────╯

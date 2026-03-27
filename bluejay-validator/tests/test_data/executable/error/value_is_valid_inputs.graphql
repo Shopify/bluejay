@@ -1,0 +1,29 @@
+# Missing required field
+query missingRequiredField {
+  withRequiredInput(input: { owner: "Scott" }) { name }
+}
+
+# Invalid field type in required input
+query invalidFieldType {
+  withRequiredInput(input: { name: 123, color: SIT }) { name }
+}
+
+# Null into non-null field
+query nullIntoNonNullField {
+  withRequiredInput(input: { name: null, color: SIT }) { name }
+}
+
+# Unknown field in input
+query unknownFieldInInput {
+  withRequiredInput(input: { name: "Fido", color: SIT, extra: true }) { name }
+}
+
+# Nested input missing required field
+query nestedMissingRequired {
+  withNestedInput(input: { inner: { owner: "Scott" } }) { name }
+}
+
+# Null for non-null input object argument
+query nullForNonNullInputArg {
+  withRequiredInput(input: null) { name }
+}

@@ -1,0 +1,8 @@
+# Multiple operations of different types with unique names
+query getDogName {
+  dog { name }
+}
+
+subscription getNewMessage {
+  newMessage { body }
+}

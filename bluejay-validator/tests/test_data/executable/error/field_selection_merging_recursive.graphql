@@ -1,0 +1,12 @@
+# Does not infinite loop on immediately recursive fragment
+# (also triggers cycle detection, but the important thing is it terminates)
+query immediatelyRecursive {
+  dog {
+    ...selfRefFrag
+  }
+}
+
+fragment selfRefFrag on Dog {
+  name
+  ...selfRefFrag
+}

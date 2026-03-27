@@ -1,0 +1,49 @@
+# Field not defined on fragment
+fragment invalidFieldOnFragment on Dog {
+  meowVolume
+}
+
+query fieldNotDefinedOnFragment {
+  dog {
+    ...invalidFieldOnFragment
+  }
+}
+
+# Sub-field not defined
+query subFieldNotDefined {
+  dog {
+    owner {
+      nonExistentField
+    }
+  }
+}
+
+# Field not defined on inline fragment
+query fieldNotDefinedOnInlineFragment {
+  pet {
+    ... on Dog {
+      meowVolume
+    }
+  }
+}
+
+# Aliased field target not defined
+query aliasedFieldTargetNotDefined {
+  dog {
+    volume: meowVolume
+  }
+}
+
+# Direct field selection on union (not through inline fragment)
+query directFieldSelectionOnUnion {
+  catOrDog {
+    nickname
+  }
+}
+
+# Defined on implementors but not on interface
+query definedOnImplementorOnly {
+  pet {
+    barkVolume
+  }
+}

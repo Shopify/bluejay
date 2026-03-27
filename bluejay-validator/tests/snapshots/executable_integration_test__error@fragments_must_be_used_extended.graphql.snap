@@ -1,0 +1,20 @@
+---
+source: bluejay-validator/tests/executable_integration_test.rs
+expression: formatted_errors
+input_file: bluejay-validator/tests/test_data/executable/error/fragments_must_be_used_extended.graphql
+---
+Error: Fragment definition `unusedA` is unused
+   ╭─[ fragments_must_be_used_extended.graphql:2:10 ]
+   │
+ 2 │ fragment unusedA on Dog {
+   │          ───┬───  
+   │             ╰───── Fragment definition is unused
+───╯
+
+Error: Fragment definition `unusedB` is unused
+   ╭─[ fragments_must_be_used_extended.graphql:6:10 ]
+   │
+ 6 │ fragment unusedB on Dog {
+   │          ───┬───  
+   │             ╰───── Fragment definition is unused
+───╯

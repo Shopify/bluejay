@@ -1,0 +1,12 @@
+---
+source: bluejay-validator/tests/executable_integration_test.rs
+expression: formatted_errors
+input_file: bluejay-validator/tests/test_data/executable/error/fragments_on_composite_types_extended.graphql
+---
+Error: `ComplexInput` is not a composite type
+   ╭─[ fragments_on_composite_types_extended.graphql:2:25 ]
+   │
+ 2 │ fragment fragOnInput on ComplexInput {
+   │                         ──────┬─────  
+   │                               ╰─────── Fragment definition target types must be composite types
+───╯

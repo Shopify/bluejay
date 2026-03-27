@@ -1,0 +1,20 @@
+---
+source: bluejay-validator/tests/executable_integration_test.rs
+expression: formatted_errors
+input_file: bluejay-validator/tests/test_data/executable/error/value_is_valid_nulls.graphql
+---
+Error: Got null when non-null value of type Boolean! was expected
+   ╭─[ value_is_valid_nulls.graphql:4:47 ]
+   │
+ 4 │     nonNullBooleanArgField(nonNullBooleanArg: null)
+   │                                               ──┬─  
+   │                                                 ╰─── Expected non-null value
+───╯
+
+Error: Got null when non-null value of type Int! was expected
+   ╭─[ value_is_valid_nulls.graphql:5:39 ]
+   │
+ 5 │     nonNullIntArgField(nonNullIntArg: null)
+   │                                       ──┬─  
+   │                                         ╰─── Expected non-null value
+───╯

@@ -1,0 +1,40 @@
+# Uses all variables deeply in inline fragments
+query usedInInlineFragment($atOtherHomes: Boolean) {
+  dog {
+    ... on Dog {
+      isHouseTrained(atOtherHomes: $atOtherHomes)
+    }
+  }
+}
+
+# Variable used by fragment in multiple operations
+query op1($atOtherHomes: Boolean) {
+  dog {
+    ...usesVarFrag
+  }
+}
+
+query op2($atOtherHomes: Boolean) {
+  dog {
+    ...usesVarFrag
+  }
+}
+
+fragment usesVarFrag on Dog {
+  isHouseTrained(atOtherHomes: $atOtherHomes)
+}
+
+# Uses all variables deeply through nested fragments
+query deepUsage($atOtherHomes: Boolean) {
+  dog {
+    ...outerFrag
+  }
+}
+
+fragment outerFrag on Dog {
+  ...innerFrag
+}
+
+fragment innerFrag on Dog {
+  isHouseTrained(atOtherHomes: $atOtherHomes)
+}

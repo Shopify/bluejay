@@ -1,0 +1,13 @@
+# Args are known deeply
+query argsKnownDeeply {
+  dog {
+    owner {
+      pets {
+        ... on Dog {
+          doesKnowCommand(dogCommand: SIT)
+        }
+      }
+    }
+  }
+}
+

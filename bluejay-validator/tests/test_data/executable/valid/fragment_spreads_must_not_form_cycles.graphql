@@ -1,0 +1,59 @@
+# Single reference is valid (no cycle)
+query singleReference {
+  dog {
+    ...fragA
+  }
+}
+
+fragment fragA on Dog {
+  name
+}
+
+# Spreading twice is not circular
+query spreadingTwice {
+  dog {
+    ...fragB
+    ...fragB
+  }
+}
+
+fragment fragB on Dog {
+  name
+}
+
+# Spreading twice indirectly is not circular
+query spreadingTwiceIndirectly {
+  dog {
+    ...fragC
+    ...fragD
+  }
+}
+
+fragment fragC on Dog {
+  ...fragE
+}
+
+fragment fragD on Dog {
+  ...fragE
+}
+
+fragment fragE on Dog {
+  name
+}
+
+# Double spread within abstract types
+query doubleSpreadAbstract {
+  pet {
+    ...petFrag
+  }
+}
+
+fragment petFrag on Pet {
+  name
+  ... on Dog {
+    barkVolume
+  }
+  ... on Cat {
+    meowVolume
+  }
+}

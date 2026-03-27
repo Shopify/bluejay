@@ -1,0 +1,52 @@
+---
+source: bluejay-validator/tests/executable_integration_test.rs
+expression: formatted_errors
+input_file: bluejay-validator/tests/test_data/executable/error/field_selections_extended.graphql
+---
+Error: Field `nonExistentField` does not exist on type `Human`
+    ╭─[ field_selections_extended.graphql:16:7 ]
+    │
+ 16 │       nonExistentField
+    │       ────────┬───────  
+    │               ╰───────── Field does not exist on type `Human`
+────╯
+
+Error: Field `meowVolume` does not exist on type `Dog`
+    ╭─[ field_selections_extended.graphql:25:7 ]
+    │
+ 25 │       meowVolume
+    │       ─────┬────  
+    │            ╰────── Field does not exist on type `Dog`
+────╯
+
+Error: Field `meowVolume` does not exist on type `Dog`
+    ╭─[ field_selections_extended.graphql:33:13 ]
+    │
+ 33 │     volume: meowVolume
+    │             ─────┬────  
+    │                  ╰────── Field does not exist on type `Dog`
+────╯
+
+Error: Field `nickname` does not exist on type `CatOrDog`
+    ╭─[ field_selections_extended.graphql:40:5 ]
+    │
+ 40 │     nickname
+    │     ────┬───  
+    │         ╰───── Field does not exist on type `CatOrDog`
+────╯
+
+Error: Field `barkVolume` does not exist on type `Pet`
+    ╭─[ field_selections_extended.graphql:47:5 ]
+    │
+ 47 │     barkVolume
+    │     ─────┬────  
+    │          ╰────── Field does not exist on type `Pet`
+────╯
+
+Error: Field `meowVolume` does not exist on type `Dog`
+   ╭─[ field_selections_extended.graphql:3:3 ]
+   │
+ 3 │   meowVolume
+   │   ─────┬────  
+   │        ╰────── Field does not exist on type `Dog`
+───╯

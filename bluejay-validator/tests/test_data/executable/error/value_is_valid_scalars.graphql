@@ -1,0 +1,112 @@
+# Int field errors
+query floatIntoInt {
+  arguments {
+    intArgField(intArg: 1.0)
+  }
+}
+
+query stringIntoInt {
+  arguments {
+    intArgField(intArg: "3")
+  }
+}
+
+query booleanIntoInt {
+  arguments {
+    intArgField(intArg: true)
+  }
+}
+
+query unquotedStringIntoInt {
+  arguments {
+    intArgField(intArg: FOO)
+  }
+}
+
+# Float field errors
+query stringIntoFloat {
+  arguments {
+    floatArgField(floatArg: "3.0")
+  }
+}
+
+query booleanIntoFloat {
+  arguments {
+    floatArgField(floatArg: true)
+  }
+}
+
+query unquotedStringIntoFloat {
+  arguments {
+    floatArgField(floatArg: FOO)
+  }
+}
+
+# Boolean field errors
+query intIntoBoolean {
+  arguments {
+    booleanArgField(booleanArg: 2)
+  }
+}
+
+query floatIntoBoolean {
+  arguments {
+    booleanArgField(booleanArg: 1.0)
+  }
+}
+
+query stringIntoBoolean {
+  arguments {
+    booleanArgField(booleanArg: "true")
+  }
+}
+
+query unquotedStringIntoBoolean {
+  arguments {
+    booleanArgField(booleanArg: TRUE)
+  }
+}
+
+# String field errors
+query intIntoString {
+  arguments {
+    stringArgField(stringArg: 1)
+  }
+}
+
+query floatIntoString {
+  arguments {
+    stringArgField(stringArg: 1.0)
+  }
+}
+
+query booleanIntoString {
+  arguments {
+    stringArgField(stringArg: true)
+  }
+}
+
+query unquotedStringIntoString {
+  arguments {
+    stringArgField(stringArg: FOO)
+  }
+}
+
+# ID field errors
+query floatIntoID {
+  arguments {
+    idArgField(idArg: 1.0)
+  }
+}
+
+query booleanIntoID {
+  arguments {
+    idArgField(idArg: true)
+  }
+}
+
+query unquotedStringIntoID {
+  arguments {
+    idArgField(idArg: FOO)
+  }
+}

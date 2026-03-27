@@ -1,0 +1,6 @@
+# Fails with many more than one root field
+subscription manyRootFields {
+  newMessage { body }
+  a: newMessage { body }
+  b: newMessage { body }
+}

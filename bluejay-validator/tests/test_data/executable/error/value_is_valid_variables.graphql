@@ -1,0 +1,25 @@
+# Variable with invalid default null value (non-null type)
+query invalidDefaultNull($a: Int! = null) {
+  arguments {
+    nonNullIntArgField(nonNullIntArg: $a)
+  }
+}
+
+# Variable with invalid default value (wrong type)
+query invalidDefaultValue($a: Int = "one") {
+  arguments {
+    intArgField(intArg: $a)
+  }
+}
+
+# Complex variable with invalid default
+query complexInvalidDefault($a: ComplexInput = { name: 123 }) {
+  findDog(complex: $a) { name }
+}
+
+# List variable with invalid item default
+query listInvalidItemDefault($a: [String] = ["one", 2]) {
+  arguments {
+    stringListArgField(stringListArg: $a)
+  }
+}

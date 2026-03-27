@@ -1,0 +1,34 @@
+# Full required input object
+query fullRequiredInput {
+  withRequiredInput(input: { name: "Fido", color: SIT, owner: "Scott" }) { name }
+}
+
+# Partial object — only required fields
+query partialOnlyRequired {
+  withRequiredInput(input: { name: "Fido", color: SIT }) { name }
+}
+
+# Required field can be falsy (empty string)
+query requiredFieldFalsy {
+  withRequiredInput(input: { name: "", color: SIT }) { name }
+}
+
+# Full object with different field order
+query fieldsInDifferentOrder {
+  withRequiredInput(input: { color: SIT, owner: "Scott", name: "Fido" }) { name }
+}
+
+# Nested input object valid
+query nestedInputValid {
+  withNestedInput(input: { inner: { name: "Fido", color: SIT }, id: 1 }) { name }
+}
+
+# Optional input can be null
+query optionalInputNull {
+  withOptionalInput(input: null) { name }
+}
+
+# Optional input can be omitted (no arg)
+query optionalInputOmitted {
+  withOptionalInput { name }
+}

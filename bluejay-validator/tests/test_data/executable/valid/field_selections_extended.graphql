@@ -1,0 +1,72 @@
+# Object field selection
+query objectFieldSelection {
+  dog {
+    name
+  }
+}
+
+# Aliased object field selection
+query aliasedObjectFieldSelection {
+  dog {
+    dogName: name
+  }
+}
+
+# Interface field selection
+query interfaceFieldSelection {
+  pet {
+    name
+  }
+}
+
+# Aliased interface field selection
+query aliasedInterfaceFieldSelection {
+  pet {
+    petName: name
+  }
+}
+
+# Meta field selection on union (__typename)
+query metaFieldOnUnion {
+  catOrDog {
+    __typename
+  }
+}
+
+# Field in inline fragment on union
+query fieldInInlineFragmentOnUnion {
+  catOrDog {
+    ... on Dog {
+      name
+      barkVolume
+    }
+    ... on Cat {
+      name
+      meowVolume
+    }
+  }
+}
+
+# Defined on implementors via inline fragment
+query implementorViaInlineFragment {
+  pet {
+    ... on Dog {
+      barkVolume
+    }
+    ... on Cat {
+      meowVolume
+    }
+  }
+}
+
+# Deeply nested field selection
+query deeplyNestedFieldSelection {
+  dog {
+    owner {
+      name
+      pets {
+        name
+      }
+    }
+  }
+}

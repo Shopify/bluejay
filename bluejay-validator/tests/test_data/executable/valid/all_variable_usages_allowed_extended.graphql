@@ -1,0 +1,57 @@
+# Boolean => Boolean (same type)
+query booleanIntoBoolean($a: Boolean) {
+  arguments {
+    booleanArgField(booleanArg: $a)
+  }
+}
+
+# Boolean! => Boolean (non-null into nullable)
+query nonNullBooleanIntoBoolean($a: Boolean!) {
+  arguments {
+    booleanArgField(booleanArg: $a)
+  }
+}
+
+# Boolean => Boolean within fragment
+query booleanIntoFragment($a: Boolean) {
+  arguments {
+    ...booleanFrag
+  }
+}
+
+fragment booleanFrag on Arguments {
+  booleanArgField(booleanArg: $a)
+}
+
+# [String] => [String] (list compatibility)
+query listIntoList($a: [String]) {
+  arguments {
+    stringListArgField(stringListArg: $a)
+  }
+}
+
+# [String!] => [String] (non-null inner into nullable inner)
+query nonNullInnerList($a: [String!]) {
+  arguments {
+    stringListArgField(stringListArg: $a)
+  }
+}
+
+# Boolean! => Boolean! in directive
+query nonNullBooleanInDirective($a: Boolean!) {
+  dog @include(if: $a) {
+    name
+  }
+}
+
+# Int => Int (same type)
+query intIntoInt($a: Int) {
+  arguments {
+    intArgField(intArg: $a)
+  }
+}
+
+# ComplexInput => ComplexInput (same input type)
+query complexIntoComplex($a: ComplexInput) {
+  findDog(complex: $a) { name }
+}

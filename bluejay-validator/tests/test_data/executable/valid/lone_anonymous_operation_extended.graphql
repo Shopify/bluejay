@@ -1,0 +1,9 @@
+# Multiple named operations (valid — no anonymous)
+query getDogName {
+  dog { name }
+}
+
+query getHumanName {
+  human { name }
+}
+

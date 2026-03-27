@@ -1,0 +1,17 @@
+# Multiple variables not used
+query multipleUnused($a: Boolean, $b: Boolean) {
+  dog {
+    name
+  }
+}
+
+# Variable not used in fragments
+query unusedWithFragments($atOtherHomes: Boolean, $extra: Int) {
+  dog {
+    ...nameFrag
+  }
+}
+
+fragment nameFrag on Dog {
+  isHouseTrained(atOtherHomes: $atOtherHomes)
+}

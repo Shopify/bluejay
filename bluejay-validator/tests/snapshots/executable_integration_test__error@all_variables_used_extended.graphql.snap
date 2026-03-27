@@ -1,0 +1,28 @@
+---
+source: bluejay-validator/tests/executable_integration_test.rs
+expression: formatted_errors
+input_file: bluejay-validator/tests/test_data/executable/error/all_variables_used_extended.graphql
+---
+Error: Variable definition $a not used
+   ╭─[ all_variables_used_extended.graphql:2:22 ]
+   │
+ 2 │ query multipleUnused($a: Boolean, $b: Boolean) {
+   │                      ─┬  
+   │                       ╰── Variable definition not used
+───╯
+
+Error: Variable definition $b not used
+   ╭─[ all_variables_used_extended.graphql:2:35 ]
+   │
+ 2 │ query multipleUnused($a: Boolean, $b: Boolean) {
+   │                                   ─┬  
+   │                                    ╰── Variable definition not used
+───╯
+
+Error: Variable definition $extra not used
+   ╭─[ all_variables_used_extended.graphql:9:51 ]
+   │
+ 9 │ query unusedWithFragments($atOtherHomes: Boolean, $extra: Int) {
+   │                                                   ───┬──  
+   │                                                      ╰──── Variable definition not used
+───╯

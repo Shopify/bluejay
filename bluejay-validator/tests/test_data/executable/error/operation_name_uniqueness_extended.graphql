@@ -1,0 +1,8 @@
+# Multiple ops of same name of different types (mutation)
+query getName {
+  dog { name }
+}
+
+subscription getName {
+  newMessage { body }
+}

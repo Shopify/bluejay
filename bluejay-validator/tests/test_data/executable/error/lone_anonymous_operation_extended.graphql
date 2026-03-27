@@ -1,0 +1,8 @@
+# Multiple anonymous operations
+{
+  dog { name }
+}
+
+{
+  human { name }
+}

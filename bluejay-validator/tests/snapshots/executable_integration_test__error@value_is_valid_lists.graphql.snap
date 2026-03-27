@@ -1,0 +1,28 @@
+---
+source: bluejay-validator/tests/executable_integration_test.rs
+expression: formatted_errors
+input_file: bluejay-validator/tests/test_data/executable/error/value_is_valid_lists.graphql
+---
+Error: No implicit conversion of integer to String
+   ╭─[ value_is_valid_lists.graphql:4:47 ]
+   │
+ 4 │     stringListArgField(stringListArg: ["one", 2])
+   │                                               ┬  
+   │                                               ╰── No implicit conversion to String
+───╯
+
+Error: No implicit conversion of integer to String
+    ╭─[ value_is_valid_lists.graphql:11:39 ]
+    │
+ 11 │     stringListArgField(stringListArg: 2)
+    │                                       ┬  
+    │                                       ╰── No implicit conversion to String
+────╯
+
+Error: Got null when non-null value of type Boolean! was expected
+    ╭─[ value_is_valid_lists.graphql:17:38 ]
+    │
+ 17 │   booleanList(booleanListArg: [true, null])
+    │                                      ──┬─  
+    │                                        ╰─── Expected non-null value
+────╯

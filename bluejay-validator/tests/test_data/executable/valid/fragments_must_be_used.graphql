@@ -1,0 +1,16 @@
+# All fragments used by multiple operations
+fragment dogNameFrag on Dog {
+  name
+}
+
+query op1 {
+  dog {
+    ...dogNameFrag
+  }
+}
+
+query op2 {
+  dog {
+    ...dogNameFrag
+  }
+}

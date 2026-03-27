@@ -1,0 +1,16 @@
+---
+source: bluejay-validator/tests/executable_integration_test.rs
+expression: formatted_errors
+input_file: bluejay-validator/tests/test_data/executable/error/fragment_spreads_must_not_form_cycles_inline.graphql
+---
+Error: Cycle detected in fragment `inlineSelfFrag`
+    ╭─[ fragment_spreads_must_not_form_cycles_inline.graphql:11:8 ]
+    │
+  8 │ fragment inlineSelfFrag on Dog {
+    │          ───────┬──────  
+    │                 ╰──────── Affected fragment definition
+    │ 
+ 11 │     ...inlineSelfFrag
+    │        ───────┬──────  
+    │               ╰──────── Cycle introduced by fragment spread
+────╯

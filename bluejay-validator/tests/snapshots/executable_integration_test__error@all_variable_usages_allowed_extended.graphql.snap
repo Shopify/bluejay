@@ -1,0 +1,36 @@
+---
+source: bluejay-validator/tests/executable_integration_test.rs
+expression: formatted_errors
+input_file: bluejay-validator/tests/test_data/executable/error/all_variable_usages_allowed_extended.graphql
+---
+Error: Variable $a of type String cannot be used here, where Boolean is expected
+   ╭─[ all_variable_usages_allowed_extended.graphql:4:33 ]
+   │
+ 4 │     booleanArgField(booleanArg: $a)
+   │                                 ─┬  
+   │                                  ╰── Cannot use variable of type String where Boolean is expected
+───╯
+
+Error: Variable $a of type [Boolean] cannot be used here, where [Boolean!] is expected
+    ╭─[ all_variable_usages_allowed_extended.graphql:11:52 ]
+    │
+ 11 │     nonNullBooleanListField(nonNullBooleanListArg: $a)
+    │                                                    ─┬  
+    │                                                     ╰── Cannot use variable of type [Boolean] where [Boolean!] is expected
+────╯
+
+Error: Variable $a of type Int cannot be used here, where Int! is expected
+    ╭─[ all_variable_usages_allowed_extended.graphql:18:39 ]
+    │
+ 18 │     nonNullIntArgField(nonNullIntArg: $a)
+    │                                       ─┬  
+    │                                        ╰── Cannot use variable of type Int where Int! is expected
+────╯
+
+Error: Variable $a of type Boolean cannot be used here, where Boolean! is expected
+    ╭─[ all_variable_usages_allowed_extended.graphql:24:20 ]
+    │
+ 24 │   dog @include(if: $a) {
+    │                    ─┬  
+    │                     ╰── Cannot use variable of type Boolean where Boolean! is expected
+────╯

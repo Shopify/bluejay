@@ -1,0 +1,52 @@
+---
+source: bluejay-validator/tests/executable_integration_test.rs
+expression: formatted_errors
+input_file: bluejay-validator/tests/test_data/executable/error/value_is_valid_inputs.graphql
+---
+Error: No value for required fields on input type RequiredInput: name, color
+   ╭─[ value_is_valid_inputs.graphql:3:28 ]
+   │
+ 3 │   withRequiredInput(input: { owner: "Scott" }) { name }
+   │                            ─────────┬────────  
+   │                                     ╰────────── No value for required fields: name, color
+───╯
+
+Error: No implicit conversion of integer to String!
+   ╭─[ value_is_valid_inputs.graphql:8:36 ]
+   │
+ 8 │   withRequiredInput(input: { name: 123, color: SIT }) { name }
+   │                                    ─┬─  
+   │                                     ╰─── No implicit conversion to String!
+───╯
+
+Error: Got null when non-null value of type String! was expected
+    ╭─[ value_is_valid_inputs.graphql:13:36 ]
+    │
+ 13 │   withRequiredInput(input: { name: null, color: SIT }) { name }
+    │                                    ──┬─  
+    │                                      ╰─── Expected non-null value
+────╯
+
+Error: No field with name extra on input type RequiredInput
+    ╭─[ value_is_valid_inputs.graphql:18:56 ]
+    │
+ 18 │   withRequiredInput(input: { name: "Fido", color: SIT, extra: true }) { name }
+    │                                                        ──┬──  
+    │                                                          ╰──── No field with this name on input type RequiredInput
+────╯
+
+Error: No value for required fields on input type RequiredInput: name, color
+    ╭─[ value_is_valid_inputs.graphql:23:35 ]
+    │
+ 23 │   withNestedInput(input: { inner: { owner: "Scott" } }) { name }
+    │                                   ─────────┬────────  
+    │                                            ╰────────── No value for required fields: name, color
+────╯
+
+Error: Got null when non-null value of type RequiredInput! was expected
+    ╭─[ value_is_valid_inputs.graphql:28:28 ]
+    │
+ 28 │   withRequiredInput(input: null) { name }
+    │                            ──┬─  
+    │                              ╰─── Expected non-null value
+────╯
