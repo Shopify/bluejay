@@ -96,7 +96,7 @@ fn find_input_size_offenders_arguments<
                         offenders,
                         variable_values,
                         variable_definitions,
-                        format!("{}.{}", argument_name, index),
+                        format!("{argument_name}.{index}"),
                         item,
                     );
                 })
@@ -170,7 +170,7 @@ fn find_input_size_offenders_variables<E: ExecutableDocument, VV: VariableValues
                     find_input_size_offenders_variables::<E, VV>(
                         max_length,
                         offenders,
-                        format!("{}.{}", argument_name, index),
+                        format!("{argument_name}.{index}"),
                         item,
                     );
                 })

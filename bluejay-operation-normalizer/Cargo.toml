@@ -1,0 +1,25 @@
+[package]
+name = "bluejay-operation-normalizer"
+version.workspace = true
+edition = "2021"
+license = "MIT"
+repository = "https://github.com/Shopify/bluejay"
+homepage = "https://github.com/Shopify/bluejay"
+keywords = ["graphql"]
+description = "GraphQL operation normalization and signature hashing"
+
+[dependencies]
+bluejay-core = { workspace = true }
+blake3 = "1"
+bumpalo = { version = "3", features = ["collections"] }
+
+[dev-dependencies]
+bluejay-parser = { workspace = true }
+criterion = "0.5"
+
+[[bench]]
+name = "normalize"
+harness = false
+
+[lints]
+workspace = true

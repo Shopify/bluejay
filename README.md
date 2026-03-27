@@ -5,6 +5,7 @@
 ## Crates
 
 - [`bluejay-core`](/bluejay-core/README.md)
+- [`bluejay-operation-normalize`](/bluejay-operation-normalizer/README.md)
 - [`bluejay-parser`](/bluejay-parser/README.md)
 - [`bluejay-printer`](/bluejay-printer/README.md)
 - [`bluejay-schema-comparator`](/bluejay-schema-comparator/README.md)

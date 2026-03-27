@@ -384,7 +384,9 @@ pub enum OperationResolutionError<'a> {
 impl OperationResolutionError<'_> {
     pub fn message(&self) -> Cow<'static, str> {
         match self {
-            Self::NoOperationWithName { name } => format!("No operation defined with name {}", name).into(),
+            Self::NoOperationWithName { name } => {
+                format!("No operation defined with name {name}").into()
+            }
             Self::AnonymousNotEligible => "Anonymous operation can only be used when the document contains exactly one operation definition".into(),
         }
     }

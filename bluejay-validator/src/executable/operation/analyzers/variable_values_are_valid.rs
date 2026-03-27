@@ -209,13 +209,7 @@ mod tests {
             "#,
             None,
             &serde_json::json!({}),
-            |errors| {
-                assert!(
-                    errors.is_empty(),
-                    "Expected errors to be empty: {:?}",
-                    errors
-                )
-            },
+            |errors| assert!(errors.is_empty(), "Expected errors to be empty: {errors:?}",),
         );
         validate_variable_values(
             r#"
@@ -244,13 +238,7 @@ mod tests {
             "#,
             None,
             &serde_json::json!({}),
-            |errors| {
-                assert!(
-                    errors.is_empty(),
-                    "Expected errors to be empty: {:?}",
-                    errors
-                )
-            },
+            |errors| assert!(errors.is_empty(), "Expected errors to be empty: {errors:?}",),
         );
         validate_variable_values(
             r#"
@@ -260,13 +248,7 @@ mod tests {
             "#,
             None,
             &serde_json::json!({ "arg": "value" }),
-            |errors| {
-                assert!(
-                    errors.is_empty(),
-                    "Expected errors to be empty: {:?}",
-                    errors
-                )
-            },
+            |errors| assert!(errors.is_empty(), "Expected errors to be empty: {errors:?}",),
         );
         validate_variable_values(
             r#"
@@ -276,13 +258,7 @@ mod tests {
             "#,
             None,
             &serde_json::json!({ "arg": null }),
-            |errors| {
-                assert!(
-                    errors.is_empty(),
-                    "Expected errors to be empty: {:?}",
-                    errors
-                )
-            },
+            |errors| assert!(errors.is_empty(), "Expected errors to be empty: {errors:?}",),
         );
         validate_variable_values(
             r#"
@@ -311,13 +287,7 @@ mod tests {
             "#,
             None,
             &serde_json::json!({ "arg": "value" }),
-            |errors| {
-                assert!(
-                    errors.is_empty(),
-                    "Expected errors to be empty: {:?}",
-                    errors
-                )
-            },
+            |errors| assert!(errors.is_empty(), "Expected errors to be empty: {errors:?}",),
         );
         validate_variable_values(
             r#"
@@ -356,13 +326,7 @@ mod tests {
             "#,
             None,
             &serde_json::json!({}),
-            |errors| {
-                assert!(
-                    errors.is_empty(),
-                    "Expected errors to be empty: {:?}",
-                    errors
-                )
-            },
+            |errors| assert!(errors.is_empty(), "Expected errors to be empty: {errors:?}",),
         );
         validate_variable_values(
             r#"
@@ -372,13 +336,7 @@ mod tests {
             "#,
             None,
             &serde_json::json!({}),
-            |errors| {
-                assert!(
-                    errors.is_empty(),
-                    "Expected errors to be empty: {:?}",
-                    errors
-                )
-            },
+            |errors| assert!(errors.is_empty(), "Expected errors to be empty: {errors:?}",),
         );
         validate_variable_values(
             r#"
@@ -388,13 +346,7 @@ mod tests {
             "#,
             None,
             &serde_json::json!({ "arg": "value" }),
-            |errors| {
-                assert!(
-                    errors.is_empty(),
-                    "Expected errors to be empty: {:?}",
-                    errors
-                )
-            },
+            |errors| assert!(errors.is_empty(), "Expected errors to be empty: {errors:?}",),
         );
         validate_variable_values(
             r#"
@@ -404,13 +356,7 @@ mod tests {
             "#,
             None,
             &serde_json::json!({ "arg": null }),
-            |errors| {
-                assert!(
-                    errors.is_empty(),
-                    "Expected errors to be empty: {:?}",
-                    errors
-                )
-            },
+            |errors| assert!(errors.is_empty(), "Expected errors to be empty: {errors:?}",),
         );
         validate_variable_values(
             r#"
