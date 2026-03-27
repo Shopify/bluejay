@@ -3,25 +3,20 @@ use crate::executable::{
     Cache,
 };
 use bluejay_core::definition::{SchemaDefinition, TypeDefinitionReference};
-use bluejay_core::executable::{ExecutableDocument, FragmentDefinition, FragmentSpread};
-use std::collections::HashSet;
+use bluejay_core::executable::{ExecutableDocument, FragmentSpread};
 
 pub struct FragmentSpreadTargetDefined<'a, E: ExecutableDocument, S: SchemaDefinition> {
     errors: Vec<Error<'a, E, S>>,
-    fragment_definition_names: HashSet<&'a str>,
+    cache: &'a Cache<'a, E, S>,
 }
 
 impl<'a, E: ExecutableDocument, S: SchemaDefinition> Visitor<'a, E, S>
     for FragmentSpreadTargetDefined<'a, E, S>
 {
-    fn new(executable_document: &'a E, _: &'a S, _: &'a Cache<'a, E, S>) -> Self {
+    fn new(_: &'a E, _: &'a S, cache: &'a Cache<'a, E, S>) -> Self {
         Self {
             errors: Vec::new(),
-            fragment_definition_names: HashSet::from_iter(
-                executable_document
-                    .fragment_definitions()
-                    .map(FragmentDefinition::name),
-            ),
+            cache,
         }
     }
 
@@ -31,9 +26,10 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> Visitor<'a, E, S>
         _scoped_type: TypeDefinitionReference<'a, S::TypeDefinition>,
         _path: &Path<'a, E>,
     ) {
-        if !self
-            .fragment_definition_names
-            .contains(fragment_spread.name())
+        if self
+            .cache
+            .fragment_definition(fragment_spread.name())
+            .is_none()
         {
             self.errors
                 .push(Error::FragmentSpreadTargetUndefined { fragment_spread });

@@ -26,6 +26,8 @@ pub trait Visitor<'a, E: ExecutableDocument, S: SchemaDefinition> {
     ) {
     }
 
+    fn leave_field(&mut self, _field: &'a E::Field, _field_definition: &'a S::FieldDefinition) {}
+
     fn visit_const_directive(
         &mut self,
         _directive: &'a E::Directive<true>,
@@ -129,6 +131,14 @@ macro_rules! impl_visitor {
                     path: &Path<'a, E>,
                 ) {
                     #(self.N.visit_field(field, field_definition, path);)*
+                }
+
+                fn leave_field(
+                    &mut self,
+                    field: &'a E::Field,
+                    field_definition: &'a S::FieldDefinition,
+                ) {
+                    #(self.N.leave_field(field, field_definition);)*
                 }
 
                 fn visit_const_directive(

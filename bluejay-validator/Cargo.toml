@@ -34,5 +34,9 @@ serde_json = ["dep:serde_json", "bluejay-core/serde_json"]
 name = "field_selection_merging"
 harness = false
 
+[[bench]]
+name = "validate"
+harness = false
+
 [lints]
 workspace = true

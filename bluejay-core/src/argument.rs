@@ -1,5 +1,4 @@
 use crate::{AsIter, Value};
-use std::collections::HashMap;
 
 pub trait Argument<const CONST: bool> {
     type Value: Value<CONST>;
@@ -18,17 +17,26 @@ pub trait Arguments<const CONST: bool>: AsIter<Item = Self::Argument> {
     type Argument: Argument<CONST>;
 
     fn equivalent(optional_self: Option<&Self>, optional_other: Option<&Self>) -> bool {
-        let lhs: HashMap<&str, _> = optional_self
-            .map(|args| {
-                HashMap::from_iter(args.iter().map(|arg| (arg.name(), arg.value().as_ref())))
-            })
-            .unwrap_or_default();
-        let rhs: HashMap<&str, _> = optional_other
-            .map(|args| {
-                HashMap::from_iter(args.iter().map(|arg| (arg.name(), arg.value().as_ref())))
-            })
-            .unwrap_or_default();
-        lhs == rhs
+        match (optional_self, optional_other) {
+            (None, None) => true,
+            (None, Some(other)) => other.is_empty(),
+            (Some(s), None) => s.is_empty(),
+            (Some(s), Some(other)) => {
+                // For small argument lists, use O(n*m) comparison which avoids HashMap allocation
+                let s_count = s.len();
+                let o_count = other.len();
+                if s_count != o_count {
+                    return false;
+                }
+                // Every arg in self must have a matching arg in other (same name, same value)
+                s.iter().all(|s_arg| {
+                    other.iter().any(|o_arg| {
+                        s_arg.name() == o_arg.name()
+                            && s_arg.value().as_ref() == o_arg.value().as_ref()
+                    })
+                })
+            }
+        }
     }
 }
 

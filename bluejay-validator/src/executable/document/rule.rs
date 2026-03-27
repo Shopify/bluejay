@@ -76,6 +76,10 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, R: Rule<'a, E, S>, ER> Visi
         self.rule.visit_field(field, field_definition, path);
     }
 
+    fn leave_field(&mut self, field: &'a E::Field, field_definition: &'a S::FieldDefinition) {
+        self.rule.leave_field(field, field_definition);
+    }
+
     fn visit_const_directive(
         &mut self,
         directive: &'a E::Directive<true>,
