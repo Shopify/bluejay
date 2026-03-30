@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 env:
   CARGO_TERM_COLOR: always
@@ -19,13 +19,7 @@ jobs:
       - name: Run cargo fmt
         run: cargo fmt --check
       - name: Run clippy
-        run: cargo clippy --all-features -- -D warnings
-      - name: Run clippy (tests)
-        run: cargo clippy --tests --all-features
-      - name: Run clippy (benches)
-        run: cargo clippy --benches --all-features
-      - name: Run clipping (examples)
-        run: cargo clippy --examples --all-features
+        run: cargo clippy --all-targets --all-features -- -D warnings
 
   test:
     runs-on: ubuntu-latest
