@@ -16,7 +16,7 @@ description = "A GraphQL printer"
 bluejay-core = { workspace = true }
 
 [dev-dependencies]
-insta = { version = "1.28", features = ["glob"] }
+insta = { version = "1.47", features = ["glob"] }
 similar-asserts = { version = "1.4" }
 bluejay-parser = { workspace = true }
 
