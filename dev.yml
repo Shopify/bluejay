@@ -15,7 +15,7 @@ commands:
   test:
     run: cargo test
   style:
-    run: cargo clippy
+    run: cargo clippy --all-targets
   fmt:
     run: cargo fmt
   insta:
