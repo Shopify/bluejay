@@ -18,7 +18,7 @@ quote = "1.0"
 proc-macro2 = "1.0"
 convert_case = "0.10"
 # Pin: v1.13+ requires Rust 1.86+. Remove once toolchain is upgraded.
-unicode-segmentation = ">=1.11, <1.13"
+unicode-segmentation = ">=1.11, <1.14"
 itertools = "0.14.0"
 
 [lints]
