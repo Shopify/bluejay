@@ -1,0 +1,6 @@
+---
+source: bluejay-printer/src/serializer.rs
+expression: s.into_inner()
+input_file: bluejay-printer/src/definition/test_data/schema_definition/interface.graphql
+---
+interface MyInterface{stringField:String!} interface MyOtherInterface implements MyInterface{intField:Int! stringField:String!} type MyType implements MyInterface & MyOtherInterface{intField:Int! stringField:String!} type Query{myField:MyType!}
