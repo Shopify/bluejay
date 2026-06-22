@@ -1,0 +1,6 @@
+---
+source: bluejay-printer/src/serializer.rs
+expression: s.into_inner()
+input_file: bluejay-printer/src/definition/test_data/schema_definition/directive.graphql
+---
+directive @repeatable repeatable on FIELD_DEFINITION directive @special on FIELD_DEFINITION type Query{specialField:String! @repeatable @special @repeatable}

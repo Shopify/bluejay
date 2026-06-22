@@ -1,0 +1,6 @@
+---
+source: bluejay-printer/src/serializer.rs
+expression: compact.clone()
+input_file: bluejay-printer/src/definition/test_data/schema_definition/explicit_schema.graphql
+---
+type MyMutationRootType{setSomeField(to:String):String} type MyQueryRootType{someField:String} schema{query: MyQueryRootType mutation: MyMutationRootType}

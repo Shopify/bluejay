@@ -1,0 +1,6 @@
+---
+source: bluejay-printer/src/serializer.rs
+expression: compact.clone()
+input_file: bluejay-printer/src/definition/test_data/schema_definition/union.graphql
+---
+type Person{name:String age:Int} type Photo{height:Int width:Int} type SearchQuery{firstSearchResult:SearchResult} union SearchResult=Photo|Person schema{query: SearchQuery}

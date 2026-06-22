@@ -1,0 +1,6 @@
+---
+source: bluejay-printer/src/serializer.rs
+expression: s.into_inner()
+input_file: bluejay-printer/src/definition/test_data/schema_definition/basic.graphql
+---
+input MyInput{intField:Int! booleanField:Boolean!} type MyObject{intField:Int! idField:ID!} type Query{myField(bar:MyInput!):MyObject! bar:[String!]!}
