@@ -84,7 +84,7 @@ pub struct RootOperationTypeDefinition<'a> {
 }
 
 impl<'a> RootOperationTypeDefinition<'a> {
-    pub(crate) fn operation_type(&self) -> OperationType {
+    pub fn operation_type(&self) -> OperationType {
         self.operation_type
     }
 
@@ -92,7 +92,7 @@ impl<'a> RootOperationTypeDefinition<'a> {
         &self.name
     }
 
-    pub(crate) fn name(&self) -> &str {
+    pub fn name(&self) -> &str {
         self.name.as_ref()
     }
 }

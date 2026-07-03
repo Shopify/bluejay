@@ -32,9 +32,29 @@ impl<'a, C: Context> FromTokens<'a> for FieldsDefinition<'a, C> {
         tokens: &mut impl Tokens<'a>,
         depth_limiter: DepthLimiter,
     ) -> Result<Self, ParseError> {
+        Self::from_tokens_with_builtin_fields(tokens, depth_limiter, true)
+    }
+}
+
+impl<'a, C: Context> FieldsDefinition<'a, C> {
+    pub(crate) fn from_tokens_without_builtin_fields(
+        tokens: &mut impl Tokens<'a>,
+        depth_limiter: DepthLimiter,
+    ) -> Result<Self, ParseError> {
+        Self::from_tokens_with_builtin_fields(tokens, depth_limiter, false)
+    }
+
+    fn from_tokens_with_builtin_fields(
+        tokens: &mut impl Tokens<'a>,
+        depth_limiter: DepthLimiter,
+        include_builtin_fields: bool,
+    ) -> Result<Self, ParseError> {
         let open_span = tokens.expect_punctuator(PunctuatorType::OpenBrace)?;
-        let mut field_definitions: Vec<FieldDefinition<'a, C>> =
-            vec![FieldDefinition::__typename()];
+        let mut field_definitions: Vec<FieldDefinition<'a, C>> = if include_builtin_fields {
+            vec![FieldDefinition::__typename()]
+        } else {
+            Vec::new()
+        };
         let close_span = loop {
             field_definitions.push(FieldDefinition::from_tokens(tokens, depth_limiter.bump()?)?);
             if let Some(close_span) = tokens.next_if_punctuator(PunctuatorType::CloseBrace) {

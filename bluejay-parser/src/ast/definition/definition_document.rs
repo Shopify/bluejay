@@ -3,7 +3,7 @@ use crate::ast::definition::{
     CustomScalarTypeDefinition, DefaultContext, DirectiveDefinition, Directives,
     EnumTypeDefinition, ExplicitSchemaDefinition, FieldsDefinition, InputObjectTypeDefinition,
     InputValueDefinition, InterfaceImplementations, InterfaceTypeDefinition, ObjectTypeDefinition,
-    SchemaDefinition, TypeDefinition, UnionTypeDefinition,
+    SchemaDefinition, TypeDefinition, TypeSystemExtension, UnionTypeDefinition,
 };
 use crate::ast::{DepthLimiter, FromTokens, Parse, ParseDetails, ParseError, Tokens};
 use bluejay_core::definition::{prelude::*, HasDirectives};
@@ -21,6 +21,7 @@ pub struct DefinitionDocument<'a, C: Context = DefaultContext> {
     schema_definitions: Vec<ExplicitSchemaDefinition<'a, C>>,
     directive_definitions: Vec<DirectiveDefinition<'a, C>>,
     type_definitions: Vec<TypeDefinition<'a, C>>,
+    type_system_extensions: Vec<TypeSystemExtension<'a, C>>,
 }
 
 #[derive(Debug)]
@@ -117,6 +118,15 @@ impl<'a, C: Context> Parse<'a> for DefinitionDocument<'a, C> {
                         max_depth,
                     )
                 }
+                Some(TypeSystemExtension::<C>::EXTEND_IDENTIFIER) => {
+                    Self::parse_definition::<_, TypeSystemExtension<C>>(
+                        &mut instance.type_system_extensions,
+                        &mut tokens,
+                        &mut errors,
+                        &mut last_pass_had_error,
+                        max_depth,
+                    )
+                }
                 _ => {
                     if let Some(token) = tokens.next() {
                         if !last_pass_had_error {
@@ -173,6 +183,7 @@ impl<'a, C: Context> DefinitionDocument<'a, C> {
             schema_definitions: Vec::new(),
             directive_definitions: Vec::with_capacity(8),
             type_definitions,
+            type_system_extensions: Vec::with_capacity(8),
         }
     }
 
@@ -274,6 +285,7 @@ impl<'a, C: Context> DefinitionDocument<'a, C> {
             .filter(|dd| !dd.is_builtin())
             .count()
             + self.schema_definitions.len()
+            + self.type_system_extensions.len()
             + self
                 .type_definitions
                 .iter()
@@ -283,6 +295,10 @@ impl<'a, C: Context> DefinitionDocument<'a, C> {
 
     pub fn directive_definitions(&self) -> &[DirectiveDefinition<'a, C>] {
         &self.directive_definitions
+    }
+
+    pub fn type_system_extensions(&self) -> &[TypeSystemExtension<'a, C>] {
+        &self.type_system_extensions
     }
 
     fn index_directive_definitions(
@@ -775,7 +791,7 @@ mod tests {
         AsIter,
     };
 
-    use super::{DefinitionDocument, Parse, SchemaDefinition};
+    use super::{DefaultContext, DefinitionDocument, Parse, SchemaDefinition, TypeSystemExtension};
 
     #[test]
     fn test_can_be_used_owned_with_self_cell() {
@@ -835,6 +851,224 @@ mod tests {
         let document: DefinitionDocument = DefinitionDocument::parse(s).result.unwrap();
 
         assert_eq!(1, document.definition_count());
+    }
+
+    #[test]
+    fn type_system_extensions_test() {
+        let s = r#"
+        extend schema @schemaDirective {
+            mutation: Mutation
+        }
+
+        extend scalar DateTime @specifiedBy(url: "https://example.com/date-time")
+
+        extend type Query implements Node @objectDirective {
+            product: Product
+        }
+
+        extend interface Node @interfaceDirective {
+            legacyId: ID
+        }
+
+        extend union SearchResult @unionDirective = Product | Collection
+
+        extend enum ProductStatus @enumDirective {
+            UNLISTED
+        }
+
+        extend input ProductInput @inputDirective {
+            title: String
+        }
+        "#;
+
+        let document: DefinitionDocument = DefinitionDocument::parse(s)
+            .result
+            .expect("Document had parse errors");
+
+        assert_eq!(7, document.definition_count());
+
+        let extensions = document.type_system_extensions();
+        assert_eq!(7, extensions.len());
+        assert!(extensions
+            .iter()
+            .all(|extension| extension.directives().is_some()));
+
+        match &extensions[0] {
+            TypeSystemExtension::Schema(extension) => {
+                assert!(extension.directives().is_some());
+                let root_operation_type_definitions = extension
+                    .root_operation_type_definitions()
+                    .expect("Expected root operation type definitions");
+                assert_eq!(1, root_operation_type_definitions.len());
+                assert_eq!("Mutation", root_operation_type_definitions[0].name());
+            }
+            extension => panic!("Expected schema extension, got {extension:?}"),
+        }
+
+        match &extensions[1] {
+            TypeSystemExtension::Scalar(extension) => {
+                assert_eq!("DateTime", extension.name());
+                assert_eq!(1, extension.directives().iter().count());
+            }
+            extension => panic!("Expected scalar extension, got {extension:?}"),
+        }
+
+        match &extensions[2] {
+            TypeSystemExtension::Object(extension) => {
+                assert_eq!("Query", extension.name());
+                assert!(extension.interface_implementations().is_some());
+                assert!(extension.directives().is_some());
+                let fields_definition = extension
+                    .fields_definition()
+                    .expect("Expected fields definition");
+                assert_eq!(1, fields_definition.iter().count());
+                assert!(fields_definition.iter().all(|field| !field.is_builtin()));
+            }
+            extension => panic!("Expected object extension, got {extension:?}"),
+        }
+
+        match &extensions[3] {
+            TypeSystemExtension::Interface(extension) => {
+                assert_eq!("Node", extension.name());
+                assert!(extension.directives().is_some());
+                let fields_definition = extension
+                    .fields_definition()
+                    .expect("Expected fields definition");
+                assert_eq!(1, fields_definition.iter().count());
+                assert!(fields_definition.iter().all(|field| !field.is_builtin()));
+            }
+            extension => panic!("Expected interface extension, got {extension:?}"),
+        }
+
+        match &extensions[4] {
+            TypeSystemExtension::Union(extension) => {
+                assert_eq!("SearchResult", extension.name());
+                assert!(extension.directives().is_some());
+                assert_eq!(
+                    2,
+                    extension
+                        .union_member_types()
+                        .expect("Expected union member types")
+                        .iter()
+                        .count(),
+                );
+            }
+            extension => panic!("Expected union extension, got {extension:?}"),
+        }
+
+        match &extensions[5] {
+            TypeSystemExtension::Enum(extension) => {
+                assert_eq!("ProductStatus", extension.name());
+                assert!(extension.directives().is_some());
+                assert_eq!(
+                    1,
+                    extension
+                        .enum_value_definitions()
+                        .expect("Expected enum value definitions")
+                        .iter()
+                        .count(),
+                );
+            }
+            extension => panic!("Expected enum extension, got {extension:?}"),
+        }
+
+        match &extensions[6] {
+            TypeSystemExtension::InputObject(extension) => {
+                assert_eq!("ProductInput", extension.name());
+                assert!(extension.directives().is_some());
+                assert_eq!(
+                    1,
+                    extension
+                        .input_field_definitions()
+                        .expect("Expected input field definitions")
+                        .iter()
+                        .count(),
+                );
+            }
+            extension => panic!("Expected input object extension, got {extension:?}"),
+        }
+    }
+
+    #[test]
+    fn type_system_extension_single_component_variants_test() {
+        for s in [
+            "extend schema @schemaDirective",
+            "extend schema { query: Query }",
+            "extend scalar DateTime @specifiedBy(url: \"https://example.com/date-time\")",
+            "extend type Query implements Node",
+            "extend type Query @objectDirective",
+            "extend type Query { product: Product }",
+            "extend interface Node implements LegacyNode",
+            "extend interface Node @interfaceDirective",
+            "extend interface Node { legacyId: ID }",
+            "extend union SearchResult @unionDirective",
+            "extend union SearchResult = Product | Collection",
+            "extend enum ProductStatus @enumDirective",
+            "extend enum ProductStatus { UNLISTED }",
+            "extend input ProductInput @inputDirective",
+            "extend input ProductInput { title: String }",
+        ] {
+            assert!(
+                DefinitionDocument::<DefaultContext>::parse(s)
+                    .result
+                    .is_ok(),
+                "Expected `{s}` to parse successfully",
+            );
+        }
+    }
+
+    #[test]
+    fn type_system_extension_empty_variants_are_parse_errors() {
+        for s in [
+            "extend schema",
+            "extend scalar DateTime",
+            "extend type Query",
+            "extend interface Node",
+            "extend union SearchResult",
+            "extend enum ProductStatus",
+            "extend input ProductInput",
+        ] {
+            assert!(
+                DefinitionDocument::<DefaultContext>::parse(s)
+                    .result
+                    .is_err(),
+                "Expected `{s}` to be rejected",
+            );
+        }
+    }
+
+    #[test]
+    fn type_system_extension_unknown_or_missing_extension_kind_is_parse_error() {
+        for s in [
+            "extend directive @foo on FIELD",
+            "extend { query: Query }",
+            "extend",
+        ] {
+            assert!(
+                DefinitionDocument::<DefaultContext>::parse(s)
+                    .result
+                    .is_err(),
+                "Expected `{s}` to be rejected",
+            );
+        }
+    }
+
+    #[test]
+    fn document_can_mix_definitions_and_type_system_extensions() {
+        let s = r#"
+        type Query {
+            foo: String!
+        }
+
+        extend type Query @deprecated
+        "#;
+
+        let document: DefinitionDocument = DefinitionDocument::parse(s)
+            .result
+            .expect("Document had parse errors");
+
+        assert_eq!(2, document.definition_count());
+        assert_eq!(1, document.type_system_extensions().len());
     }
 
     #[test]
