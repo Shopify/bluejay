@@ -21,6 +21,7 @@ mod object_type_definition;
 mod output_type;
 mod schema_definition;
 mod type_definition;
+mod type_system_extension;
 mod union_member_type;
 mod union_member_types;
 mod union_type_definition;
@@ -48,6 +49,10 @@ pub use object_type_definition::ObjectTypeDefinition;
 pub use output_type::{BaseOutputType, OutputType};
 pub use schema_definition::SchemaDefinition;
 pub use type_definition::TypeDefinition;
+pub use type_system_extension::{
+    EnumTypeExtension, InputObjectTypeExtension, InterfaceTypeExtension, ObjectTypeExtension,
+    ScalarTypeExtension, SchemaExtension, TypeSystemExtension, UnionTypeExtension,
+};
 pub use union_member_type::UnionMemberType;
 pub use union_member_types::UnionMemberTypes;
 pub use union_type_definition::UnionTypeDefinition;
