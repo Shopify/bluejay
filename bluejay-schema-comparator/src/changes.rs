@@ -6,7 +6,7 @@ use bluejay_core::definition::{
     ShallowOutputTypeReference, TypeDefinitionReference, UnionTypeDefinition,
 };
 use bluejay_core::{Argument, AsIter, Directive, Value};
-use bluejay_printer::value::ValuePrinter;
+use bluejay_printer::print_value;
 use std::borrow::Cow;
 use strum::AsRefStr;
 
@@ -684,7 +684,7 @@ impl<S: SchemaDefinition> Change<'_, S> {
             } => match (old_argument.default_value(), new_argument.default_value()) {
                 (Some(old_default_value), Some(new_default_value)) => {
                     if old_default_value.as_ref() != new_default_value.as_ref() {
-                        format!("Default value for argument `{}` on field `{}.{}` was changed from `{}` to `{}`", old_argument.name(), type_name, field.name(), ValuePrinter::new(old_default_value), ValuePrinter::new(new_default_value))
+                        format!("Default value for argument `{}` on field `{}.{}` was changed from `{}` to `{}`", old_argument.name(), type_name, field.name(), print_value(old_default_value), print_value(new_default_value))
                     } else {
                         String::new()
                     }
@@ -692,7 +692,7 @@ impl<S: SchemaDefinition> Change<'_, S> {
                 (Some(old_default_value), None) => {
                     format!(
                         "Default value `{}` was removed from argument `{}` on field `{}.{}`",
-                        ValuePrinter::new(old_default_value),
+                        print_value(old_default_value),
                         old_argument.name(),
                         type_name,
                         field.name()
@@ -701,7 +701,7 @@ impl<S: SchemaDefinition> Change<'_, S> {
                 (None, Some(new_default_value)) => {
                     format!(
                         "Default value `{}` was added to argument `{}` on field `{}.{}`",
-                        ValuePrinter::new(new_default_value),
+                        print_value(new_default_value),
                         new_argument.name(),
                         type_name,
                         field.name()
@@ -857,8 +857,8 @@ impl<S: SchemaDefinition> Change<'_, S> {
                             "Input field `{}.{}` default value changed from `{}` to `{}`",
                             input_object_type_definition.name(),
                             new_field_definition.name(),
-                            ValuePrinter::new(old_default_value),
-                            ValuePrinter::new(new_default_value)
+                            print_value(old_default_value),
+                            print_value(new_default_value)
                         )
                     } else {
                         String::new()
@@ -867,7 +867,7 @@ impl<S: SchemaDefinition> Change<'_, S> {
                 (Some(old_default_value), None) => {
                     format!(
                         "Default value `{}` was removed from input field `{}.{}`",
-                        ValuePrinter::new(old_default_value),
+                        print_value(old_default_value),
                         input_object_type_definition.name(),
                         old_field_definition.name()
                     )
@@ -875,7 +875,7 @@ impl<S: SchemaDefinition> Change<'_, S> {
                 (None, Some(new_default_value)) => {
                     format!(
                         "Default value `{}` was added to input field `{}.{}`",
-                        ValuePrinter::new(new_default_value),
+                        print_value(new_default_value),
                         input_object_type_definition.name(),
                         old_field_definition.name()
                     )
@@ -980,7 +980,7 @@ impl<S: SchemaDefinition> Change<'_, S> {
                 ) {
                     (Some(old_default_value), Some(new_default_value)) => {
                         if old_default_value.as_ref() != new_default_value.as_ref() {
-                            format!("Directive argument `{}.{}` default value changed from `{}` to `{}`", directive_definition.name(), new_argument_definition.name(), ValuePrinter::new(old_default_value), ValuePrinter::new(new_default_value))
+                            format!("Directive argument `{}.{}` default value changed from `{}` to `{}`", directive_definition.name(), new_argument_definition.name(), print_value(old_default_value), print_value(new_default_value))
                         } else {
                             String::new()
                         }
@@ -988,7 +988,7 @@ impl<S: SchemaDefinition> Change<'_, S> {
                     (Some(old_default_value), None) => {
                         format!(
                             "Default value `{}` was removed from directive argument `{}.{}`",
-                            ValuePrinter::new(old_default_value),
+                            print_value(old_default_value),
                             directive_definition.name(),
                             old_argument_definition.name()
                         )
@@ -996,7 +996,7 @@ impl<S: SchemaDefinition> Change<'_, S> {
                     (None, Some(new_default_value)) => {
                         format!(
                             "Default value `{}` was added to directive argument `{}.{}`",
-                            ValuePrinter::new(new_default_value),
+                            print_value(new_default_value),
                             directive_definition.name(),
                             old_argument_definition.name()
                         )
@@ -1057,8 +1057,8 @@ impl<S: SchemaDefinition> Change<'_, S> {
                     "Value for argument `{}` on directive `{}` changed from {} to {}",
                     new_argument.name(),
                     directive.name(),
-                    ValuePrinter::new(old_argument.value()),
-                    ValuePrinter::new(new_argument.value()),
+                    print_value(old_argument.value()),
+                    print_value(new_argument.value()),
                 )
             }
         }
