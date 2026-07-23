@@ -60,7 +60,7 @@ impl<'a, S: SchemaDefinition, C: CodeGenerator> EnumTypeDefinitionBuilder<'a, S,
                 .code_generator
                 .additional_impls_for_enum(instance.enum_type_definition)
                 .into_iter()
-                .map(Into::into),
+                .map(syn::Item::Impl),
         );
 
         items

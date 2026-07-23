@@ -80,7 +80,7 @@ impl<'a, S: SchemaDefinition, C: CodeGenerator> InputObjectTypeDefinitionBuilder
                 .code_generator()
                 .additional_impls_for_one_of_input_object(self.input_object_type_definition)
                 .into_iter()
-                .map(Into::into),
+                .map(syn::Item::Impl),
         );
 
         items
@@ -128,7 +128,7 @@ impl<'a, S: SchemaDefinition, C: CodeGenerator> InputObjectTypeDefinitionBuilder
                 .code_generator()
                 .additional_impls_for_input_object(self.input_object_type_definition)
                 .into_iter()
-                .map(Into::into),
+                .map(syn::Item::Impl),
         );
 
         items

@@ -37,7 +37,7 @@ impl<'a, C: CodeGenerator> ExecutableStructBuilder<'a, C> {
                 .code_generator
                 .additional_impls_for_executable_struct(instance.executable_struct)
                 .into_iter()
-                .map(Into::into),
+                .map(syn::Item::Impl),
         );
 
         items.extend(instance.nested_module());

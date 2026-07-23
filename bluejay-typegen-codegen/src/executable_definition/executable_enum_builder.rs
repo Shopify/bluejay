@@ -39,7 +39,7 @@ impl<'a, C: CodeGenerator> ExecutableEnumBuilder<'a, C> {
                 .code_generator
                 .additional_impls_for_executable_enum(instance.executable_enum)
                 .into_iter()
-                .map(Into::into),
+                .map(syn::Item::Impl),
         );
 
         items.extend(instance.nested_module());
