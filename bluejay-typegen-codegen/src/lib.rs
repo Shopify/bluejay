@@ -234,7 +234,7 @@ fn custom_scalar_borrows(
                         pub type #ident #lifetime = #ty;
                     };
                     if let Some((_, items)) = module.content.as_mut() {
-                        items.push(alias.into());
+                        items.push(syn::Item::Type(alias));
                     }
                     custom_scalars.insert(
                         name,
@@ -329,7 +329,7 @@ fn process_module_item<S: SchemaDefinition, C: CodeGenerator>(
                         )?;
                         module.content = Some((syn::token::Brace::default(), items));
                         module.attrs = Vec::new();
-                        Ok(module.into())
+                        Ok(syn::Item::Mod(module))
                     } else {
                         Err(syn::Error::new(
                             list.delimiter.span().open(),

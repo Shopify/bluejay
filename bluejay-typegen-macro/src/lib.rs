@@ -125,7 +125,7 @@ impl CodeGenerator for SerdeCodeGenerator {
 
         let fields_named: syn::FieldsNamed = parse_quote! { { #(#fields,)* } };
 
-        fields_named.into()
+        syn::Fields::Named(fields_named)
     }
 
     fn attributes_for_executable_enum(

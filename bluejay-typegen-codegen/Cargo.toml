@@ -13,7 +13,7 @@ description = "Code generation utilities for `bluejay-typegen-macro`"
 bluejay-core = { workspace = true }
 bluejay-parser = { workspace = true, features = ["format-errors"] }
 bluejay-validator = { workspace = true }
-syn = { version = "2.0", features = ["full"] }
+syn = { version = "3.0", features = ["full"] }
 quote = "1.0"
 proc-macro2 = "1.0"
 convert_case = "0.10"
