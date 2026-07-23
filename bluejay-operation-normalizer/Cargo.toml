@@ -15,7 +15,7 @@ bumpalo = { version = "3", features = ["collections"] }
 
 [dev-dependencies]
 bluejay-parser = { workspace = true }
-criterion = "0.5"
+criterion = "0.7"
 
 [[bench]]
 name = "normalize"
