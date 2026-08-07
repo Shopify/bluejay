@@ -10,5 +10,6 @@ type MyQueryRootType {
 
 schema {
   query: MyQueryRootType
+
   mutation: MyMutationRootType
 }
