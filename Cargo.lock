@@ -79,7 +79,7 @@ dependencies = [
 
 [[package]]
 name = "bluejay-core"
-version = "0.3.1"
+version = "0.4.0"
 dependencies = [
  "enum-as-inner",
  "itertools 0.15.0",
@@ -89,7 +89,7 @@ dependencies = [
 
 [[package]]
 name = "bluejay-operation-normalizer"
-version = "0.3.1"
+version = "0.4.0"
 dependencies = [
  "blake3",
  "bluejay-core",
@@ -100,7 +100,7 @@ dependencies = [
 
 [[package]]
 name = "bluejay-parser"
-version = "0.3.1"
+version = "0.4.0"
 dependencies = [
  "ariadne",
  "bluejay-core",
@@ -116,7 +116,7 @@ dependencies = [
 
 [[package]]
 name = "bluejay-printer"
-version = "0.3.1"
+version = "0.4.0"
 dependencies = [
  "bluejay-core",
  "bluejay-parser",
@@ -126,7 +126,7 @@ dependencies = [
 
 [[package]]
 name = "bluejay-schema-comparator"
-version = "0.3.1"
+version = "0.4.0"
 dependencies = [
  "bluejay-core",
  "bluejay-parser",
@@ -137,7 +137,7 @@ dependencies = [
 
 [[package]]
 name = "bluejay-typegen"
-version = "0.3.1"
+version = "0.4.0"
 dependencies = [
  "bluejay-typegen-macro",
  "serde",
@@ -147,7 +147,7 @@ dependencies = [
 
 [[package]]
 name = "bluejay-typegen-codegen"
-version = "0.3.1"
+version = "0.4.0"
 dependencies = [
  "bluejay-core",
  "bluejay-parser",
@@ -161,7 +161,7 @@ dependencies = [
 
 [[package]]
 name = "bluejay-typegen-macro"
-version = "0.3.1"
+version = "0.4.0"
 dependencies = [
  "bluejay-core",
  "bluejay-typegen-codegen",
@@ -172,7 +172,7 @@ dependencies = [
 
 [[package]]
 name = "bluejay-validator"
-version = "0.3.1"
+version = "0.4.0"
 dependencies = [
  "bluejay-core",
  "bluejay-parser",
@@ -187,7 +187,7 @@ dependencies = [
 
 [[package]]
 name = "bluejay-visibility"
-version = "0.3.1"
+version = "0.4.0"
 dependencies = [
  "bluejay-core",
  "bluejay-parser",
