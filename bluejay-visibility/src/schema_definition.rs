@@ -201,7 +201,7 @@ impl<'a, S: definition::SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>>
     fn get_type_definition(
         &self,
         name: &str,
-    ) -> Option<definition::TypeDefinitionReference<Self::TypeDefinition>> {
+    ) -> Option<definition::TypeDefinitionReference<'_, Self::TypeDefinition>> {
         self.cache
             .get_type_definition(name)
             .or_else(|| {

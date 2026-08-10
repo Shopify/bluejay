@@ -42,15 +42,15 @@ impl<'a> FromTokens<'a> for VariableDefinition<'a> {
 }
 
 impl VariableDefinition<'_> {
-    pub fn variable(&self) -> &Variable {
+    pub fn variable(&self) -> &Variable<'_> {
         &self.variable
     }
 
-    pub fn r#type(&self) -> &VariableType {
+    pub fn r#type(&self) -> &VariableType<'_> {
         &self.r#type
     }
 
-    pub fn default_value(&self) -> Option<&ConstValue> {
+    pub fn default_value(&self) -> Option<&ConstValue<'_>> {
         self.default_value.as_ref()
     }
 }

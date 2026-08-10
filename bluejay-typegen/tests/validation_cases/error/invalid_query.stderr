@@ -5,12 +5,13 @@ error: Error: Field `bar` does not exist on type `Query`
           │   ─┬─
           │    ╰─── Field does not exist on type `Query`
        ───╯
+
   --> tests/validation_cases/error/invalid_query.rs:7:13
    |
-7  |       #[query([
+ 7 |       #[query([
    |  _____________^
-8  | |         {
-9  | |             bar
+ 8 | |         {
+ 9 | |             bar
 10 | |         }
 11 | |     ])]
    | |_____^

@@ -282,7 +282,7 @@ fn coerce_input_object_value<
         errors.extend(
             indexed_object
                 .iter()
-                .filter(|(_, entries)| (entries.len() > 1))
+                .filter(|(_, entries)| entries.len() > 1)
                 .map(|(&field_name, entries)| Error::NonUniqueFieldNames {
                     value,
                     field_name,

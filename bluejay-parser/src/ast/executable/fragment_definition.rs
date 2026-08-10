@@ -63,7 +63,7 @@ impl<'a> FragmentDefinition<'a> {
         &self.type_condition
     }
 
-    pub fn selection_set(&self) -> &SelectionSet {
+    pub fn selection_set(&self) -> &SelectionSet<'_> {
         &self.selection_set
     }
 }

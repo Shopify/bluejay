@@ -5,6 +5,7 @@ error: Error: typegen requires unaliased selection of `__typename` on union type
           │       ───────────────────┬───────────────────
           │                          ╰───────────────────── Selection set does not contain an unaliased `__typename` selection as the first selection
        ───╯
+
   --> tests/validation_cases/error/invalid_query_missing_typename_on_union.rs:17:13
    |
 17 |       #[query([

@@ -104,7 +104,7 @@ impl Token {
         let common_indent = lines[1..]
             .iter()
             .filter_map(|&(start, end)| {
-                let line_bytes = raw[start..end].as_bytes();
+                let line_bytes = &raw.as_bytes()[start..end];
                 let indent = line_bytes.iter().position(|&b| b != b' ' && b != b'\t');
                 indent // None means all-whitespace, filtered out
             })

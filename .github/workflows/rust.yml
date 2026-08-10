@@ -10,6 +10,15 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
+  msrv:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Install Rust 1.88.0
+        run: rustup toolchain install 1.88.0 --profile minimal
+      - name: Check minimum Rust version
+        run: cargo +1.88.0 check --workspace --all-targets --all-features
+
   lint:
     runs-on: ubuntu-latest
     steps:
