@@ -5,6 +5,7 @@ error: Error: typegen requires fragment spreads on interfaces to target either t
           │                 ──────┬──────
           │                       ╰──────── Fragment spread on interface type
        ───╯
+
   --> tests/validation_cases/error/interface_fragment_spread_invalid_target.rs:15:13
    |
 15 |       #[query([

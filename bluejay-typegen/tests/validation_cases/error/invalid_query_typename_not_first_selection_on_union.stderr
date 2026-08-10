@@ -13,6 +13,7 @@ error: Error: typegen requires unaliased selection of `__typename` on union type
           │                           ─────┬────
           │                                ╰────── Field selection on union type
        ───╯
+
   --> tests/validation_cases/error/invalid_query_typename_not_first_selection_on_union.rs:17:13
    |
 17 |       #[query([

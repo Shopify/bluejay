@@ -20,7 +20,7 @@ pub trait Tokens<'a>: Iterator<Item = LexicalToken<'a>> {
     fn next_if_name(&mut self) -> Option<Name<'a>>;
     fn next_if_name_matches(&mut self, name: &str) -> Option<Span>;
     fn peek_variable_name(&mut self, n: usize) -> bool;
-    fn peek_name(&mut self, n: usize) -> Option<&Name>;
+    fn peek_name(&mut self, n: usize) -> Option<&Name<'_>>;
     fn peek_name_matches(&mut self, n: usize, name: &str) -> bool;
     fn peek_string_value(&mut self, n: usize) -> bool;
     fn peek_punctuator_matches(&mut self, n: usize, punctuator_type: PunctuatorType) -> bool;
@@ -56,7 +56,7 @@ impl<'a, T: Lexer<'a>> LexerTokens<'a, T> {
     }
 
     #[inline]
-    pub fn peek_next(&mut self) -> Option<&LexicalToken> {
+    pub fn peek_next(&mut self) -> Option<&LexicalToken<'_>> {
         self.peek(0)
     }
 
@@ -201,7 +201,7 @@ impl<'a, T: Lexer<'a>> LexerTokens<'a, T> {
     }
 
     #[inline]
-    pub fn peek_name(&mut self, n: usize) -> Option<&Name> {
+    pub fn peek_name(&mut self, n: usize) -> Option<&Name<'_>> {
         self.peek(n).and_then(LexicalToken::as_name)
     }
 
@@ -304,7 +304,7 @@ impl<'a, T: Lexer<'a>> Tokens<'a> for LexerTokens<'a, T> {
     }
 
     #[inline]
-    fn peek_name(&mut self, n: usize) -> Option<&Name> {
+    fn peek_name(&mut self, n: usize) -> Option<&Name<'_>> {
         self.peek_name(n)
     }
 

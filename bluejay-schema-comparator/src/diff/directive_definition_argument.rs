@@ -49,14 +49,14 @@ impl<'a, S: SchemaDefinition + 'a> DirectiveDefinitionArgumentDiff<'a, S> {
             self.old_argument_definition.default_value(),
             self.new_argument_definition.default_value(),
         ) {
-            (Some(old_default), Some(new_default)) => {
-                if old_default.as_ref() != new_default.as_ref() {
-                    changes.push(Change::DirectiveDefinitionArgumentDefaultValueChanged {
-                        directive_definition: self.directive_definition,
-                        old_argument_definition: self.old_argument_definition,
-                        new_argument_definition: self.new_argument_definition,
-                    });
-                }
+            (Some(old_default), Some(new_default))
+                if old_default.as_ref() != new_default.as_ref() =>
+            {
+                changes.push(Change::DirectiveDefinitionArgumentDefaultValueChanged {
+                    directive_definition: self.directive_definition,
+                    old_argument_definition: self.old_argument_definition,
+                    new_argument_definition: self.new_argument_definition,
+                });
             }
             (Some(_), None) | (None, Some(_)) => {
                 changes.push(Change::DirectiveDefinitionArgumentDefaultValueChanged {

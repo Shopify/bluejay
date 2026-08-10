@@ -102,7 +102,7 @@ pub trait SchemaDefinition:
     fn get_type_definition(
         &self,
         name: &str,
-    ) -> Option<TypeDefinitionReference<Self::TypeDefinition>>;
+    ) -> Option<TypeDefinitionReference<'_, Self::TypeDefinition>>;
     fn type_definitions(&self) -> Self::TypeDefinitions<'_>;
     fn get_directive_definition(&self, name: &str) -> Option<&Self::DirectiveDefinition>;
     fn directive_definitions(&self) -> Self::DirectiveDefinitions<'_>;

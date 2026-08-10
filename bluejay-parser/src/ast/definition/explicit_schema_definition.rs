@@ -19,7 +19,7 @@ pub struct ExplicitSchemaDefinition<'a, C: Context> {
 impl<'a, C: Context> ExplicitSchemaDefinition<'a, C> {
     pub(crate) const SCHEMA_IDENTIFIER: &'static str = "schema";
 
-    pub(crate) fn description(&self) -> Option<&StringValue> {
+    pub(crate) fn description(&self) -> Option<&StringValue<'_>> {
         self.description.as_ref()
     }
 

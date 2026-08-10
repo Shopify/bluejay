@@ -15,6 +15,7 @@ resolver = "2"
 
 [workspace.package]
 version = "0.3.1"
+rust-version = "1.88"
 
 [workspace.lints.clippy]
 wildcard_imports = "deny"
@@ -26,7 +27,7 @@ bluejay-printer = { path = "./bluejay-printer", version = "=0.3.1" }
 bluejay-schema-comparator = { path = "./bluejay-schema-comparator", version = "=0.3.1" }
 bluejay-typegen = { path = "./bluejay-typegen", version = "=0.3.1" }
 bluejay-typegen-codegen = { path = "./bluejay-typegen-codegen", version = "=0.3.1" }
-bluejay-typegen-macro = { path = "./bluejay-typegen-macro", version = "=0.3.1" }
+bluejay-typegen-macro = { path = "./bluejay-typegen-macro", version = "=0.3.1", default-features = false }
 bluejay-validator = { path = "./bluejay-validator", version = "=0.3.1" }
 bluejay-operation-normalizer = { path = "./bluejay-operation-normalizer", version = "=0.3.1" }
 bluejay-visibility = { path = "./bluejay-visibility", version = "=0.3.1" }

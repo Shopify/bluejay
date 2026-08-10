@@ -1,7 +1,7 @@
 use bluejay_parser::ast::{executable::ExecutableDocument, Parse};
 use criterion::{criterion_group, criterion_main, Criterion};
 
-fn parse(input: &str) -> ExecutableDocument {
+fn parse(input: &str) -> ExecutableDocument<'_> {
     ExecutableDocument::parse(input)
         .result
         .expect("parse error")

@@ -5,6 +5,7 @@ error: Error: Referenced type `Bar` does not exist
           │                   ─┬─
           │                    ╰─── No definition for referenced type
        ───╯
+
  --> tests/validation_cases/error/invalid_schema.rs:1:28
   |
 1 |   #[bluejay_typegen::typegen([

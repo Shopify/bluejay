@@ -96,11 +96,11 @@ impl<'a> Field<'a> {
         &self.name
     }
 
-    pub fn arguments(&self) -> Option<&VariableArguments> {
+    pub fn arguments(&self) -> Option<&VariableArguments<'_>> {
         self.arguments.as_ref()
     }
 
-    pub fn selection_set(&self) -> Option<&SelectionSet> {
+    pub fn selection_set(&self) -> Option<&SelectionSet<'_>> {
         self.selection_set.as_ref()
     }
 }

@@ -184,18 +184,14 @@ impl<'a, S: SchemaDefinition, C: CodeGenerator> InputObjectTypeDefinitionBuilder
         match ty {
             InputTypeReference::Base(base, _) if base.name() == target => true,
             ty => match ty.base(self.config.schema_definition()) {
-                BaseInputTypeReference::InputObject(iotd) => {
-                    if visited.insert(iotd.name()) {
-                        iotd.input_field_definitions().iter().any(|ivd| {
-                            self.contains_non_list_reference(
-                                target,
-                                ivd.r#type().as_ref(self.config.schema_definition()),
-                                visited,
-                            )
-                        })
-                    } else {
-                        false
-                    }
+                BaseInputTypeReference::InputObject(iotd) if visited.insert(iotd.name()) => {
+                    iotd.input_field_definitions().iter().any(|ivd| {
+                        self.contains_non_list_reference(
+                            target,
+                            ivd.r#type().as_ref(self.config.schema_definition()),
+                            visited,
+                        )
+                    })
                 }
                 _ => false,
             },
