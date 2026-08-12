@@ -798,7 +798,17 @@ mod tests {
     fn kitchen_sink_token_stream_test() {
         // Lex a document with all token types and all ignored token types,
         // and compare the full token stream, with spans, to the expected stream.
-        let separators = [" ", ",", "\n", "\t", "\r\n", " # comment\n", "\u{FEFF}"];
+        let separators = [
+            " ",
+            ",",
+            "\n",
+            "\t",
+            "\r\n",
+            " # comment\n",
+            " # comment\r\n",
+            " #comment\r",
+            "\u{FEFF}",
+        ];
         let parts = vec![
             ("query", Token::Name("query")),
             ("MyQuery", Token::Name("MyQuery")),
