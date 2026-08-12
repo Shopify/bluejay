@@ -24,7 +24,7 @@ pub(crate) struct Extras {
 #[logos(subpattern fixedunicode = r"\\u[0-9A-Fa-f]{4}")]
 #[logos(error = LexError)]
 #[logos(skip r"[\uFEFF\t \n\r,]+")]
-#[logos(skip r"#[^\n\r]*")] // comments
+#[logos(skip(r"#[^\n\r]*", allow_greedy = true))] // comments
 #[logos(extras = Extras)]
 pub(crate) enum Token<'a> {
     // Punctuators
@@ -470,11 +470,9 @@ mod tests {
             vec![(Err(LexError::UnrecognizedToken), 0..1)],
             Token::lexer(".").spanned().collect::<Vec<_>>(),
         );
+        // Two dots give one error that spans the failed match attempt
         assert_eq!(
-            vec![
-                (Err(LexError::UnrecognizedToken), 0..1),
-                (Err(LexError::UnrecognizedToken), 1..2),
-            ],
+            vec![(Err(LexError::UnrecognizedToken), 0..2)],
             Token::lexer("..").spanned().collect::<Vec<_>>(),
         );
         assert_eq!(
@@ -589,21 +587,23 @@ mod tests {
             )],
             Token::lexer(r#""\q""#).spanned().collect::<Vec<_>>(),
         );
-        // A unicode escape sequence with too few digits
+        // A unicode escape sequence with too few digits.
+        // The inner error covers the full failed escape sequence.
         assert_eq!(
             vec![(
                 Err(LexError::StringValueInvalid(vec![
-                    StringValueLexError::InvalidCharacters(Span::from(1..2)),
+                    StringValueLexError::InvalidCharacters(Span::from(1..5)),
                 ])),
                 0..6,
             )],
             Token::lexer(r#""\u12""#).spanned().collect::<Vec<_>>(),
         );
-        // A unicode escape sequence with no digits
+        // A unicode escape sequence with no digits.
+        // The inner error covers the full failed escape sequence.
         assert_eq!(
             vec![(
                 Err(LexError::StringValueInvalid(vec![
-                    StringValueLexError::InvalidCharacters(Span::from(1..2)),
+                    StringValueLexError::InvalidCharacters(Span::from(1..4)),
                 ])),
                 0..6,
             )],
@@ -798,7 +798,17 @@ mod tests {
     fn kitchen_sink_token_stream_test() {
         // Lex a document with all token types and all ignored token types,
         // and compare the full token stream, with spans, to the expected stream.
-        let separators = [" ", ",", "\n", "\t", "\r\n", " # comment\n", "\u{FEFF}"];
+        let separators = [
+            " ",
+            ",",
+            "\n",
+            "\t",
+            "\r\n",
+            " # comment\n",
+            " # comment\r\n",
+            " #comment\r",
+            "\u{FEFF}",
+        ];
         let parts = vec![
             ("query", Token::Name("query")),
             ("MyQuery", Token::Name("MyQuery")),
