@@ -93,22 +93,37 @@ fn truncated_documents_parse_safely() {
     }
 }
 
-/// Documents with one large numeric token or one large run of ignored
-/// characters must parse safely. With logos 0.15, these inputs overflow
-/// the stack in unoptimized builds, and the process aborts. Optimized
-/// builds are not affected. The max tokens limit does not protect
-/// against this, because each input is a single token.
-/// This test is ignored because a failure aborts the full test process.
-/// Try to enable this test again after each logos upgrade:
-/// run `cargo test -p bluejay-parser --test lexer_adversarial_test -- --ignored`
-/// in a debug build. If all tests pass, remove the ignore attribute.
+/// Documents with one large numeric token or one large run of ASCII
+/// ignored characters must parse safely. Logos 0.15 caused a stack
+/// overflow for these inputs in unoptimized builds. Logos 0.16 parses
+/// them with bounded stack usage.
 #[test]
-#[ignore = "logos 0.15 overflows the stack on large single tokens in unoptimized builds; try to re-enable after the next logos upgrade"]
 fn large_single_token_documents_parse_safely() {
     let sources = [
         format!("{{ a(b: {}) }}", "9".repeat(100_000)),
         format!("{{ a(b: -1.{0}e-{0}) }}", "9".repeat(50_000)),
         format!("query {}{{ a }}", " ".repeat(100_000)),
+    ];
+    for source in sources {
+        assert_parses_safely(&source);
+    }
+}
+
+/// Documents with one large run of multi-byte characters must parse
+/// safely. With logos 0.16, these inputs overflow the stack in
+/// unoptimized builds, and the process aborts. Optimized builds are
+/// not affected. The max tokens limit does not protect against this,
+/// because each input is a single token.
+/// This test is ignored because a failure aborts the full test process.
+/// Try to enable this test again after each logos upgrade:
+/// run `cargo test -p bluejay-parser --test lexer_adversarial_test -- --ignored`
+/// in a debug build. If all tests pass, remove the ignore attribute.
+#[test]
+#[ignore = "logos 0.16 overflows the stack on long runs of multi-byte characters in unoptimized builds; try to re-enable after the next logos upgrade"]
+fn large_multibyte_documents_parse_safely() {
+    let sources = [
+        format!("{{ a(b: \"{}\") }}", "é".repeat(50_000)),
+        format!("{}{{ a }}", "\u{FEFF}".repeat(30_000)),
     ];
     for source in sources {
         assert_parses_safely(&source);

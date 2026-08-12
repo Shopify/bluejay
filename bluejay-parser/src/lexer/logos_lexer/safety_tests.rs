@@ -242,14 +242,19 @@ fn large_pathological_inputs_terminate() {
         format!("\"\"\"{}", "\\\"\"\"".repeat(25_000)),
         format!("\"\"\"{}\"\"\"", " \n".repeat(50_000)),
         "$".repeat(50_000),
-        // Many small numeric tokens. See large_single_token_runs_terminate
-        // for why one large numeric token is not included here.
         "9 ".repeat(50_000),
         "0 ".repeat(50_000),
         ".".repeat(50_000),
         format!("#{}", "c".repeat(100_000)),
-        // Keep runs of ignored characters below the crash threshold for
-        // unoptimized builds. See large_single_token_runs_terminate.
+        // Large ASCII tokens and large ASCII ignored runs crashed
+        // unoptimized builds with logos 0.15. Logos 0.16 lexes them
+        // with bounded stack usage.
+        "9".repeat(100_000),
+        format!("-1.{0}e-{0}", "9".repeat(50_000)),
+        " ".repeat(100_000),
+        "\t \r\n,".repeat(20_000),
+        // Keep runs of byte order marks below the crash threshold for
+        // unoptimized builds. See large_multibyte_runs_terminate.
         "\u{FEFF}\t \r\n,".repeat(1_000),
     ];
     for input in large_inputs {
@@ -257,13 +262,16 @@ fn large_pathological_inputs_terminate() {
     }
 }
 
-/// With logos 0.15, the generated matchers for numeric tokens and for
-/// runs of ignored characters use stack space proportional to the run
-/// length in unoptimized builds. Optimized builds compile the recursion
-/// into loops, so release builds accept runs of all lengths. As a result
-/// of this, one numeric token with approximately 5,000 or more digits,
-/// or one run of approximately 50,000 or more ignored characters,
-/// crashes unoptimized builds.
+/// With logos 0.16, the generated matchers for runs of multi-byte
+/// characters use stack space proportional to the run length in
+/// unoptimized builds. One thousand multi-byte characters use
+/// approximately 1 MiB of stack. Optimized builds compile the
+/// recursion into loops, so release builds accept runs of all lengths.
+/// The affected inputs are strings with many multi-byte characters and
+/// runs of many byte order marks.
+/// Logos 0.15 had the same problem for numeric tokens and for runs of
+/// ASCII ignored characters. Logos 0.16 corrected those cases and
+/// introduced the multi-byte problem for strings.
 /// This test pins the current stack usage with some headroom.
 /// If it starts to abort with a stack overflow after a logos upgrade,
 /// then the stack usage per character became worse, which makes the
@@ -277,27 +285,28 @@ fn long_token_stack_usage() {
             assert_lexes_safely(&format!("-1.{}e-9", "9".repeat(1_000)));
             assert_lexes_safely(&" ".repeat(1_000));
             assert_lexes_safely(&"\u{FEFF}\t \r\n,".repeat(200));
+            assert_lexes_safely(&format!("\"{}\"", "é".repeat(500)));
         })
         .unwrap()
         .join()
         .unwrap();
 }
 
-/// One large numeric token or one large run of ignored characters must
-/// lex safely. With logos 0.15, these inputs overflow the stack in
-/// unoptimized builds, and the process aborts. Optimized builds are not
-/// affected. See long_token_stack_usage for the details.
+/// One large run of multi-byte characters must lex safely. With
+/// logos 0.16, these inputs overflow the stack in unoptimized builds,
+/// and the process aborts. Optimized builds are not affected.
+/// See long_token_stack_usage for the details.
 /// This test is ignored because a failure aborts the full test process.
 /// Try to enable this test again after each logos upgrade:
 /// run `cargo test -p bluejay-parser --lib -- --ignored` in a debug
 /// build. If all tests pass, remove the ignore attribute.
 #[test]
-#[ignore = "logos 0.15 overflows the stack on large single tokens in unoptimized builds; try to re-enable after the next logos upgrade"]
-fn large_single_token_runs_terminate() {
+#[ignore = "logos 0.16 overflows the stack on long runs of multi-byte characters in unoptimized builds; try to re-enable after the next logos upgrade"]
+fn large_multibyte_runs_terminate() {
     let large_inputs = [
-        "9".repeat(100_000),
-        format!("-1.{0}e-{0}", "9".repeat(50_000)),
-        " ".repeat(100_000),
+        format!("\"{}\"", "é".repeat(50_000)),
+        format!("\"{}\"", "🔥".repeat(25_000)),
+        "\u{FEFF}".repeat(30_000),
         "\u{FEFF}\t \r\n,".repeat(20_000),
     ];
     for input in large_inputs {
