@@ -12,6 +12,13 @@ pub struct InputObjectCircularReferences<'a, S: SchemaDefinition + 'a> {
 }
 
 impl<'a, S: SchemaDefinition> Visitor<'a, S> for InputObjectCircularReferences<'a, S> {
+    fn new(schema_definition: &'a S) -> Self {
+        Self {
+            schema_definition,
+            errors: Vec::new(),
+        }
+    }
+
     fn visit_input_object_type_definition(
         &mut self,
         input_object_type_definition: &'a <S as SchemaDefinition>::InputObjectTypeDefinition,
@@ -66,22 +73,11 @@ impl<'a, S: SchemaDefinition + 'a> InputObjectCircularReferences<'a, S> {
     }
 }
 
-impl<'a, S: SchemaDefinition> IntoIterator for InputObjectCircularReferences<'a, S> {
-    type Item = Error<'a, S>;
-    type IntoIter = std::vec::IntoIter<Error<'a, S>>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.errors.into_iter()
-    }
-}
-
 impl<'a, S: SchemaDefinition> Rule<'a, S> for InputObjectCircularReferences<'a, S> {
     type Error = Error<'a, S>;
+    type Errors = std::vec::IntoIter<Error<'a, S>>;
 
-    fn new(schema_definition: &'a S) -> Self {
-        Self {
-            schema_definition,
-            errors: Vec::new(),
-        }
+    fn into_errors(self) -> Self::Errors {
+        self.errors.into_iter()
     }
 }
