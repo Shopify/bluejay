@@ -9,7 +9,7 @@ pub use input_object_circular_references::InputObjectCircularReferences;
 #[macro_export]
 macro_rules! combine_definition_rules {
     ( $name:ty, $err:ty, [$( $rule:ty ),* $(,)?] $(,)? ) => {
-        paste::paste! {
+        pastey::paste! {
             pub struct $name<'a, S: bluejay_core::definition::SchemaDefinition> {
                 $([<$rule:snake>]: $rule<'a, S>,)*
             }
