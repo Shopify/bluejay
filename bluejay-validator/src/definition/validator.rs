@@ -1,4 +1,4 @@
-use crate::definition::{BuiltinRules, Rule};
+use crate::definition::{BuiltinRules, Rule, Visitor};
 use bluejay_core::definition::{SchemaDefinition, TypeDefinitionReference};
 
 pub struct Validator<'a, S: SchemaDefinition, R: Rule<'a, S>> {
@@ -12,7 +12,7 @@ impl<'a, S: SchemaDefinition, R: Rule<'a, S>> Validator<'a, S, R> {
     fn new(schema_definition: &'a S) -> Self {
         Self {
             schema_definition,
-            rule: Rule::new(schema_definition),
+            rule: Visitor::new(schema_definition),
         }
     }
 
@@ -49,9 +49,9 @@ impl<'a, S: SchemaDefinition, R: Rule<'a, S>> Validator<'a, S, R> {
 
 impl<'a, S: SchemaDefinition, R: Rule<'a, S>> IntoIterator for Validator<'a, S, R> {
     type Item = R::Error;
-    type IntoIter = <R as IntoIterator>::IntoIter;
+    type IntoIter = R::Errors;
 
     fn into_iter(self) -> Self::IntoIter {
-        self.rule.into_iter()
+        self.rule.into_errors()
     }
 }

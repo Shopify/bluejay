@@ -1,4 +1,3 @@
-mod chain_iters;
 pub mod definition;
 pub mod executable;
 mod path;
