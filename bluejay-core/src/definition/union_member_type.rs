@@ -1,11 +1,11 @@
-use crate::definition::{ObjectTypeDefinition, SchemaDefinition};
+use crate::definition::SchemaDefinition;
 
 pub trait UnionMemberType {
-    type ObjectTypeDefinition: ObjectTypeDefinition;
+    type SchemaDefinition: SchemaDefinition;
 
-    fn member_type<'a, S: SchemaDefinition<ObjectTypeDefinition = Self::ObjectTypeDefinition>>(
+    fn member_type<'a>(
         &'a self,
-        schema_definition: &'a S,
-    ) -> &'a Self::ObjectTypeDefinition;
+        schema_definition: &'a Self::SchemaDefinition,
+    ) -> &'a <Self::SchemaDefinition as SchemaDefinition>::ObjectTypeDefinition;
     fn name(&self) -> &str;
 }

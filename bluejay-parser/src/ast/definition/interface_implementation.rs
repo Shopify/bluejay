@@ -1,6 +1,6 @@
 use std::marker::PhantomData;
 
-use crate::ast::definition::{Context, InterfaceTypeDefinition};
+use crate::ast::definition::{Context, InterfaceTypeDefinition, SchemaDefinition};
 use crate::ast::{DepthLimiter, FromTokens, ParseError, Tokens};
 use crate::lexical_token::Name;
 use bluejay_core::definition::{
@@ -15,15 +15,12 @@ pub struct InterfaceImplementation<'a, C: Context + 'a> {
 }
 
 impl<'a, C: Context> CoreInterfaceImplementation for InterfaceImplementation<'a, C> {
-    type InterfaceTypeDefinition = InterfaceTypeDefinition<'a, C>;
+    type SchemaDefinition = SchemaDefinition<'a, C>;
 
-    fn interface<
-        'b,
-        S: CoreSchemaDefinition<InterfaceTypeDefinition = Self::InterfaceTypeDefinition>,
-    >(
+    fn interface<'b>(
         &'b self,
-        schema_definition: &'b S,
-    ) -> &'b Self::InterfaceTypeDefinition {
+        schema_definition: &'b SchemaDefinition<'a, C>,
+    ) -> &'b InterfaceTypeDefinition<'a, C> {
         schema_definition
             .get_type_definition(self.interface_name().as_str())
             .unwrap()

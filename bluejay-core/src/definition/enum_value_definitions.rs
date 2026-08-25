@@ -1,6 +1,8 @@
-use crate::definition::EnumValueDefinition;
+use crate::definition::SchemaDefinition;
 use crate::AsIter;
 
-pub trait EnumValueDefinitions: AsIter<Item = Self::EnumValueDefinition> {
-    type EnumValueDefinition: EnumValueDefinition;
+pub trait EnumValueDefinitions:
+    AsIter<Item = <Self::SchemaDefinition as SchemaDefinition>::EnumValueDefinition>
+{
+    type SchemaDefinition: SchemaDefinition;
 }

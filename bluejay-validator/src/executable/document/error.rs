@@ -31,7 +31,7 @@ pub enum Error<'a, E: ExecutableDocument, S: SchemaDefinition> {
     },
     FieldDoesNotExistOnType {
         field: &'a E::Field,
-        r#type: TypeDefinitionReference<'a, S::TypeDefinition>,
+        r#type: TypeDefinitionReference<'a, S>,
     },
     OperationTypeNotDefined {
         operation: &'a E::ExplicitOperationDefinition,
@@ -89,11 +89,11 @@ pub enum Error<'a, E: ExecutableDocument, S: SchemaDefinition> {
     },
     FragmentSpreadIsNotPossible {
         fragment_spread: &'a E::FragmentSpread,
-        parent_type: TypeDefinitionReference<'a, S::TypeDefinition>,
+        parent_type: TypeDefinitionReference<'a, S>,
     },
     InlineFragmentSpreadIsNotPossible {
         inline_fragment: &'a E::InlineFragment,
-        parent_type: TypeDefinitionReference<'a, S::TypeDefinition>,
+        parent_type: TypeDefinitionReference<'a, S>,
     },
     InvalidConstValue(InputCoercionError<'a, true, E::Value<true>>),
     InvalidVariableValue(InputCoercionError<'a, false, E::Value<false>>),

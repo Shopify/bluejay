@@ -14,31 +14,14 @@ mod error;
 pub use error::Error;
 
 pub trait CoerceInput: SchemaDefinition {
-    fn coerce_value<
-        'a,
-        const CONST: bool,
-        I: InputType<
-            CustomScalarTypeDefinition = Self::CustomScalarTypeDefinition,
-            InputObjectTypeDefinition = Self::InputObjectTypeDefinition,
-            EnumTypeDefinition = Self::EnumTypeDefinition,
-        >,
-        V: Value<CONST>,
-    >(
+    fn coerce_value<'a, const CONST: bool, I: InputType<SchemaDefinition = Self>, V: Value<CONST>>(
         &'a self,
         input_type: &'a I,
         value: &'a V,
         path: Path<'a>,
     ) -> Result<(), Vec<Error<'a, CONST, V>>>;
 
-    fn coerce_const_value<
-        'a,
-        I: InputType<
-            CustomScalarTypeDefinition = Self::CustomScalarTypeDefinition,
-            InputObjectTypeDefinition = Self::InputObjectTypeDefinition,
-            EnumTypeDefinition = Self::EnumTypeDefinition,
-        >,
-        V: Value<true>,
-    >(
+    fn coerce_const_value<'a, I: InputType<SchemaDefinition = Self>, V: Value<true>>(
         &'a self,
         input_type: &'a I,
         value: &'a V,
@@ -52,11 +35,7 @@ impl<S: SchemaDefinition> CoerceInput for S {
     fn coerce_value<
         'a,
         const CONST: bool,
-        I: InputType<
-            CustomScalarTypeDefinition = Self::CustomScalarTypeDefinition,
-            InputObjectTypeDefinition = Self::InputObjectTypeDefinition,
-            EnumTypeDefinition = Self::EnumTypeDefinition,
-        >,
+        I: InputType<SchemaDefinition = Self>,
         V: Value<CONST>,
     >(
         &'a self,
@@ -72,11 +51,7 @@ fn coerce_value_for_input_type<
     'a,
     const CONST: bool,
     S: SchemaDefinition,
-    T: InputType<
-        CustomScalarTypeDefinition = S::CustomScalarTypeDefinition,
-        InputObjectTypeDefinition = S::InputObjectTypeDefinition,
-        EnumTypeDefinition = S::EnumTypeDefinition,
-    >,
+    T: InputType<SchemaDefinition = S>,
     V: Value<CONST>,
 >(
     schema_definition: &'a S,
@@ -139,11 +114,7 @@ fn coerce_value_for_base_input_type<
     'a,
     const CONST: bool,
     S: SchemaDefinition,
-    T: InputType<
-        CustomScalarTypeDefinition = S::CustomScalarTypeDefinition,
-        InputObjectTypeDefinition = S::InputObjectTypeDefinition,
-        EnumTypeDefinition = S::EnumTypeDefinition,
-    >,
+    T: InputType<SchemaDefinition = S>,
     V: Value<CONST>,
 >(
     schema_definition: &'a S,
@@ -203,9 +174,15 @@ fn coerce_custom_scalar_value<'a, const CONST: bool, V: Value<CONST>>(
     })
 }
 
-fn coerce_enum_value<'a, const CONST: bool, V: Value<CONST>, T: InputType>(
+fn coerce_enum_value<
+    'a,
+    const CONST: bool,
+    S: SchemaDefinition,
+    V: Value<CONST>,
+    T: InputType<SchemaDefinition = S>,
+>(
     input_type: &'a T,
-    enum_type_definition: &'a T::EnumTypeDefinition,
+    enum_type_definition: &'a S::EnumTypeDefinition,
     value: &'a V,
     path: Path<'a>,
 ) -> Result<(), Vec<Error<'a, CONST, V>>> {
@@ -250,16 +227,12 @@ fn coerce_input_object_value<
     'a,
     const CONST: bool,
     S: SchemaDefinition,
-    T: InputType<
-        CustomScalarTypeDefinition = S::CustomScalarTypeDefinition,
-        InputObjectTypeDefinition = S::InputObjectTypeDefinition,
-        EnumTypeDefinition = S::EnumTypeDefinition,
-    >,
+    T: InputType<SchemaDefinition = S>,
     V: Value<CONST>,
 >(
     schema_definition: &'a S,
     input_type: &'a T,
-    input_object_type_definition: &'a T::InputObjectTypeDefinition,
+    input_object_type_definition: &'a S::InputObjectTypeDefinition,
     value: &'a V,
     path: Path<'a>,
 ) -> Result<(), Vec<Error<'a, CONST, V>>> {

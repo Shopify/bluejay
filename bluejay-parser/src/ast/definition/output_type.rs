@@ -1,7 +1,4 @@
-use crate::ast::definition::{
-    Context, CustomScalarTypeDefinition, EnumTypeDefinition, InterfaceTypeDefinition,
-    ObjectTypeDefinition, TypeDefinition, UnionTypeDefinition,
-};
+use crate::ast::definition::{Context, SchemaDefinition, TypeDefinition};
 use crate::ast::{DepthLimiter, FromTokens, ParseError, Tokens};
 use crate::lexical_token::{Name, PunctuatorType};
 use crate::{HasSpan, Span};
@@ -31,7 +28,7 @@ impl<'a, C: Context + 'a> BaseOutputType<'a, C> {
 
     pub(crate) fn core_type_from_type_definition(
         type_definition: &'a TypeDefinition<'a, C>,
-    ) -> Result<BaseOutputTypeReference<'a, OutputType<'a, C>>, ()> {
+    ) -> Result<BaseOutputTypeReference<'a, SchemaDefinition<'a, C>>, ()> {
         match type_definition {
             TypeDefinition::BuiltinScalar(bstd) => {
                 Ok(BaseOutputTypeReference::BuiltinScalar(*bstd))
@@ -62,25 +59,12 @@ impl<'a, C: Context + 'a> OutputType<'a, C> {
 }
 
 impl<'a, C: Context + 'a> CoreOutputType for OutputType<'a, C> {
-    type CustomScalarTypeDefinition = CustomScalarTypeDefinition<'a, C>;
-    type EnumTypeDefinition = EnumTypeDefinition<'a, C>;
-    type InterfaceTypeDefinition = InterfaceTypeDefinition<'a, C>;
-    type ObjectTypeDefinition = ObjectTypeDefinition<'a, C>;
-    type UnionTypeDefinition = UnionTypeDefinition<'a, C>;
+    type SchemaDefinition = SchemaDefinition<'a, C>;
 
-    fn as_ref<
-        'b,
-        S: CoreSchemaDefinition<
-            CustomScalarTypeDefinition = Self::CustomScalarTypeDefinition,
-            EnumTypeDefinition = Self::EnumTypeDefinition,
-            ObjectTypeDefinition = Self::ObjectTypeDefinition,
-            InterfaceTypeDefinition = Self::InterfaceTypeDefinition,
-            UnionTypeDefinition = Self::UnionTypeDefinition,
-        >,
-    >(
+    fn as_ref<'b>(
         &'b self,
-        schema_definition: &'b S,
-    ) -> OutputTypeReference<'b, Self> {
+        schema_definition: &'b SchemaDefinition<'a, C>,
+    ) -> OutputTypeReference<'b, SchemaDefinition<'a, C>, Self> {
         match self {
             Self::Base(base, required, _) => OutputTypeReference::Base(
                 schema_definition

@@ -14,7 +14,7 @@ pub trait Visitor<'a, E: ExecutableDocument, S: SchemaDefinition> {
     fn visit_selection_set(
         &mut self,
         _selection_set: &'a E::SelectionSet,
-        _type: TypeDefinitionReference<'a, S::TypeDefinition>,
+        _type: TypeDefinitionReference<'a, S>,
     ) {
     }
 
@@ -61,14 +61,14 @@ pub trait Visitor<'a, E: ExecutableDocument, S: SchemaDefinition> {
     fn visit_inline_fragment(
         &mut self,
         _inline_fragment: &'a E::InlineFragment,
-        _scoped_type: TypeDefinitionReference<'a, S::TypeDefinition>,
+        _scoped_type: TypeDefinitionReference<'a, S>,
     ) {
     }
 
     fn visit_fragment_spread(
         &mut self,
         _fragment_spread: &'a E::FragmentSpread,
-        _scoped_type: TypeDefinitionReference<'a, S::TypeDefinition>,
+        _scoped_type: TypeDefinitionReference<'a, S>,
         _path: &Path<'a, E>,
     ) {
     }
@@ -119,7 +119,7 @@ macro_rules! impl_visitor {
                 fn visit_selection_set(
                     &mut self,
                     selection_set: &'a E::SelectionSet,
-                    r#type: TypeDefinitionReference<'a, S::TypeDefinition>,
+                    r#type: TypeDefinitionReference<'a, S>,
                 ) {
                     #(self.N.visit_selection_set(selection_set, r#type);)*
                 }
@@ -180,7 +180,7 @@ macro_rules! impl_visitor {
                 fn visit_inline_fragment(
                     &mut self,
                     inline_fragment: &'a E::InlineFragment,
-                    scoped_type: TypeDefinitionReference<'a, S::TypeDefinition>,
+                    scoped_type: TypeDefinitionReference<'a, S>,
                 ) {
                     #(self.N.visit_inline_fragment(inline_fragment, scoped_type);)*
                 }
@@ -188,7 +188,7 @@ macro_rules! impl_visitor {
                 fn visit_fragment_spread(
                     &mut self,
                     fragment_spread: &'a E::FragmentSpread,
-                    scoped_type: TypeDefinitionReference<'a, S::TypeDefinition>,
+                    scoped_type: TypeDefinitionReference<'a, S>,
                     path: &Path<'a, E>,
                 ) {
                     #(self.N.visit_fragment_spread(fragment_spread, scoped_type, path);)*

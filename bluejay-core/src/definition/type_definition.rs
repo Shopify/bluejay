@@ -1,33 +1,26 @@
 use crate::definition::{
     BaseInputTypeReference, BaseOutputTypeReference, EnumTypeDefinition, HasDirectives,
-    InputObjectTypeDefinition, InputType, InterfaceTypeDefinition, ObjectTypeDefinition,
-    OutputType, ScalarTypeDefinition, UnionTypeDefinition,
+    InputObjectTypeDefinition, InterfaceTypeDefinition, ObjectTypeDefinition, ScalarTypeDefinition,
+    SchemaDefinition, UnionTypeDefinition,
 };
 use crate::BuiltinScalarDefinition;
 use enum_as_inner::EnumAsInner;
 
 #[derive(Debug, EnumAsInner)]
-pub enum TypeDefinitionReference<'a, T: TypeDefinition> {
+pub enum TypeDefinitionReference<'a, S: SchemaDefinition> {
     BuiltinScalar(BuiltinScalarDefinition),
-    CustomScalar(&'a T::CustomScalarTypeDefinition),
-    Object(&'a T::ObjectTypeDefinition),
-    InputObject(&'a T::InputObjectTypeDefinition),
-    Enum(&'a T::EnumTypeDefinition),
-    Union(&'a T::UnionTypeDefinition),
-    Interface(&'a T::InterfaceTypeDefinition),
+    CustomScalar(&'a S::CustomScalarTypeDefinition),
+    Object(&'a S::ObjectTypeDefinition),
+    InputObject(&'a S::InputObjectTypeDefinition),
+    Enum(&'a S::EnumTypeDefinition),
+    Union(&'a S::UnionTypeDefinition),
+    Interface(&'a S::InterfaceTypeDefinition),
 }
 
-impl<
-        'a,
-        T: TypeDefinition,
-        I: InputType<
-            CustomScalarTypeDefinition = T::CustomScalarTypeDefinition,
-            InputObjectTypeDefinition = T::InputObjectTypeDefinition,
-            EnumTypeDefinition = T::EnumTypeDefinition,
-        >,
-    > From<BaseInputTypeReference<'a, I>> for TypeDefinitionReference<'a, T>
+impl<'a, S: SchemaDefinition> From<BaseInputTypeReference<'a, S>>
+    for TypeDefinitionReference<'a, S>
 {
-    fn from(value: BaseInputTypeReference<'a, I>) -> Self {
+    fn from(value: BaseInputTypeReference<'a, S>) -> Self {
         match value {
             BaseInputTypeReference::BuiltinScalar(bstd) => Self::BuiltinScalar(bstd),
             BaseInputTypeReference::CustomScalar(cstd) => Self::CustomScalar(cstd),
@@ -37,19 +30,10 @@ impl<
     }
 }
 
-impl<
-        'a,
-        T: TypeDefinition,
-        O: OutputType<
-            CustomScalarTypeDefinition = T::CustomScalarTypeDefinition,
-            EnumTypeDefinition = T::EnumTypeDefinition,
-            ObjectTypeDefinition = T::ObjectTypeDefinition,
-            InterfaceTypeDefinition = T::InterfaceTypeDefinition,
-            UnionTypeDefinition = T::UnionTypeDefinition,
-        >,
-    > From<BaseOutputTypeReference<'a, O>> for TypeDefinitionReference<'a, T>
+impl<'a, S: SchemaDefinition> From<BaseOutputTypeReference<'a, S>>
+    for TypeDefinitionReference<'a, S>
 {
-    fn from(value: BaseOutputTypeReference<'a, O>) -> Self {
+    fn from(value: BaseOutputTypeReference<'a, S>) -> Self {
         match value {
             BaseOutputTypeReference::BuiltinScalar(bstd) => Self::BuiltinScalar(bstd),
             BaseOutputTypeReference::CustomScalar(cstd) => Self::CustomScalar(cstd),
@@ -62,37 +46,20 @@ impl<
 }
 
 pub trait TypeDefinition: Sized {
-    type CustomScalarTypeDefinition: ScalarTypeDefinition;
-    type ObjectTypeDefinition: ObjectTypeDefinition<
-        Directives = <Self::CustomScalarTypeDefinition as HasDirectives>::Directives,
-    >;
-    type InputObjectTypeDefinition: InputObjectTypeDefinition<
-        Directives = <Self::CustomScalarTypeDefinition as HasDirectives>::Directives,
-    >;
-    type EnumTypeDefinition: EnumTypeDefinition<
-        Directives = <Self::CustomScalarTypeDefinition as HasDirectives>::Directives,
-    >;
-    type UnionTypeDefinition: UnionTypeDefinition<
-        FieldsDefinition = <Self::ObjectTypeDefinition as ObjectTypeDefinition>::FieldsDefinition,
-        Directives = <Self::CustomScalarTypeDefinition as HasDirectives>::Directives,
-    >;
-    type InterfaceTypeDefinition: InterfaceTypeDefinition<
-        FieldsDefinition = <Self::ObjectTypeDefinition as ObjectTypeDefinition>::FieldsDefinition,
-        Directives = <Self::CustomScalarTypeDefinition as HasDirectives>::Directives,
-    >;
+    type SchemaDefinition: SchemaDefinition;
 
-    fn as_ref(&self) -> TypeDefinitionReference<'_, Self>;
+    fn as_ref(&self) -> TypeDefinitionReference<'_, Self::SchemaDefinition>;
 }
 
-impl<T: TypeDefinition> Clone for TypeDefinitionReference<'_, T> {
+impl<S: SchemaDefinition> Clone for TypeDefinitionReference<'_, S> {
     fn clone(&self) -> Self {
         *self
     }
 }
 
-impl<T: TypeDefinition> Copy for TypeDefinitionReference<'_, T> {}
+impl<S: SchemaDefinition> Copy for TypeDefinitionReference<'_, S> {}
 
-impl<'a, T: TypeDefinition> TypeDefinitionReference<'a, T> {
+impl<'a, S: SchemaDefinition> TypeDefinitionReference<'a, S> {
     pub fn name(&self) -> &'a str {
         match self {
             Self::BuiltinScalar(bsd) => bsd.name(),
@@ -155,9 +122,7 @@ impl<'a, T: TypeDefinition> TypeDefinitionReference<'a, T> {
         )
     }
 
-    pub fn fields_definition(
-        &self,
-    ) -> Option<&'a <T::ObjectTypeDefinition as ObjectTypeDefinition>::FieldsDefinition> {
+    pub fn fields_definition(&self) -> Option<&'a S::FieldsDefinition> {
         match self {
             Self::Object(otd) => Some(otd.fields_definition()),
             Self::Interface(itd) => Some(itd.fields_definition()),
@@ -170,8 +135,11 @@ impl<'a, T: TypeDefinition> TypeDefinitionReference<'a, T> {
     }
 }
 
-impl<'a, T: TypeDefinition> HasDirectives for TypeDefinitionReference<'a, T> {
-    type Directives = <T::CustomScalarTypeDefinition as HasDirectives>::Directives;
+impl<'a, S: SchemaDefinition> HasDirectives for TypeDefinitionReference<'a, S>
+where
+    <S as SchemaDefinition>::Directives: 'a,
+{
+    type Directives = <S as SchemaDefinition>::Directives;
 
     fn directives(&self) -> Option<&'a Self::Directives> {
         match self {

@@ -29,8 +29,7 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> ObjectTypeDe
 impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> definition::ObjectTypeDefinition
     for ObjectTypeDefinition<'a, S, W>
 {
-    type FieldsDefinition = FieldsDefinition<'a, S, W>;
-    type InterfaceImplementations = InterfaceImplementations<'a, S, W>;
+    type SchemaDefinition = crate::SchemaDefinition<'a, S, W>;
 
     fn description(&self) -> Option<&str> {
         self.inner.description()
@@ -40,12 +39,12 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> definition::
         self.inner.name()
     }
 
-    fn fields_definition(&self) -> &Self::FieldsDefinition {
+    fn fields_definition(&self) -> &FieldsDefinition<'a, S, W> {
         self.fields_definition
             .get_or_init(|| FieldsDefinition::new(self.inner.fields_definition(), self.cache))
     }
 
-    fn interface_implementations(&self) -> Option<&Self::InterfaceImplementations> {
+    fn interface_implementations(&self) -> Option<&InterfaceImplementations<'a, S, W>> {
         self.interface_implementations
             .get_or_init(|| {
                 self.inner

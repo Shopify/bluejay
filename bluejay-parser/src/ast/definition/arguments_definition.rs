@@ -1,4 +1,4 @@
-use crate::ast::definition::{Context, InputValueDefinition};
+use crate::ast::definition::{Context, InputValueDefinition, SchemaDefinition};
 use crate::ast::{DepthLimiter, FromTokens, IsMatch, ParseError, Tokens};
 use crate::lexical_token::PunctuatorType;
 use crate::Span;
@@ -24,7 +24,7 @@ impl<'a, C: Context> AsIter for ArgumentsDefinition<'a, C> {
 }
 
 impl<'a, C: Context> CoreArgumentsDefinition for ArgumentsDefinition<'a, C> {
-    type ArgumentDefinition = InputValueDefinition<'a, C>;
+    type SchemaDefinition = SchemaDefinition<'a, C>;
 }
 
 impl<'a, C: Context> FromTokens<'a> for ArgumentsDefinition<'a, C> {

@@ -34,7 +34,7 @@ pub trait Visitor<'a, E: ExecutableDocument, S: SchemaDefinition, V: VariableVal
         &mut self,
         field: &'a E::Field,
         field_definition: &'a S::FieldDefinition,
-        scoped_type: TypeDefinitionReference<'a, S::TypeDefinition>,
+        scoped_type: TypeDefinitionReference<'a, S>,
         included: bool,
     ) {
     }
@@ -46,7 +46,7 @@ pub trait Visitor<'a, E: ExecutableDocument, S: SchemaDefinition, V: VariableVal
         &mut self,
         field: &'a <E as ExecutableDocument>::Field,
         field_definition: &'a S::FieldDefinition,
-        scoped_type: TypeDefinitionReference<'a, S::TypeDefinition>,
+        scoped_type: TypeDefinitionReference<'a, S>,
         included: bool,
     ) {
     }
@@ -88,7 +88,7 @@ macro_rules! impl_visitor {
                     &mut self,
                     field: &'a E::Field,
                     field_definition: &'a S::FieldDefinition,
-                    owner_type: TypeDefinitionReference<'a, S::TypeDefinition>,
+                    owner_type: TypeDefinitionReference<'a, S>,
                     included: bool,
                 ) {
                     #(self.N.visit_field(field, field_definition, owner_type, included);)*
@@ -98,7 +98,7 @@ macro_rules! impl_visitor {
                     &mut self,
                     field: &'a <E as ExecutableDocument>::Field,
                     field_definition: &'a S::FieldDefinition,
-                    owner_type: TypeDefinitionReference<'a, S::TypeDefinition>,
+                    owner_type: TypeDefinitionReference<'a, S>,
                     included: bool,
                 ) {
                     #(self.N.leave_field(field, field_definition, owner_type, included);)*

@@ -1,14 +1,16 @@
-use crate::definition::{DirectiveDefinition, SchemaDefinition};
+use crate::definition::SchemaDefinition;
 
 pub trait Directive: crate::Directive<true> {
-    type DirectiveDefinition: DirectiveDefinition;
+    type SchemaDefinition: SchemaDefinition;
 
-    fn definition<'a, S: SchemaDefinition<DirectiveDefinition = Self::DirectiveDefinition>>(
+    fn definition<'a>(
         &'a self,
-        schema_definition: &'a S,
-    ) -> &'a Self::DirectiveDefinition;
+        schema_definition: &'a Self::SchemaDefinition,
+    ) -> &'a <Self::SchemaDefinition as SchemaDefinition>::DirectiveDefinition;
 }
 
-pub trait Directives: crate::Directives<true, Directive = <Self as Directives>::Directive> {
-    type Directive: Directive;
+pub trait Directives:
+    crate::Directives<true, Directive = <Self::SchemaDefinition as SchemaDefinition>::Directive>
+{
+    type SchemaDefinition: SchemaDefinition;
 }

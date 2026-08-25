@@ -29,7 +29,7 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>>
 impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>>
     definition::InputObjectTypeDefinition for InputObjectTypeDefinition<'a, S, W>
 {
-    type InputFieldsDefinition = InputFieldsDefinition<'a, S, W>;
+    type SchemaDefinition = crate::SchemaDefinition<'a, S, W>;
 
     fn description(&self) -> Option<&str> {
         self.inner.description()
@@ -39,7 +39,7 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>>
         self.inner.name()
     }
 
-    fn input_field_definitions(&self) -> &Self::InputFieldsDefinition {
+    fn input_field_definitions(&self) -> &InputFieldsDefinition<'a, S, W> {
         self.input_fields_definition.get_or_init(|| {
             InputFieldsDefinition::new(self.inner.input_field_definitions(), self.cache)
         })

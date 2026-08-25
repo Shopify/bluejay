@@ -2,7 +2,7 @@ use crate::ast::DepthLimiter;
 use crate::lexical_token::{Name, StringValue};
 use crate::{
     ast::{
-        definition::{Context, Directives},
+        definition::{Context, Directives, SchemaDefinition},
         ConstDirectives, FromTokens, ParseError, Tokens, TryFromTokens,
     },
     HasSpan,
@@ -22,7 +22,9 @@ impl<'a, C: Context> EnumValueDefinition<'a, C> {
     }
 }
 
-impl<C: Context> CoreEnumValueDefinition for EnumValueDefinition<'_, C> {
+impl<'a, C: Context> CoreEnumValueDefinition for EnumValueDefinition<'a, C> {
+    type SchemaDefinition = SchemaDefinition<'a, C>;
+
     fn description(&self) -> Option<&str> {
         self.description.as_ref().map(AsRef::as_ref)
     }

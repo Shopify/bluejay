@@ -19,7 +19,7 @@ pub enum TypeDefinition<'a, S: SchemaDefinition, W: Warden<SchemaDefinition = S>
 
 impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> TypeDefinition<'a, S, W> {
     pub(crate) fn new(
-        type_definition: TypeDefinitionReference<'a, S::TypeDefinition>,
+        type_definition: TypeDefinitionReference<'a, S>,
         cache: &'a Cache<'a, S, W>,
     ) -> Option<Self> {
         let warden = cache.warden();
@@ -46,7 +46,7 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> TypeDefiniti
         }
     }
 
-    pub(crate) fn inner(&self) -> TypeDefinitionReference<'_, S::TypeDefinition> {
+    pub(crate) fn inner(&self) -> TypeDefinitionReference<'_, S> {
         match self {
             Self::BuiltinScalar(bstd) => TypeDefinitionReference::BuiltinScalar(*bstd),
             Self::CustomScalar(cstd) => TypeDefinitionReference::CustomScalar(cstd.inner()),
@@ -62,14 +62,9 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> TypeDefiniti
 impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> definition::TypeDefinition
     for TypeDefinition<'a, S, W>
 {
-    type ObjectTypeDefinition = ObjectTypeDefinition<'a, S, W>;
-    type InputObjectTypeDefinition = InputObjectTypeDefinition<'a, S, W>;
-    type CustomScalarTypeDefinition = ScalarTypeDefinition<'a, S, W>;
-    type InterfaceTypeDefinition = InterfaceTypeDefinition<'a, S, W>;
-    type EnumTypeDefinition = EnumTypeDefinition<'a, S, W>;
-    type UnionTypeDefinition = UnionTypeDefinition<'a, S, W>;
+    type SchemaDefinition = crate::SchemaDefinition<'a, S, W>;
 
-    fn as_ref(&self) -> TypeDefinitionReference<'_, Self> {
+    fn as_ref(&self) -> TypeDefinitionReference<'_, Self::SchemaDefinition> {
         match self {
             Self::Object(otd) => TypeDefinitionReference::Object(otd),
             Self::Interface(itd) => TypeDefinitionReference::Interface(itd),

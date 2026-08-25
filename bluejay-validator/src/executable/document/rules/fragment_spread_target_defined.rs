@@ -23,7 +23,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> Visitor<'a, E, S>
     fn visit_fragment_spread(
         &mut self,
         fragment_spread: &'a <E as ExecutableDocument>::FragmentSpread,
-        _scoped_type: TypeDefinitionReference<'a, S::TypeDefinition>,
+        _scoped_type: TypeDefinitionReference<'a, S>,
         _path: &Path<'a, E>,
     ) {
         if self

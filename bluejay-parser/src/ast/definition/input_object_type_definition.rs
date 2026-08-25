@@ -1,4 +1,4 @@
-use crate::ast::definition::{Context, Directives, InputFieldsDefinition};
+use crate::ast::definition::{Context, Directives, InputFieldsDefinition, SchemaDefinition};
 use crate::ast::{ConstDirectives, DepthLimiter, FromTokens, ParseError, Tokens, TryFromTokens};
 use crate::lexical_token::{Name, StringValue};
 use bluejay_core::definition::{
@@ -14,7 +14,7 @@ pub struct InputObjectTypeDefinition<'a, C: Context> {
 }
 
 impl<'a, C: Context> CoreInputObjectTypeDefinition for InputObjectTypeDefinition<'a, C> {
-    type InputFieldsDefinition = InputFieldsDefinition<'a, C>;
+    type SchemaDefinition = SchemaDefinition<'a, C>;
 
     fn description(&self) -> Option<&str> {
         self.description.as_ref().map(AsRef::as_ref)
@@ -24,7 +24,7 @@ impl<'a, C: Context> CoreInputObjectTypeDefinition for InputObjectTypeDefinition
         self.name.as_ref()
     }
 
-    fn input_field_definitions(&self) -> &Self::InputFieldsDefinition {
+    fn input_field_definitions(&self) -> &InputFieldsDefinition<'a, C> {
         &self.input_fields_definition
     }
 }

@@ -1,14 +1,14 @@
-use crate::{
-    Cache, EnumTypeDefinition, InterfaceTypeDefinition, ObjectTypeDefinition, ScalarTypeDefinition,
-    TypeDefinition, UnionTypeDefinition, Warden,
-};
+use crate::{Cache, TypeDefinition, Warden};
 use bluejay_core::definition::{
     self, prelude::*, BaseOutputTypeReference, OutputTypeReference, SchemaDefinition,
     ShallowOutputTypeReference, TypeDefinitionReference,
 };
 
 pub enum OutputType<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S> + 'a> {
-    Base(BaseOutputTypeReference<'a, Self>, bool),
+    Base(
+        BaseOutputTypeReference<'a, crate::SchemaDefinition<'a, S, W>>,
+        bool,
+    ),
     List(Box<Self>, bool),
 }
 
@@ -25,9 +25,9 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> OutputType<'
     }
 
     fn new_base(
-        inner: BaseOutputTypeReference<'a, S::OutputType>,
+        inner: BaseOutputTypeReference<'a, S>,
         cache: &'a Cache<'a, S, W>,
-    ) -> Option<BaseOutputTypeReference<'a, Self>> {
+    ) -> Option<BaseOutputTypeReference<'a, crate::SchemaDefinition<'a, S, W>>> {
         let tdr = match inner {
             BaseOutputTypeReference::BuiltinScalar(bstd) => {
                 TypeDefinitionReference::BuiltinScalar(bstd)
@@ -58,7 +58,7 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> OutputType<'
             })
     }
 
-    pub(crate) fn base(&self) -> BaseOutputTypeReference<'_, Self> {
+    pub(crate) fn base(&self) -> BaseOutputTypeReference<'_, crate::SchemaDefinition<'a, S, W>> {
         match self {
             Self::Base(b, _) => *b,
             Self::List(inner, _) => inner.base(),
@@ -69,25 +69,12 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> OutputType<'
 impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> definition::OutputType
     for OutputType<'a, S, W>
 {
-    type ObjectTypeDefinition = ObjectTypeDefinition<'a, S, W>;
-    type CustomScalarTypeDefinition = ScalarTypeDefinition<'a, S, W>;
-    type InterfaceTypeDefinition = InterfaceTypeDefinition<'a, S, W>;
-    type EnumTypeDefinition = EnumTypeDefinition<'a, S, W>;
-    type UnionTypeDefinition = UnionTypeDefinition<'a, S, W>;
+    type SchemaDefinition = crate::SchemaDefinition<'a, S, W>;
 
-    fn as_ref<
-        'b,
-        S2: SchemaDefinition<
-            CustomScalarTypeDefinition = Self::CustomScalarTypeDefinition,
-            EnumTypeDefinition = Self::EnumTypeDefinition,
-            ObjectTypeDefinition = Self::ObjectTypeDefinition,
-            InterfaceTypeDefinition = Self::InterfaceTypeDefinition,
-            UnionTypeDefinition = Self::UnionTypeDefinition,
-        >,
-    >(
+    fn as_ref<'b>(
         &'b self,
-        _: &'b S2,
-    ) -> OutputTypeReference<'b, Self> {
+        _: &'b Self::SchemaDefinition,
+    ) -> OutputTypeReference<'b, Self::SchemaDefinition, Self> {
         match self {
             Self::Base(b, required) => OutputTypeReference::Base(*b, *required),
             Self::List(inner, required) => OutputTypeReference::List(inner.as_ref(), *required),

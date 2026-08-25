@@ -1,4 +1,4 @@
-use crate::definition::ArgumentsDefinition;
+use crate::definition::SchemaDefinition;
 use crate::AsIter;
 use strum::{AsRefStr, Display, EnumIter, EnumString, VariantNames};
 
@@ -47,12 +47,14 @@ impl DirectiveLocation {
 }
 
 pub trait DirectiveDefinition {
-    type ArgumentsDefinition: ArgumentsDefinition;
+    type SchemaDefinition: SchemaDefinition;
     type DirectiveLocations: AsIter<Item = DirectiveLocation>;
 
     fn description(&self) -> Option<&str>;
     fn name(&self) -> &str;
-    fn arguments_definition(&self) -> Option<&Self::ArgumentsDefinition>;
+    fn arguments_definition(
+        &self,
+    ) -> Option<&<Self::SchemaDefinition as SchemaDefinition>::ArgumentsDefinition>;
     fn is_repeatable(&self) -> bool;
     fn locations(&self) -> &Self::DirectiveLocations;
     fn is_builtin(&self) -> bool;

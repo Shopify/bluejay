@@ -103,7 +103,7 @@ impl<'a, C: Context> CoreSchemaDefinition for SchemaDefinition<'a, C> {
     type TypeDefinitions<'b>
         = std::iter::Map<
         Values<'b, &'b str, &'b TypeDefinition<'a, C>>,
-        fn(&&'b TypeDefinition<'a, C>) -> TypeDefinitionReference<'b, TypeDefinition<'a, C>>,
+        fn(&&'b TypeDefinition<'a, C>) -> TypeDefinitionReference<'b, SchemaDefinition<'a, C>>,
     >
     where
         'a: 'b;
@@ -139,13 +139,13 @@ impl<'a, C: Context> CoreSchemaDefinition for SchemaDefinition<'a, C> {
     fn get_type_definition(
         &self,
         name: &str,
-    ) -> Option<TypeDefinitionReference<'_, Self::TypeDefinition>> {
+    ) -> Option<TypeDefinitionReference<'_, SchemaDefinition<'a, C>>> {
         self.type_definitions.get(name).map(|td| td.as_ref())
     }
 
     fn type_definitions(&self) -> Self::TypeDefinitions<'_> {
         self.type_definitions.values().map(
-            |td: &&TypeDefinition<C>| -> TypeDefinitionReference<'_, TypeDefinition<'a, C>> {
+            |td: &&TypeDefinition<C>| -> TypeDefinitionReference<'_, SchemaDefinition<'a, C>> {
                 td.as_ref()
             },
         )

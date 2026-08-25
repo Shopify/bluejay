@@ -1,4 +1,4 @@
-use crate::ast::definition::{Context, EnumValueDefinition};
+use crate::ast::definition::{Context, EnumValueDefinition, SchemaDefinition};
 use crate::ast::{DepthLimiter, FromTokens, ParseError, Tokens};
 use crate::lexical_token::PunctuatorType;
 use crate::Span;
@@ -24,7 +24,7 @@ impl<'a, C: Context> AsIter for EnumValueDefinitions<'a, C> {
 }
 
 impl<'a, C: Context> CoreEnumValueDefinitions for EnumValueDefinitions<'a, C> {
-    type EnumValueDefinition = EnumValueDefinition<'a, C>;
+    type SchemaDefinition = SchemaDefinition<'a, C>;
 }
 
 impl<'a, C: Context> FromTokens<'a> for EnumValueDefinitions<'a, C> {

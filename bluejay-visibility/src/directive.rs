@@ -24,8 +24,8 @@ impl<'a, S: SchemaDefinition, W: Warden<SchemaDefinition = S>> Directive<'a, S, 
     }
 }
 
-impl<S: SchemaDefinition, W: Warden<SchemaDefinition = S>> CoreDirective<true>
-    for Directive<'_, S, W>
+impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> CoreDirective<true>
+    for Directive<'a, S, W>
 {
     type Arguments = <S::Directive as CoreDirective<true>>::Arguments;
 
@@ -41,12 +41,12 @@ impl<S: SchemaDefinition, W: Warden<SchemaDefinition = S>> CoreDirective<true>
 impl<'a, S: SchemaDefinition, W: Warden<SchemaDefinition = S>> CoreDefinitionDirective
     for Directive<'a, S, W>
 {
-    type DirectiveDefinition = DirectiveDefinition<'a, S, W>;
+    type SchemaDefinition = crate::SchemaDefinition<'a, S, W>;
 
-    fn definition<'b, S2: SchemaDefinition<DirectiveDefinition = Self::DirectiveDefinition>>(
+    fn definition<'b>(
         &'b self,
-        _: &'b S2,
-    ) -> &'b Self::DirectiveDefinition {
+        _: &'b Self::SchemaDefinition,
+    ) -> &'b DirectiveDefinition<'a, S, W> {
         self.definition
     }
 }

@@ -29,8 +29,7 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> UnionTypeDef
 impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> definition::UnionTypeDefinition
     for UnionTypeDefinition<'a, S, W>
 {
-    type UnionMemberTypes = UnionMemberTypes<'a, S, W>;
-    type FieldsDefinition = FieldsDefinition<'a, S, W>;
+    type SchemaDefinition = crate::SchemaDefinition<'a, S, W>;
 
     fn description(&self) -> Option<&str> {
         self.inner.description()
@@ -40,12 +39,12 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> definition::
         self.inner.name()
     }
 
-    fn union_member_types(&self) -> &Self::UnionMemberTypes {
+    fn union_member_types(&self) -> &UnionMemberTypes<'a, S, W> {
         self.union_member_types
             .get_or_init(|| UnionMemberTypes::new(self.inner.union_member_types(), self.cache))
     }
 
-    fn fields_definition(&self) -> &Self::FieldsDefinition {
+    fn fields_definition(&self) -> &FieldsDefinition<'a, S, W> {
         self.fields_definition
             .get_or_init(|| FieldsDefinition::new(self.inner.fields_definition(), self.cache))
     }

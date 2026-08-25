@@ -117,7 +117,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, V: Visitor<'a, E, S>>
     fn visit_selection_set(
         &mut self,
         selection_set: &'a E::SelectionSet,
-        scoped_type: TypeDefinitionReference<'a, S::TypeDefinition>,
+        scoped_type: TypeDefinitionReference<'a, S>,
         path: &Path<'a, E>,
     ) {
         self.visitor.visit_selection_set(selection_set, scoped_type);
@@ -234,7 +234,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, V: Visitor<'a, E, S>>
     fn visit_inline_fragment(
         &mut self,
         inline_fragment: &'a E::InlineFragment,
-        scoped_type: TypeDefinitionReference<'a, S::TypeDefinition>,
+        scoped_type: TypeDefinitionReference<'a, S>,
         path: &Path<'a, E>,
     ) {
         if let Some(directives) = inline_fragment.directives() {
@@ -258,7 +258,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, V: Visitor<'a, E, S>>
     fn visit_fragment_spread(
         &mut self,
         fragment_spread: &'a E::FragmentSpread,
-        scoped_type: TypeDefinitionReference<'a, S::TypeDefinition>,
+        scoped_type: TypeDefinitionReference<'a, S>,
         path: &Path<'a, E>,
     ) {
         if let Some(directives) = fragment_spread.directives() {

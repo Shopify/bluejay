@@ -39,12 +39,12 @@ impl<'a, S: SchemaDefinition, W: Warden<SchemaDefinition = S>> UnionMemberType<'
 impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> definition::UnionMemberType
     for UnionMemberType<'a, S, W>
 {
-    type ObjectTypeDefinition = ObjectTypeDefinition<'a, S, W>;
+    type SchemaDefinition = crate::SchemaDefinition<'a, S, W>;
 
-    fn member_type<'b, S2: SchemaDefinition<ObjectTypeDefinition = Self::ObjectTypeDefinition>>(
+    fn member_type<'b>(
         &'b self,
-        _: &'b S2,
-    ) -> &'b Self::ObjectTypeDefinition {
+        _: &'b Self::SchemaDefinition,
+    ) -> &'b ObjectTypeDefinition<'a, S, W> {
         self.member_type
     }
 

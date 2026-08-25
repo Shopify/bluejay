@@ -3,8 +3,8 @@ use crate::executable::{
     Cache,
 };
 use bluejay_core::definition::{
-    FieldDefinition, ObjectTypeDefinition, OutputType, SchemaDefinition, TypeDefinition,
-    TypeDefinitionReference, UnionMemberType, UnionTypeDefinition,
+    FieldDefinition, ObjectTypeDefinition, OutputType, SchemaDefinition, TypeDefinitionReference,
+    UnionMemberType, UnionTypeDefinition,
 };
 use bluejay_core::executable::{ExecutableDocument, Field};
 use bluejay_core::AsIter;
@@ -30,7 +30,7 @@ pub struct ComplexityCost<
 > {
     schema_definition: &'a S,
     cost_computer: C,
-    scopes_arena: Arena<ComplexityScope<'a, S::TypeDefinition, C::FieldMultipliers>>,
+    scopes_arena: Arena<ComplexityScope<'a, S, C::FieldMultipliers>>,
     scopes_stack: Vec<Option<NodeId>>,
 }
 
@@ -64,7 +64,7 @@ impl<
         &mut self,
         field: &'a <E as ExecutableDocument>::Field,
         field_definition: &'a S::FieldDefinition,
-        scoped_type: TypeDefinitionReference<'a, S::TypeDefinition>,
+        scoped_type: TypeDefinitionReference<'a, S>,
         included: bool,
     ) {
         if !included {
@@ -149,7 +149,7 @@ impl<
         &mut self,
         _field: &'a <E as ExecutableDocument>::Field,
         _field_definition: &'a S::FieldDefinition,
-        _scoped_type: TypeDefinitionReference<'a, S::TypeDefinition>,
+        _scoped_type: TypeDefinitionReference<'a, S>,
         included: bool,
     ) {
         if included {
@@ -194,7 +194,7 @@ impl<
 
     fn merged_max_complexity_for_scopes(
         &self,
-        scopes: &[&ComplexityScope<'a, S::TypeDefinition, C::FieldMultipliers>],
+        scopes: &[&ComplexityScope<'a, S, C::FieldMultipliers>],
     ) -> usize {
         // build a set of all unique possible type definitions
         // with abstract types expanded to encompass all of their possible types
@@ -273,7 +273,7 @@ impl<
                                 }
                             })
                     })
-                    .collect::<Vec<&ComplexityScope<'a, S::TypeDefinition, C::FieldMultipliers>>>();
+                    .collect::<Vec<&ComplexityScope<'a, S, C::FieldMultipliers>>>();
 
                 let children_cost = self.merged_max_complexity_for_scopes(&composite_scopes);
 
@@ -284,7 +284,7 @@ impl<
 
     fn possible_type_names(
         &self,
-        ty: &TypeDefinitionReference<'a, S::TypeDefinition>,
+        ty: &TypeDefinitionReference<'a, S>,
     ) -> impl Iterator<Item = &'a str> {
         match ty {
             TypeDefinitionReference::Object(_) => Either::Left(Some(ty.name()).into_iter()),
@@ -305,19 +305,19 @@ impl<
 
 type InnerSelection<'a> = HashMap<&'a str, NodeId>;
 
-struct TypedSelection<'a, T: TypeDefinition> {
-    type_definition: TypeDefinitionReference<'a, T>,
+struct TypedSelection<'a, S: SchemaDefinition> {
+    type_definition: TypeDefinitionReference<'a, S>,
     inner_selection: InnerSelection<'a>,
 }
 
-struct ComplexityScope<'a, T: TypeDefinition, F> {
+struct ComplexityScope<'a, S: SchemaDefinition, F> {
     cost: usize,
     multiplier: usize,
-    typed_selections: HashMap<&'a str, TypedSelection<'a, T>>,
+    typed_selections: HashMap<&'a str, TypedSelection<'a, S>>,
     field_multipliers: F,
 }
 
-impl<T: TypeDefinition, F: Default> Default for ComplexityScope<'_, T, F> {
+impl<S: SchemaDefinition, F: Default> Default for ComplexityScope<'_, S, F> {
     fn default() -> Self {
         Self {
             cost: 0,
@@ -328,7 +328,7 @@ impl<T: TypeDefinition, F: Default> Default for ComplexityScope<'_, T, F> {
     }
 }
 
-impl<T: TypeDefinition, F> ComplexityScope<'_, T, F> {
+impl<S: SchemaDefinition, F> ComplexityScope<'_, S, F> {
     fn multiplier_for_field<E: ExecutableDocument>(&self, field: &E::Field) -> usize
     where
         F: FieldMultipliers<E>,

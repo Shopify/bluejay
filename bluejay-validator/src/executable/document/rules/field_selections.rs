@@ -21,7 +21,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Visitor<'a, E, S>
     fn visit_selection_set(
         &mut self,
         selection_set: &'a E::SelectionSet,
-        r#type: TypeDefinitionReference<'a, S::TypeDefinition>,
+        r#type: TypeDefinitionReference<'a, S>,
     ) {
         if let Some(fields_definition) = r#type.fields_definition() {
             self.errors

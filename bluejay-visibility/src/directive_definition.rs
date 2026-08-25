@@ -32,7 +32,7 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> DirectiveDef
 impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> definition::DirectiveDefinition
     for DirectiveDefinition<'a, S, W>
 {
-    type ArgumentsDefinition = ArgumentsDefinition<'a, S, W>;
+    type SchemaDefinition = crate::SchemaDefinition<'a, S, W>;
     type DirectiveLocations =
         <S::DirectiveDefinition as definition::DirectiveDefinition>::DirectiveLocations;
 
@@ -48,7 +48,7 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> definition::
         self.inner.is_builtin()
     }
 
-    fn arguments_definition(&self) -> Option<&Self::ArgumentsDefinition> {
+    fn arguments_definition(&self) -> Option<&ArgumentsDefinition<'a, S, W>> {
         self.arguments_definition
             .get_or_init(|| {
                 self.inner

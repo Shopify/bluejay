@@ -88,10 +88,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, VV: VariableValues> Visitor
         &mut self,
         field: &'a <E as ExecutableDocument>::Field,
         field_definition: &'a <S as SchemaDefinition>::FieldDefinition,
-        _scoped_type: bluejay_core::definition::TypeDefinitionReference<
-            'a,
-            <S as SchemaDefinition>::TypeDefinition,
-        >,
+        _scoped_type: bluejay_core::definition::TypeDefinitionReference<'a, S>,
         included: bool,
     ) {
         if !included {
@@ -161,11 +158,7 @@ fn get_deprecation_reason<N: HasDirectives>(ast_item: &N) -> Option<&str> {
 impl<'a, E: ExecutableDocument, S: SchemaDefinition, VV: VariableValues> Deprecation<'a, E, S, VV> {
     fn find_deprecations_for_value<
         const CONST: bool,
-        I: InputType<
-            CustomScalarTypeDefinition = S::CustomScalarTypeDefinition,
-            InputObjectTypeDefinition = S::InputObjectTypeDefinition,
-            EnumTypeDefinition = S::EnumTypeDefinition,
-        >,
+        I: InputType<SchemaDefinition = S>,
         V: Value<CONST>,
     >(
         &mut self,

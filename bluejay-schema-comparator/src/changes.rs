@@ -90,18 +90,18 @@ impl Criticality {
 #[derive(AsRefStr)]
 pub enum Change<'a, S: SchemaDefinition> {
     TypeRemoved {
-        removed_type_definition: TypeDefinitionReference<'a, S::TypeDefinition>,
+        removed_type_definition: TypeDefinitionReference<'a, S>,
     },
     TypeAdded {
-        added_type_definition: TypeDefinitionReference<'a, S::TypeDefinition>,
+        added_type_definition: TypeDefinitionReference<'a, S>,
     },
     TypeKindChanged {
-        old_type_definition: TypeDefinitionReference<'a, S::TypeDefinition>,
-        new_type_definition: TypeDefinitionReference<'a, S::TypeDefinition>,
+        old_type_definition: TypeDefinitionReference<'a, S>,
+        new_type_definition: TypeDefinitionReference<'a, S>,
     },
     TypeDescriptionChanged {
-        old_type_definition: TypeDefinitionReference<'a, S::TypeDefinition>,
-        new_type_definition: TypeDefinitionReference<'a, S::TypeDefinition>,
+        old_type_definition: TypeDefinitionReference<'a, S>,
+        new_type_definition: TypeDefinitionReference<'a, S>,
     },
     FieldAdded {
         added_field_definition: &'a S::FieldDefinition,

@@ -1,8 +1,12 @@
-use crate::definition::HasDirectives;
+use crate::definition::{HasDirectives, SchemaDefinition};
 use crate::Value;
 use std::borrow::Cow;
 
-pub trait ScalarTypeDefinition: HasDirectives {
+pub trait ScalarTypeDefinition:
+    HasDirectives<Directives = <Self::SchemaDefinition as SchemaDefinition>::Directives>
+{
+    type SchemaDefinition: SchemaDefinition;
+
     fn description(&self) -> Option<&str>;
     fn name(&self) -> &str;
 

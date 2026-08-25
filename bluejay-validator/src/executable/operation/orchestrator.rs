@@ -149,7 +149,7 @@ impl<
     fn visit_selection_set(
         &mut self,
         selection_set: &'a E::SelectionSet,
-        scoped_type: TypeDefinitionReference<'a, S::TypeDefinition>,
+        scoped_type: TypeDefinitionReference<'a, S>,
         included: bool,
     ) {
         selection_set
@@ -175,7 +175,7 @@ impl<
         &mut self,
         field: &'a E::Field,
         field_definition: &'a S::FieldDefinition,
-        owner_type: TypeDefinitionReference<'a, S::TypeDefinition>,
+        owner_type: TypeDefinitionReference<'a, S>,
         included: bool,
     ) {
         if let Some(directives) = field.directives() {
@@ -236,7 +236,7 @@ impl<
     fn visit_inline_fragment(
         &mut self,
         inline_fragment: &'a E::InlineFragment,
-        scoped_type: TypeDefinitionReference<'a, S::TypeDefinition>,
+        scoped_type: TypeDefinitionReference<'a, S>,
         included: bool,
     ) {
         if let Some(directives) = inline_fragment.directives() {
