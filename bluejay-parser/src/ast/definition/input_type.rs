@@ -56,7 +56,7 @@ impl<'a, C: Context + 'a> CoreInputType for InputType<'a, C> {
     fn as_ref<'b>(
         &'b self,
         schema_definition: &'b SchemaDefinition<'a, C>,
-    ) -> InputTypeReference<'b, SchemaDefinition<'a, C>, Self> {
+    ) -> InputTypeReference<'b, SchemaDefinition<'a, C>> {
         match self {
             Self::Base(base, required, _) => InputTypeReference::Base(
                 schema_definition
@@ -72,12 +72,14 @@ impl<'a, C: Context + 'a> CoreInputType for InputType<'a, C> {
         }
     }
 
-    fn as_shallow_ref(&self) -> ShallowInputTypeReference<'_, Self> {
+    fn as_shallow_ref(&self) -> ShallowInputTypeReference<'_, Self::SchemaDefinition> {
         match self {
             Self::Base(base, required, _) => {
                 ShallowInputTypeReference::Base(base.name().as_str(), *required)
             }
-            Self::List(inner, required, _) => ShallowInputTypeReference::List(inner, *required),
+            Self::List(inner, required, _) => {
+                ShallowInputTypeReference::List(inner.as_ref(), *required)
+            }
         }
     }
 }

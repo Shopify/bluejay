@@ -1295,8 +1295,8 @@ impl<S: SchemaDefinition> Change<'_, S> {
 }
 
 fn is_change_safe_for_field<S: SchemaDefinition>(
-    old_type: ShallowOutputTypeReference<S::OutputType>,
-    new_type: ShallowOutputTypeReference<S::OutputType>,
+    old_type: ShallowOutputTypeReference<S>,
+    new_type: ShallowOutputTypeReference<S>,
 ) -> bool {
     match (old_type, new_type) {
         (
@@ -1318,8 +1318,8 @@ fn is_change_safe_for_field<S: SchemaDefinition>(
 }
 
 fn is_change_safe_for_input_value<S: SchemaDefinition>(
-    old_type: ShallowInputTypeReference<S::InputType>,
-    new_type: ShallowInputTypeReference<S::InputType>,
+    old_type: ShallowInputTypeReference<S>,
+    new_type: ShallowInputTypeReference<S>,
 ) -> bool {
     match (old_type, new_type) {
         (

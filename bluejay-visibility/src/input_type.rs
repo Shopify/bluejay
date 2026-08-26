@@ -70,14 +70,14 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> definition::
     fn as_ref<'b>(
         &'b self,
         _: &'b Self::SchemaDefinition,
-    ) -> InputTypeReference<'b, Self::SchemaDefinition, Self> {
+    ) -> InputTypeReference<'b, Self::SchemaDefinition> {
         match self {
             Self::Base(b, required) => InputTypeReference::Base(*b, *required),
-            Self::List(inner, required) => InputTypeReference::List(inner, *required),
+            Self::List(inner, required) => InputTypeReference::List(inner.as_ref(), *required),
         }
     }
 
-    fn as_shallow_ref(&self) -> definition::ShallowInputTypeReference<'_, Self> {
+    fn as_shallow_ref(&self) -> definition::ShallowInputTypeReference<'_, Self::SchemaDefinition> {
         match self {
             Self::Base(base, required) => {
                 definition::ShallowInputTypeReference::Base(base.name(), *required)

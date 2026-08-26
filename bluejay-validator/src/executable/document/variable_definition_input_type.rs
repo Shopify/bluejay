@@ -1,31 +1,10 @@
-use bluejay_core::definition::{
-    BaseInputTypeReference, InputType, InputTypeReference, SchemaDefinition,
-    ShallowInputTypeReference,
-};
+use bluejay_core::definition::{BaseInputTypeReference, SchemaDefinition};
 use bluejay_core::executable::{VariableType, VariableTypeReference};
 
 #[derive(Clone)]
 pub enum VariableDefinitionInputType<'a, S: SchemaDefinition> {
     Base(BaseInputTypeReference<'a, S>, bool),
     List(Box<Self>, bool),
-}
-
-impl<S: SchemaDefinition> InputType for VariableDefinitionInputType<'_, S> {
-    type SchemaDefinition = S;
-
-    fn as_ref<'a>(&'a self, _: &'a S) -> InputTypeReference<'a, S, Self> {
-        match self {
-            Self::Base(base, required) => InputTypeReference::Base(*base, *required),
-            Self::List(inner, required) => InputTypeReference::List(inner.as_ref(), *required),
-        }
-    }
-
-    fn as_shallow_ref(&self) -> ShallowInputTypeReference<'_, Self> {
-        match self {
-            Self::Base(base, required) => ShallowInputTypeReference::Base(base.name(), *required),
-            Self::List(inner, required) => ShallowInputTypeReference::List(inner, *required),
-        }
-    }
 }
 
 impl<'a, S: SchemaDefinition, T: VariableType> TryFrom<(&'a S, &T)>

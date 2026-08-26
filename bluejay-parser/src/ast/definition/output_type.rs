@@ -64,7 +64,7 @@ impl<'a, C: Context + 'a> CoreOutputType for OutputType<'a, C> {
     fn as_ref<'b>(
         &'b self,
         schema_definition: &'b SchemaDefinition<'a, C>,
-    ) -> OutputTypeReference<'b, SchemaDefinition<'a, C>, Self> {
+    ) -> OutputTypeReference<'b, SchemaDefinition<'a, C>> {
         match self {
             Self::Base(base, required, _) => OutputTypeReference::Base(
                 schema_definition
@@ -78,7 +78,7 @@ impl<'a, C: Context + 'a> CoreOutputType for OutputType<'a, C> {
         }
     }
 
-    fn as_shallow_ref(&self) -> ShallowOutputTypeReference<'_, Self> {
+    fn as_shallow_ref(&self) -> ShallowOutputTypeReference<'_, Self::SchemaDefinition> {
         match self {
             Self::Base(base, required, _) => {
                 ShallowOutputTypeReference::Base(base.name().as_str(), *required)

@@ -31,29 +31,20 @@ impl<'a, S: SchemaDefinition> BaseInputTypeReference<'a, S> {
     }
 }
 
-pub enum InputTypeReference<
-    'a,
-    S: SchemaDefinition,
-    I: InputType<SchemaDefinition = S> = <S as SchemaDefinition>::InputType,
-> {
+pub enum InputTypeReference<'a, S: SchemaDefinition> {
     Base(BaseInputTypeReference<'a, S>, bool),
-    List(&'a I, bool),
+    List(&'a S::InputType, bool),
 }
 
-impl<S: SchemaDefinition, I: InputType<SchemaDefinition = S>> Clone
-    for InputTypeReference<'_, S, I>
-{
+impl<S: SchemaDefinition> Clone for InputTypeReference<'_, S> {
     fn clone(&self) -> Self {
         *self
     }
 }
 
-impl<S: SchemaDefinition, I: InputType<SchemaDefinition = S>> Copy
-    for InputTypeReference<'_, S, I>
-{
-}
+impl<S: SchemaDefinition> Copy for InputTypeReference<'_, S> {}
 
-impl<'a, S: SchemaDefinition, I: InputType<SchemaDefinition = S>> InputTypeReference<'a, S, I> {
+impl<'a, S: SchemaDefinition> InputTypeReference<'a, S> {
     pub fn is_required(&self) -> bool {
         match self {
             Self::Base(_, r) => *r,
@@ -77,12 +68,12 @@ impl<'a, S: SchemaDefinition, I: InputType<SchemaDefinition = S>> InputTypeRefer
 }
 
 #[derive(Clone)]
-pub enum ShallowInputTypeReference<'a, I: InputType> {
+pub enum ShallowInputTypeReference<'a, S: SchemaDefinition> {
     Base(&'a str, bool),
-    List(&'a I, bool),
+    List(&'a S::InputType, bool),
 }
 
-impl<I: InputType> ShallowInputTypeReference<'_, I> {
+impl<S: SchemaDefinition> ShallowInputTypeReference<'_, S> {
     pub fn is_required(&self) -> bool {
         match self {
             Self::Base(_, r) => *r,
@@ -91,7 +82,7 @@ impl<I: InputType> ShallowInputTypeReference<'_, I> {
     }
 }
 
-impl<I: InputType> std::fmt::Display for ShallowInputTypeReference<'_, I> {
+impl<S: SchemaDefinition> std::fmt::Display for ShallowInputTypeReference<'_, S> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             ShallowInputTypeReference::Base(name, required) => {
@@ -109,7 +100,7 @@ impl<I: InputType> std::fmt::Display for ShallowInputTypeReference<'_, I> {
     }
 }
 
-impl<I: InputType> PartialEq for ShallowInputTypeReference<'_, I> {
+impl<S: SchemaDefinition> PartialEq for ShallowInputTypeReference<'_, S> {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
             (
@@ -126,14 +117,14 @@ impl<I: InputType> PartialEq for ShallowInputTypeReference<'_, I> {
 }
 
 pub trait InputType: Sized {
-    type SchemaDefinition: SchemaDefinition;
+    type SchemaDefinition: SchemaDefinition<InputType = Self>;
 
     fn as_ref<'a>(
         &'a self,
         schema_definition: &'a Self::SchemaDefinition,
-    ) -> InputTypeReference<'a, Self::SchemaDefinition, Self>;
+    ) -> InputTypeReference<'a, Self::SchemaDefinition>;
 
-    fn as_shallow_ref(&self) -> ShallowInputTypeReference<'_, Self>;
+    fn as_shallow_ref(&self) -> ShallowInputTypeReference<'_, Self::SchemaDefinition>;
 
     fn display_name(&self) -> String {
         self.as_shallow_ref().to_string()

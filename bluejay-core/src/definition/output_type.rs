@@ -46,29 +46,20 @@ impl<S: SchemaDefinition> Clone for BaseOutputTypeReference<'_, S> {
 
 impl<S: SchemaDefinition> Copy for BaseOutputTypeReference<'_, S> {}
 
-pub enum OutputTypeReference<
-    'a,
-    S: SchemaDefinition,
-    O: OutputType<SchemaDefinition = S> = <S as SchemaDefinition>::OutputType,
-> {
+pub enum OutputTypeReference<'a, S: SchemaDefinition> {
     Base(BaseOutputTypeReference<'a, S>, bool),
-    List(&'a O, bool),
+    List(&'a S::OutputType, bool),
 }
 
-impl<S: SchemaDefinition, O: OutputType<SchemaDefinition = S>> Clone
-    for OutputTypeReference<'_, S, O>
-{
+impl<S: SchemaDefinition> Clone for OutputTypeReference<'_, S> {
     fn clone(&self) -> Self {
         *self
     }
 }
 
-impl<S: SchemaDefinition, O: OutputType<SchemaDefinition = S>> Copy
-    for OutputTypeReference<'_, S, O>
-{
-}
+impl<S: SchemaDefinition> Copy for OutputTypeReference<'_, S> {}
 
-impl<'a, S: SchemaDefinition, O: OutputType<SchemaDefinition = S>> OutputTypeReference<'a, S, O> {
+impl<'a, S: SchemaDefinition> OutputTypeReference<'a, S> {
     pub fn is_required(&self) -> bool {
         match self {
             Self::Base(_, r) => *r,
@@ -85,12 +76,12 @@ impl<'a, S: SchemaDefinition, O: OutputType<SchemaDefinition = S>> OutputTypeRef
 }
 
 #[derive(Clone)]
-pub enum ShallowOutputTypeReference<'a, O: OutputType> {
+pub enum ShallowOutputTypeReference<'a, S: SchemaDefinition> {
     Base(&'a str, bool),
-    List(&'a O, bool),
+    List(&'a S::OutputType, bool),
 }
 
-impl<'a, O: OutputType> ShallowOutputTypeReference<'a, O> {
+impl<'a, S: SchemaDefinition> ShallowOutputTypeReference<'a, S> {
     pub fn is_required(&self) -> bool {
         match self {
             Self::Base(_, r) => *r,
@@ -106,7 +97,7 @@ impl<'a, O: OutputType> ShallowOutputTypeReference<'a, O> {
     }
 }
 
-impl<O: OutputType> PartialEq for ShallowOutputTypeReference<'_, O> {
+impl<S: SchemaDefinition> PartialEq for ShallowOutputTypeReference<'_, S> {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
             (
@@ -122,7 +113,7 @@ impl<O: OutputType> PartialEq for ShallowOutputTypeReference<'_, O> {
     }
 }
 
-impl<O: OutputType> std::fmt::Display for ShallowOutputTypeReference<'_, O> {
+impl<S: SchemaDefinition> std::fmt::Display for ShallowOutputTypeReference<'_, S> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             ShallowOutputTypeReference::Base(name, required) => {
@@ -141,14 +132,14 @@ impl<O: OutputType> std::fmt::Display for ShallowOutputTypeReference<'_, O> {
 }
 
 pub trait OutputType: Sized {
-    type SchemaDefinition: SchemaDefinition;
+    type SchemaDefinition: SchemaDefinition<OutputType = Self>;
 
     fn as_ref<'a>(
         &'a self,
         schema_definition: &'a Self::SchemaDefinition,
-    ) -> OutputTypeReference<'a, Self::SchemaDefinition, Self>;
+    ) -> OutputTypeReference<'a, Self::SchemaDefinition>;
 
-    fn as_shallow_ref(&self) -> ShallowOutputTypeReference<'_, Self>;
+    fn as_shallow_ref(&self) -> ShallowOutputTypeReference<'_, Self::SchemaDefinition>;
 
     fn display_name(&self) -> String {
         self.as_shallow_ref().to_string()

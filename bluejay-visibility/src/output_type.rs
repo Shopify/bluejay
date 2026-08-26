@@ -74,14 +74,14 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> definition::
     fn as_ref<'b>(
         &'b self,
         _: &'b Self::SchemaDefinition,
-    ) -> OutputTypeReference<'b, Self::SchemaDefinition, Self> {
+    ) -> OutputTypeReference<'b, Self::SchemaDefinition> {
         match self {
             Self::Base(b, required) => OutputTypeReference::Base(*b, *required),
             Self::List(inner, required) => OutputTypeReference::List(inner.as_ref(), *required),
         }
     }
 
-    fn as_shallow_ref(&self) -> ShallowOutputTypeReference<'_, Self> {
+    fn as_shallow_ref(&self) -> ShallowOutputTypeReference<'_, Self::SchemaDefinition> {
         match self {
             Self::Base(b, required) => ShallowOutputTypeReference::Base(b.name(), *required),
             Self::List(inner, required) => {
