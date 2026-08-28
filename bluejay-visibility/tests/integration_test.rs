@@ -12,7 +12,7 @@ use bluejay_parser::{
     },
     Error,
 };
-use bluejay_printer::definition::SchemaDefinitionPrinter;
+use bluejay_printer::print_schema_definition;
 use bluejay_visibility::{Cache, SchemaDefinition, Warden};
 use std::marker::PhantomData;
 
@@ -160,7 +160,7 @@ fn test_visibility() {
         let visibility_scoped_schema_definition = SchemaDefinition::new(&cache).unwrap();
 
         let printed_schema_definition =
-            SchemaDefinitionPrinter::to_string(&visibility_scoped_schema_definition);
+            print_schema_definition(&visibility_scoped_schema_definition);
 
         insta::assert_snapshot!(printed_schema_definition);
     });

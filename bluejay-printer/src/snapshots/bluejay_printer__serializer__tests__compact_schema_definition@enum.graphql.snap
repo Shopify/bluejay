@@ -1,0 +1,6 @@
+---
+source: bluejay-printer/src/serializer.rs
+expression: s.into_inner()
+input_file: bluejay-printer/src/definition/test_data/schema_definition/enum.graphql
+---
+type Query{weight:Weight!} type Weight{value:Int! unit:WeightUnit!} enum WeightUnit{KILOGRAMS POUNDS}
