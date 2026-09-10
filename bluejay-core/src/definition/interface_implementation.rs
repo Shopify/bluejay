@@ -1,12 +1,12 @@
-use crate::definition::{InterfaceTypeDefinition, SchemaDefinition};
+use crate::definition::SchemaDefinition;
 
 pub trait InterfaceImplementation {
-    type InterfaceTypeDefinition: InterfaceTypeDefinition;
+    type SchemaDefinition: SchemaDefinition;
 
-    fn interface<'a, S: SchemaDefinition<InterfaceTypeDefinition = Self::InterfaceTypeDefinition>>(
+    fn interface<'a>(
         &'a self,
-        schema_definition: &'a S,
-    ) -> &'a Self::InterfaceTypeDefinition;
+        schema_definition: &'a Self::SchemaDefinition,
+    ) -> &'a <Self::SchemaDefinition as SchemaDefinition>::InterfaceTypeDefinition;
 
     fn name(&self) -> &str;
 }

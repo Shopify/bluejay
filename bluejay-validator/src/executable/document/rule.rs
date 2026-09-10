@@ -62,7 +62,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, R: Rule<'a, E, S>, ER> Visi
     fn visit_selection_set(
         &mut self,
         selection_set: &'a E::SelectionSet,
-        r#type: TypeDefinitionReference<'a, S::TypeDefinition>,
+        r#type: TypeDefinitionReference<'a, S>,
     ) {
         self.rule.visit_selection_set(selection_set, r#type);
     }
@@ -119,7 +119,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, R: Rule<'a, E, S>, ER> Visi
     fn visit_inline_fragment(
         &mut self,
         inline_fragment: &'a E::InlineFragment,
-        scoped_type: TypeDefinitionReference<'a, S::TypeDefinition>,
+        scoped_type: TypeDefinitionReference<'a, S>,
     ) {
         self.rule
             .visit_inline_fragment(inline_fragment, scoped_type);
@@ -128,7 +128,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, R: Rule<'a, E, S>, ER> Visi
     fn visit_fragment_spread(
         &mut self,
         fragment_spread: &'a E::FragmentSpread,
-        scoped_type: TypeDefinitionReference<'a, S::TypeDefinition>,
+        scoped_type: TypeDefinitionReference<'a, S>,
         path: &Path<'a, E>,
     ) {
         self.rule

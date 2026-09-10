@@ -1,6 +1,6 @@
 use crate::ast::definition::{
     Context, CustomScalarTypeDefinition, EnumTypeDefinition, InputObjectTypeDefinition,
-    InterfaceTypeDefinition, ObjectTypeDefinition, UnionTypeDefinition,
+    InterfaceTypeDefinition, ObjectTypeDefinition, SchemaDefinition, UnionTypeDefinition,
 };
 use crate::lexical_token::Name;
 use bluejay_core::definition::{TypeDefinition as CoreTypeDefinition, TypeDefinitionReference};
@@ -44,14 +44,9 @@ impl<C: Context> TypeDefinition<'_, C> {
 }
 
 impl<'a, C: Context> CoreTypeDefinition for TypeDefinition<'a, C> {
-    type CustomScalarTypeDefinition = CustomScalarTypeDefinition<'a, C>;
-    type ObjectTypeDefinition = ObjectTypeDefinition<'a, C>;
-    type InputObjectTypeDefinition = InputObjectTypeDefinition<'a, C>;
-    type EnumTypeDefinition = EnumTypeDefinition<'a, C>;
-    type UnionTypeDefinition = UnionTypeDefinition<'a, C>;
-    type InterfaceTypeDefinition = InterfaceTypeDefinition<'a, C>;
+    type SchemaDefinition = SchemaDefinition<'a, C>;
 
-    fn as_ref(&self) -> TypeDefinitionReference<'_, Self> {
+    fn as_ref(&self) -> TypeDefinitionReference<'_, SchemaDefinition<'a, C>> {
         match self {
             Self::BuiltinScalar(bstd) => TypeDefinitionReference::BuiltinScalar(*bstd),
             Self::CustomScalar(cstd) => TypeDefinitionReference::CustomScalar(cstd),

@@ -1,4 +1,4 @@
-use crate::ast::definition::{Context, InterfaceImplementation};
+use crate::ast::definition::{Context, InterfaceImplementation, SchemaDefinition};
 use crate::ast::{DepthLimiter, FromTokens, IsMatch, ParseError, Tokens};
 use crate::lexical_token::PunctuatorType;
 use bluejay_core::definition::InterfaceImplementations as CoreInterfaceImplementations;
@@ -22,7 +22,7 @@ impl<'a, C: Context + 'a> AsIter for InterfaceImplementations<'a, C> {
 }
 
 impl<'a, C: Context + 'a> CoreInterfaceImplementations for InterfaceImplementations<'a, C> {
-    type InterfaceImplementation = InterfaceImplementation<'a, C>;
+    type SchemaDefinition = SchemaDefinition<'a, C>;
 }
 
 impl<'a, C: Context + 'a> InterfaceImplementations<'a, C> {

@@ -1,11 +1,14 @@
-use crate::definition::{FieldsDefinition, HasDirectives, InterfaceImplementations};
+use crate::definition::{HasDirectives, SchemaDefinition};
 
-pub trait InterfaceTypeDefinition: HasDirectives {
-    type FieldsDefinition: FieldsDefinition;
-    type InterfaceImplementations: InterfaceImplementations;
+pub trait InterfaceTypeDefinition:
+    HasDirectives<Directives = <Self::SchemaDefinition as SchemaDefinition>::Directives>
+{
+    type SchemaDefinition: SchemaDefinition;
 
     fn description(&self) -> Option<&str>;
     fn name(&self) -> &str;
-    fn interface_implementations(&self) -> Option<&Self::InterfaceImplementations>;
-    fn fields_definition(&self) -> &Self::FieldsDefinition;
+    fn interface_implementations(
+        &self,
+    ) -> Option<&<Self::SchemaDefinition as SchemaDefinition>::InterfaceImplementations>;
+    fn fields_definition(&self) -> &<Self::SchemaDefinition as SchemaDefinition>::FieldsDefinition;
 }

@@ -42,15 +42,12 @@ impl<'a, S: SchemaDefinition, W: Warden<SchemaDefinition = S>> InterfaceImplemen
 impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>>
     definition::InterfaceImplementation for InterfaceImplementation<'a, S, W>
 {
-    type InterfaceTypeDefinition = InterfaceTypeDefinition<'a, S, W>;
+    type SchemaDefinition = crate::SchemaDefinition<'a, S, W>;
 
-    fn interface<
-        'b,
-        S2: SchemaDefinition<InterfaceTypeDefinition = Self::InterfaceTypeDefinition>,
-    >(
+    fn interface<'b>(
         &'b self,
-        _: &'b S2,
-    ) -> &'b Self::InterfaceTypeDefinition {
+        _: &'b Self::SchemaDefinition,
+    ) -> &'b InterfaceTypeDefinition<'a, S, W> {
         self.interface
     }
 

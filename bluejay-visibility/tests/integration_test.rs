@@ -1,5 +1,5 @@
 use bluejay_core::{
-    definition::{prelude::*, SchemaDefinition as CoreSchemaDefinition, TypeDefinitionReference},
+    definition::{prelude::*, TypeDefinitionReference},
     AsIter, Directive as _,
 };
 use bluejay_parser::{
@@ -32,12 +32,7 @@ impl<'a> DirectiveWarden<'a> {
 impl<'a> Warden for DirectiveWarden<'a> {
     type SchemaDefinition = ParserSchemaDefinition<'a>;
     type TypeDefinitionsForName<'b>
-        = std::option::IntoIter<
-        TypeDefinitionReference<
-            'b,
-            <Self::SchemaDefinition as CoreSchemaDefinition>::TypeDefinition,
-        >,
-    >
+        = std::option::IntoIter<TypeDefinitionReference<'b, Self::SchemaDefinition>>
     where
         Self: 'b;
 

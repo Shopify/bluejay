@@ -9,12 +9,8 @@ use std::marker::PhantomData;
 
 pub trait Warden: Sized {
     type SchemaDefinition: SchemaDefinition;
-    type TypeDefinitionsForName<'a>: Iterator<
-            Item = TypeDefinitionReference<
-                'a,
-                <Self::SchemaDefinition as SchemaDefinition>::TypeDefinition,
-            >,
-        > + 'a
+    type TypeDefinitionsForName<'a>: Iterator<Item = TypeDefinitionReference<'a, Self::SchemaDefinition>>
+        + 'a
     where
         Self: 'a;
 
@@ -171,7 +167,7 @@ impl<S: SchemaDefinition> Default for NullWarden<S> {
 impl<S: SchemaDefinition> Warden for NullWarden<S> {
     type SchemaDefinition = S;
     type TypeDefinitionsForName<'a>
-        = std::option::IntoIter<TypeDefinitionReference<'a, S::TypeDefinition>>
+        = std::option::IntoIter<TypeDefinitionReference<'a, S>>
     where
         Self: 'a;
 

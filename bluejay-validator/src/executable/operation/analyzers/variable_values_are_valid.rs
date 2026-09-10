@@ -6,7 +6,7 @@ use crate::{
         operation::{Analyzer, VariableValues, Visitor},
         Cache,
     },
-    value::input_coercion::{CoerceInput, Error as CoerceInputError},
+    value::input_coercion::{coerce_variable_definition_value, Error as CoerceInputError},
 };
 use bluejay_core::definition::SchemaDefinition;
 use bluejay_core::executable::{ExecutableDocument, VariableDefinition};
@@ -63,7 +63,8 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, VV: VariableValues> Visitor
         };
         match key_and_value {
             Some((_, value)) => {
-                if let Err(errors) = self.schema_definition.coerce_const_value(
+                if let Err(errors) = coerce_variable_definition_value(
+                    self.schema_definition,
                     variable_definition_input_type,
                     value,
                     Default::default(),

@@ -89,8 +89,8 @@ impl<'a, S: SchemaDefinition> SchemaDiff<'a, S> {
 
     fn changes_in_type(
         &self,
-        old_type: TypeDefinitionReference<'a, S::TypeDefinition>,
-        new_type: TypeDefinitionReference<'a, S::TypeDefinition>,
+        old_type: TypeDefinitionReference<'a, S>,
+        new_type: TypeDefinitionReference<'a, S>,
         changes: &mut Vec<Change<'a, S>>,
     ) {
         match (old_type, new_type) {
@@ -145,7 +145,7 @@ impl<'a, S: SchemaDefinition> SchemaDiff<'a, S> {
         }
     }
 
-    fn added_types(&self) -> impl Iterator<Item = TypeDefinitionReference<'a, S::TypeDefinition>> {
+    fn added_types(&self) -> impl Iterator<Item = TypeDefinitionReference<'a, S>> {
         self.new_schema_definition
             .type_definitions()
             .filter(|new_type| {

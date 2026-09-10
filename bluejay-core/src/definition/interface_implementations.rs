@@ -1,6 +1,8 @@
-use crate::definition::InterfaceImplementation;
+use crate::definition::SchemaDefinition;
 use crate::AsIter;
 
-pub trait InterfaceImplementations: AsIter<Item = Self::InterfaceImplementation> {
-    type InterfaceImplementation: InterfaceImplementation;
+pub trait InterfaceImplementations:
+    AsIter<Item = <Self::SchemaDefinition as SchemaDefinition>::InterfaceImplementation>
+{
+    type SchemaDefinition: SchemaDefinition;
 }

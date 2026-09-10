@@ -1,14 +1,14 @@
-use crate::{
-    Cache, EnumTypeDefinition, InputObjectTypeDefinition, ScalarTypeDefinition, TypeDefinition,
-    Warden,
-};
+use crate::{Cache, TypeDefinition, Warden};
 use bluejay_core::definition::{
     self, prelude::*, BaseInputTypeReference, InputTypeReference, SchemaDefinition,
     TypeDefinitionReference,
 };
 
 pub enum InputType<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S> + 'a> {
-    Base(BaseInputTypeReference<'a, Self>, bool),
+    Base(
+        BaseInputTypeReference<'a, crate::SchemaDefinition<'a, S, W>>,
+        bool,
+    ),
     List(Box<Self>, bool),
 }
 
@@ -25,9 +25,9 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S> + 'a> InputTy
     }
 
     fn new_base(
-        inner: BaseInputTypeReference<'a, S::InputType>,
+        inner: BaseInputTypeReference<'a, S>,
         cache: &'a Cache<'a, S, W>,
-    ) -> Option<BaseInputTypeReference<'a, Self>> {
+    ) -> Option<BaseInputTypeReference<'a, crate::SchemaDefinition<'a, S, W>>> {
         let tdr = match inner {
             BaseInputTypeReference::BuiltinScalar(bstd) => {
                 TypeDefinitionReference::BuiltinScalar(bstd)
@@ -54,7 +54,7 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S> + 'a> InputTy
             })
     }
 
-    pub(crate) fn base(&self) -> BaseInputTypeReference<'a, Self> {
+    pub(crate) fn base(&self) -> BaseInputTypeReference<'a, crate::SchemaDefinition<'a, S, W>> {
         match self {
             Self::Base(base, _) => *base,
             Self::List(inner, _) => inner.base(),
@@ -65,28 +65,19 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S> + 'a> InputTy
 impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> definition::InputType
     for InputType<'a, S, W>
 {
-    type CustomScalarTypeDefinition = ScalarTypeDefinition<'a, S, W>;
-    type EnumTypeDefinition = EnumTypeDefinition<'a, S, W>;
-    type InputObjectTypeDefinition = InputObjectTypeDefinition<'a, S, W>;
+    type SchemaDefinition = crate::SchemaDefinition<'a, S, W>;
 
-    fn as_ref<
-        'b,
-        S2: SchemaDefinition<
-            CustomScalarTypeDefinition = Self::CustomScalarTypeDefinition,
-            InputObjectTypeDefinition = Self::InputObjectTypeDefinition,
-            EnumTypeDefinition = Self::EnumTypeDefinition,
-        >,
-    >(
+    fn as_ref<'b>(
         &'b self,
-        _: &'b S2,
-    ) -> InputTypeReference<'b, Self> {
+        _: &'b Self::SchemaDefinition,
+    ) -> InputTypeReference<'b, Self::SchemaDefinition> {
         match self {
             Self::Base(b, required) => InputTypeReference::Base(*b, *required),
-            Self::List(inner, required) => InputTypeReference::List(inner, *required),
+            Self::List(inner, required) => InputTypeReference::List(inner.as_ref(), *required),
         }
     }
 
-    fn as_shallow_ref(&self) -> definition::ShallowInputTypeReference<'_, Self> {
+    fn as_shallow_ref(&self) -> definition::ShallowInputTypeReference<'_, Self::SchemaDefinition> {
         match self {
             Self::Base(base, required) => {
                 definition::ShallowInputTypeReference::Base(base.name(), *required)

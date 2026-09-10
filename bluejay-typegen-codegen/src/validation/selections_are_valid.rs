@@ -34,7 +34,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> Visitor<'a, E, S>
     fn visit_selection_set(
         &mut self,
         selection_set: &'a E::SelectionSet,
-        ty: TypeDefinitionReference<'a, S::TypeDefinition>,
+        ty: TypeDefinitionReference<'a, S>,
     ) {
         match ty {
             TypeDefinitionReference::Object(_) => self.visit_object_selection_set(selection_set),

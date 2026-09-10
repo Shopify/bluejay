@@ -1,10 +1,15 @@
-use crate::definition::InputValueDefinition;
+use crate::definition::{InputValueDefinition, SchemaDefinition};
 use crate::AsIter;
 
-pub trait InputFieldsDefinition: AsIter<Item = Self::InputValueDefinition> {
-    type InputValueDefinition: InputValueDefinition;
+pub trait InputFieldsDefinition:
+    AsIter<Item = <Self::SchemaDefinition as SchemaDefinition>::InputValueDefinition>
+{
+    type SchemaDefinition: SchemaDefinition;
 
-    fn get(&self, name: &str) -> Option<&Self::InputValueDefinition> {
+    fn get(
+        &self,
+        name: &str,
+    ) -> Option<&<Self::SchemaDefinition as SchemaDefinition>::InputValueDefinition> {
         self.iter().find(|fd| fd.name() == name)
     }
 }

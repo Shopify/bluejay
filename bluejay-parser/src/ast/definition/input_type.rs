@@ -1,7 +1,4 @@
-use crate::ast::definition::{
-    Context, CustomScalarTypeDefinition, DefaultContext, EnumTypeDefinition,
-    InputObjectTypeDefinition, TypeDefinition,
-};
+use crate::ast::definition::{Context, DefaultContext, SchemaDefinition, TypeDefinition};
 use crate::ast::{DepthLimiter, FromTokens, ParseError, Tokens};
 use crate::lexical_token::{Name, PunctuatorType};
 use crate::{HasSpan, Span};
@@ -25,7 +22,7 @@ impl<'a, C: Context + 'a> BaseInputType<'a, C> {
 
     pub(crate) fn core_type_from_type_definition(
         type_definition: &'a TypeDefinition<'a, C>,
-    ) -> Result<BaseInputTypeReference<'a, InputType<'a, C>>, ()> {
+    ) -> Result<BaseInputTypeReference<'a, SchemaDefinition<'a, C>>, ()> {
         match type_definition {
             TypeDefinition::BuiltinScalar(bstd) => Ok(BaseInputTypeReference::BuiltinScalar(*bstd)),
             TypeDefinition::CustomScalar(cstd) => Ok(BaseInputTypeReference::CustomScalar(cstd)),
@@ -54,21 +51,12 @@ impl<'a, C: Context> InputType<'a, C> {
 }
 
 impl<'a, C: Context + 'a> CoreInputType for InputType<'a, C> {
-    type CustomScalarTypeDefinition = CustomScalarTypeDefinition<'a, C>;
-    type EnumTypeDefinition = EnumTypeDefinition<'a, C>;
-    type InputObjectTypeDefinition = InputObjectTypeDefinition<'a, C>;
+    type SchemaDefinition = SchemaDefinition<'a, C>;
 
-    fn as_ref<
-        'b,
-        S: CoreSchemaDefinition<
-            CustomScalarTypeDefinition = Self::CustomScalarTypeDefinition,
-            InputObjectTypeDefinition = Self::InputObjectTypeDefinition,
-            EnumTypeDefinition = Self::EnumTypeDefinition,
-        >,
-    >(
+    fn as_ref<'b>(
         &'b self,
-        schema_definition: &'b S,
-    ) -> InputTypeReference<'b, Self> {
+        schema_definition: &'b SchemaDefinition<'a, C>,
+    ) -> InputTypeReference<'b, SchemaDefinition<'a, C>> {
         match self {
             Self::Base(base, required, _) => InputTypeReference::Base(
                 schema_definition
@@ -84,12 +72,14 @@ impl<'a, C: Context + 'a> CoreInputType for InputType<'a, C> {
         }
     }
 
-    fn as_shallow_ref(&self) -> ShallowInputTypeReference<'_, Self> {
+    fn as_shallow_ref(&self) -> ShallowInputTypeReference<'_, Self::SchemaDefinition> {
         match self {
             Self::Base(base, required, _) => {
                 ShallowInputTypeReference::Base(base.name().as_str(), *required)
             }
-            Self::List(inner, required, _) => ShallowInputTypeReference::List(inner, *required),
+            Self::List(inner, required, _) => {
+                ShallowInputTypeReference::List(inner.as_ref(), *required)
+            }
         }
     }
 }

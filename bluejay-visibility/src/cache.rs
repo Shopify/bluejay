@@ -29,7 +29,7 @@ impl<'a, S: SchemaDefinition, W: Warden<SchemaDefinition = S>> Cache<'a, S, W> {
 
     pub(crate) fn get_or_create_type_definition(
         &'a self,
-        type_definition: TypeDefinitionReference<'a, S::TypeDefinition>,
+        type_definition: TypeDefinitionReference<'a, S>,
     ) -> Option<&'a TypeDefinition<'a, S, W>> {
         match self.type_definitions.get(type_definition.name()) {
             Some(existing_type_definition) => self
@@ -72,8 +72,8 @@ impl<'a, S: SchemaDefinition, W: Warden<SchemaDefinition = S>> Cache<'a, S, W> {
 
     fn type_definitions_equal(
         &self,
-        left: TypeDefinitionReference<'a, S::TypeDefinition>,
-        right: TypeDefinitionReference<'a, S::TypeDefinition>,
+        left: TypeDefinitionReference<'a, S>,
+        right: TypeDefinitionReference<'a, S>,
     ) -> bool {
         match (left, right) {
             (

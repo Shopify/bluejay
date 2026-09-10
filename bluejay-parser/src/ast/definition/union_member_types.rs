@@ -1,4 +1,4 @@
-use crate::ast::definition::{Context, UnionMemberType};
+use crate::ast::definition::{Context, SchemaDefinition, UnionMemberType};
 use crate::ast::{DepthLimiter, FromTokens, ParseError, Tokens};
 use crate::lexical_token::PunctuatorType;
 use bluejay_core::definition::UnionMemberTypes as CoreUnionMemberTypes;
@@ -22,7 +22,7 @@ impl<'a, C: Context> AsIter for UnionMemberTypes<'a, C> {
 }
 
 impl<'a, C: Context> CoreUnionMemberTypes for UnionMemberTypes<'a, C> {
-    type UnionMemberType = UnionMemberType<'a, C>;
+    type SchemaDefinition = SchemaDefinition<'a, C>;
 }
 
 impl<'a, C: Context> FromTokens<'a> for UnionMemberTypes<'a, C> {

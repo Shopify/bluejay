@@ -31,7 +31,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> Visitor<'a, E, S>
     fn visit_fragment_spread(
         &mut self,
         fragment_spread: &'a <E as ExecutableDocument>::FragmentSpread,
-        parent_type: TypeDefinitionReference<'a, S::TypeDefinition>,
+        parent_type: TypeDefinitionReference<'a, S>,
         _path: &Path<'a, E>,
     ) {
         if let Some(fragment_definition) = self.cache.fragment_definition(fragment_spread.name()) {
@@ -52,7 +52,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> Visitor<'a, E, S>
     fn visit_inline_fragment(
         &mut self,
         inline_fragment: &'a <E as ExecutableDocument>::InlineFragment,
-        parent_type: TypeDefinitionReference<'a, S::TypeDefinition>,
+        parent_type: TypeDefinitionReference<'a, S>,
     ) {
         if let Some(type_condition) = inline_fragment.type_condition() {
             if let Some(fragment_type) = self.schema_definition.get_type_definition(type_condition)
@@ -71,8 +71,8 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> Visitor<'a, E, S>
 impl<'a, E: ExecutableDocument, S: SchemaDefinition> FragmentSpreadIsPossible<'a, E, S> {
     fn spread_is_not_possible(
         &self,
-        parent_type: TypeDefinitionReference<'a, S::TypeDefinition>,
-        fragment_type: TypeDefinitionReference<'a, S::TypeDefinition>,
+        parent_type: TypeDefinitionReference<'a, S>,
+        fragment_type: TypeDefinitionReference<'a, S>,
     ) -> bool {
         // Fast path: if either type is not a composite type, spread is not applicable
         if !parent_type.is_composite() || !fragment_type.is_composite() {
@@ -95,11 +95,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> FragmentSpreadIsPossible<'a
         !self.types_have_overlap(parent_type, fragment_type)
     }
 
-    fn type_contains_name(
-        &self,
-        t: TypeDefinitionReference<'a, S::TypeDefinition>,
-        name: &str,
-    ) -> bool {
+    fn type_contains_name(&self, t: TypeDefinitionReference<'a, S>, name: &str) -> bool {
         match t {
             TypeDefinitionReference::Object(_) => t.name() == name,
             TypeDefinitionReference::Interface(itd) => self
@@ -116,8 +112,8 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> FragmentSpreadIsPossible<'a
 
     fn types_have_overlap(
         &self,
-        a: TypeDefinitionReference<'a, S::TypeDefinition>,
-        b: TypeDefinitionReference<'a, S::TypeDefinition>,
+        a: TypeDefinitionReference<'a, S>,
+        b: TypeDefinitionReference<'a, S>,
     ) -> bool {
         match (a, b) {
             (TypeDefinitionReference::Object(o), other)
@@ -135,7 +131,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> FragmentSpreadIsPossible<'a
 
     fn possible_type_names(
         &self,
-        t: TypeDefinitionReference<'a, S::TypeDefinition>,
+        t: TypeDefinitionReference<'a, S>,
     ) -> impl Iterator<Item = &'a str> + '_ {
         use itertools::Either;
         match t {

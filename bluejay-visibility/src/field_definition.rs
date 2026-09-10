@@ -38,8 +38,7 @@ impl<'a, S: SchemaDefinition, W: Warden<SchemaDefinition = S>> FieldDefinition<'
 impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> definition::FieldDefinition
     for FieldDefinition<'a, S, W>
 {
-    type OutputType = OutputType<'a, S, W>;
-    type ArgumentsDefinition = ArgumentsDefinition<'a, S, W>;
+    type SchemaDefinition = crate::SchemaDefinition<'a, S, W>;
 
     fn description(&self) -> Option<&str> {
         self.inner.description()
@@ -53,11 +52,11 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> definition::
         self.inner.is_builtin()
     }
 
-    fn r#type(&self) -> &Self::OutputType {
+    fn r#type(&self) -> &OutputType<'a, S, W> {
         &self.r#type
     }
 
-    fn arguments_definition(&self) -> Option<&Self::ArgumentsDefinition> {
+    fn arguments_definition(&self) -> Option<&ArgumentsDefinition<'a, S, W>> {
         self.arguments_definition
             .get_or_init(|| {
                 self.inner

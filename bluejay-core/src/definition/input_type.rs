@@ -1,26 +1,26 @@
 use crate::definition::{
     EnumTypeDefinition, HasDirectives, InputObjectTypeDefinition, ScalarTypeDefinition,
-    SchemaDefinition, TypeDefinition, TypeDefinitionReference,
+    SchemaDefinition, TypeDefinitionReference,
 };
 use crate::BuiltinScalarDefinition;
 
 #[derive(Debug)]
-pub enum BaseInputTypeReference<'a, T: InputType> {
+pub enum BaseInputTypeReference<'a, S: SchemaDefinition> {
     BuiltinScalar(BuiltinScalarDefinition),
-    CustomScalar(&'a T::CustomScalarTypeDefinition),
-    InputObject(&'a T::InputObjectTypeDefinition),
-    Enum(&'a T::EnumTypeDefinition),
+    CustomScalar(&'a S::CustomScalarTypeDefinition),
+    InputObject(&'a S::InputObjectTypeDefinition),
+    Enum(&'a S::EnumTypeDefinition),
 }
 
-impl<T: InputType> Clone for BaseInputTypeReference<'_, T> {
+impl<S: SchemaDefinition> Clone for BaseInputTypeReference<'_, S> {
     fn clone(&self) -> Self {
         *self
     }
 }
 
-impl<T: InputType> Copy for BaseInputTypeReference<'_, T> {}
+impl<S: SchemaDefinition> Copy for BaseInputTypeReference<'_, S> {}
 
-impl<'a, T: InputType> BaseInputTypeReference<'a, T> {
+impl<'a, S: SchemaDefinition> BaseInputTypeReference<'a, S> {
     pub fn name(&self) -> &'a str {
         match self {
             Self::BuiltinScalar(bstd) => bstd.name(),
@@ -29,39 +29,22 @@ impl<'a, T: InputType> BaseInputTypeReference<'a, T> {
             Self::InputObject(iotd) => iotd.name(),
         }
     }
-
-    pub fn convert<
-        I: InputType<
-            CustomScalarTypeDefinition = T::CustomScalarTypeDefinition,
-            InputObjectTypeDefinition = T::InputObjectTypeDefinition,
-            EnumTypeDefinition = T::EnumTypeDefinition,
-        >,
-    >(
-        &self,
-    ) -> BaseInputTypeReference<'a, I> {
-        match self {
-            Self::BuiltinScalar(bstd) => BaseInputTypeReference::BuiltinScalar(*bstd),
-            Self::CustomScalar(cstd) => BaseInputTypeReference::CustomScalar(*cstd),
-            Self::Enum(etd) => BaseInputTypeReference::Enum(*etd),
-            Self::InputObject(iotd) => BaseInputTypeReference::InputObject(*iotd),
-        }
-    }
 }
 
-pub enum InputTypeReference<'a, I: InputType> {
-    Base(BaseInputTypeReference<'a, I>, bool),
-    List(&'a I, bool),
+pub enum InputTypeReference<'a, S: SchemaDefinition> {
+    Base(BaseInputTypeReference<'a, S>, bool),
+    List(&'a S::InputType, bool),
 }
 
-impl<I: InputType> Clone for InputTypeReference<'_, I> {
+impl<S: SchemaDefinition> Clone for InputTypeReference<'_, S> {
     fn clone(&self) -> Self {
         *self
     }
 }
 
-impl<I: InputType> Copy for InputTypeReference<'_, I> {}
+impl<S: SchemaDefinition> Copy for InputTypeReference<'_, S> {}
 
-impl<'a, I: InputType> InputTypeReference<'a, I> {
+impl<'a, S: SchemaDefinition> InputTypeReference<'a, S> {
     pub fn is_required(&self) -> bool {
         match self {
             Self::Base(_, r) => *r,
@@ -69,16 +52,7 @@ impl<'a, I: InputType> InputTypeReference<'a, I> {
         }
     }
 
-    pub fn base<
-        S: SchemaDefinition<
-            CustomScalarTypeDefinition = I::CustomScalarTypeDefinition,
-            InputObjectTypeDefinition = I::InputObjectTypeDefinition,
-            EnumTypeDefinition = I::EnumTypeDefinition,
-        >,
-    >(
-        &self,
-        schema_definition: &'a S,
-    ) -> BaseInputTypeReference<'a, I> {
+    pub fn base(&self, schema_definition: &'a S) -> BaseInputTypeReference<'a, S> {
         match self {
             Self::Base(b, _) => *b,
             Self::List(l, _) => l.base(schema_definition),
@@ -94,12 +68,12 @@ impl<'a, I: InputType> InputTypeReference<'a, I> {
 }
 
 #[derive(Clone)]
-pub enum ShallowInputTypeReference<'a, I: InputType> {
+pub enum ShallowInputTypeReference<'a, S: SchemaDefinition> {
     Base(&'a str, bool),
-    List(&'a I, bool),
+    List(&'a S::InputType, bool),
 }
 
-impl<I: InputType> ShallowInputTypeReference<'_, I> {
+impl<S: SchemaDefinition> ShallowInputTypeReference<'_, S> {
     pub fn is_required(&self) -> bool {
         match self {
             Self::Base(_, r) => *r,
@@ -108,7 +82,7 @@ impl<I: InputType> ShallowInputTypeReference<'_, I> {
     }
 }
 
-impl<I: InputType> std::fmt::Display for ShallowInputTypeReference<'_, I> {
+impl<S: SchemaDefinition> std::fmt::Display for ShallowInputTypeReference<'_, S> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             ShallowInputTypeReference::Base(name, required) => {
@@ -126,7 +100,7 @@ impl<I: InputType> std::fmt::Display for ShallowInputTypeReference<'_, I> {
     }
 }
 
-impl<I: InputType> PartialEq for ShallowInputTypeReference<'_, I> {
+impl<S: SchemaDefinition> PartialEq for ShallowInputTypeReference<'_, S> {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
             (
@@ -143,27 +117,14 @@ impl<I: InputType> PartialEq for ShallowInputTypeReference<'_, I> {
 }
 
 pub trait InputType: Sized {
-    type CustomScalarTypeDefinition: ScalarTypeDefinition;
-    type InputObjectTypeDefinition: InputObjectTypeDefinition<
-        Directives = <Self::CustomScalarTypeDefinition as HasDirectives>::Directives,
-    >;
-    type EnumTypeDefinition: EnumTypeDefinition<
-        Directives = <Self::CustomScalarTypeDefinition as HasDirectives>::Directives,
-    >;
+    type SchemaDefinition: SchemaDefinition<InputType = Self>;
 
-    fn as_ref<
-        'a,
-        S: SchemaDefinition<
-            CustomScalarTypeDefinition = Self::CustomScalarTypeDefinition,
-            InputObjectTypeDefinition = Self::InputObjectTypeDefinition,
-            EnumTypeDefinition = Self::EnumTypeDefinition,
-        >,
-    >(
+    fn as_ref<'a>(
         &'a self,
-        schema_definition: &'a S,
-    ) -> InputTypeReference<'a, Self>;
+        schema_definition: &'a Self::SchemaDefinition,
+    ) -> InputTypeReference<'a, Self::SchemaDefinition>;
 
-    fn as_shallow_ref(&self) -> ShallowInputTypeReference<'_, Self>;
+    fn as_shallow_ref(&self) -> ShallowInputTypeReference<'_, Self::SchemaDefinition>;
 
     fn display_name(&self) -> String {
         self.as_shallow_ref().to_string()
@@ -173,34 +134,20 @@ pub trait InputType: Sized {
         self.as_shallow_ref().is_required()
     }
 
-    fn base<
-        'a,
-        S: SchemaDefinition<
-            CustomScalarTypeDefinition = Self::CustomScalarTypeDefinition,
-            InputObjectTypeDefinition = Self::InputObjectTypeDefinition,
-            EnumTypeDefinition = Self::EnumTypeDefinition,
-        >,
-    >(
+    fn base<'a>(
         &'a self,
-        schema_definition: &'a S,
-    ) -> BaseInputTypeReference<'a, Self> {
+        schema_definition: &'a Self::SchemaDefinition,
+    ) -> BaseInputTypeReference<'a, Self::SchemaDefinition> {
         self.as_ref(schema_definition).base(schema_definition)
     }
 }
 
-impl<
-        'a,
-        T: TypeDefinition,
-        I: InputType<
-            CustomScalarTypeDefinition = T::CustomScalarTypeDefinition,
-            InputObjectTypeDefinition = T::InputObjectTypeDefinition,
-            EnumTypeDefinition = T::EnumTypeDefinition,
-        >,
-    > TryFrom<TypeDefinitionReference<'a, T>> for BaseInputTypeReference<'a, I>
+impl<'a, S: SchemaDefinition> TryFrom<TypeDefinitionReference<'a, S>>
+    for BaseInputTypeReference<'a, S>
 {
     type Error = ();
 
-    fn try_from(value: TypeDefinitionReference<'a, T>) -> Result<Self, Self::Error> {
+    fn try_from(value: TypeDefinitionReference<'a, S>) -> Result<Self, Self::Error> {
         match value {
             TypeDefinitionReference::BuiltinScalar(bstd) => Ok(Self::BuiltinScalar(bstd)),
             TypeDefinitionReference::CustomScalar(cstd) => Ok(Self::CustomScalar(cstd)),
@@ -213,8 +160,11 @@ impl<
     }
 }
 
-impl<'a, I: InputType> HasDirectives for BaseInputTypeReference<'a, I> {
-    type Directives = <I::CustomScalarTypeDefinition as HasDirectives>::Directives;
+impl<'a, S: SchemaDefinition> HasDirectives for BaseInputTypeReference<'a, S>
+where
+    <S as SchemaDefinition>::Directives: 'a,
+{
+    type Directives = <S as SchemaDefinition>::Directives;
 
     fn directives(&self) -> Option<&'a Self::Directives> {
         match self {

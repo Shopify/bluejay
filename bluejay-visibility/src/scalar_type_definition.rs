@@ -24,9 +24,11 @@ impl<'a, S: SchemaDefinition, W: Warden<SchemaDefinition = S>> ScalarTypeDefinit
     }
 }
 
-impl<S: SchemaDefinition, W: Warden<SchemaDefinition = S>> definition::ScalarTypeDefinition
-    for ScalarTypeDefinition<'_, S, W>
+impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> definition::ScalarTypeDefinition
+    for ScalarTypeDefinition<'a, S, W>
 {
+    type SchemaDefinition = crate::SchemaDefinition<'a, S, W>;
+
     fn description(&self) -> Option<&str> {
         self.inner.description()
     }

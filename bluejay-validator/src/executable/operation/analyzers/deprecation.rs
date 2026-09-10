@@ -2,10 +2,12 @@ use crate::executable::{
     operation::{Analyzer, VariableValues, Visitor},
     Cache,
 };
+use crate::value::input_type::{
+    InputTypeView, InputTypeViewReference, SchemaInputTypeView, VariableDefinitionInputTypeView,
+};
 use bluejay_core::definition::{
     BaseInputTypeReference, EnumTypeDefinition, EnumValueDefinition, HasDirectives,
-    InputObjectTypeDefinition, InputType, InputTypeReference, InputValueDefinition,
-    SchemaDefinition,
+    InputObjectTypeDefinition, InputValueDefinition, SchemaDefinition,
 };
 use bluejay_core::executable::{ExecutableDocument, Field, VariableDefinition};
 use bluejay_core::{Argument, AsIter, Directive, ObjectValue, Value, ValueReference};
@@ -72,11 +74,15 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, VV: VariableValues> Visitor
                 .variable_values
                 .get(variable_definition.variable().as_ref())
             {
-                self.find_deprecations_for_value(input_type, value, variable_definition.variable());
+                self.find_deprecations_for_value(
+                    VariableDefinitionInputTypeView::new(input_type),
+                    value,
+                    variable_definition.variable(),
+                );
             }
             if let Some(default_value) = variable_definition.default_value() {
                 self.find_deprecations_for_value(
-                    input_type,
+                    VariableDefinitionInputTypeView::new(input_type),
                     default_value,
                     variable_definition.variable(),
                 );
@@ -88,10 +94,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, VV: VariableValues> Visitor
         &mut self,
         field: &'a <E as ExecutableDocument>::Field,
         field_definition: &'a <S as SchemaDefinition>::FieldDefinition,
-        _scoped_type: bluejay_core::definition::TypeDefinitionReference<
-            'a,
-            <S as SchemaDefinition>::TypeDefinition,
-        >,
+        _scoped_type: bluejay_core::definition::TypeDefinitionReference<'a, S>,
         included: bool,
     ) {
         if !included {
@@ -125,7 +128,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, VV: VariableValues> Visitor
         }
 
         self.find_deprecations_for_value(
-            input_value_definition.r#type(),
+            SchemaInputTypeView::new(input_value_definition.r#type()),
             argument.value(),
             argument.name(),
         );
@@ -161,26 +164,22 @@ fn get_deprecation_reason<N: HasDirectives>(ast_item: &N) -> Option<&str> {
 impl<'a, E: ExecutableDocument, S: SchemaDefinition, VV: VariableValues> Deprecation<'a, E, S, VV> {
     fn find_deprecations_for_value<
         const CONST: bool,
-        I: InputType<
-            CustomScalarTypeDefinition = S::CustomScalarTypeDefinition,
-            InputObjectTypeDefinition = S::InputObjectTypeDefinition,
-            EnumTypeDefinition = S::EnumTypeDefinition,
-        >,
+        I: InputTypeView<'a, SchemaDefinition = S>,
         V: Value<CONST>,
     >(
         &mut self,
-        input_type: &'a I,
+        input_type: I,
         value: &'a V,
         name: &'a str,
     ) {
         match input_type.as_ref(self.schema_definition) {
-            InputTypeReference::List(inner_list_type, _) => match value.as_ref() {
+            InputTypeViewReference::List(inner_list_type, _) => match value.as_ref() {
                 ValueReference::List(list_value) => list_value.iter().for_each(|list_item| {
                     self.find_deprecations_for_value(inner_list_type, list_item, name)
                 }),
                 _ => self.find_deprecations_for_value(inner_list_type, value, name),
             },
-            InputTypeReference::Base(base_input_type, _) => match base_input_type {
+            InputTypeViewReference::Base(base_input_type, _) => match base_input_type {
                 BaseInputTypeReference::Enum(etd) => {
                     let enum_value = match value.as_ref() {
                         ValueReference::Enum(enum_value) => Some(enum_value),
@@ -231,7 +230,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, VV: VariableValues> Depreca
                                     }
 
                                     self.find_deprecations_for_value(
-                                        input_field_definition.r#type(),
+                                        SchemaInputTypeView::new(input_field_definition.r#type()),
                                         value,
                                         name,
                                     )

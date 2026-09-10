@@ -1,4 +1,4 @@
-use crate::ast::definition::{Context, Directives, EnumValueDefinitions};
+use crate::ast::definition::{Context, Directives, EnumValueDefinitions, SchemaDefinition};
 use crate::ast::{
     ConstDirectives, DepthLimiter, FromTokens, Parse, ParseError, Tokens, TryFromTokens,
 };
@@ -15,7 +15,7 @@ pub struct EnumTypeDefinition<'a, C: Context> {
 }
 
 impl<'a, C: Context> CoreEnumTypeDefinition for EnumTypeDefinition<'a, C> {
-    type EnumValueDefinitions = EnumValueDefinitions<'a, C>;
+    type SchemaDefinition = SchemaDefinition<'a, C>;
 
     fn description(&self) -> Option<&str> {
         self.description.as_ref().map(AsRef::as_ref)
@@ -25,7 +25,7 @@ impl<'a, C: Context> CoreEnumTypeDefinition for EnumTypeDefinition<'a, C> {
         self.name.as_ref()
     }
 
-    fn enum_value_definitions(&self) -> &Self::EnumValueDefinitions {
+    fn enum_value_definitions(&self) -> &EnumValueDefinitions<'a, C> {
         &self.enum_value_definitions
     }
 

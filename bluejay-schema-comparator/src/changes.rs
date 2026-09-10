@@ -90,18 +90,18 @@ impl Criticality {
 #[derive(AsRefStr)]
 pub enum Change<'a, S: SchemaDefinition> {
     TypeRemoved {
-        removed_type_definition: TypeDefinitionReference<'a, S::TypeDefinition>,
+        removed_type_definition: TypeDefinitionReference<'a, S>,
     },
     TypeAdded {
-        added_type_definition: TypeDefinitionReference<'a, S::TypeDefinition>,
+        added_type_definition: TypeDefinitionReference<'a, S>,
     },
     TypeKindChanged {
-        old_type_definition: TypeDefinitionReference<'a, S::TypeDefinition>,
-        new_type_definition: TypeDefinitionReference<'a, S::TypeDefinition>,
+        old_type_definition: TypeDefinitionReference<'a, S>,
+        new_type_definition: TypeDefinitionReference<'a, S>,
     },
     TypeDescriptionChanged {
-        old_type_definition: TypeDefinitionReference<'a, S::TypeDefinition>,
-        new_type_definition: TypeDefinitionReference<'a, S::TypeDefinition>,
+        old_type_definition: TypeDefinitionReference<'a, S>,
+        new_type_definition: TypeDefinitionReference<'a, S>,
     },
     FieldAdded {
         added_field_definition: &'a S::FieldDefinition,
@@ -1295,8 +1295,8 @@ impl<S: SchemaDefinition> Change<'_, S> {
 }
 
 fn is_change_safe_for_field<S: SchemaDefinition>(
-    old_type: ShallowOutputTypeReference<S::OutputType>,
-    new_type: ShallowOutputTypeReference<S::OutputType>,
+    old_type: ShallowOutputTypeReference<S>,
+    new_type: ShallowOutputTypeReference<S>,
 ) -> bool {
     match (old_type, new_type) {
         (
@@ -1318,8 +1318,8 @@ fn is_change_safe_for_field<S: SchemaDefinition>(
 }
 
 fn is_change_safe_for_input_value<S: SchemaDefinition>(
-    old_type: ShallowInputTypeReference<S::InputType>,
-    new_type: ShallowInputTypeReference<S::InputType>,
+    old_type: ShallowInputTypeReference<S>,
+    new_type: ShallowInputTypeReference<S>,
 ) -> bool {
     match (old_type, new_type) {
         (

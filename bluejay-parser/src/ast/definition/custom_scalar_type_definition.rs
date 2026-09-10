@@ -1,5 +1,5 @@
 use crate::ast::{
-    definition::{Context, Directives},
+    definition::{Context, Directives, SchemaDefinition},
     ConstDirectives, DepthLimiter, FromTokens, ParseError, Tokens, TryFromTokens,
 };
 use crate::lexical_token::{Name, StringValue};
@@ -24,7 +24,9 @@ impl<'a, C: Context> CustomScalarTypeDefinition<'a, C> {
     }
 }
 
-impl<C: Context> CoreScalarTypeDefinition for CustomScalarTypeDefinition<'_, C> {
+impl<'a, C: Context> CoreScalarTypeDefinition for CustomScalarTypeDefinition<'a, C> {
+    type SchemaDefinition = SchemaDefinition<'a, C>;
+
     fn description(&self) -> Option<&str> {
         self.description.as_ref().map(AsRef::as_ref)
     }

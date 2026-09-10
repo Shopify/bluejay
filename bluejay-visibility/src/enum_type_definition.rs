@@ -27,7 +27,7 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> EnumTypeDefi
 impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> definition::EnumTypeDefinition
     for EnumTypeDefinition<'a, S, W>
 {
-    type EnumValueDefinitions = EnumValueDefinitions<'a, S, W>;
+    type SchemaDefinition = crate::SchemaDefinition<'a, S, W>;
 
     fn description(&self) -> Option<&str> {
         self.inner.description()
@@ -37,7 +37,7 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> definition::
         self.inner.name()
     }
 
-    fn enum_value_definitions(&self) -> &Self::EnumValueDefinitions {
+    fn enum_value_definitions(&self) -> &EnumValueDefinitions<'a, S, W> {
         self.enum_value_definitions.get_or_init(|| {
             EnumValueDefinitions::new(self.inner.enum_value_definitions(), self.cache)
         })

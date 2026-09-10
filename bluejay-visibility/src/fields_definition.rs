@@ -69,9 +69,9 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> AsIter
 impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> definition::FieldsDefinition
     for FieldsDefinition<'a, S, W>
 {
-    type FieldDefinition = FieldDefinition<'a, S, W>;
+    type SchemaDefinition = crate::SchemaDefinition<'a, S, W>;
 
-    fn get(&self, name: &str) -> Option<&Self::FieldDefinition> {
+    fn get(&self, name: &str) -> Option<&FieldDefinition<'a, S, W>> {
         self.indexed_fields_definition
             .get(name)
             .or_else(|| {

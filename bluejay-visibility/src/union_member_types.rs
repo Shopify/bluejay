@@ -43,5 +43,5 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> AsIter
 impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> definition::UnionMemberTypes
     for UnionMemberTypes<'a, S, W>
 {
-    type UnionMemberType = UnionMemberType<'a, S, W>;
+    type SchemaDefinition = crate::SchemaDefinition<'a, S, W>;
 }

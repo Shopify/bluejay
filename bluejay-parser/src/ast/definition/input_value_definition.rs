@@ -1,4 +1,4 @@
-use crate::ast::definition::{Context, Directives, InputType};
+use crate::ast::definition::{Context, Directives, InputType, SchemaDefinition};
 use crate::ast::{ConstDirectives, ConstValue, DepthLimiter, FromTokens, ParseError, Tokens};
 use crate::lexical_token::{Name, PunctuatorType, StringValue};
 use bluejay_core::definition::{HasDirectives, InputValueDefinition as CoreInputValueDefinition};
@@ -19,7 +19,7 @@ impl<'a, C: Context> InputValueDefinition<'a, C> {
 }
 
 impl<'a, C: Context> CoreInputValueDefinition for InputValueDefinition<'a, C> {
-    type InputType = InputType<'a, C>;
+    type SchemaDefinition = SchemaDefinition<'a, C>;
     type Value = ConstValue<'a>;
 
     fn description(&self) -> Option<&str> {
@@ -30,7 +30,7 @@ impl<'a, C: Context> CoreInputValueDefinition for InputValueDefinition<'a, C> {
         self.name.as_ref()
     }
 
-    fn r#type(&self) -> &Self::InputType {
+    fn r#type(&self) -> &InputType<'a, C> {
         &self.r#type
     }
 

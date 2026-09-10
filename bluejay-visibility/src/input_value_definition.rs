@@ -41,8 +41,8 @@ impl<'a, S: SchemaDefinition, W: Warden<SchemaDefinition = S>> InputValueDefinit
 impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> definition::InputValueDefinition
     for InputValueDefinition<'a, S, W>
 {
+    type SchemaDefinition = crate::SchemaDefinition<'a, S, W>;
     type Value = <S::InputValueDefinition as definition::InputValueDefinition>::Value;
-    type InputType = InputType<'a, S, W>;
 
     fn description(&self) -> Option<&str> {
         self.inner.description()
@@ -58,7 +58,7 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> definition::
             .input_value_definition_default_value(self)
     }
 
-    fn r#type(&self) -> &Self::InputType {
+    fn r#type(&self) -> &InputType<'a, S, W> {
         &self.r#type
     }
 }

@@ -8,84 +8,32 @@ use crate::definition::{
 };
 
 pub trait SchemaDefinition:
-    HasDirectives<Directives = <Self as SchemaDefinition>::Directives>
+    Sized + HasDirectives<Directives = <Self as SchemaDefinition>::Directives>
 {
-    type Directive: Directive<DirectiveDefinition = Self::DirectiveDefinition>;
-    type Directives: Directives<Directive = Self::Directive>;
-    type InputValueDefinition: InputValueDefinition<
-        InputType = Self::InputType,
-        Directives = <Self as SchemaDefinition>::Directives,
-    >;
-    type InputFieldsDefinition: InputFieldsDefinition<
-        InputValueDefinition = Self::InputValueDefinition,
-    >;
-    type ArgumentsDefinition: ArgumentsDefinition<ArgumentDefinition = Self::InputValueDefinition>;
-    type EnumValueDefinition: EnumValueDefinition<
-        Directives = <Self as SchemaDefinition>::Directives,
-    >;
-    type EnumValueDefinitions: EnumValueDefinitions<EnumValueDefinition = Self::EnumValueDefinition>;
-    type FieldDefinition: FieldDefinition<
-        ArgumentsDefinition = Self::ArgumentsDefinition,
-        OutputType = Self::OutputType,
-        Directives = <Self as SchemaDefinition>::Directives,
-    >;
-    type FieldsDefinition: FieldsDefinition<FieldDefinition = Self::FieldDefinition>;
-    type InterfaceImplementation: InterfaceImplementation<
-        InterfaceTypeDefinition = Self::InterfaceTypeDefinition,
-    >;
-    type InterfaceImplementations: InterfaceImplementations<
-        InterfaceImplementation = Self::InterfaceImplementation,
-    >;
-    type UnionMemberType: UnionMemberType<ObjectTypeDefinition = Self::ObjectTypeDefinition>;
-    type UnionMemberTypes: UnionMemberTypes<UnionMemberType = Self::UnionMemberType>;
-    type InputType: InputType<
-        CustomScalarTypeDefinition = Self::CustomScalarTypeDefinition,
-        InputObjectTypeDefinition = Self::InputObjectTypeDefinition,
-        EnumTypeDefinition = Self::EnumTypeDefinition,
-    >;
-    type OutputType: OutputType<
-        CustomScalarTypeDefinition = Self::CustomScalarTypeDefinition,
-        EnumTypeDefinition = Self::EnumTypeDefinition,
-        ObjectTypeDefinition = Self::ObjectTypeDefinition,
-        InterfaceTypeDefinition = Self::InterfaceTypeDefinition,
-        UnionTypeDefinition = Self::UnionTypeDefinition,
-    >;
-    type CustomScalarTypeDefinition: ScalarTypeDefinition<
-        Directives = <Self as SchemaDefinition>::Directives,
-    >;
-    type ObjectTypeDefinition: ObjectTypeDefinition<
-        FieldsDefinition = Self::FieldsDefinition,
-        InterfaceImplementations = Self::InterfaceImplementations,
-        Directives = <Self as SchemaDefinition>::Directives,
-    >;
-    type InterfaceTypeDefinition: InterfaceTypeDefinition<
-        FieldsDefinition = Self::FieldsDefinition,
-        InterfaceImplementations = Self::InterfaceImplementations,
-        Directives = <Self as SchemaDefinition>::Directives,
-    >;
-    type UnionTypeDefinition: UnionTypeDefinition<
-        UnionMemberTypes = Self::UnionMemberTypes,
-        Directives = <Self as SchemaDefinition>::Directives,
-        FieldsDefinition = Self::FieldsDefinition,
-    >;
-    type InputObjectTypeDefinition: InputObjectTypeDefinition<
-        InputFieldsDefinition = Self::InputFieldsDefinition,
-        Directives = <Self as SchemaDefinition>::Directives,
-    >;
-    type EnumTypeDefinition: EnumTypeDefinition<
-        Directives = <Self as SchemaDefinition>::Directives,
-        EnumValueDefinitions = Self::EnumValueDefinitions,
-    >;
-    type TypeDefinition: TypeDefinition<
-        CustomScalarTypeDefinition = Self::CustomScalarTypeDefinition,
-        ObjectTypeDefinition = Self::ObjectTypeDefinition,
-        InputObjectTypeDefinition = Self::InputObjectTypeDefinition,
-        EnumTypeDefinition = Self::EnumTypeDefinition,
-        UnionTypeDefinition = Self::UnionTypeDefinition,
-        InterfaceTypeDefinition = Self::InterfaceTypeDefinition,
-    >;
-    type DirectiveDefinition: DirectiveDefinition<ArgumentsDefinition = Self::ArgumentsDefinition>;
-    type TypeDefinitions<'a>: Iterator<Item = TypeDefinitionReference<'a, Self::TypeDefinition>>
+    type Directive: Directive<SchemaDefinition = Self>;
+    type Directives: Directives<SchemaDefinition = Self>;
+    type InputValueDefinition: InputValueDefinition<SchemaDefinition = Self>;
+    type InputFieldsDefinition: InputFieldsDefinition<SchemaDefinition = Self>;
+    type ArgumentsDefinition: ArgumentsDefinition<SchemaDefinition = Self>;
+    type EnumValueDefinition: EnumValueDefinition<SchemaDefinition = Self>;
+    type EnumValueDefinitions: EnumValueDefinitions<SchemaDefinition = Self>;
+    type FieldDefinition: FieldDefinition<SchemaDefinition = Self>;
+    type FieldsDefinition: FieldsDefinition<SchemaDefinition = Self>;
+    type InterfaceImplementation: InterfaceImplementation<SchemaDefinition = Self>;
+    type InterfaceImplementations: InterfaceImplementations<SchemaDefinition = Self>;
+    type UnionMemberType: UnionMemberType<SchemaDefinition = Self>;
+    type UnionMemberTypes: UnionMemberTypes<SchemaDefinition = Self>;
+    type InputType: InputType<SchemaDefinition = Self>;
+    type OutputType: OutputType<SchemaDefinition = Self>;
+    type CustomScalarTypeDefinition: ScalarTypeDefinition<SchemaDefinition = Self>;
+    type ObjectTypeDefinition: ObjectTypeDefinition<SchemaDefinition = Self>;
+    type InterfaceTypeDefinition: InterfaceTypeDefinition<SchemaDefinition = Self>;
+    type UnionTypeDefinition: UnionTypeDefinition<SchemaDefinition = Self>;
+    type InputObjectTypeDefinition: InputObjectTypeDefinition<SchemaDefinition = Self>;
+    type EnumTypeDefinition: EnumTypeDefinition<SchemaDefinition = Self>;
+    type TypeDefinition: TypeDefinition<SchemaDefinition = Self>;
+    type DirectiveDefinition: DirectiveDefinition<SchemaDefinition = Self>;
+    type TypeDefinitions<'a>: Iterator<Item = TypeDefinitionReference<'a, Self>>
     where
         Self: 'a;
     type DirectiveDefinitions<'a>: Iterator<Item = &'a Self::DirectiveDefinition>
@@ -99,10 +47,7 @@ pub trait SchemaDefinition:
     fn query(&self) -> &Self::ObjectTypeDefinition;
     fn mutation(&self) -> Option<&Self::ObjectTypeDefinition>;
     fn subscription(&self) -> Option<&Self::ObjectTypeDefinition>;
-    fn get_type_definition(
-        &self,
-        name: &str,
-    ) -> Option<TypeDefinitionReference<'_, Self::TypeDefinition>>;
+    fn get_type_definition(&self, name: &str) -> Option<TypeDefinitionReference<'_, Self>>;
     fn type_definitions(&self) -> Self::TypeDefinitions<'_>;
     fn get_directive_definition(&self, name: &str) -> Option<&Self::DirectiveDefinition>;
     fn directive_definitions(&self) -> Self::DirectiveDefinitions<'_>;

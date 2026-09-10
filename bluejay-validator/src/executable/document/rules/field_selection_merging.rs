@@ -34,7 +34,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition> Visitor<'a, E, S>
     fn visit_selection_set(
         &mut self,
         selection_set: &'a E::SelectionSet,
-        r#type: TypeDefinitionReference<'a, S::TypeDefinition>,
+        r#type: TypeDefinitionReference<'a, S>,
     ) {
         self.selection_set_valid(selection_set, r#type);
     }
@@ -44,7 +44,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> FieldSelectionMer
     fn selection_set_valid(
         &mut self,
         selection_set: &'a E::SelectionSet,
-        parent_type: TypeDefinitionReference<'a, S::TypeDefinition>,
+        parent_type: TypeDefinitionReference<'a, S>,
     ) -> bool {
         if let Some(errors) = self.cached_errors.get(&Indexed(selection_set)) {
             errors.is_empty()
@@ -233,7 +233,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> FieldSelectionMer
     fn selection_set_contained_fields(
         &mut self,
         selection_set: &'a E::SelectionSet,
-        parent_type: TypeDefinitionReference<'a, S::TypeDefinition>,
+        parent_type: TypeDefinitionReference<'a, S>,
     ) -> HashMap<&'a str, Vec<FieldContext<'a, E, S>>> {
         let mut fields = HashMap::new();
         self.visit_selections_for_fields(selection_set.iter(), &mut fields, parent_type, &[]);
@@ -272,7 +272,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> FieldSelectionMer
         &mut self,
         selections: impl Iterator<Item = &'a E::Selection>,
         fields: &mut HashMap<&'a str, Vec<FieldContext<'a, E, S>>>,
-        parent_type: TypeDefinitionReference<'a, S::TypeDefinition>,
+        parent_type: TypeDefinitionReference<'a, S>,
         parent_fragments: &[&'a str],
     ) {
         selections.for_each(|selection| match selection.as_ref() {
@@ -384,6 +384,6 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Rule<'a, E, S>
 struct FieldContext<'a, E: ExecutableDocument, S: SchemaDefinition> {
     field: &'a E::Field,
     field_definition: &'a S::FieldDefinition,
-    parent_type: TypeDefinitionReference<'a, S::TypeDefinition>,
+    parent_type: TypeDefinitionReference<'a, S>,
     parent_fragments: Vec<&'a str>,
 }

@@ -60,5 +60,5 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> CoreDirectiv
 impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> CoreDefinitionDirectives
     for Directives<'a, S, W>
 {
-    type Directive = Directive<'a, S, W>;
+    type SchemaDefinition = crate::SchemaDefinition<'a, S, W>;
 }

@@ -43,5 +43,5 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> AsIter
 impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>>
     definition::InterfaceImplementations for InterfaceImplementations<'a, S, W>
 {
-    type InterfaceImplementation = InterfaceImplementation<'a, S, W>;
+    type SchemaDefinition = crate::SchemaDefinition<'a, S, W>;
 }

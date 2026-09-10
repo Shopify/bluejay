@@ -1,4 +1,4 @@
-use crate::ast::definition::{Context, FieldDefinition};
+use crate::ast::definition::{Context, FieldDefinition, SchemaDefinition};
 use crate::ast::{DepthLimiter, FromTokens, ParseError, Tokens};
 use crate::lexical_token::PunctuatorType;
 use crate::Span;
@@ -24,7 +24,7 @@ impl<'a, C: Context> AsIter for FieldsDefinition<'a, C> {
 }
 
 impl<'a, C: Context> CoreFieldsDefinition for FieldsDefinition<'a, C> {
-    type FieldDefinition = FieldDefinition<'a, C>;
+    type SchemaDefinition = SchemaDefinition<'a, C>;
 }
 
 impl<'a, C: Context> FromTokens<'a> for FieldsDefinition<'a, C> {

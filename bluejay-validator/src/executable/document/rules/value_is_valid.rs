@@ -2,7 +2,7 @@ use crate::executable::{
     document::{Error, Path, Rule, Visitor},
     Cache,
 };
-use crate::value::input_coercion::CoerceInput;
+use crate::value::input_coercion::{coerce_variable_definition_value, CoerceInput};
 use bluejay_core::definition::{InputValueDefinition, SchemaDefinition};
 use bluejay_core::executable::{ExecutableDocument, VariableDefinition};
 use bluejay_core::Argument;
@@ -33,7 +33,8 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Visitor<'a, E, S>
                 .cache
                 .variable_definition_input_type(variable_definition.r#type())
             {
-                if let Err(coercion_errors) = self.schema_definition.coerce_value(
+                if let Err(coercion_errors) = coerce_variable_definition_value(
+                    self.schema_definition,
                     input_value_definition,
                     default_value,
                     Default::default(),

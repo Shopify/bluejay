@@ -1,9 +1,9 @@
 use crate::ast::{
     self,
-    definition::{Context, DirectiveDefinition},
+    definition::{Context, DirectiveDefinition, SchemaDefinition},
 };
 use crate::{HasSpan, Span};
-use bluejay_core::definition::SchemaDefinition;
+use bluejay_core::definition::SchemaDefinition as CoreSchemaDefinition;
 use std::marker::PhantomData;
 
 #[derive(Debug)]
@@ -25,12 +25,12 @@ impl<'a, C: Context> bluejay_core::Directive<true> for Directive<'a, C> {
 }
 
 impl<'a, C: Context> bluejay_core::definition::Directive for Directive<'a, C> {
-    type DirectiveDefinition = DirectiveDefinition<'a, C>;
+    type SchemaDefinition = SchemaDefinition<'a, C>;
 
-    fn definition<'b, S: SchemaDefinition<DirectiveDefinition = Self::DirectiveDefinition>>(
+    fn definition<'b>(
         &'b self,
-        schema_definition: &'b S,
-    ) -> &'b Self::DirectiveDefinition {
+        schema_definition: &'b SchemaDefinition<'a, C>,
+    ) -> &'b DirectiveDefinition<'a, C> {
         schema_definition
             .get_directive_definition(self.inner.name().as_str())
             .unwrap()
@@ -74,7 +74,7 @@ impl<'a, C: Context> bluejay_core::Directives<true> for Directives<'a, C> {
 }
 
 impl<'a, C: Context> bluejay_core::definition::Directives for Directives<'a, C> {
-    type Directive = Directive<'a, C>;
+    type SchemaDefinition = SchemaDefinition<'a, C>;
 }
 
 impl<'a, C: Context> From<ast::Directives<'a, true>> for Directives<'a, C> {

@@ -1,4 +1,6 @@
-use crate::ast::definition::{ArgumentsDefinition, Context, Directives, OutputType};
+use crate::ast::definition::{
+    ArgumentsDefinition, Context, Directives, OutputType, SchemaDefinition,
+};
 use crate::ast::{
     ConstDirectives, DepthLimiter, FromTokens, Parse, ParseError, Tokens, TryFromTokens,
 };
@@ -40,8 +42,7 @@ impl<C: Context> FieldDefinition<'_, C> {
 }
 
 impl<'a, C: Context> CoreFieldDefinition for FieldDefinition<'a, C> {
-    type ArgumentsDefinition = ArgumentsDefinition<'a, C>;
-    type OutputType = OutputType<'a, C>;
+    type SchemaDefinition = SchemaDefinition<'a, C>;
 
     fn description(&self) -> Option<&str> {
         self.description.as_ref().map(AsRef::as_ref)
@@ -51,11 +52,11 @@ impl<'a, C: Context> CoreFieldDefinition for FieldDefinition<'a, C> {
         self.name.as_ref()
     }
 
-    fn arguments_definition(&self) -> Option<&Self::ArgumentsDefinition> {
+    fn arguments_definition(&self) -> Option<&ArgumentsDefinition<'a, C>> {
         self.arguments_definition.as_ref()
     }
 
-    fn r#type(&self) -> &Self::OutputType {
+    fn r#type(&self) -> &OutputType<'a, C> {
         &self.r#type
     }
 

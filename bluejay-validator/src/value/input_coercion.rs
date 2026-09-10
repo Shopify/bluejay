@@ -1,8 +1,12 @@
+use crate::executable::document::VariableDefinitionInputType;
+use crate::value::input_type::{
+    InputTypeView, InputTypeViewReference, SchemaInputTypeView, VariableDefinitionInputTypeView,
+};
 use crate::Path;
 use bluejay_core::definition::{
     BaseInputTypeReference, EnumTypeDefinition, EnumValueDefinition, InputFieldsDefinition,
-    InputObjectTypeDefinition, InputType, InputTypeReference, InputValueDefinition,
-    ScalarTypeDefinition, SchemaDefinition,
+    InputObjectTypeDefinition, InputType, InputValueDefinition, ScalarTypeDefinition,
+    SchemaDefinition,
 };
 use bluejay_core::{
     AsIter, BuiltinScalarDefinition, Directive, ObjectValue, Value, ValueReference,
@@ -14,33 +18,16 @@ mod error;
 pub use error::Error;
 
 pub trait CoerceInput: SchemaDefinition {
-    fn coerce_value<
-        'a,
-        const CONST: bool,
-        I: InputType<
-            CustomScalarTypeDefinition = Self::CustomScalarTypeDefinition,
-            InputObjectTypeDefinition = Self::InputObjectTypeDefinition,
-            EnumTypeDefinition = Self::EnumTypeDefinition,
-        >,
-        V: Value<CONST>,
-    >(
+    fn coerce_value<'a, const CONST: bool, V: Value<CONST>>(
         &'a self,
-        input_type: &'a I,
+        input_type: &'a Self::InputType,
         value: &'a V,
         path: Path<'a>,
     ) -> Result<(), Vec<Error<'a, CONST, V>>>;
 
-    fn coerce_const_value<
-        'a,
-        I: InputType<
-            CustomScalarTypeDefinition = Self::CustomScalarTypeDefinition,
-            InputObjectTypeDefinition = Self::InputObjectTypeDefinition,
-            EnumTypeDefinition = Self::EnumTypeDefinition,
-        >,
-        V: Value<true>,
-    >(
+    fn coerce_const_value<'a, V: Value<true>>(
         &'a self,
-        input_type: &'a I,
+        input_type: &'a Self::InputType,
         value: &'a V,
         path: Path<'a>,
     ) -> Result<(), Vec<Error<'a, true, V>>> {
@@ -49,38 +36,51 @@ pub trait CoerceInput: SchemaDefinition {
 }
 
 impl<S: SchemaDefinition> CoerceInput for S {
-    fn coerce_value<
-        'a,
-        const CONST: bool,
-        I: InputType<
-            CustomScalarTypeDefinition = Self::CustomScalarTypeDefinition,
-            InputObjectTypeDefinition = Self::InputObjectTypeDefinition,
-            EnumTypeDefinition = Self::EnumTypeDefinition,
-        >,
-        V: Value<CONST>,
-    >(
+    fn coerce_value<'a, const CONST: bool, V: Value<CONST>>(
         &'a self,
-        input_type: &'a I,
+        input_type: &'a Self::InputType,
         value: &'a V,
         path: Path<'a>,
     ) -> Result<(), Vec<Error<'a, CONST, V>>> {
-        coerce_value_for_input_type(self, input_type, value, path, true)
+        coerce_value_for_input_type(
+            self,
+            SchemaInputTypeView::new(input_type),
+            value,
+            path,
+            true,
+        )
     }
+}
+
+pub(crate) fn coerce_variable_definition_value<
+    'a,
+    const CONST: bool,
+    S: SchemaDefinition,
+    V: Value<CONST>,
+>(
+    schema_definition: &'a S,
+    input_type: &'a VariableDefinitionInputType<'a, S>,
+    value: &'a V,
+    path: Path<'a>,
+) -> Result<(), Vec<Error<'a, CONST, V>>> {
+    coerce_value_for_input_type(
+        schema_definition,
+        VariableDefinitionInputTypeView::new(input_type),
+        value,
+        path,
+        true,
+    )
 }
 
 fn coerce_value_for_input_type<
     'a,
     const CONST: bool,
     S: SchemaDefinition,
-    T: InputType<
-        CustomScalarTypeDefinition = S::CustomScalarTypeDefinition,
-        InputObjectTypeDefinition = S::InputObjectTypeDefinition,
-        EnumTypeDefinition = S::EnumTypeDefinition,
-    >,
+    I: InputTypeView<'a, SchemaDefinition = S>,
     V: Value<CONST>,
 >(
     schema_definition: &'a S,
-    input_type: &'a T,
+    input_type: I,
     value: &'a V,
     path: Path<'a>,
     allow_implicit_list: bool,
@@ -95,10 +95,10 @@ fn coerce_value_for_input_type<
         }]),
         ValueReference::Null | ValueReference::Variable(_) => Ok(()),
         core_value => match core_type {
-            InputTypeReference::Base(_, _) => {
+            InputTypeViewReference::Base(_, _) => {
                 coerce_value_for_base_input_type(schema_definition, input_type, value, path)
             }
-            InputTypeReference::List(inner, _) => {
+            InputTypeViewReference::List(inner, _) => {
                 if let ValueReference::List(values) = core_value {
                     let errors: Vec<Error<'a, CONST, V>> = values
                         .iter()
@@ -139,15 +139,11 @@ fn coerce_value_for_base_input_type<
     'a,
     const CONST: bool,
     S: SchemaDefinition,
-    T: InputType<
-        CustomScalarTypeDefinition = S::CustomScalarTypeDefinition,
-        InputObjectTypeDefinition = S::InputObjectTypeDefinition,
-        EnumTypeDefinition = S::EnumTypeDefinition,
-    >,
+    I: InputTypeView<'a, SchemaDefinition = S>,
     V: Value<CONST>,
 >(
     schema_definition: &'a S,
-    input_type: &'a T,
+    input_type: I,
     value: &'a V,
     path: Path<'a>,
 ) -> Result<(), Vec<Error<'a, CONST, V>>> {
@@ -164,8 +160,14 @@ fn coerce_value_for_base_input_type<
     }
 }
 
-fn coerce_builtin_scalar_value<'a, const CONST: bool, V: Value<CONST>, T: InputType>(
-    input_type: &'a T,
+fn coerce_builtin_scalar_value<
+    'a,
+    const CONST: bool,
+    S: SchemaDefinition,
+    I: InputTypeView<'a, SchemaDefinition = S>,
+    V: Value<CONST>,
+>(
+    input_type: I,
     bstd: BuiltinScalarDefinition,
     value: &'a V,
     path: Path<'a>,
@@ -203,9 +205,15 @@ fn coerce_custom_scalar_value<'a, const CONST: bool, V: Value<CONST>>(
     })
 }
 
-fn coerce_enum_value<'a, const CONST: bool, V: Value<CONST>, T: InputType>(
-    input_type: &'a T,
-    enum_type_definition: &'a T::EnumTypeDefinition,
+fn coerce_enum_value<
+    'a,
+    const CONST: bool,
+    S: SchemaDefinition,
+    I: InputTypeView<'a, SchemaDefinition = S>,
+    V: Value<CONST>,
+>(
+    input_type: I,
+    enum_type_definition: &'a S::EnumTypeDefinition,
     value: &'a V,
     path: Path<'a>,
 ) -> Result<(), Vec<Error<'a, CONST, V>>> {
@@ -250,16 +258,12 @@ fn coerce_input_object_value<
     'a,
     const CONST: bool,
     S: SchemaDefinition,
-    T: InputType<
-        CustomScalarTypeDefinition = S::CustomScalarTypeDefinition,
-        InputObjectTypeDefinition = S::InputObjectTypeDefinition,
-        EnumTypeDefinition = S::EnumTypeDefinition,
-    >,
+    I: InputTypeView<'a, SchemaDefinition = S>,
     V: Value<CONST>,
 >(
     schema_definition: &'a S,
-    input_type: &'a T,
-    input_object_type_definition: &'a T::InputObjectTypeDefinition,
+    input_type: I,
+    input_object_type_definition: &'a S::InputObjectTypeDefinition,
     value: &'a V,
     path: Path<'a>,
 ) -> Result<(), Vec<Error<'a, CONST, V>>> {

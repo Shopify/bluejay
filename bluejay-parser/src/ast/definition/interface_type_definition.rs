@@ -1,4 +1,6 @@
-use crate::ast::definition::{Context, Directives, FieldsDefinition, InterfaceImplementations};
+use crate::ast::definition::{
+    Context, Directives, FieldsDefinition, InterfaceImplementations, SchemaDefinition,
+};
 use crate::ast::{ConstDirectives, DepthLimiter, FromTokens, ParseError, Tokens, TryFromTokens};
 use crate::lexical_token::{Name, StringValue};
 use bluejay_core::definition::{
@@ -15,8 +17,7 @@ pub struct InterfaceTypeDefinition<'a, C: Context> {
 }
 
 impl<'a, C: Context> CoreInterfaceTypeDefinition for InterfaceTypeDefinition<'a, C> {
-    type FieldsDefinition = FieldsDefinition<'a, C>;
-    type InterfaceImplementations = InterfaceImplementations<'a, C>;
+    type SchemaDefinition = SchemaDefinition<'a, C>;
 
     fn description(&self) -> Option<&str> {
         self.description.as_ref().map(AsRef::as_ref)
@@ -26,11 +27,11 @@ impl<'a, C: Context> CoreInterfaceTypeDefinition for InterfaceTypeDefinition<'a,
         self.name.as_ref()
     }
 
-    fn interface_implementations(&self) -> Option<&Self::InterfaceImplementations> {
+    fn interface_implementations(&self) -> Option<&InterfaceImplementations<'a, C>> {
         self.interface_implementations.as_ref()
     }
 
-    fn fields_definition(&self) -> &Self::FieldsDefinition {
+    fn fields_definition(&self) -> &FieldsDefinition<'a, C> {
         &self.fields_definition
     }
 }

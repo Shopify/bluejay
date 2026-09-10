@@ -33,7 +33,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, VV: VariableValues> Visitor
         &mut self,
         _field: &'a <E as ExecutableDocument>::Field,
         _field_definition: &'a S::FieldDefinition,
-        _scoped_type: TypeDefinitionReference<'a, S::TypeDefinition>,
+        _scoped_type: TypeDefinitionReference<'a, S>,
         included: bool,
     ) {
         if included {
@@ -46,7 +46,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, VV: VariableValues> Visitor
         &mut self,
         _field: &'a <E as ExecutableDocument>::Field,
         _field_definition: &'a S::FieldDefinition,
-        _scoped_type: TypeDefinitionReference<'a, S::TypeDefinition>,
+        _scoped_type: TypeDefinitionReference<'a, S>,
         included: bool,
     ) {
         if included {

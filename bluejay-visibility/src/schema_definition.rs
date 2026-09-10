@@ -161,9 +161,7 @@ impl<'a, S: definition::SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>>
     type TypeDefinition = TypeDefinition<'a, S, W>;
     type DirectiveDefinition = DirectiveDefinition<'a, S, W>;
     type TypeDefinitions<'b>
-        = std::iter::Copied<
-        btree_map::Values<'b, &'a str, TypeDefinitionReference<'b, Self::TypeDefinition>>,
-    >
+        = std::iter::Copied<btree_map::Values<'b, &'a str, TypeDefinitionReference<'b, Self>>>
     where
         'a: 'b;
     type DirectiveDefinitions<'b>
@@ -201,7 +199,7 @@ impl<'a, S: definition::SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>>
     fn get_type_definition(
         &self,
         name: &str,
-    ) -> Option<definition::TypeDefinitionReference<'_, Self::TypeDefinition>> {
+    ) -> Option<definition::TypeDefinitionReference<'_, Self>> {
         self.cache
             .get_type_definition(name)
             .or_else(|| {
@@ -247,7 +245,7 @@ struct TypeDefinitionsAndDirectiveDefinitions<
     S: definition::SchemaDefinition,
     W: Warden<SchemaDefinition = S>,
 > {
-    type_definitions: BTreeMap<&'a str, TypeDefinitionReference<'a, TypeDefinition<'a, S, W>>>,
+    type_definitions: BTreeMap<&'a str, TypeDefinitionReference<'a, SchemaDefinition<'a, S, W>>>,
     directive_definitions: BTreeMap<&'a str, &'a DirectiveDefinition<'a, S, W>>,
 }
 
@@ -269,7 +267,7 @@ impl<'a, S: definition::SchemaDefinition, W: Warden<SchemaDefinition = S>>
 
 struct VisibilityVisitor<'a, 'b, S: definition::SchemaDefinition, W: Warden<SchemaDefinition = S>> {
     schema_definition: &'b SchemaDefinition<'a, S, W>,
-    type_definitions: BTreeMap<&'a str, TypeDefinitionReference<'a, TypeDefinition<'a, S, W>>>,
+    type_definitions: BTreeMap<&'a str, TypeDefinitionReference<'a, SchemaDefinition<'a, S, W>>>,
     directive_definitions: BTreeMap<&'a str, &'a DirectiveDefinition<'a, S, W>>,
 }
 
@@ -317,7 +315,7 @@ impl<'a, 'b, S: definition::SchemaDefinition, W: Warden<SchemaDefinition = S>>
 
     fn visit_type_definition(
         &mut self,
-        type_definition: TypeDefinitionReference<'a, TypeDefinition<'a, S, W>>,
+        type_definition: TypeDefinitionReference<'a, SchemaDefinition<'a, S, W>>,
     ) {
         if let Entry::Vacant(entry) = self.type_definitions.entry(type_definition.name()) {
             entry.insert(type_definition);

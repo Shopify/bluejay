@@ -50,7 +50,7 @@ impl<'a, E: ExecutableDocument + 'a, S: SchemaDefinition + 'a> Visitor<'a, E, S>
     fn visit_fragment_spread(
         &mut self,
         fragment_spread: &'a E::FragmentSpread,
-        _: TypeDefinitionReference<'a, S::TypeDefinition>,
+        _: TypeDefinitionReference<'a, S>,
         path: &Path<'a, E>,
     ) {
         if let Some(fragment_definition) = self.cache.fragment_definition(fragment_spread.name()) {
@@ -187,7 +187,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition> AllVariableUsagesAllowed<'a
     fn are_types_compatible(
         &self,
         variable_type: VariableTypeReference<'a, E::VariableType>,
-        location_type: InputTypeReference<'a, S::InputType>,
+        location_type: InputTypeReference<'a, S>,
     ) -> bool {
         match (variable_type, location_type) {
             (

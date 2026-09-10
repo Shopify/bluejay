@@ -178,7 +178,7 @@ impl<'a, S: SchemaDefinition, C: CodeGenerator> InputObjectTypeDefinitionBuilder
     fn contains_non_list_reference(
         &self,
         target: &str,
-        ty: InputTypeReference<'a, S::InputType>,
+        ty: InputTypeReference<'a, S>,
         visited: &mut HashSet<&'a str>,
     ) -> bool {
         match ty {
@@ -230,7 +230,7 @@ impl<'a, S: SchemaDefinition, C: CodeGenerator> InputObjectTypeDefinitionBuilder
             .any(|ivd| self.contains_reference_types(ivd.r#type(), visited))
     }
 
-    fn type_for_base_input_type(&self, base: BaseInputTypeReference<S::InputType>) -> syn::Type {
+    fn type_for_base_input_type(&self, base: BaseInputTypeReference<S>) -> syn::Type {
         match base {
             BaseInputTypeReference::BuiltinScalar(bstd) => {
                 builtin_scalar_type(bstd, self.config.borrow())
@@ -261,7 +261,7 @@ impl<'a, S: SchemaDefinition, C: CodeGenerator> InputObjectTypeDefinitionBuilder
 
     fn type_for_input_type(
         &self,
-        ty: InputTypeReference<S::InputType>,
+        ty: InputTypeReference<S>,
         parent_type_name: Option<&str>,
         has_default_value: Option<bool>,
     ) -> syn::Type {

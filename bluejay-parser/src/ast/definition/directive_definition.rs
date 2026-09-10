@@ -1,4 +1,4 @@
-use crate::ast::definition::{ArgumentsDefinition, Context};
+use crate::ast::definition::{ArgumentsDefinition, Context, SchemaDefinition};
 use crate::ast::{DepthLimiter, FromTokens, Parse, ParseError, Tokens, TryFromTokens};
 use crate::lexical_token::{Name, PunctuatorType, StringValue};
 use crate::Span;
@@ -61,7 +61,7 @@ pub struct DirectiveDefinition<'a, C: Context> {
 }
 
 impl<'a, C: Context> CoreDirectiveDefinition for DirectiveDefinition<'a, C> {
-    type ArgumentsDefinition = ArgumentsDefinition<'a, C>;
+    type SchemaDefinition = SchemaDefinition<'a, C>;
     type DirectiveLocations = DirectiveLocations;
 
     fn description(&self) -> Option<&str> {
@@ -72,7 +72,7 @@ impl<'a, C: Context> CoreDirectiveDefinition for DirectiveDefinition<'a, C> {
         self.name.as_ref()
     }
 
-    fn arguments_definition(&self) -> Option<&Self::ArgumentsDefinition> {
+    fn arguments_definition(&self) -> Option<&ArgumentsDefinition<'a, C>> {
         self.arguments_definition.as_ref()
     }
 

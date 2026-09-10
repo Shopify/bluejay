@@ -43,5 +43,5 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> AsIter
 impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> definition::ArgumentsDefinition
     for ArgumentsDefinition<'a, S, W>
 {
-    type ArgumentDefinition = InputValueDefinition<'a, S, W>;
+    type SchemaDefinition = crate::SchemaDefinition<'a, S, W>;
 }

@@ -1,9 +1,11 @@
 use std::marker::PhantomData;
 
-use crate::ast::definition::{Context, ObjectTypeDefinition};
+use crate::ast::definition::{Context, ObjectTypeDefinition, SchemaDefinition};
 use crate::ast::{DepthLimiter, FromTokens, ParseError, Tokens};
 use crate::lexical_token::Name;
-use bluejay_core::definition::{SchemaDefinition, UnionMemberType as CoreUnionMemberType};
+use bluejay_core::definition::{
+    SchemaDefinition as CoreSchemaDefinition, UnionMemberType as CoreUnionMemberType,
+};
 
 #[derive(Debug)]
 pub struct UnionMemberType<'a, C: Context + 'a> {
@@ -12,12 +14,12 @@ pub struct UnionMemberType<'a, C: Context + 'a> {
 }
 
 impl<'a, C: Context + 'a> CoreUnionMemberType for UnionMemberType<'a, C> {
-    type ObjectTypeDefinition = ObjectTypeDefinition<'a, C>;
+    type SchemaDefinition = SchemaDefinition<'a, C>;
 
-    fn member_type<'b, S: SchemaDefinition<ObjectTypeDefinition = Self::ObjectTypeDefinition>>(
+    fn member_type<'b>(
         &'b self,
-        schema_definition: &'b S,
-    ) -> &'b Self::ObjectTypeDefinition {
+        schema_definition: &'b SchemaDefinition<'a, C>,
+    ) -> &'b ObjectTypeDefinition<'a, C> {
         schema_definition
             .get_type_definition(self.name.as_str())
             .unwrap()

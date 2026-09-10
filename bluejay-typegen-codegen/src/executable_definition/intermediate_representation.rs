@@ -514,7 +514,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, C: CodeGenerator>
     fn build_field_type(
         &self,
         field: &'a E::Field,
-        output_type: OutputTypeReference<'a, S::OutputType>,
+        output_type: OutputTypeReference<'a, S>,
         depth: usize,
         path: Path<'a>,
     ) -> WrappedExecutableType<'a> {
@@ -553,7 +553,7 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, C: CodeGenerator>
         &self,
         parent_name: &'a str,
         selection_set: Option<&'a E::SelectionSet>,
-        base_output_type: BaseOutputTypeReference<'a, S::OutputType>,
+        base_output_type: BaseOutputTypeReference<'a, S>,
         depth: usize,
         path: Path<'a>,
     ) -> ExecutableType<'a> {
