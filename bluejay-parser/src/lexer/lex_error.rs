@@ -5,7 +5,6 @@ use crate::Span;
 pub enum LexError {
     #[default]
     UnrecognizedToken,
-    IntegerValueTooLarge,
     FloatValueTooLarge,
     StringValueInvalid(Vec<StringValueLexError>),
     MaxTokensExceeded {
@@ -31,11 +30,6 @@ impl From<(LexError, Span)> for Error {
             LexError::UnrecognizedToken => Self::new(
                 "Unrecognized token",
                 Some(Annotation::new("Unable to parse", span)),
-                Vec::new(),
-            ),
-            LexError::IntegerValueTooLarge => Self::new(
-                "Value too large to fit in a 32-bit signed integer",
-                Some(Annotation::new("Integer too large", span)),
                 Vec::new(),
             ),
             LexError::FloatValueTooLarge => Self::new(

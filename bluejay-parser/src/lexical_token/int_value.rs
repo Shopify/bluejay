@@ -1,42 +1,39 @@
 use super::HasSpan;
 use crate::Span;
+use bluejay_core::IntegerValue;
 
 #[derive(PartialEq, Debug)]
-pub struct IntValue {
-    value: i32,
+pub struct IntValue<'a> {
+    value: &'a str,
     span: Span,
 }
 
-impl HasSpan for IntValue {
+impl HasSpan for IntValue<'_> {
     fn span(&self) -> &Span {
         &self.span
     }
 }
 
-impl From<IntValue> for Span {
-    fn from(value: IntValue) -> Self {
+impl From<IntValue<'_>> for Span {
+    fn from(value: IntValue<'_>) -> Self {
         value.span
     }
 }
 
-impl From<IntValue> for i32 {
-    fn from(val: IntValue) -> Self {
-        val.value
+impl<'a> From<IntValue<'a>> for IntegerValue<'a> {
+    fn from(val: IntValue<'a>) -> Self {
+        Self::from_validated_literal(val.value)
     }
 }
 
-impl IntValue {
-    pub(crate) fn value(&self) -> i32 {
-        self.value
-    }
-
-    pub(crate) fn new(value: i32, span: Span) -> Self {
+impl<'a> IntValue<'a> {
+    pub(crate) fn new(value: &'a str, span: Span) -> Self {
         Self { value, span }
     }
 }
 
-impl AsRef<i32> for IntValue {
-    fn as_ref(&self) -> &i32 {
-        &self.value
+impl AsRef<str> for IntValue<'_> {
+    fn as_ref(&self) -> &str {
+        self.value
     }
 }

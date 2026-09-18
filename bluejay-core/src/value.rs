@@ -2,6 +2,9 @@ use crate::AsIter;
 use enum_as_inner::EnumAsInner;
 use std::collections::HashMap;
 
+mod integer_value;
+pub use integer_value::{IntegerValue, InvalidIntegerValue};
+
 #[cfg(feature = "serde_json")]
 mod serde_json;
 
@@ -75,7 +78,7 @@ impl<T: Value<false>> VariableValue for T {}
 #[strum(serialize_all = "lowercase")]
 pub enum ValueReference<'a, const CONST: bool, V: Value<CONST>> {
     Variable(&'a V::Variable),
-    Integer(i32),
+    Integer(IntegerValue<'a>),
     Float(f64),
     String(&'a str),
     Boolean(bool),

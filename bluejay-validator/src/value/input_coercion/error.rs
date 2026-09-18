@@ -22,6 +22,14 @@ pub enum Error<'a, const CONST: bool, V: Value<CONST>> {
         input_type_name: String,
         path: Path<'a>,
     },
+    IntegerOutOfRange {
+        value: &'a V,
+        path: Path<'a>,
+    },
+    NonFiniteFloat {
+        value: &'a V,
+        path: Path<'a>,
+    },
     NoEnumMemberWithName {
         name: &'a str,
         value: &'a V,
@@ -77,6 +85,10 @@ impl<const CONST: bool, V: Value<CONST>> Error<'_, CONST, V> {
             Self::NoImplicitConversion { input_type_name, value, .. } => {
                 format!("No implicit conversion of {} to {input_type_name}", value.as_ref().variant()).into()
             }
+            Self::IntegerOutOfRange { .. } => {
+                "Int values must be between -2147483648 and 2147483647".into()
+            }
+            Self::NonFiniteFloat { .. } => "Float values must be finite".into(),
             Self::NoEnumMemberWithName { name, enum_type_name, .. } => {
                 format!("No member `{name}` on enum {enum_type_name}").into()
             }
@@ -138,6 +150,13 @@ impl<'a, const CONST: bool> From<Error<'a, CONST, ParserValue<'a, CONST>>> for P
                 )),
                 Vec::new(),
             ),
+            Error::IntegerOutOfRange { value, .. } | Error::NonFiniteFloat { value, .. } => {
+                Self::new(
+                    error.message(),
+                    Some(Annotation::new(error.message(), *value.span())),
+                    Vec::new(),
+                )
+            }
             Error::NoEnumMemberWithName {
                 value,
                 enum_type_name,

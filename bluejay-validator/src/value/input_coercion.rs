@@ -174,14 +174,24 @@ fn coerce_builtin_scalar_value<
 ) -> Result<(), Vec<Error<'a, CONST, V>>> {
     match (bstd, value.as_ref()) {
         (BuiltinScalarDefinition::Boolean, ValueReference::Boolean(_)) => Ok(()),
-        (BuiltinScalarDefinition::Float, ValueReference::Float(_)) => Ok(()),
-        (BuiltinScalarDefinition::Float, ValueReference::Integer(_)) => Ok(()),
+        (BuiltinScalarDefinition::Float, ValueReference::Float(f)) if f.is_finite() => Ok(()),
+        (BuiltinScalarDefinition::Float, ValueReference::Integer(i)) if i.as_f64().is_some() => {
+            Ok(())
+        }
+        (BuiltinScalarDefinition::Float, ValueReference::Float(_) | ValueReference::Integer(_)) => {
+            Err(vec![Error::NonFiniteFloat { value, path }])
+        }
         (BuiltinScalarDefinition::ID, ValueReference::Integer(_)) => Ok(()),
         (
             BuiltinScalarDefinition::ID | BuiltinScalarDefinition::String,
             ValueReference::String(_),
         ) => Ok(()),
-        (BuiltinScalarDefinition::Int, ValueReference::Integer(_)) => Ok(()),
+        (BuiltinScalarDefinition::Int, ValueReference::Integer(i)) if i.as_i32().is_some() => {
+            Ok(())
+        }
+        (BuiltinScalarDefinition::Int, ValueReference::Integer(_)) => {
+            Err(vec![Error::IntegerOutOfRange { value, path }])
+        }
         _ => Err(vec![Error::NoImplicitConversion {
             value,
             input_type_name: input_type.display_name(),
@@ -604,6 +614,36 @@ mod tests {
             }]),
             SCHEMA_DEFINITION.coerce_const_value(it, &json!("123.4"), Default::default()),
         );
+    }
+
+    #[test]
+    fn test_non_finite_native_floats() {
+        #[derive(Debug)]
+        struct NativeFloat(f64);
+
+        impl Value<true> for NativeFloat {
+            type List = Vec<Self>;
+            type Object = Vec<(String, Self)>;
+            type Variable = String;
+
+            fn as_ref(&self) -> ValueReference<'_, true, Self> {
+                ValueReference::Float(self.0)
+            }
+        }
+
+        let it = input_type("Query", "field", "floatArg");
+        for value in [f64::NAN, f64::INFINITY, f64::NEG_INFINITY] {
+            let value = NativeFloat(value);
+            let errors = SCHEMA_DEFINITION
+                .coerce_const_value(it, &value, Default::default())
+                .unwrap_err();
+            assert!(matches!(errors.as_slice(), [Error::NonFiniteFloat { .. }]));
+        }
+        for value in [f64::MAX, f64::MIN, 0.0, -0.0, f64::MIN_POSITIVE] {
+            assert!(SCHEMA_DEFINITION
+                .coerce_const_value(it, &NativeFloat(value), Default::default())
+                .is_ok());
+        }
     }
 
     #[test]

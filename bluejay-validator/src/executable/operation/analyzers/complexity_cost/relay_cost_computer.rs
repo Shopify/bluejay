@@ -4,7 +4,7 @@ use crate::executable::operation::{
 };
 use bluejay_core::definition::{prelude::*, SchemaDefinition};
 use bluejay_core::executable::{ExecutableDocument, Field};
-use bluejay_core::{Argument, AsIter, Directive, Value, ValueReference};
+use bluejay_core::{Argument, AsIter, Directive, IntegerValue, Value, ValueReference};
 use std::marker::PhantomData;
 
 const CONNECTION_COST_KIND: &str = "connection";
@@ -101,9 +101,12 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, V: VariableValues> CostComp
                     self.extract_field_sizing_argument(field, CONNECTION_LAST_ARGUMENT),
                 );
 
-                let static_size = first_size.into_iter().chain(last_size).max().unwrap_or(0);
-
-                let multiplier = Self::multiplier_for_static_size(static_size);
+                let multiplier = first_size
+                    .into_iter()
+                    .chain(last_size)
+                    .map(Self::multiplier_for_static_size)
+                    .max()
+                    .unwrap_or(0);
 
                 RelayFieldMultipliers {
                     connection_multiplier: Some(multiplier),
@@ -119,25 +122,32 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, V: VariableValues> CostComp
 }
 
 impl<E: ExecutableDocument, S: SchemaDefinition, V: VariableValues> RelayCostComputer<'_, E, S, V> {
-    fn extract_field_sizing_argument(
-        &self,
-        field: &<E as ExecutableDocument>::Field,
+    fn extract_field_sizing_argument<'a>(
+        &'a self,
+        field: &'a <E as ExecutableDocument>::Field,
         argument_name: &str,
-    ) -> Option<usize> {
+    ) -> Option<IntegerValue<'a>> {
         field
             .arguments()
             .and_then(|arguments| arguments.iter().find(|arg| arg.name() == argument_name))
             .and_then(|argument| match argument.value().as_ref() {
-                ValueReference::Integer(int) => Some(int.max(0) as usize),
+                ValueReference::Integer(int) => Some(int),
                 ValueReference::Variable(var) => self
                     .operation_definition
-                    .evaluate_int(var, self.variable_values)
-                    .map(|i| i.max(0) as usize),
+                    .evaluate_int(var, self.variable_values),
                 _ => None,
             })
     }
 
-    fn multiplier_for_static_size(static_size: usize) -> usize {
+    fn multiplier_for_static_size(static_size: IntegerValue<'_>) -> usize {
+        if static_size.is_negative() {
+            return 0;
+        }
+        let Some(static_size) = static_size.as_u64() else {
+            // An oversized positive integer must not look like an absent argument.
+            // Conservatively saturate the cost rather than underestimate it.
+            return usize::MAX;
+        };
         if static_size > 0 {
             // floor(2 * ln(max(2, static_size)))
             (2f32 * (static_size.max(2) as f32).ln()).floor() as usize
