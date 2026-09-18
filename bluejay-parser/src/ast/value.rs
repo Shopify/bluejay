@@ -4,14 +4,14 @@ use crate::lexical_token::{
 };
 use crate::{HasSpan, Span};
 use bluejay_core::{
-    AsIter, ListValue as CoreListValue, ObjectValue as CoreObjectValue, Value as CoreValue,
-    ValueReference,
+    AsIter, IntegerValue, ListValue as CoreListValue, ObjectValue as CoreObjectValue,
+    Value as CoreValue, ValueReference,
 };
 
 #[derive(Debug)]
 pub enum Value<'a, const CONST: bool> {
     Variable(Variable<'a>),
-    Integer(IntValue),
+    Integer(IntValue<'a>),
     Float(FloatValue),
     String(StringValue<'a>),
     Boolean(BooleanValue),
@@ -29,7 +29,9 @@ impl<'a, const CONST: bool> CoreValue<CONST> for Value<'a, CONST> {
     fn as_ref(&self) -> ValueReference<'_, CONST, Self> {
         match self {
             Self::Variable(v) => ValueReference::Variable(v),
-            Self::Integer(i) => ValueReference::Integer(i.value()),
+            Self::Integer(i) => {
+                ValueReference::Integer(IntegerValue::from_validated_literal(i.as_ref()))
+            }
             Self::Float(f) => ValueReference::Float(f.value()),
             Self::String(s) => ValueReference::String(s.as_ref()),
             Self::Boolean(b) => ValueReference::Boolean(b.value()),

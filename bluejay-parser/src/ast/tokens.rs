@@ -14,7 +14,7 @@ pub trait Tokens<'a>: Iterator<Item = LexicalToken<'a>> {
     fn unexpected_eof(&self) -> ParseError;
     fn unexpected_token(&mut self) -> ParseError;
     fn next_if_punctuator(&mut self, punctuator_type: PunctuatorType) -> Option<Span>;
-    fn next_if_int_value(&mut self) -> Option<IntValue>;
+    fn next_if_int_value(&mut self) -> Option<IntValue<'a>>;
     fn next_if_float_value(&mut self) -> Option<FloatValue>;
     fn next_if_string_value(&mut self) -> Option<StringValue<'a>>;
     fn next_if_name(&mut self) -> Option<Name<'a>>;
@@ -147,7 +147,7 @@ impl<'a, T: Lexer<'a>> LexerTokens<'a, T> {
     }
 
     #[inline]
-    pub fn next_if_int_value(&mut self) -> Option<IntValue> {
+    pub fn next_if_int_value(&mut self) -> Option<IntValue<'a>> {
         self.compute_up_to(0);
         match self.buffer.front() {
             Some(LexicalToken::IntValue(_)) => {
@@ -279,7 +279,7 @@ impl<'a, T: Lexer<'a>> Tokens<'a> for LexerTokens<'a, T> {
     }
 
     #[inline]
-    fn next_if_int_value(&mut self) -> Option<IntValue> {
+    fn next_if_int_value(&mut self) -> Option<IntValue<'a>> {
         self.next_if_int_value()
     }
 

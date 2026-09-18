@@ -98,6 +98,16 @@ mod tests {
         assert_prints!("1");
         assert_prints!("0");
         assert_prints!("-100");
+        assert_prints!("-0");
+        assert_prints!("2147483648");
+        assert_prints!("-2147483649");
+        assert_prints!("9007199254740993");
+        assert_prints!("18446744073709551616");
+        assert_prints!("-18446744073709551616");
+        for literal in ["9".repeat(1000), format!("-{}", "9".repeat(1000))] {
+            let parsed = VariableValue::parse(&literal).result.unwrap();
+            assert_eq!(literal, ValuePrinter::to_string(&parsed));
+        }
     }
 
     #[test]

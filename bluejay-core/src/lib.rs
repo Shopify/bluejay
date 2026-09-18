@@ -20,5 +20,6 @@ pub use indexable::{Indexable, Indexed};
 pub use operation_type::OperationType;
 pub use strum::IntoEnumIterator;
 pub use value::{
-    ConstValue, ListValue, ObjectValue, Value, ValueReference, Variable, VariableValue,
+    ConstValue, IntegerValue, InvalidIntegerValue, ListValue, ObjectValue, Value, ValueReference,
+    Variable, VariableValue,
 };

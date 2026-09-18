@@ -19,7 +19,7 @@ pub enum LexicalToken<'a> {
     Punctuator(Punctuator),
     Name(Name<'a>),
     VariableName(Variable<'a>),
-    IntValue(IntValue),
+    IntValue(IntValue<'a>),
     FloatValue(FloatValue),
     StringValue(StringValue<'a>),
 }

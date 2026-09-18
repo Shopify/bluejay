@@ -17,9 +17,9 @@ pub(crate) struct Extras {
 }
 
 #[derive(Logos, Debug, PartialEq)]
-#[logos(subpattern intpart = r"-?(?:0|[1-9]\d*)")]
-#[logos(subpattern decimalpart = r"\.\d+")]
-#[logos(subpattern exponentpart = r"[eE][+-]?\d+")]
+#[logos(subpattern intpart = r"-?(?:0|[1-9][0-9]*)")]
+#[logos(subpattern decimalpart = r"\.[0-9]+")]
+#[logos(subpattern exponentpart = r"[eE][+-]?[0-9]+")]
 #[logos(subpattern hexdigit = r"[0-9A-Fa-f]")]
 #[logos(subpattern fixedunicode = r"\\u[0-9A-Fa-f]{4}")]
 #[logos(error = LexError)]
@@ -65,7 +65,7 @@ pub(crate) enum Token<'a> {
 
     // IntValue
     #[regex(r"(?&intpart)", parse_integer)]
-    IntValue(i32),
+    IntValue(&'a str),
 
     // FloatValue
     #[regex(
@@ -106,13 +106,9 @@ fn validate_number_no_trailing_name_start<'a>(
 }
 
 #[inline]
-fn parse_integer<'a>(lexer: &mut logos::Lexer<'a, Token<'a>>) -> Result<i32, LexError> {
-    validate_number_no_trailing_name_start(lexer).and_then(|_| {
-        lexer
-            .slice()
-            .parse()
-            .map_err(|_| LexError::IntegerValueTooLarge)
-    })
+fn parse_integer<'a>(lexer: &mut logos::Lexer<'a, Token<'a>>) -> Result<&'a str, LexError> {
+    validate_number_no_trailing_name_start(lexer)?;
+    Ok(lexer.slice())
 }
 
 #[inline]
@@ -343,7 +339,7 @@ mod tests {
     #[test]
     fn int_test() {
         assert_eq!(
-            Some(Ok(Token::IntValue(12345))),
+            Some(Ok(Token::IntValue("12345"))),
             Token::lexer("12345").next()
         );
         assert_eq!(
@@ -358,18 +354,18 @@ mod tests {
             Some((Err(LexError::UnrecognizedToken), 0..6)),
             Token::lexer("12345_").spanned().next()
         );
-        assert_eq!(Some(Ok(Token::IntValue(0))), Token::lexer("0").next());
-        assert_eq!(Some(Ok(Token::IntValue(0))), Token::lexer("-0").next());
-        let int_too_positive = (i64::from(i32::MAX) + 1).to_string();
-        assert_eq!(
-            Token::lexer(&int_too_positive).next(),
-            Some(Err(LexError::IntegerValueTooLarge))
-        );
-        let int_too_negative = (i64::from(i32::MIN) - 1).to_string();
-        assert_eq!(
-            Token::lexer(&int_too_negative).next(),
-            Some(Err(LexError::IntegerValueTooLarge))
-        );
+        for literal in [
+            "0",
+            "-0",
+            "2147483648",
+            "-2147483649",
+            "18446744073709551616",
+        ] {
+            assert_eq!(
+                Some(Ok(Token::IntValue(literal))),
+                Token::lexer(literal).next(),
+            );
+        }
     }
 
     #[test]
@@ -410,6 +406,33 @@ mod tests {
             Some((Err(LexError::UnrecognizedToken), 0..15)),
             Token::lexer("12345.6789e123A").spanned().next()
         );
+    }
+
+    #[test]
+    fn numeric_tokens_do_not_consume_unicode_digits() {
+        for digit in ["١", "１", "𝟙"] {
+            for (prefix, expected) in [
+                ("1", Token::IntValue("1")),
+                ("-1", Token::IntValue("-1")),
+                ("1.5", Token::FloatValue(1.5)),
+                ("1e2", Token::FloatValue(100.0)),
+                ("1.5e2", Token::FloatValue(150.0)),
+            ] {
+                let source = format!("{prefix}{digit}");
+                let mut lexer = Token::lexer(&source).spanned();
+                assert_eq!(
+                    Some((Ok(expected), 0..prefix.len())),
+                    lexer.next(),
+                    "{source}"
+                );
+                assert_eq!(
+                    Some((Err(LexError::UnrecognizedToken), prefix.len()..source.len())),
+                    lexer.next(),
+                    "{source}"
+                );
+                assert_eq!(None, lexer.next(), "{source}");
+            }
+        }
     }
 
     #[test]
@@ -735,11 +758,11 @@ mod tests {
     fn number_edge_cases_test() {
         // Boundary values for 32-bit signed integers
         assert_eq!(
-            Some(Ok(Token::IntValue(i32::MAX))),
+            Some(Ok(Token::IntValue("2147483647"))),
             Token::lexer("2147483647").next(),
         );
         assert_eq!(
-            Some(Ok(Token::IntValue(i32::MIN))),
+            Some(Ok(Token::IntValue("-2147483648"))),
             Token::lexer("-2147483648").next(),
         );
         // A minus sign alone is not a valid token
@@ -769,15 +792,15 @@ mod tests {
         // A comma terminates a number
         assert_eq!(
             vec![
-                (Ok(Token::IntValue(1)), 0..1),
-                (Ok(Token::IntValue(2)), 2..3),
+                (Ok(Token::IntValue("1")), 0..1),
+                (Ok(Token::IntValue("2")), 2..3),
             ],
             Token::lexer("1,2").spanned().collect::<Vec<_>>(),
         );
         // A punctuator terminates a number
         assert_eq!(
             vec![
-                (Ok(Token::IntValue(123)), 0..3),
+                (Ok(Token::IntValue("123")), 0..3),
                 (Ok(Token::CloseRoundBracket), 3..4),
             ],
             Token::lexer("123)").spanned().collect::<Vec<_>>(),
@@ -820,7 +843,7 @@ mod tests {
             ("!", Token::Bang),
             ("]", Token::CloseSquareBracket),
             ("=", Token::Equals),
-            ("-42", Token::IntValue(-42)),
+            ("-42", Token::IntValue("-42")),
             (")", Token::CloseRoundBracket),
             ("@", Token::At),
             ("dir", Token::Name("dir")),
@@ -864,7 +887,7 @@ mod tests {
             vec![
                 LexicalToken::Name(Name::new("query", Span::new(0..5))),
                 LexicalToken::VariableName(Variable::new("v", Span::new(6..8))),
-                LexicalToken::IntValue(IntValue::new(42, Span::new(9..11))),
+                LexicalToken::IntValue(IntValue::new("42", Span::new(9..11))),
                 LexicalToken::FloatValue(FloatValue::new(-3.5, Span::new(12..16))),
                 LexicalToken::StringValue(StringValue::new("s".into(), Span::new(17..20))),
                 LexicalToken::StringValue(StringValue::new("b".into(), Span::new(21..28))),
@@ -925,7 +948,7 @@ mod tests {
             .next(),
         );
         assert_eq!(
-            vec![Ok(Token::IntValue(123)), Ok(Token::Name("A"))],
+            vec![Ok(Token::IntValue("123")), Ok(Token::Name("A"))],
             Token::lexer_with_extras(
                 "123A",
                 Extras {

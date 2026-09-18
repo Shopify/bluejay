@@ -277,9 +277,11 @@ impl<
 
                 let children_cost = self.merged_max_complexity_for_scopes(&composite_scopes);
 
-                (base_cost + children_cost) * multiplier
+                base_cost
+                    .saturating_add(children_cost)
+                    .saturating_mul(multiplier)
             })
-            .sum()
+            .fold(0, usize::saturating_add)
     }
 
     fn possible_type_names(
@@ -916,6 +918,103 @@ mod tests {
             }
         }"#,
             19,
+        );
+    }
+
+    #[test]
+    fn wide_connection_sizes_work_as_literals_variables_and_defaults() {
+        // Analysis computes costs independently of scalar input validation.
+        for (size, expected_complexity) in [
+            (serde_json::json!(0), 1),
+            (serde_json::json!(-1), 1),
+            (serde_json::json!(-2147483649i64), 1),
+            (serde_json::json!(i64::MIN), 1),
+            (serde_json::json!(2147483648i64), 127),
+            (serde_json::json!(4294967296u64), 133),
+            (serde_json::json!(i64::MAX), 262),
+            (serde_json::json!(u64::MAX), 265),
+        ] {
+            for argument in ["first", "last"] {
+                check_complexity(
+                    &format!(
+                        "{{ oneObjectConnection({argument}: {size}) {{ edges {{ node {{ twoScalar }} }} }} }}"
+                    ),
+                    expected_complexity,
+                );
+                check_complexity_with_variables(
+                    &format!(
+                        "query($size: Int = 7) {{ oneObjectConnection({argument}: $size) {{ edges {{ node {{ twoScalar }} }} }} }}"
+                    ),
+                    serde_json::json!({"size": size}),
+                    expected_complexity,
+                );
+                check_complexity(
+                    &format!(
+                        "query($size: Int = {size}) {{ oneObjectConnection({argument}: $size) {{ edges {{ node {{ twoScalar }} }} }} }}"
+                    ),
+                    expected_complexity,
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn oversized_connection_sizes_saturate_instead_of_becoming_absent() {
+        for (size, expected_complexity) in [
+            ("18446744073709551616".to_owned(), usize::MAX),
+            ("9".repeat(1000), usize::MAX),
+            ("-0".to_owned(), 1),
+            ("-18446744073709551616".to_owned(), 1),
+            (format!("-{}", "9".repeat(1000)), 1),
+        ] {
+            for argument in ["first", "last"] {
+                check_complexity(
+                    &format!(
+                        "{{ oneObjectConnection({argument}: {size}) {{ edges {{ node {{ twoScalar }} }} }} }}"
+                    ),
+                    expected_complexity,
+                );
+                check_complexity(
+                    &format!(
+                        "query($size: Int = {size}) {{ oneObjectConnection({argument}: $size) {{ edges {{ node {{ twoScalar }} }} }} }}"
+                    ),
+                    expected_complexity,
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn saturated_connection_costs_do_not_overflow_when_combined() {
+        check_complexity(
+            "{
+                oneObjectConnection(first: 18446744073709551616) {
+                    edges { node { twoScalar } }
+                    nodes { twoScalar }
+                }
+                twoScalar
+            }",
+            usize::MAX,
+        );
+    }
+
+    #[test]
+    fn wide_connection_sizes_use_the_larger_multiplier() {
+        check_complexity(
+            "query($last: Int = 18446744073709551615) {
+                oneObjectConnection(first: 2147483648, last: $last) {
+                    edges { node { twoScalar } }
+                }
+            }",
+            265,
+        );
+        check_complexity(
+            "{
+                oneObjectConnection(first: -18446744073709551616, last: 7) {
+                    edges { node { twoScalar } }
+                }
+            }",
+            10,
         );
     }
 
