@@ -3,7 +3,7 @@ use crate::executable::operation::{
     OperationDefinitionValueEvaluationExt, VariableValues,
 };
 use bluejay_core::definition::{prelude::*, SchemaDefinition};
-use bluejay_core::executable::{ExecutableDocument, Field};
+use bluejay_core::executable::{ExecutableDocument, Field, OperationDefinition};
 use bluejay_core::{Argument, AsIter, Directive, IntegerValue, Value, ValueReference};
 use std::marker::PhantomData;
 
@@ -95,71 +95,87 @@ impl<'a, E: ExecutableDocument, S: SchemaDefinition, V: VariableValues> CostComp
         });
 
         match kind {
-            Some(CONNECTION_COST_KIND) => {
-                let (first_size, last_size) = (
-                    self.extract_field_sizing_argument(field, CONNECTION_FIRST_ARGUMENT),
-                    self.extract_field_sizing_argument(field, CONNECTION_LAST_ARGUMENT),
-                );
-
-                let multiplier = first_size
-                    .into_iter()
-                    .chain(last_size)
-                    .map(Self::multiplier_for_static_size)
-                    .max()
-                    .unwrap_or(0);
-
-                RelayFieldMultipliers {
-                    connection_multiplier: Some(multiplier),
-                    executable_document: PhantomData,
-                }
-            }
-            _ => RelayFieldMultipliers {
-                connection_multiplier: None,
-                executable_document: PhantomData,
-            },
+            Some(CONNECTION_COST_KIND) => RelayFieldMultipliers::for_connection(
+                self.operation_definition,
+                self.variable_values,
+                field,
+            ),
+            _ => RelayFieldMultipliers::default(),
         }
     }
 }
 
-impl<E: ExecutableDocument, S: SchemaDefinition, V: VariableValues> RelayCostComputer<'_, E, S, V> {
-    fn extract_field_sizing_argument<'a>(
-        &'a self,
-        field: &'a <E as ExecutableDocument>::Field,
-        argument_name: &str,
-    ) -> Option<IntegerValue<'a>> {
-        field
-            .arguments()
-            .and_then(|arguments| arguments.iter().find(|arg| arg.name() == argument_name))
-            .and_then(|argument| match argument.value().as_ref() {
-                ValueReference::Integer(int) => Some(int),
-                ValueReference::Variable(var) => self
-                    .operation_definition
-                    .evaluate_int(var, self.variable_values),
-                _ => None,
-            })
-    }
-
-    fn multiplier_for_static_size(static_size: IntegerValue<'_>) -> usize {
-        if static_size.is_negative() {
-            return 0;
-        }
-        let Some(static_size) = static_size.as_u64() else {
-            // An oversized positive integer must not look like an absent argument.
-            // Conservatively saturate the cost rather than underestimate it.
-            return usize::MAX;
-        };
-        if static_size > 0 {
-            // floor(2 * ln(max(2, static_size)))
-            (2f32 * (static_size.max(2) as f32).ln()).floor() as usize
-        } else {
-            0
-        }
-    }
-}
-
+/// The multipliers a Relay connection field applies to its `edges` and `nodes`.
+///
+/// Cost computers that identify connections some other way than the `@cost`
+/// directive can build these directly with [`Self::for_connection`].
 pub struct RelayFieldMultipliers<E: ExecutableDocument> {
     connection_multiplier: Option<usize>,
     executable_document: PhantomData<E>,
+}
+
+impl<E: ExecutableDocument> RelayFieldMultipliers<E> {
+    /// Multipliers for a connection field, sized by the larger of its `first`
+    /// and `last` arguments. A variable argument resolves through
+    /// `variable_values` and the operation's variable defaults.
+    ///
+    /// The multiplier is `floor(2 * ln(max(2, size)))`, `0` for a size of zero
+    /// or below, and saturates for a size beyond `u64` so that an oversized
+    /// page never costs less than an absent one.
+    pub fn for_connection<V: VariableValues>(
+        operation_definition: &E::OperationDefinition,
+        variable_values: &V,
+        field: &E::Field,
+    ) -> Self {
+        let connection_multiplier = [CONNECTION_FIRST_ARGUMENT, CONNECTION_LAST_ARGUMENT]
+            .into_iter()
+            .filter_map(|argument_name| {
+                field_sizing_argument(operation_definition, variable_values, field, argument_name)
+            })
+            .map(multiplier_for_static_size)
+            .max()
+            .unwrap_or(0);
+
+        Self {
+            connection_multiplier: Some(connection_multiplier),
+            executable_document: PhantomData,
+        }
+    }
+}
+
+fn field_sizing_argument<'a, F: Field, O: OperationDefinition, V: VariableValues>(
+    operation_definition: &'a O,
+    variable_values: &'a V,
+    field: &'a F,
+    argument_name: &str,
+) -> Option<IntegerValue<'a>> {
+    field
+        .arguments()
+        .and_then(|arguments| arguments.iter().find(|arg| arg.name() == argument_name))
+        .and_then(|argument| match argument.value().as_ref() {
+            ValueReference::Integer(int) => Some(int),
+            ValueReference::Variable(var) => {
+                operation_definition.evaluate_int(var, variable_values)
+            }
+            _ => None,
+        })
+}
+
+fn multiplier_for_static_size(static_size: IntegerValue<'_>) -> usize {
+    if static_size.is_negative() {
+        return 0;
+    }
+    let Some(static_size) = static_size.as_u64() else {
+        // An oversized positive integer must not look like an absent argument.
+        // Conservatively saturate the cost rather than underestimate it.
+        return usize::MAX;
+    };
+    if static_size > 0 {
+        // floor(2 * ln(max(2, static_size)))
+        (2f32 * (static_size.max(2) as f32).ln()).floor() as usize
+    } else {
+        0
+    }
 }
 
 impl<E: ExecutableDocument> Default for RelayFieldMultipliers<E> {

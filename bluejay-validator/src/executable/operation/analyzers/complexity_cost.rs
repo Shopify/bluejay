@@ -19,7 +19,7 @@ mod cost_computer;
 pub use cost_computer::{CostComputer, DefaultCostComputer, FieldMultipliers};
 
 mod relay_cost_computer;
-pub use relay_cost_computer::RelayCostComputer;
+pub use relay_cost_computer::{RelayCostComputer, RelayFieldMultipliers};
 
 pub struct ComplexityCost<
     'a,
