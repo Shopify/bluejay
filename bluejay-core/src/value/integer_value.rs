@@ -39,7 +39,8 @@ impl<'a> IntegerValue<'a> {
         self.as_i64().and_then(|value| value.try_into().ok())
     }
 
-    fn as_i64(self) -> Option<i64> {
+    /// Return the value only if it fits in a signed 64-bit integer.
+    pub fn as_i64(self) -> Option<i64> {
         match self.0 {
             Representation::Literal(value) => value.parse().ok(),
             Representation::Signed(value) => Some(value),
