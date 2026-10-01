@@ -94,6 +94,16 @@ impl<'a, C: Context> DirectiveDefinition<'a, C> {
     const REPEATABLE_IDENTIFIER: &'static str = "repeatable";
     const ON_IDENTIFIER: &'static str = "on";
 
+    /// Source token for the directive name (Shopify gqlc vendor delta).
+    pub fn source_name_token(&self) -> &Name<'a> {
+        &self.name
+    }
+
+    /// Source token for the description block string, if present (Shopify gqlc vendor delta).
+    pub fn description_token(&self) -> Option<&StringValue<'a>> {
+        self.description.as_ref()
+    }
+
     pub(crate) fn name_token(&self) -> &Name<'a> {
         &self.name
     }

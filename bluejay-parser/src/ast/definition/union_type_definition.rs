@@ -14,6 +14,18 @@ pub struct UnionTypeDefinition<'a, C: Context> {
     fields_definition: FieldsDefinition<'a, C>,
 }
 
+impl<'a, C: Context> UnionTypeDefinition<'a, C> {
+    /// Source token for the type name (Shopify gqlc vendor delta).
+    pub fn source_name_token(&self) -> &Name<'a> {
+        &self.name
+    }
+
+    /// Source token for the description block string, if present (Shopify gqlc vendor delta).
+    pub fn description_token(&self) -> Option<&StringValue<'a>> {
+        self.description.as_ref()
+    }
+}
+
 impl<'a, C: Context> CoreUnionTypeDefinition for UnionTypeDefinition<'a, C> {
     type SchemaDefinition = SchemaDefinition<'a, C>;
 

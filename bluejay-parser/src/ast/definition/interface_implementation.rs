@@ -14,6 +14,13 @@ pub struct InterfaceImplementation<'a, C: Context + 'a> {
     context: PhantomData<C>,
 }
 
+impl<'a, C: Context + 'a> InterfaceImplementation<'a, C> {
+    /// Source token for the referenced type name (Shopify gqlc vendor delta).
+    pub fn source_name_token(&self) -> &Name<'a> {
+        &self.name
+    }
+}
+
 impl<'a, C: Context> CoreInterfaceImplementation for InterfaceImplementation<'a, C> {
     type SchemaDefinition = SchemaDefinition<'a, C>;
 

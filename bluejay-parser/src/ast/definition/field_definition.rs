@@ -17,6 +17,18 @@ pub struct FieldDefinition<'a, C: Context> {
     is_builtin: bool,
 }
 
+impl<'a, C: Context> FieldDefinition<'a, C> {
+    /// Source token for the field name (Shopify gqlc vendor delta).
+    pub fn name_token(&self) -> &Name<'a> {
+        &self.name
+    }
+
+    /// Source token for the description block string, if present (Shopify gqlc vendor delta).
+    pub fn description_token(&self) -> Option<&StringValue<'a>> {
+        self.description.as_ref()
+    }
+}
+
 impl<C: Context> FieldDefinition<'_, C> {
     const __TYPENAME_DEFINITION: &'static str = "__typename: String!";
     const __SCHEMA_DEFINITION: &'static str = "__schema: __Schema!";

@@ -13,6 +13,18 @@ pub struct InputObjectTypeDefinition<'a, C: Context> {
     input_fields_definition: InputFieldsDefinition<'a, C>,
 }
 
+impl<'a, C: Context> InputObjectTypeDefinition<'a, C> {
+    /// Source token for the type name (Shopify gqlc vendor delta).
+    pub fn source_name_token(&self) -> &Name<'a> {
+        &self.name
+    }
+
+    /// Source token for the description block string, if present (Shopify gqlc vendor delta).
+    pub fn description_token(&self) -> Option<&StringValue<'a>> {
+        self.description.as_ref()
+    }
+}
+
 impl<'a, C: Context> CoreInputObjectTypeDefinition for InputObjectTypeDefinition<'a, C> {
     type SchemaDefinition = SchemaDefinition<'a, C>;
 

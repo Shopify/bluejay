@@ -38,6 +38,19 @@ impl<C: Context> TypeSystemExtension<'_, C> {
 }
 
 impl<'a, C: Context> TypeSystemExtension<'a, C> {
+    /// Source token for the extended type name; `None` for schema extensions (Shopify gqlc vendor delta).
+    pub fn source_name_token(&self) -> Option<&Name<'a>> {
+        match self {
+            Self::Schema(_) => None,
+            Self::Scalar(extension) => Some(extension.source_name_token()),
+            Self::Object(extension) => Some(extension.source_name_token()),
+            Self::Interface(extension) => Some(extension.source_name_token()),
+            Self::Union(extension) => Some(extension.source_name_token()),
+            Self::Enum(extension) => Some(extension.source_name_token()),
+            Self::InputObject(extension) => Some(extension.source_name_token()),
+        }
+    }
+
     pub fn directives(&self) -> Option<&Directives<'a, C>> {
         match self {
             Self::Schema(extension) => extension.directives(),
@@ -145,6 +158,13 @@ pub struct ScalarTypeExtension<'a, C: Context> {
     directives: Directives<'a, C>,
 }
 
+impl<'a, C: Context> ScalarTypeExtension<'a, C> {
+    /// Source token for the extended type name (Shopify gqlc vendor delta).
+    pub fn source_name_token(&self) -> &Name<'a> {
+        &self.name
+    }
+}
+
 impl<C: Context> ScalarTypeExtension<'_, C> {
     pub(crate) const SCALAR_IDENTIFIER: &'static str = "scalar";
 }
@@ -183,6 +203,13 @@ pub struct ObjectTypeExtension<'a, C: Context> {
     interface_implementations: Option<InterfaceImplementations<'a, C>>,
     directives: Option<Directives<'a, C>>,
     fields_definition: Option<FieldsDefinition<'a, C>>,
+}
+
+impl<'a, C: Context> ObjectTypeExtension<'a, C> {
+    /// Source token for the extended type name (Shopify gqlc vendor delta).
+    pub fn source_name_token(&self) -> &Name<'a> {
+        &self.name
+    }
 }
 
 impl<C: Context> ObjectTypeExtension<'_, C> {
@@ -244,6 +271,13 @@ pub struct InterfaceTypeExtension<'a, C: Context> {
     fields_definition: Option<FieldsDefinition<'a, C>>,
 }
 
+impl<'a, C: Context> InterfaceTypeExtension<'a, C> {
+    /// Source token for the extended type name (Shopify gqlc vendor delta).
+    pub fn source_name_token(&self) -> &Name<'a> {
+        &self.name
+    }
+}
+
 impl<C: Context> InterfaceTypeExtension<'_, C> {
     pub(crate) const INTERFACE_IDENTIFIER: &'static str = "interface";
 }
@@ -302,6 +336,13 @@ pub struct UnionTypeExtension<'a, C: Context> {
     member_types: Option<UnionMemberTypes<'a, C>>,
 }
 
+impl<'a, C: Context> UnionTypeExtension<'a, C> {
+    /// Source token for the extended type name (Shopify gqlc vendor delta).
+    pub fn source_name_token(&self) -> &Name<'a> {
+        &self.name
+    }
+}
+
 impl<C: Context> UnionTypeExtension<'_, C> {
     pub(crate) const UNION_IDENTIFIER: &'static str = "union";
 }
@@ -356,6 +397,13 @@ pub struct EnumTypeExtension<'a, C: Context> {
     name: Name<'a>,
     directives: Option<Directives<'a, C>>,
     enum_value_definitions: Option<EnumValueDefinitions<'a, C>>,
+}
+
+impl<'a, C: Context> EnumTypeExtension<'a, C> {
+    /// Source token for the extended type name (Shopify gqlc vendor delta).
+    pub fn source_name_token(&self) -> &Name<'a> {
+        &self.name
+    }
 }
 
 impl<C: Context> EnumTypeExtension<'_, C> {
@@ -413,6 +461,13 @@ pub struct InputObjectTypeExtension<'a, C: Context> {
     name: Name<'a>,
     directives: Option<Directives<'a, C>>,
     input_fields_definition: Option<InputFieldsDefinition<'a, C>>,
+}
+
+impl<'a, C: Context> InputObjectTypeExtension<'a, C> {
+    /// Source token for the extended type name (Shopify gqlc vendor delta).
+    pub fn source_name_token(&self) -> &Name<'a> {
+        &self.name
+    }
 }
 
 impl<C: Context> InputObjectTypeExtension<'_, C> {

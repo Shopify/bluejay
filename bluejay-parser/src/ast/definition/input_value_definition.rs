@@ -13,6 +13,13 @@ pub struct InputValueDefinition<'a, C: Context> {
 }
 
 impl<'a, C: Context> InputValueDefinition<'a, C> {
+    /// Source token for the description block string, if present (Shopify gqlc vendor delta).
+    pub fn description_token(&self) -> Option<&StringValue<'a>> {
+        self.description.as_ref()
+    }
+}
+
+impl<'a, C: Context> InputValueDefinition<'a, C> {
     pub fn name_token(&self) -> &Name<'a> {
         &self.name
     }

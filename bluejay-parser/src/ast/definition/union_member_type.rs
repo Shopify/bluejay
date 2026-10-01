@@ -13,6 +13,13 @@ pub struct UnionMemberType<'a, C: Context + 'a> {
     context: PhantomData<C>,
 }
 
+impl<'a, C: Context + 'a> UnionMemberType<'a, C> {
+    /// Source token for the referenced type name (Shopify gqlc vendor delta).
+    pub fn source_name_token(&self) -> &Name<'a> {
+        &self.name
+    }
+}
+
 impl<'a, C: Context + 'a> CoreUnionMemberType for UnionMemberType<'a, C> {
     type SchemaDefinition = SchemaDefinition<'a, C>;
 

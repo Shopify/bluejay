@@ -19,15 +19,15 @@ pub struct ExplicitSchemaDefinition<'a, C: Context> {
 impl<'a, C: Context> ExplicitSchemaDefinition<'a, C> {
     pub(crate) const SCHEMA_IDENTIFIER: &'static str = "schema";
 
-    pub(crate) fn description(&self) -> Option<&StringValue<'_>> {
+    pub fn description(&self) -> Option<&StringValue<'_>> {
         self.description.as_ref()
     }
 
-    pub(crate) fn root_operation_type_definitions(&self) -> &[RootOperationTypeDefinition<'a>] {
+    pub fn root_operation_type_definitions(&self) -> &[RootOperationTypeDefinition<'a>] {
         &self.root_operation_type_definitions
     }
 
-    pub(crate) fn directives(&self) -> Option<&Directives<'a, C>> {
+    pub fn directives(&self) -> Option<&Directives<'a, C>> {
         self.directives.as_ref()
     }
 

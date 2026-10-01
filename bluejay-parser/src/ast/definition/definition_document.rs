@@ -293,8 +293,16 @@ impl<'a, C: Context> DefinitionDocument<'a, C> {
                 .count()
     }
 
+    pub fn schema_definitions(&self) -> &[ExplicitSchemaDefinition<'a, C>] {
+        &self.schema_definitions
+    }
+
     pub fn directive_definitions(&self) -> &[DirectiveDefinition<'a, C>] {
         &self.directive_definitions
+    }
+
+    pub fn type_definitions(&self) -> &[TypeDefinition<'a, C>] {
+        &self.type_definitions
     }
 
     pub fn type_system_extensions(&self) -> &[TypeSystemExtension<'a, C>] {

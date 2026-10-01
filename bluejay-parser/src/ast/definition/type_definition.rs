@@ -2,7 +2,7 @@ use crate::ast::definition::{
     Context, CustomScalarTypeDefinition, EnumTypeDefinition, InputObjectTypeDefinition,
     InterfaceTypeDefinition, ObjectTypeDefinition, SchemaDefinition, UnionTypeDefinition,
 };
-use crate::lexical_token::Name;
+use crate::lexical_token::{Name, StringValue};
 use bluejay_core::definition::{TypeDefinition as CoreTypeDefinition, TypeDefinitionReference};
 use bluejay_core::BuiltinScalarDefinition;
 
@@ -18,6 +18,24 @@ pub enum TypeDefinition<'a, C: Context> {
 }
 
 impl<C: Context> TypeDefinition<'_, C> {
+    /// Source token for the type name; `None` for built-in scalars (Shopify gqlc vendor delta).
+    pub fn source_name_token(&self) -> Option<&Name<'_>> {
+        self.name_token()
+    }
+
+    /// Source token for the description block string, if present (Shopify gqlc vendor delta).
+    pub fn description_token(&self) -> Option<&StringValue<'_>> {
+        match self {
+            Self::BuiltinScalar(_) => None,
+            Self::CustomScalar(cstd) => cstd.description_token(),
+            Self::Enum(etd) => etd.description_token(),
+            Self::InputObject(iotd) => iotd.description_token(),
+            Self::Interface(itd) => itd.description_token(),
+            Self::Object(otd) => otd.description_token(),
+            Self::Union(utd) => utd.description_token(),
+        }
+    }
+
     pub(crate) fn name_token(&self) -> Option<&Name<'_>> {
         match self {
             Self::BuiltinScalar(_) => None,
