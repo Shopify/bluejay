@@ -11,14 +11,14 @@ mod format_errors;
 pub use annotation::Annotation;
 pub use format_errors::SpanToLocation;
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Error {
     message: Cow<'static, str>,
     primary_annotation: Option<Annotation>,
     secondary_annotations: Vec<Annotation>,
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 pub struct Location {
     pub line: usize,
@@ -26,7 +26,7 @@ pub struct Location {
 }
 
 /// A [spec compliant GraphQL Error](https://spec.graphql.org/draft/#sec-Errors.Error-Result-Format)
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 pub struct GraphQLError {
     pub message: Cow<'static, str>,

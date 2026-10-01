@@ -1,7 +1,7 @@
 use crate::Span;
 use std::borrow::Cow;
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Annotation {
     pub(crate) message: Cow<'static, str>,
     pub(crate) span: Span,
