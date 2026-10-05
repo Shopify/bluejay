@@ -20,6 +20,7 @@ mod enum_type_definition;
 mod executable_definition;
 mod input;
 mod input_object_type_definition;
+mod input_type;
 pub mod names;
 mod types;
 mod validation;

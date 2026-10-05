@@ -41,6 +41,16 @@ pub(crate) enum Error<'a, E: ExecutableDocument, S: SchemaDefinition> {
         operation_definition: &'a E::OperationDefinition,
         fragment_definition: &'a E::FragmentDefinition,
     },
+    VariablesStructAndFragmentNamesClash {
+        operation_definition: &'a E::OperationDefinition,
+        fragment_definition: &'a E::FragmentDefinition,
+        name: String,
+    },
+    VariablesStructAndOperationNamesClash {
+        operation_definition: &'a E::OperationDefinition,
+        other_operation_definition: &'a E::OperationDefinition,
+        name: String,
+    },
 }
 
 const MACRO_NAME: &str = "typegen";
@@ -136,6 +146,32 @@ impl<'a, S: SchemaDefinition> From<Error<'a, ParserExecutableDocument<'a>, S>> f
                 vec![
                     Annotation::new(
                         "Operation definition",
+                        *operation_definition.span(),
+                    ),
+                ],
+            ),
+            Error::VariablesStructAndFragmentNamesClash { operation_definition, fragment_definition, name } => Self::new(
+                format!("{MACRO_NAME} generates a struct named `{name}` for the variables of an operation, which clashes with the struct for a fragment"),
+                Some(Annotation::new(
+                    format!("Fragment definition with a struct named `{name}`"),
+                    *fragment_definition.span(),
+                )),
+                vec![
+                    Annotation::new(
+                        "Operation definition with variables",
+                        *operation_definition.span(),
+                    ),
+                ],
+            ),
+            Error::VariablesStructAndOperationNamesClash { operation_definition, other_operation_definition, name } => Self::new(
+                format!("{MACRO_NAME} generates a struct named `{name}` for the variables of an operation, which clashes with the struct for an operation"),
+                Some(Annotation::new(
+                    format!("Operation definition with a struct named `{name}`"),
+                    *other_operation_definition.span(),
+                )),
+                vec![
+                    Annotation::new(
+                        "Operation definition with variables",
                         *operation_definition.span(),
                     ),
                 ],

@@ -7,6 +7,13 @@ mod schema {
 
     #[query("tests/query.graphql")]
     pub mod query {}
+
+    #[query([
+        query($arg: MyEnum) {
+            myField(arg: $arg)
+        }
+    ])]
+    pub mod anonymous_query {}
 }
 
 #[test]
@@ -216,5 +223,59 @@ fn test_builtin_scalars_deserialization() {
             },
         },
         parsed,
+    );
+}
+
+#[test]
+fn test_variables_serialization() {
+    let value = schema::query::MyArgsVariables {
+        required: "x".into(),
+        optional: None,
+        with_default: None,
+        list: Some(vec!["VARIANT_1".into()]),
+        input: Some(schema::MyInput {
+            my_field: "y".into(),
+            my_circular_field: None,
+        }),
+        decimal: Some("1.5".into()),
+        r#enum: Some(schema::MyEnum::Variant2),
+    };
+    assert_eq!(
+        serde_json::json!({
+            "required": "x",
+            "list": ["VARIANT_1"],
+            "input": { "myField": "y", "myCircularField": null },
+            "decimal": "1.5",
+            "enum": "VARIANT_2",
+        }),
+        serde_json::to_value(value).expect("Error serializing value"),
+    );
+}
+
+#[test]
+fn test_variables_with_values_serialization() {
+    let value = schema::query::MyArgsVariables {
+        required: "x".into(),
+        optional: Some(2),
+        with_default: Some(3),
+        list: None,
+        input: None,
+        decimal: None,
+        r#enum: None,
+    };
+    assert_eq!(
+        serde_json::json!({ "required": "x", "optional": 2, "withDefault": 3 }),
+        serde_json::to_value(value).expect("Error serializing value"),
+    );
+}
+
+#[test]
+fn test_anonymous_operation_variables_serialization() {
+    let value = schema::anonymous_query::RootVariables {
+        arg: Some(schema::MyEnum::Variant1),
+    };
+    assert_eq!(
+        serde_json::json!({ "arg": "VARIANT_1" }),
+        serde_json::to_value(value).expect("Error serializing value"),
     );
 }

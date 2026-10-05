@@ -16,6 +16,7 @@ mod executable_enum_variant_builder;
 mod executable_struct_builder;
 mod executable_type_builder;
 mod intermediate_representation;
+mod variables_struct_builder;
 
 use executable_enum_builder::ExecutableEnumBuilder;
 use executable_enum_variant_builder::ExecutableEnumVariantBuilder;
@@ -24,6 +25,7 @@ use executable_type_builder::ExecutableTypeBuilder;
 pub use intermediate_representation::{
     ExecutableEnum, ExecutableField, ExecutableStruct, ExecutableType, WrappedExecutableType,
 };
+use variables_struct_builder::VariablesStructBuilder;
 
 mod kw {
     syn::custom_keyword!(custom_scalar_overrides);
@@ -252,5 +254,11 @@ pub(crate) fn generate_executable_definition<S: SchemaDefinition, C: CodeGenerat
     Ok(executable_types
         .iter()
         .flat_map(|et| ExecutableTypeBuilder::build(et, config.code_generator()))
+        .chain(
+            executable_document
+                .operation_definitions()
+                .iter()
+                .flat_map(|od| VariablesStructBuilder::build(od, config, &validation_cache)),
+        )
         .collect())
 }

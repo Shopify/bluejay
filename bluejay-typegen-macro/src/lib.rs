@@ -41,6 +41,13 @@ use syn::{parse_macro_input, parse_quote};
 /// `#[query("path/to/query.graphql")]`, where the argument is a string literal path to the query document, or the
 /// query contents enclosed in square brackets.
 ///
+/// ##### Variables
+///
+/// For each operation that defines variables, a struct holding them is generated next to the struct for the operation,
+/// named after the operation with a `Variables` suffix, or `RootVariables` for an anonymous operation. A variable that
+/// is nullable or has a default value is an `Option`, and is left out rather than serialized as `null` when `None`,
+/// so that any default value applies.
+///
 /// ##### Custom scalar overrides
 ///
 /// To override the type of a custom scalar for a path within a query, use the `custom_scalar_overrides` named argument
@@ -230,6 +237,39 @@ impl CodeGenerator for SerdeCodeGenerator {
     ) -> Vec<syn::Attribute> {
         // the attributes are the same as for a normal input object field
         self.attributes_for_input_object_field(input_value_definition, borrows)
+    }
+
+    fn attributes_for_variables_struct(
+        &self,
+        #[allow(unused_variables)]
+        operation_definition: &impl bluejay_core::executable::OperationDefinition,
+    ) -> Vec<syn::Attribute> {
+        vec![
+            parse_quote! { #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::fmt::Debug, ::bluejay_typegen::serde::Serialize)] },
+            parse_quote! { #[serde(crate = "bluejay_typegen::serde")] },
+        ]
+    }
+
+    fn attributes_for_variables_struct_field(
+        &self,
+        variable_definition: &impl bluejay_core::executable::VariableDefinition,
+        borrows: bool,
+    ) -> Vec<syn::Attribute> {
+        let serialized_as = syn::LitStr::new(variable_definition.variable(), Span::call_site());
+        let mut attributes = vec![parse_quote! { #[serde(rename = #serialized_as)] }];
+
+        // omitting a variable lets its default value apply, where `null` would override it
+        if !variable_definition.is_required() {
+            attributes.push(
+                parse_quote! { #[serde(skip_serializing_if = "::std::option::Option::is_none")] },
+            );
+        }
+
+        if borrows {
+            attributes.push(parse_quote! { #[serde(borrow)] });
+        }
+
+        attributes
     }
 }
 

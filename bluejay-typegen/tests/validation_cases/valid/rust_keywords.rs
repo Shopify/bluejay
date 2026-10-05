@@ -32,6 +32,14 @@ mod schema {
         }
     ])]
     mod query {}
+
+    #[query([
+        query Variables($type: Result!, $fn: Option!) {
+            result(result: $type)
+            option(option: $fn)
+        }
+    ])]
+    mod variables {}
 }
 
 fn main() {}
