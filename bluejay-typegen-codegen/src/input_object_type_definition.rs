@@ -1,10 +1,9 @@
 use crate::attributes::doc_string;
-use crate::builtin_scalar::{builtin_scalar_type, scalar_is_reference};
+use crate::input_type::{base_input_type, input_field_borrows, input_object_lifetime};
 use crate::names::{enum_variant_ident, field_ident, type_ident};
-use crate::{types, CodeGenerator, Config};
+use crate::{CodeGenerator, Config};
 use bluejay_core::definition::{
-    prelude::*, BaseInputTypeReference, EnumTypeDefinition, InputTypeReference,
-    ScalarTypeDefinition, SchemaDefinition,
+    prelude::*, BaseInputTypeReference, InputTypeReference, SchemaDefinition,
 };
 use bluejay_core::{AsIter, Directive};
 use std::collections::HashSet;
@@ -43,7 +42,7 @@ impl<'a, S: SchemaDefinition, C: CodeGenerator> InputObjectTypeDefinitionBuilder
     fn build_enum(&self) -> Vec<syn::Item> {
         let attributes = self.attributes_for_enum();
         let name_ident = self.name_ident();
-        let lifetime = self.lifetime(self.input_object_type_definition);
+        let lifetime = input_object_lifetime(self.config, self.input_object_type_definition);
 
         let variants: Vec<syn::Variant> = self
             .input_object_type_definition
@@ -89,7 +88,7 @@ impl<'a, S: SchemaDefinition, C: CodeGenerator> InputObjectTypeDefinitionBuilder
     fn build_struct(&self) -> Vec<syn::Item> {
         let attributes = self.attributes_for_struct();
         let name_ident = self.name_ident();
-        let lifetime = self.lifetime(self.input_object_type_definition);
+        let lifetime = input_object_lifetime(self.config, self.input_object_type_definition);
 
         let fields: Vec<syn::Field> = self
             .input_object_type_definition
@@ -104,7 +103,8 @@ impl<'a, S: SchemaDefinition, C: CodeGenerator> InputObjectTypeDefinitionBuilder
                     .code_generator()
                     .attributes_for_input_object_field(
                         ivd,
-                        self.input_field_contains_reference_types(
+                        input_field_borrows(
+                            self.config,
                             self.input_object_type_definition,
                             ivd,
                             &mut HashSet::new(),
@@ -167,17 +167,6 @@ impl<'a, S: SchemaDefinition, C: CodeGenerator> InputObjectTypeDefinitionBuilder
             .collect()
     }
 
-    fn lifetime(
-        &self,
-        input_object_type_definition: &'a S::InputObjectTypeDefinition,
-    ) -> Option<syn::Generics> {
-        (self.input_object_contains_reference_types(
-            input_object_type_definition,
-            &mut HashSet::new(),
-        ))
-        .then(|| parse_quote! { <'a> })
-    }
-
     fn contains_non_list_reference(
         &self,
         target: &str,
@@ -201,80 +190,6 @@ impl<'a, S: SchemaDefinition, C: CodeGenerator> InputObjectTypeDefinitionBuilder
         }
     }
 
-    fn contains_reference_types(
-        &self,
-        ty: &'a S::InputType,
-        visited: &mut HashSet<&'a str>,
-    ) -> bool {
-        let base = ty.base(self.config.schema_definition());
-        if !self.config.borrow() || !visited.insert(base.name()) {
-            return false;
-        }
-
-        match base {
-            BaseInputTypeReference::BuiltinScalar(bstd) => scalar_is_reference(bstd),
-            BaseInputTypeReference::CustomScalar(cstd) => self.config.custom_scalar_borrows(cstd),
-            BaseInputTypeReference::Enum(etd) => {
-                self.config.enum_as_str(etd) && self.config.borrow()
-            }
-            BaseInputTypeReference::InputObject(iotd) => {
-                self.input_object_contains_reference_types(iotd, visited)
-            }
-        }
-    }
-
-    fn input_object_contains_reference_types(
-        &self,
-        iotd: &'a S::InputObjectTypeDefinition,
-        visited: &mut HashSet<&'a str>,
-    ) -> bool {
-        iotd.input_field_definitions()
-            .iter()
-            .any(|ivd| self.input_field_contains_reference_types(iotd, ivd, visited))
-    }
-
-    /// Whether the type for `ivd`, a field of `iotd`, borrows, skipping types already in `visited`.
-    fn input_field_contains_reference_types(
-        &self,
-        iotd: &'a S::InputObjectTypeDefinition,
-        ivd: &'a S::InputValueDefinition,
-        visited: &mut HashSet<&'a str>,
-    ) -> bool {
-        self.config.custom_scalar_override(iotd, ivd).map_or_else(
-            || self.contains_reference_types(ivd.r#type(), visited),
-            |custom_scalar_override| custom_scalar_override.borrows,
-        )
-    }
-
-    fn type_for_base_input_type(&self, base: BaseInputTypeReference<S>) -> syn::Type {
-        match base {
-            BaseInputTypeReference::BuiltinScalar(bstd) => {
-                builtin_scalar_type(bstd, self.config.borrow())
-            }
-            BaseInputTypeReference::InputObject(iotd) => {
-                let ident = type_ident(iotd.name());
-                let lifetime = self.lifetime(iotd);
-                parse_quote! { #ident #lifetime }
-            }
-            BaseInputTypeReference::Enum(etd) => {
-                if self.config.enum_as_str(etd) {
-                    types::string(self.config.borrow())
-                } else {
-                    let ident = type_ident(etd.name());
-                    parse_quote! { #ident }
-                }
-            }
-            BaseInputTypeReference::CustomScalar(cstd) => {
-                let ident = type_ident(cstd.name());
-                let lifetime: Option<syn::Generics> = self
-                    .config
-                    .custom_scalar_borrows(cstd)
-                    .then(|| parse_quote! { <'a> });
-                parse_quote! { #ident #lifetime }
-            }
-        }
-    }
-
     /// The type for `ty`, with `custom_scalar_override` in place of its base type if given.
     fn type_for_input_type(
         &self,
@@ -291,7 +206,7 @@ impl<'a, S: SchemaDefinition, C: CodeGenerator> InputObjectTypeDefinitionBuilder
             InputTypeReference::Base(base, _) => {
                 let mut inner = custom_scalar_override
                     .cloned()
-                    .unwrap_or_else(|| self.type_for_base_input_type(base));
+                    .unwrap_or_else(|| base_input_type(self.config, base, 0));
                 if let Some(parent_type_name) = parent_type_name {
                     if self.contains_non_list_reference(parent_type_name, ty, &mut HashSet::new()) {
                         inner = parse_quote! { ::std::boxed::Box<#inner> };

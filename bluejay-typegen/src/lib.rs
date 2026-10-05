@@ -20,6 +20,8 @@
 //! Within the module defining the schema definition, a submodule can be defined for any number of executable documents.
 //! This can be done by decorating the submodule with `#[query(...)]` where the argument follows the same convention as the positional argument of the macro.
 //! For each operation and fragment definition in the query document, a corresponding Rust type is generated. If an anonymous operation is defined, the type is named `Root`.
+//! For each operation that defines variables, a struct holding the variables is also generated, named after the operation with a `Variables` suffix, e.g. `PlayerVariables`, or `RootVariables` for an anonymous operation.
+//! A variable that is nullable or has a default value is an `Option`, and is left out rather than serialized as `null` when `None`, so that any default value applies.
 //! See [type path pattern](#type-path-pattern) for more information on how the path for a given type is determined.
 //!
 //! ### Example
@@ -115,6 +117,7 @@
 //!
 //! ### Limitations
 //! - A query cannot contain a fragment definition with the same name as an operation definition
+//! - A query cannot contain a fragment or operation definition whose type has the same name as the variables struct of an operation, e.g. a fragment named `PlayerVariables` alongside a `Player` operation with variables
 //! - A schema module must contain exactly one type alias for each custom scalar defined in the schema, so that the type alias can be used in the generated Rust types
 //! - Within the scope of an object type, the selection set must not contain any inline fragments and must either:
 //!     - Contain at least one field selection, or
@@ -133,6 +136,7 @@
 //! - If the type is a custom scalar, enum, or input type, the path is `schema_module::TypeName`. For example, the `Position` enum in the example above has the path `schema::Position`.
 //! - If the type is an operation root type, the path is `schema_module::query_module::OperationName`. For example, the `Player` type for the `Player` query root in the example above has the path `schema::query::Player`.
 //! - If the type is an anonymous operation root type, the path is `schema_module::query_module::Root`
+//! - If the type holds the variables of an operation, the path is `schema_module::query_module::OperationNameVariables`, or `schema_module::query_module::RootVariables` for an anonymous operation
 //! - If the type is a nested object type, the path is nested under the path of the parent object type, like `schema_module::query_module::operation_name::TypeName`. For example, the `Player` Rust enum type for the `player` field in the example above has the path `schema::query::player::Player`. And the `Stats` Rust struct type for the `stats` field in the `Skater` arm of the `Player` enum has the path `schema::query::player::player::skater::Stats`.
 //! - If the type is a fragment definition, the path is `schema_module::query_module::FragmentName`, with all nested types following the same pattern as operation types, e.g. at `schema_module::query_module::fragment_name::TypeName`.
 

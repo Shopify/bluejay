@@ -43,3 +43,24 @@ fragment MyFragment on MyInterface {
 query MyStrEnum {
   myStrEnum
 }
+
+query MyArgs(
+  "A required argument"
+  $required: String!
+  $optional: Int
+  $withDefault: Int! = 1
+  $list: [MyStrEnum!]
+  $input: MyInput
+  $decimal: Decimal
+  $enum: MyEnum
+) {
+  myArgs(
+    required: $required
+    optional: $optional
+    withDefault: $withDefault
+    list: $list
+    input: $input
+    decimal: $decimal
+    enum: $enum
+  )
+}

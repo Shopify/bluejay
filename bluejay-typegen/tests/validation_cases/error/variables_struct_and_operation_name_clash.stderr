@@ -1,0 +1,21 @@
+error: Error: typegen generates a struct named `FooVariables` for the variables of an operation, which clashes with the struct for an operation
+          ╭─[ <unknown>:1:57 ]
+          │
+        1 │ ╭─▶ query Foo($arg: String) { myType(arg: $arg) { field } } query FooVariables
+          │ │   ───────────────────────────┬───────────────────────────
+          │ │                              ╰───────────────────────────── Operation definition with variables
+        2 │ ├─▶ { myType { field } }
+          │ │
+          │ ╰───────────────────────── Operation definition with a struct named `FooVariables`
+       ───╯
+
+  --> tests/validation_cases/error/variables_struct_and_operation_name_clash.rs:11:13
+   |
+11 |       #[query([
+   |  _____________^
+12 | |         query Foo($arg: String) {
+13 | |             myType(arg: $arg) {
+14 | |                 field
+...  |
+23 | |     ])]
+   | |_____^

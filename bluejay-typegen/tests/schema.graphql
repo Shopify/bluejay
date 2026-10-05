@@ -43,6 +43,15 @@ type Query {
   myDecimals: [Decimal!]!
   builtinScalars: BuiltinScalars!
   myStrEnum: MyStrEnum!
+  myArgs(
+    required: String!
+    optional: Int
+    withDefault: Int!
+    list: [MyStrEnum!]
+    input: MyInput
+    decimal: Decimal
+    enum: MyEnum
+  ): String
 }
 
 interface MyInterface {
