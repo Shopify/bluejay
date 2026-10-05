@@ -22,6 +22,9 @@ use syn::{parse_macro_input, parse_quote};
 /// _borrow_: Boolean literal indicating whether the generated types should borrow where possible. Defaults to `false`.
 /// When `true`, deserializing must be done from a string as a opposed to `serde_json::Value` or a reader.
 ///
+/// _custom_scalar_overrides_: Map from `"InputObject.field"` to the type to use for that input object field instead
+/// of its custom scalar. See [custom scalar overrides](#custom-scalar-overrides).
+///
 /// ### Trait implementations
 ///
 /// By default, will implement `PartialEq`, `Eq`, `Clone`, and `Debug` for all types. Will implement `Copy` for enums.
@@ -56,6 +59,10 @@ use syn::{parse_macro_input, parse_quote};
 ///     "MyQuery.myField" => ::std::primitive::i32,
 /// })]
 /// ```
+/// The same argument on the `#[typegen(...)]` attribute overrides the type of a custom scalar field of an input object,
+/// with paths of the form `"MyInput.myField"`. Lists and nullability are kept, so a nullable field is an `Option` of the
+/// type.
+///
 /// Any type path that does not start with `::` is assumed to be relative to the schema definition module.
 /// Types may have a single lifetime parameter, which must be named `a`. Generic types are not supported.
 /// If you need to use a generic type, use an alias for the type to remove the generic parameters.

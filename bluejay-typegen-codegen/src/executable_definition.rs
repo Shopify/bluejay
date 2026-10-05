@@ -31,9 +31,9 @@ mod kw {
 
 pub(crate) struct CustomScalarOverride {
     graphql_path_token: syn::LitStr,
-    graphql_path: Vec<String>,
+    pub(crate) graphql_path: Vec<String>,
     type_token: syn::Type,
-    borrows: bool,
+    pub(crate) borrows: bool,
 }
 
 impl Parse for CustomScalarOverride {
@@ -55,6 +55,46 @@ impl Parse for CustomScalarOverride {
 }
 
 impl CustomScalarOverride {
+    /// Parses the braced map that is the value of `custom_scalar_overrides`.
+    pub(crate) fn parse_all(
+        input: syn::parse::ParseStream,
+    ) -> syn::Result<syn::punctuated::Punctuated<Self, syn::Token![,]>> {
+        let content;
+        syn::braced!(content in input);
+        syn::punctuated::Punctuated::parse_terminated(&content)
+    }
+
+    /// Returns `overrides`, or an error for each whose path `is_custom_scalar_path` rejects or that borrows without the
+    /// `borrow` option.
+    pub(crate) fn validate_all(
+        overrides: Option<syn::punctuated::Punctuated<Self, syn::Token![,]>>,
+        borrow: bool,
+        path_error: &str,
+        is_custom_scalar_path: impl Fn(&[String]) -> bool,
+    ) -> syn::Result<Vec<Self>> {
+        let (valid, errors): (Vec<_>, Vec<syn::Error>) =
+            overrides.into_iter().flatten().partition_map(|c| {
+                if !is_custom_scalar_path(&c.graphql_path) {
+                    Either::Right(syn::Error::new(c.graphql_path_token.span(), path_error))
+                } else if c.borrows && !borrow {
+                    Either::Right(syn::Error::new(
+                        c.type_token.span(),
+                        "Custom scalar overrides must not borrow if the `borrow` option is not enabled",
+                    ))
+                } else {
+                    Either::Left(c)
+                }
+            });
+
+        match errors.into_iter().reduce(|mut acc, error| {
+            acc.combine(error);
+            acc
+        }) {
+            Some(error) => Err(error),
+            None => Ok(valid),
+        }
+    }
+
     fn graphql_path(lit_str: &syn::LitStr) -> Vec<String> {
         lit_str.value().split('.').map(|s| s.to_string()).collect()
     }
@@ -105,7 +145,7 @@ impl CustomScalarOverride {
         Ok(true)
     }
 
-    fn r#type(&self) -> &syn::Type {
+    pub(crate) fn r#type(&self) -> &syn::Type {
         &self.type_token
     }
 }
@@ -126,11 +166,11 @@ impl Parse for Input {
             input.parse::<syn::Token![,]>()?;
             let lookahead = input.lookahead1();
             if lookahead.peek(kw::custom_scalar_overrides) {
-                parse_key_value_with(input, &mut custom_scalar_overrides, |input| {
-                    let content;
-                    syn::braced!(content in input);
-                    syn::punctuated::Punctuated::parse_terminated(&content)
-                })?;
+                parse_key_value_with(
+                    input,
+                    &mut custom_scalar_overrides,
+                    CustomScalarOverride::parse_all,
+                )?;
             } else {
                 return Err(lookahead.error());
             }
@@ -196,46 +236,17 @@ pub(crate) fn generate_executable_definition<S: SchemaDefinition, C: CodeGenerat
         ));
     }
 
-    let custom_scalar_overrides: Vec<CustomScalarOverride> = custom_scalar_overrides
-        .map(|c| c.into_iter().collect())
-        .unwrap_or_default();
-
-    let (valid_custom_scalar_overrides, custom_scalar_override_errors): (Vec<_>, Vec<syn::Error>) =
-        custom_scalar_overrides
-            .into_iter()
-            .partition_map(|c| {
-                if paths_with_custom_scalar_type.contains(&c.graphql_path) {
-                    if c.borrows && !config.borrow() {
-                        Either::Right(syn::Error::new(
-                            c.type_token.span(),
-                            "Custom scalar overrides must not borrow if the `borrow` option is not enabled",
-                        ))
-                    } else {
-                        Either::Left(c)
-                    }
-                } else {
-                    Either::Right(syn::Error::new(
-                        c.graphql_path_token.span(),
-                        "Custom scalar overrides must correspond to a path in the query that is a custom scalar type",
-                    ))
-                }
-            });
-
-    if let Some(combined_error) =
-        custom_scalar_override_errors
-            .into_iter()
-            .reduce(|mut acc, error| {
-                acc.combine(error);
-                acc
-            })
-    {
-        return Err(combined_error);
-    }
+    let custom_scalar_overrides = CustomScalarOverride::validate_all(
+        custom_scalar_overrides,
+        config.borrow(),
+        "Custom scalar overrides must correspond to a path in the query that is a custom scalar type",
+        |path| paths_with_custom_scalar_type.contains(path),
+    )?;
 
     let executable_types = ExecutableType::for_executable_document(
         &executable_document,
         config,
-        valid_custom_scalar_overrides,
+        custom_scalar_overrides,
     );
 
     Ok(executable_types

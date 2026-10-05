@@ -1,9 +1,11 @@
+use crate::executable_definition::CustomScalarOverride;
 use quote::{ToTokens, TokenStreamExt};
 use syn::parse::Parse;
 
 mod kw {
     syn::custom_keyword!(borrow);
     syn::custom_keyword!(enums_as_str);
+    syn::custom_keyword!(custom_scalar_overrides);
 }
 
 pub enum DocumentInput {
@@ -65,6 +67,8 @@ pub struct Input {
     pub(crate) schema: DocumentInput,
     pub borrow: Option<syn::LitBool>,
     pub enums_as_str: syn::punctuated::Punctuated<syn::LitStr, syn::Token![,]>,
+    pub(crate) custom_scalar_overrides:
+        Option<syn::punctuated::Punctuated<CustomScalarOverride, syn::Token![,]>>,
 }
 
 impl Parse for Input {
@@ -73,6 +77,7 @@ impl Parse for Input {
 
         let mut borrow: Option<syn::LitBool> = None;
         let mut enums_as_str = None;
+        let mut custom_scalar_overrides = None;
 
         while !input.is_empty() {
             input.parse::<syn::Token![,]>()?;
@@ -85,6 +90,12 @@ impl Parse for Input {
                     syn::bracketed!(content in input);
                     syn::punctuated::Punctuated::parse_separated_nonempty(&content)
                 })?;
+            } else if lookahead.peek(kw::custom_scalar_overrides) {
+                parse_key_value_with(
+                    input,
+                    &mut custom_scalar_overrides,
+                    CustomScalarOverride::parse_all,
+                )?;
             } else {
                 return Err(lookahead.error());
             }
@@ -96,6 +107,7 @@ impl Parse for Input {
             schema,
             borrow,
             enums_as_str,
+            custom_scalar_overrides,
         })
     }
 }
