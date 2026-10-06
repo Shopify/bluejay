@@ -4,7 +4,7 @@
 
 use crate::{
     builtin_scalar::builtin_scalar_type,
-    executable_definition::CustomScalarOverride,
+    input::CustomScalarOverride,
     names::{module_ident, type_ident, ANONYMOUS_OPERATION_STRUCT_NAME},
     types, CodeGenerator, Config,
 };

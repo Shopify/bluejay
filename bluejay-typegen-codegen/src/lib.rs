@@ -27,12 +27,12 @@ mod validation;
 use attributes::doc_string;
 pub use code_generator::CodeGenerator;
 use enum_type_definition::EnumTypeDefinitionBuilder;
-use executable_definition::{generate_executable_definition, CustomScalarOverride};
+use executable_definition::generate_executable_definition;
 pub use executable_definition::{
     ExecutableEnum, ExecutableField, ExecutableStruct, ExecutableType, WrappedExecutableType,
 };
-use input::DocumentInput;
 pub use input::Input;
+use input::{CustomScalarOverride, DocumentInput};
 use input_object_type_definition::InputObjectTypeDefinitionBuilder;
 
 pub(crate) struct Config<'a, S: SchemaDefinition, C: CodeGenerator> {
