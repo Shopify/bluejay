@@ -13,6 +13,8 @@
 //! - `borrow`: A boolean indicating whether the generated types should borrow strings from the input JSON value instead of owning them. Defaults to `false`.
 //! - `enums_as_str`: An array of string literals containing the names of enum types from the GraphQL schema that should be represented as strings. Defaults to `[]`.
 //!   When `borrow` is true, the values are `std::borrow::Cow<str>`, otherwise they are `String`.
+//! - `custom_scalar_overrides`: A map from `"InputObject.field"` to the type to use for that input object field instead of its custom scalar, e.g. `{ "MyInput.myField" => ::std::primitive::i32 }`. Lists and nullability are kept.
+//!   Type paths that do not start with `::` are relative to the module. Defaults to `{}`.
 //!
 //! #### Queries
 //! Within the module defining the schema definition, a submodule can be defined for any number of executable documents.

@@ -1,9 +1,11 @@
+use itertools::{Either, Itertools};
 use quote::{ToTokens, TokenStreamExt};
-use syn::parse::Parse;
+use syn::{parse::Parse, spanned::Spanned};
 
 mod kw {
     syn::custom_keyword!(borrow);
     syn::custom_keyword!(enums_as_str);
+    syn::custom_keyword!(custom_scalar_overrides);
 }
 
 pub enum DocumentInput {
@@ -61,10 +63,133 @@ impl DocumentInput {
     }
 }
 
+pub(crate) struct CustomScalarOverride {
+    graphql_path_token: syn::LitStr,
+    pub(crate) graphql_path: Vec<String>,
+    type_token: syn::Type,
+    pub(crate) borrows: bool,
+}
+
+impl Parse for CustomScalarOverride {
+    fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
+        let graphql_path_token = input.parse()?;
+        let graphql_path = Self::graphql_path(&graphql_path_token);
+        input.parse::<syn::Token![=>]>()?;
+        let type_token = input.parse()?;
+
+        let borrows = Self::type_borrows(&type_token)?;
+
+        Ok(Self {
+            graphql_path_token,
+            graphql_path,
+            type_token,
+            borrows,
+        })
+    }
+}
+
+impl CustomScalarOverride {
+    /// Parses the braced map that is the value of `custom_scalar_overrides`.
+    pub(crate) fn parse_all(
+        input: syn::parse::ParseStream,
+    ) -> syn::Result<syn::punctuated::Punctuated<Self, syn::Token![,]>> {
+        let content;
+        syn::braced!(content in input);
+        syn::punctuated::Punctuated::parse_terminated(&content)
+    }
+
+    /// Returns `overrides`, or an error for each whose path `is_custom_scalar_path` rejects or that borrows without the
+    /// `borrow` option.
+    pub(crate) fn validate_all(
+        overrides: Option<syn::punctuated::Punctuated<Self, syn::Token![,]>>,
+        borrow: bool,
+        path_error: &str,
+        is_custom_scalar_path: impl Fn(&[String]) -> bool,
+    ) -> syn::Result<Vec<Self>> {
+        let (valid, errors): (Vec<_>, Vec<syn::Error>) =
+            overrides.into_iter().flatten().partition_map(|c| {
+                if !is_custom_scalar_path(&c.graphql_path) {
+                    Either::Right(syn::Error::new(c.graphql_path_token.span(), path_error))
+                } else if c.borrows && !borrow {
+                    Either::Right(syn::Error::new(
+                        c.type_token.span(),
+                        "Custom scalar overrides must not borrow if the `borrow` option is not enabled",
+                    ))
+                } else {
+                    Either::Left(c)
+                }
+            });
+
+        match errors.into_iter().reduce(|mut acc, error| {
+            acc.combine(error);
+            acc
+        }) {
+            Some(error) => Err(error),
+            None => Ok(valid),
+        }
+    }
+
+    fn graphql_path(lit_str: &syn::LitStr) -> Vec<String> {
+        lit_str.value().split('.').map(|s| s.to_string()).collect()
+    }
+
+    fn type_borrows(ty: &syn::Type) -> syn::Result<bool> {
+        let path = match ty {
+            syn::Type::Path(path) => path,
+            // allow the `()` type
+            syn::Type::Tuple(tuple) if tuple.elems.is_empty() => return Ok(false),
+            _ => {
+                return Err(syn::Error::new(
+                    ty.span(),
+                    "Unsupported type for custom scalar overrides",
+                ));
+            }
+        };
+
+        let Some(last_segment) = path.path.segments.last() else {
+            return Err(syn::Error::new(
+                path.span(),
+                "Path must have at least one segment",
+            ));
+        };
+
+        let path_arguments = match &last_segment.arguments {
+            syn::PathArguments::None => return Ok(false),
+            syn::PathArguments::AngleBracketed(bracketed) => bracketed,
+            syn::PathArguments::Parenthesized(parenthesized) => {
+                return Err(syn::Error::new(
+                    parenthesized.span(),
+                    "Paths for custom scalar overrides must not contain parenthesized generic arguments",
+                ));
+            }
+        };
+
+        if path_arguments.args.len() != 1
+            || !matches!(
+                path_arguments.args.first(),
+                Some(syn::GenericArgument::Lifetime(lifetime)) if lifetime.ident != "'a"
+            )
+        {
+            return Err(syn::Error::new(
+                ty.span(),
+                "Paths for custom scalar overrides with generic arguments must contain a single lifetime parameter 'a",
+            ));
+        }
+
+        Ok(true)
+    }
+
+    pub(crate) fn r#type(&self) -> &syn::Type {
+        &self.type_token
+    }
+}
+
 pub struct Input {
     pub(crate) schema: DocumentInput,
     pub borrow: Option<syn::LitBool>,
     pub enums_as_str: syn::punctuated::Punctuated<syn::LitStr, syn::Token![,]>,
+    pub(crate) custom_scalar_overrides:
+        Option<syn::punctuated::Punctuated<CustomScalarOverride, syn::Token![,]>>,
 }
 
 impl Parse for Input {
@@ -73,6 +198,7 @@ impl Parse for Input {
 
         let mut borrow: Option<syn::LitBool> = None;
         let mut enums_as_str = None;
+        let mut custom_scalar_overrides = None;
 
         while !input.is_empty() {
             input.parse::<syn::Token![,]>()?;
@@ -85,6 +211,12 @@ impl Parse for Input {
                     syn::bracketed!(content in input);
                     syn::punctuated::Punctuated::parse_separated_nonempty(&content)
                 })?;
+            } else if lookahead.peek(kw::custom_scalar_overrides) {
+                parse_key_value_with(
+                    input,
+                    &mut custom_scalar_overrides,
+                    CustomScalarOverride::parse_all,
+                )?;
             } else {
                 return Err(lookahead.error());
             }
@@ -96,6 +228,7 @@ impl Parse for Input {
             schema,
             borrow,
             enums_as_str,
+            custom_scalar_overrides,
         })
     }
 }

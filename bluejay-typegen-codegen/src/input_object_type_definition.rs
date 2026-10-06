@@ -97,15 +97,18 @@ impl<'a, S: SchemaDefinition, C: CodeGenerator> InputObjectTypeDefinitionBuilder
             .iter()
             .map(|ivd| {
                 let field_ident = field_ident(ivd.name());
-                let field_type = self
-                    .type_for_input_value_definition(self.input_object_type_definition.name(), ivd);
+                let field_type = self.type_for_input_value_definition(ivd);
                 let description_attribute = ivd.description().map(doc_string);
                 let field_attributes = self
                     .config
                     .code_generator()
                     .attributes_for_input_object_field(
                         ivd,
-                        self.contains_reference_types(ivd.r#type(), &mut HashSet::new()),
+                        self.input_field_contains_reference_types(
+                            self.input_object_type_definition,
+                            ivd,
+                            &mut HashSet::new(),
+                        ),
                     );
 
                 parse_quote! {
@@ -227,7 +230,20 @@ impl<'a, S: SchemaDefinition, C: CodeGenerator> InputObjectTypeDefinitionBuilder
     ) -> bool {
         iotd.input_field_definitions()
             .iter()
-            .any(|ivd| self.contains_reference_types(ivd.r#type(), visited))
+            .any(|ivd| self.input_field_contains_reference_types(iotd, ivd, visited))
+    }
+
+    /// Whether the type for `ivd`, a field of `iotd`, borrows, skipping types already in `visited`.
+    fn input_field_contains_reference_types(
+        &self,
+        iotd: &'a S::InputObjectTypeDefinition,
+        ivd: &'a S::InputValueDefinition,
+        visited: &mut HashSet<&'a str>,
+    ) -> bool {
+        self.config.custom_scalar_override(iotd, ivd).map_or_else(
+            || self.contains_reference_types(ivd.r#type(), visited),
+            |custom_scalar_override| custom_scalar_override.borrows,
+        )
     }
 
     fn type_for_base_input_type(&self, base: BaseInputTypeReference<S>) -> syn::Type {
@@ -259,11 +275,13 @@ impl<'a, S: SchemaDefinition, C: CodeGenerator> InputObjectTypeDefinitionBuilder
         }
     }
 
+    /// The type for `ty`, with `custom_scalar_override` in place of its base type if given.
     fn type_for_input_type(
         &self,
         ty: InputTypeReference<S>,
         parent_type_name: Option<&str>,
         has_default_value: Option<bool>,
+        custom_scalar_override: Option<&syn::Type>,
     ) -> syn::Type {
         let required = has_default_value.map_or_else(
             || ty.is_required(),
@@ -271,7 +289,9 @@ impl<'a, S: SchemaDefinition, C: CodeGenerator> InputObjectTypeDefinitionBuilder
         );
         match ty {
             InputTypeReference::Base(base, _) => {
-                let mut inner = self.type_for_base_input_type(base);
+                let mut inner = custom_scalar_override
+                    .cloned()
+                    .unwrap_or_else(|| self.type_for_base_input_type(base));
                 if let Some(parent_type_name) = parent_type_name {
                     if self.contains_non_list_reference(parent_type_name, ty, &mut HashSet::new()) {
                         inner = parse_quote! { ::std::boxed::Box<#inner> };
@@ -288,6 +308,7 @@ impl<'a, S: SchemaDefinition, C: CodeGenerator> InputObjectTypeDefinitionBuilder
                     inner.as_ref(self.config.schema_definition()),
                     None,
                     None,
+                    custom_scalar_override,
                 ));
                 if required {
                     inner_ty
@@ -298,16 +319,19 @@ impl<'a, S: SchemaDefinition, C: CodeGenerator> InputObjectTypeDefinitionBuilder
         }
     }
 
-    fn type_for_input_value_definition(
-        &self,
-        parent_type_name: &str,
-        ivd: &S::InputValueDefinition,
-    ) -> syn::Type {
+    fn type_for_input_value_definition(&self, ivd: &S::InputValueDefinition) -> syn::Type {
         self.type_for_input_type(
             ivd.r#type().as_ref(self.config.schema_definition()),
-            Some(parent_type_name),
+            Some(self.input_object_type_definition.name()),
             Some(ivd.default_value().is_some()),
+            self.custom_scalar_override(ivd),
         )
+    }
+
+    fn custom_scalar_override(&self, ivd: &S::InputValueDefinition) -> Option<&syn::Type> {
+        self.config
+            .custom_scalar_override(self.input_object_type_definition, ivd)
+            .map(|custom_scalar_override| custom_scalar_override.r#type())
     }
 
     fn variant_type(&self, ivd: &S::InputValueDefinition) -> syn::Type {
@@ -321,6 +345,7 @@ impl<'a, S: SchemaDefinition, C: CodeGenerator> InputObjectTypeDefinitionBuilder
             required_type,
             Some(self.input_object_type_definition.name()),
             None,
+            self.custom_scalar_override(ivd),
         )
     }
 }

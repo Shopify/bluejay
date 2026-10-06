@@ -1,5 +1,5 @@
 use bluejay_core::{
-    definition::{prelude::*, SchemaDefinition, TypeDefinitionReference},
+    definition::{prelude::*, BaseInputTypeReference, SchemaDefinition, TypeDefinitionReference},
     BuiltinScalarDefinition,
 };
 use bluejay_parser::{
@@ -31,8 +31,8 @@ use executable_definition::generate_executable_definition;
 pub use executable_definition::{
     ExecutableEnum, ExecutableField, ExecutableStruct, ExecutableType, WrappedExecutableType,
 };
-use input::DocumentInput;
 pub use input::Input;
+use input::{CustomScalarOverride, DocumentInput};
 use input_object_type_definition::InputObjectTypeDefinitionBuilder;
 
 pub(crate) struct Config<'a, S: SchemaDefinition, C: CodeGenerator> {
@@ -40,6 +40,7 @@ pub(crate) struct Config<'a, S: SchemaDefinition, C: CodeGenerator> {
     schema_definition: &'a S,
     custom_scalar_borrows: HashMap<String, bool>,
     enums_as_str: HashSet<String>,
+    custom_scalar_overrides: Vec<CustomScalarOverride>,
     code_generator: &'a C,
 }
 
@@ -67,6 +68,17 @@ impl<'a, S: SchemaDefinition, C: CodeGenerator> Config<'a, S, C> {
         self.enums_as_str.contains(etd.name())
     }
 
+    /// The override for the type of `ivd`, a field of `iotd`.
+    pub(crate) fn custom_scalar_override(
+        &self,
+        iotd: &S::InputObjectTypeDefinition,
+        ivd: &S::InputValueDefinition,
+    ) -> Option<&CustomScalarOverride> {
+        self.custom_scalar_overrides
+            .iter()
+            .find(|c| c.graphql_path == [iotd.name(), ivd.name()])
+    }
+
     pub(crate) fn code_generator(&self) -> &C {
         self.code_generator
     }
@@ -82,6 +94,7 @@ pub fn generate_schema(
         ref schema,
         borrow,
         enums_as_str,
+        custom_scalar_overrides,
     } = input;
 
     let borrow = borrow.is_some_and(|lit| lit.value());
@@ -116,11 +129,19 @@ pub fn generate_schema(
 
     let enums_as_str = validate_enums_as_str(enums_as_str, &schema_definition)?;
 
+    let custom_scalar_overrides = CustomScalarOverride::validate_all(
+        custom_scalar_overrides,
+        borrow,
+        "Custom scalar overrides must correspond to an input object field that is a custom scalar type",
+        |path| is_custom_scalar_input_field(&schema_definition, path),
+    )?;
+
     let config = Config {
         schema_definition: &schema_definition,
         borrow,
         custom_scalar_borrows,
         enums_as_str,
+        custom_scalar_overrides,
         code_generator: &code_generator,
     };
 
@@ -281,6 +302,29 @@ fn validate_enums_as_str(
         }
     })?;
     Ok(enum_names)
+}
+
+/// Whether `path` is `[input object name, field name]` for a field whose base type is a custom scalar.
+fn is_custom_scalar_input_field(
+    schema_definition: &impl SchemaDefinition,
+    path: &[String],
+) -> bool {
+    let [type_name, field_name] = path else {
+        return false;
+    };
+    let Some(TypeDefinitionReference::InputObject(iotd)) =
+        schema_definition.get_type_definition(type_name)
+    else {
+        return false;
+    };
+    iotd.input_field_definitions()
+        .get(field_name)
+        .is_some_and(|ivd| {
+            matches!(
+                ivd.r#type().base(schema_definition),
+                BaseInputTypeReference::CustomScalar(_)
+            )
+        })
 }
 
 fn process_module_items<S: SchemaDefinition, C: CodeGenerator>(
