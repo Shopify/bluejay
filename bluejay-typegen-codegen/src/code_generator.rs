@@ -1,6 +1,7 @@
 use bluejay_core::definition::{
     EnumTypeDefinition, EnumValueDefinition, InputObjectTypeDefinition, InputValueDefinition,
 };
+use bluejay_core::executable::{OperationDefinition, VariableDefinition};
 
 use crate::{ExecutableEnum, ExecutableStruct};
 
@@ -129,6 +130,33 @@ pub trait CodeGenerator {
     fn attributes_for_one_of_input_object_field(
         &self,
         #[allow(unused_variables)] input_value_definition: &impl InputValueDefinition,
+        #[allow(unused_variables)] borrows: bool,
+    ) -> Vec<syn::Attribute> {
+        Vec::new()
+    }
+
+    /// Any attributes for the struct holding the variables of an operation. Only generated for operations that define
+    /// variables.
+    fn attributes_for_variables_struct(
+        &self,
+        #[allow(unused_variables)] operation_definition: &impl OperationDefinition,
+    ) -> Vec<syn::Attribute> {
+        Vec::new()
+    }
+
+    /// Any additional impl blocks for the struct holding the variables of an operation.
+    fn additional_impls_for_variables_struct(
+        &self,
+        #[allow(unused_variables)] operation_definition: &impl OperationDefinition,
+    ) -> Vec<syn::ItemImpl> {
+        Vec::new()
+    }
+
+    /// Any attributes for a field of the struct holding the variables of an operation. Does not need to include the doc
+    /// string attribute, that will be added automatically.
+    fn attributes_for_variables_struct_field(
+        &self,
+        #[allow(unused_variables)] variable_definition: &impl VariableDefinition,
         #[allow(unused_variables)] borrows: bool,
     ) -> Vec<syn::Attribute> {
         Vec::new()
