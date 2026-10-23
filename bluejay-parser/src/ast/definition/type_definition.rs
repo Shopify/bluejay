@@ -2,7 +2,8 @@ use crate::ast::definition::{
     Context, CustomScalarTypeDefinition, EnumTypeDefinition, InputObjectTypeDefinition,
     InterfaceTypeDefinition, ObjectTypeDefinition, SchemaDefinition, UnionTypeDefinition,
 };
-use crate::lexical_token::Name;
+use crate::lexical_token::{Name, StringValue};
+use crate::{HasSpan, Span};
 use bluejay_core::definition::{TypeDefinition as CoreTypeDefinition, TypeDefinitionReference};
 use bluejay_core::BuiltinScalarDefinition;
 
@@ -17,8 +18,8 @@ pub enum TypeDefinition<'a, C: Context> {
     Interface(InterfaceTypeDefinition<'a, C>),
 }
 
-impl<C: Context> TypeDefinition<'_, C> {
-    pub(crate) fn name_token(&self) -> Option<&Name<'_>> {
+impl<'a, C: Context> TypeDefinition<'a, C> {
+    pub fn name_token(&self) -> Option<&Name<'a>> {
         match self {
             Self::BuiltinScalar(_) => None,
             Self::CustomScalar(cstd) => Some(cstd.name()),
@@ -27,6 +28,32 @@ impl<C: Context> TypeDefinition<'_, C> {
             Self::Interface(itd) => Some(itd.name()),
             Self::Object(otd) => Some(otd.name()),
             Self::Union(utd) => Some(utd.name()),
+        }
+    }
+
+    pub fn description_token(&self) -> Option<&StringValue<'a>> {
+        match self {
+            Self::BuiltinScalar(_) => None,
+            Self::CustomScalar(cstd) => cstd.description_token(),
+            Self::Enum(etd) => etd.description_token(),
+            Self::InputObject(iotd) => iotd.description_token(),
+            Self::Interface(itd) => itd.description_token(),
+            Self::Object(otd) => otd.description_token(),
+            Self::Union(utd) => utd.description_token(),
+        }
+    }
+
+    /// Starts at the description, if there is one. For a builtin introspection type, the span is
+    /// in Bluejay's own definition source, not in the parsed document.
+    pub fn span(&self) -> Option<&Span> {
+        match self {
+            Self::BuiltinScalar(_) => None,
+            Self::CustomScalar(cstd) => Some(cstd.span()),
+            Self::Enum(etd) => Some(etd.span()),
+            Self::InputObject(iotd) => Some(iotd.span()),
+            Self::Interface(itd) => Some(itd.span()),
+            Self::Object(otd) => Some(otd.span()),
+            Self::Union(utd) => Some(utd.span()),
         }
     }
 

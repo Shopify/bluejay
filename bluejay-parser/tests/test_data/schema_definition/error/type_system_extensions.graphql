@@ -1,0 +1,13 @@
+type Query {
+  a: Int
+}
+
+extend type Query {
+  b: Int
+}
+
+extend schema @deprecated
+
+extend enum Status {
+  ARCHIVED
+}

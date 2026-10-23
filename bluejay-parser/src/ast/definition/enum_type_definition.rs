@@ -2,7 +2,8 @@ use crate::ast::definition::{Context, Directives, EnumValueDefinitions, SchemaDe
 use crate::ast::{
     ConstDirectives, DepthLimiter, FromTokens, Parse, ParseError, Tokens, TryFromTokens,
 };
-use crate::lexical_token::{Name, StringValue};
+use crate::lexical_token::{Name, PunctuatorType, StringValue};
+use crate::{HasSpan, Span};
 use bluejay_core::definition::{EnumTypeDefinition as CoreEnumTypeDefinition, HasDirectives};
 
 #[derive(Debug)]
@@ -12,6 +13,7 @@ pub struct EnumTypeDefinition<'a, C: Context> {
     directives: Option<Directives<'a, C>>,
     enum_value_definitions: EnumValueDefinitions<'a, C>,
     is_builtin: bool,
+    span: Span,
 }
 
 impl<'a, C: Context> CoreEnumTypeDefinition for EnumTypeDefinition<'a, C> {
@@ -72,6 +74,14 @@ impl<'a, C: Context> EnumTypeDefinition<'a, C> {
         &self.name
     }
 
+    pub fn name_token(&self) -> &Name<'a> {
+        &self.name
+    }
+
+    pub fn description_token(&self) -> Option<&StringValue<'a>> {
+        self.description.as_ref()
+    }
+
     fn builtin(s: &'static str) -> Self {
         let mut definition = Self::parse(s).result.unwrap();
         definition.is_builtin = true;
@@ -93,18 +103,46 @@ impl<'a, C: Context> FromTokens<'a> for EnumTypeDefinition<'a, C> {
         depth_limiter: DepthLimiter,
     ) -> Result<Self, ParseError> {
         let description = tokens.next_if_string_value();
-        tokens.expect_name_value(Self::ENUM_IDENTIFIER)?;
+        let enum_identifier_span = tokens.expect_name_value(Self::ENUM_IDENTIFIER)?;
         let name = tokens.expect_name()?;
         let directives = ConstDirectives::try_from_tokens(tokens, depth_limiter.bump()?)?;
-        let enum_value_definitions =
-            EnumValueDefinitions::from_tokens(tokens, depth_limiter.bump()?)?;
+        // Optional in the grammar. `SchemaDefinition::try_from` rejects an empty type.
+        let enum_value_definitions = if tokens.peek_punctuator_matches(0, PunctuatorType::OpenBrace)
+        {
+            Some(EnumValueDefinitions::from_tokens(
+                tokens,
+                depth_limiter.bump()?,
+            )?)
+        } else {
+            None
+        };
+        let start = description
+            .as_ref()
+            .map_or(enum_identifier_span, |description| *description.span());
+        let end = enum_value_definitions
+            .as_ref()
+            .map(|enum_value_definitions| *enum_value_definitions.span())
+            .or_else(|| {
+                directives
+                    .as_ref()
+                    .and_then(|directives| directives.span().copied())
+            })
+            .unwrap_or(*name.span());
         Ok(Self {
             description,
             name,
             directives: directives.map(Directives::from),
-            enum_value_definitions,
+            enum_value_definitions: enum_value_definitions
+                .unwrap_or_else(EnumValueDefinitions::empty),
             is_builtin: false,
+            span: start.merge(&end),
         })
+    }
+}
+
+impl<C: Context> HasSpan for EnumTypeDefinition<'_, C> {
+    fn span(&self) -> &Span {
+        &self.span
     }
 }
 

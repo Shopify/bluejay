@@ -1,0 +1,28 @@
+---
+source: bluejay-parser/tests/schema_definition_integration_test.rs
+expression: formatted_errors
+input_file: bluejay-parser/tests/test_data/schema_definition/error/type_system_extensions.graphql
+---
+Error: Type system extensions are not supported when building a schema
+   ╭─[ type_system_extensions.graphql:5:1 ]
+   │
+ 5 │ extend type Query {
+   │ ────────┬────────  
+   │         ╰────────── Extension of `Query` is not supported when building a schema
+───╯
+
+Error: Type system extensions are not supported when building a schema
+   ╭─[ type_system_extensions.graphql:9:1 ]
+   │
+ 9 │ extend schema @deprecated
+   │ ──────┬──────  
+   │       ╰──────── Schema extensions are not supported when building a schema
+───╯
+
+Error: Type system extensions are not supported when building a schema
+    ╭─[ type_system_extensions.graphql:11:1 ]
+    │
+ 11 │ extend enum Status {
+    │ ─────────┬────────  
+    │          ╰────────── Extension of `Status` is not supported when building a schema
+────╯

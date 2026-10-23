@@ -1,6 +1,6 @@
 use crate::ast::definition::{
     Context, Directive, DirectiveDefinition, ExplicitSchemaDefinition, RootOperationTypeDefinition,
-    TypeDefinition,
+    TypeDefinition, TypeSystemExtension,
 };
 use crate::error::{Annotation, Error};
 use crate::lexical_token::Name;
@@ -58,6 +58,12 @@ pub enum DefinitionDocumentError<'a, C: Context> {
     },
     ReferencedDirectiveDoesNotExist {
         directive: &'a Directive<'a, C>,
+    },
+    TypeSystemExtensionNotSupported {
+        extension: &'a TypeSystemExtension<'a, C>,
+    },
+    EmptyTypeDefinition {
+        definition: &'a TypeDefinition<'a, C>,
     },
 }
 
@@ -235,6 +241,43 @@ impl<C: Context> From<DefinitionDocumentError<'_, C>> for Error {
                 )),
                 Vec::new(),
             ),
+            DefinitionDocumentError::TypeSystemExtensionNotSupported { extension } => Error::new(
+                "Type system extensions are not supported when building a schema",
+                Some(Annotation::new(
+                    match extension.name() {
+                        Some(name) => {
+                            format!("Extension of `{name}` is not supported when building a schema")
+                        }
+                        None => {
+                            "Schema extensions are not supported when building a schema".to_string()
+                        }
+                    },
+                    extension.header_span(),
+                )),
+                Vec::new(),
+            ),
+            DefinitionDocumentError::EmptyTypeDefinition { definition } => {
+                let (kind, members) = match definition {
+                    TypeDefinition::Object(_) => ("Object type", "define one or more fields"),
+                    TypeDefinition::Interface(_) => ("Interface type", "define one or more fields"),
+                    TypeDefinition::Union(_) => ("Union type", "include one or more member types"),
+                    TypeDefinition::Enum(_) => ("Enum type", "define one or more values"),
+                    TypeDefinition::InputObject(_) => {
+                        ("Input object type", "define one or more input fields")
+                    }
+                    TypeDefinition::CustomScalar(_) | TypeDefinition::BuiltinScalar(_) => {
+                        ("Scalar type", "define one or more members")
+                    }
+                };
+                let name = definition.as_ref().name();
+                Error::new(
+                    format!("{kind} `{name}` must {members}"),
+                    definition.name_token().map(|name_token| {
+                        Annotation::new(format!("Must {members}"), *name_token.span())
+                    }),
+                    Vec::new(),
+                )
+            }
         }
     }
 }

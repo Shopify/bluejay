@@ -1,6 +1,7 @@
 use crate::ast::definition::{Context, InterfaceImplementation, SchemaDefinition};
 use crate::ast::{DepthLimiter, FromTokens, IsMatch, ParseError, Tokens};
 use crate::lexical_token::PunctuatorType;
+use crate::{HasSpan, Span};
 use bluejay_core::definition::InterfaceImplementations as CoreInterfaceImplementations;
 use bluejay_core::AsIter;
 
@@ -27,6 +28,20 @@ impl<'a, C: Context + 'a> CoreInterfaceImplementations for InterfaceImplementati
 
 impl<'a, C: Context + 'a> InterfaceImplementations<'a, C> {
     const IMPLEMENTS_IDENTIFIER: &'static str = "implements";
+
+    pub(crate) fn span(&self) -> Option<Span> {
+        let first = self
+            .interface_implementations
+            .first()?
+            .interface_name()
+            .span();
+        let last = self
+            .interface_implementations
+            .last()?
+            .interface_name()
+            .span();
+        Some(first.merge(last))
+    }
 }
 
 impl<'a, C: Context + 'a> FromTokens<'a> for InterfaceImplementations<'a, C> {

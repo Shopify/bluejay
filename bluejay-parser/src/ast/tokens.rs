@@ -3,7 +3,7 @@ use crate::lexer::{LexError, Lexer};
 use crate::lexical_token::{
     FloatValue, IntValue, LexicalToken, Name, PunctuatorType, StringValue, Variable,
 };
-use crate::Span;
+use crate::{HasSpan, Span};
 use std::collections::VecDeque;
 
 pub trait Tokens<'a>: Iterator<Item = LexicalToken<'a>> {
@@ -24,6 +24,7 @@ pub trait Tokens<'a>: Iterator<Item = LexicalToken<'a>> {
     fn peek_name_matches(&mut self, n: usize, name: &str) -> bool;
     fn peek_string_value(&mut self, n: usize) -> bool;
     fn peek_punctuator_matches(&mut self, n: usize, punctuator_type: PunctuatorType) -> bool;
+    fn peek_span(&mut self, n: usize) -> Option<Span>;
     fn into_errors(self) -> Vec<(LexError, Span)>;
     fn token_count(&self) -> usize;
 }
@@ -224,6 +225,11 @@ impl<'a, T: Lexer<'a>> LexerTokens<'a, T> {
     pub fn peek_punctuator_matches(&mut self, n: usize, punctuator_type: PunctuatorType) -> bool {
         matches!(self.peek(n), Some(LexicalToken::Punctuator(p)) if p.r#type() == punctuator_type)
     }
+
+    #[inline]
+    pub fn peek_span(&mut self, n: usize) -> Option<Span> {
+        self.peek(n).map(|token| *token.span())
+    }
 }
 
 impl<'a, T: Lexer<'a>> Iterator for LexerTokens<'a, T> {
@@ -326,6 +332,11 @@ impl<'a, T: Lexer<'a>> Tokens<'a> for LexerTokens<'a, T> {
     #[inline]
     fn peek_punctuator_matches(&mut self, n: usize, punctuator_type: PunctuatorType) -> bool {
         self.peek_punctuator_matches(n, punctuator_type)
+    }
+
+    #[inline]
+    fn peek_span(&mut self, n: usize) -> Option<Span> {
+        self.peek_span(n)
     }
 
     #[inline]

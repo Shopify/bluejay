@@ -16,6 +16,10 @@ impl<'a, C: Context> InputValueDefinition<'a, C> {
     pub fn name_token(&self) -> &Name<'a> {
         &self.name
     }
+
+    pub fn description_token(&self) -> Option<&StringValue<'a>> {
+        self.description.as_ref()
+    }
 }
 
 impl<'a, C: Context> CoreInputValueDefinition for InputValueDefinition<'a, C> {

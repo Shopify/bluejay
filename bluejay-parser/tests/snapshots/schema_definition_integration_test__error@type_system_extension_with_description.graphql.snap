@@ -1,0 +1,12 @@
+---
+source: bluejay-parser/tests/schema_definition_integration_test.rs
+expression: formatted_errors
+input_file: bluejay-parser/tests/test_data/schema_definition/error/type_system_extension_with_description.graphql
+---
+Error: Parse error
+   ╭─[ type_system_extension_with_description.graphql:5:1 ]
+   │
+ 5 │ "Description"
+   │ ──────┬──────  
+   │       ╰──────── A type system extension cannot have a description
+───╯
