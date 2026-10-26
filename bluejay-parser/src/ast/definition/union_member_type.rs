@@ -36,6 +36,10 @@ impl<'a, C: Context> UnionMemberType<'a, C> {
     pub(crate) fn name(&self) -> &Name<'a> {
         &self.name
     }
+
+    pub fn name_token(&self) -> &Name<'a> {
+        &self.name
+    }
 }
 
 impl<'a, C: Context> FromTokens<'a> for UnionMemberType<'a, C> {

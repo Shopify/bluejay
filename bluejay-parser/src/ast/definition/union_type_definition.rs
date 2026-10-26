@@ -3,6 +3,7 @@ use crate::ast::definition::{
 };
 use crate::ast::{ConstDirectives, DepthLimiter, FromTokens, ParseError, Tokens, TryFromTokens};
 use crate::lexical_token::{Name, PunctuatorType, StringValue};
+use crate::{HasSpan, Span};
 use bluejay_core::definition::{HasDirectives, UnionTypeDefinition as CoreUnionTypeDefinition};
 
 #[derive(Debug)]
@@ -12,6 +13,7 @@ pub struct UnionTypeDefinition<'a, C: Context> {
     directives: Option<Directives<'a, C>>,
     member_types: UnionMemberTypes<'a, C>,
     fields_definition: FieldsDefinition<'a, C>,
+    span: Span,
 }
 
 impl<'a, C: Context> CoreUnionTypeDefinition for UnionTypeDefinition<'a, C> {
@@ -40,6 +42,14 @@ impl<'a, C: Context> UnionTypeDefinition<'a, C> {
     pub(crate) fn name(&self) -> &Name<'a> {
         &self.name
     }
+
+    pub fn name_token(&self) -> &Name<'a> {
+        &self.name
+    }
+
+    pub fn description_token(&self) -> Option<&StringValue<'a>> {
+        self.description.as_ref()
+    }
 }
 
 impl<'a, C: Context> FromTokens<'a> for UnionTypeDefinition<'a, C> {
@@ -48,18 +58,40 @@ impl<'a, C: Context> FromTokens<'a> for UnionTypeDefinition<'a, C> {
         depth_limiter: DepthLimiter,
     ) -> Result<Self, ParseError> {
         let description = tokens.next_if_string_value();
-        tokens.expect_name_value(Self::UNION_IDENTIFIER)?;
+        let union_identifier_span = tokens.expect_name_value(Self::UNION_IDENTIFIER)?;
         let name = tokens.expect_name()?;
         let directives = ConstDirectives::try_from_tokens(tokens, depth_limiter.bump()?)?;
-        tokens.expect_punctuator(PunctuatorType::Equals)?;
-        let member_types = UnionMemberTypes::from_tokens(tokens, depth_limiter.bump()?)?;
+        // Optional in the grammar. `SchemaDefinition::try_from` rejects an empty type.
+        let member_types = if tokens.next_if_punctuator(PunctuatorType::Equals).is_some() {
+            UnionMemberTypes::from_tokens(tokens, depth_limiter.bump()?)?
+        } else {
+            UnionMemberTypes::empty()
+        };
+        let start = description
+            .as_ref()
+            .map_or(union_identifier_span, |description| *description.span());
+        let end = member_types
+            .span()
+            .or_else(|| {
+                directives
+                    .as_ref()
+                    .and_then(|directives| directives.span().copied())
+            })
+            .unwrap_or(*name.span());
         Ok(Self {
             description,
             name,
             directives: directives.map(Directives::from),
             member_types,
             fields_definition: FieldsDefinition::__typename(),
+            span: start.merge(&end),
         })
+    }
+}
+
+impl<C: Context> HasSpan for UnionTypeDefinition<'_, C> {
+    fn span(&self) -> &Span {
+        &self.span
     }
 }
 

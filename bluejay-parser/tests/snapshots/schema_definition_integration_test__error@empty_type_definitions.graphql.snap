@@ -1,0 +1,44 @@
+---
+source: bluejay-parser/tests/schema_definition_integration_test.rs
+expression: formatted_errors
+input_file: bluejay-parser/tests/test_data/schema_definition/error/empty_type_definitions.graphql
+---
+Error: Object type `Empty` must define one or more fields
+   ╭─[ empty_type_definitions.graphql:5:6 ]
+   │
+ 5 │ type Empty
+   │      ──┬──  
+   │        ╰──── Must define one or more fields
+───╯
+
+Error: Interface type `Node` must define one or more fields
+   ╭─[ empty_type_definitions.graphql:7:11 ]
+   │
+ 7 │ interface Node
+   │           ──┬─  
+   │             ╰─── Must define one or more fields
+───╯
+
+Error: Input object type `ProductInput` must define one or more input fields
+    ╭─[ empty_type_definitions.graphql:13:7 ]
+    │
+ 13 │ input ProductInput
+    │       ──────┬─────  
+    │             ╰─────── Must define one or more input fields
+────╯
+
+Error: Union type `SearchResult` must include one or more member types
+   ╭─[ empty_type_definitions.graphql:9:7 ]
+   │
+ 9 │ union SearchResult
+   │       ──────┬─────  
+   │             ╰─────── Must include one or more member types
+───╯
+
+Error: Enum type `Status` must define one or more values
+    ╭─[ empty_type_definitions.graphql:11:6 ]
+    │
+ 11 │ enum Status
+    │      ───┬──  
+    │         ╰──── Must define one or more values
+────╯

@@ -8,7 +8,7 @@ use bluejay_core::AsIter;
 #[derive(Debug)]
 pub struct FieldsDefinition<'a, C: Context> {
     field_definitions: Vec<FieldDefinition<'a, C>>,
-    _span: Span,
+    span: Span,
 }
 
 impl<'a, C: Context> AsIter for FieldsDefinition<'a, C> {
@@ -32,9 +32,25 @@ impl<'a, C: Context> FromTokens<'a> for FieldsDefinition<'a, C> {
         tokens: &mut impl Tokens<'a>,
         depth_limiter: DepthLimiter,
     ) -> Result<Self, ParseError> {
+        Self::from_tokens_with_fields(tokens, depth_limiter, vec![FieldDefinition::__typename()])
+    }
+}
+
+impl<'a, C: Context> FieldsDefinition<'a, C> {
+    /// Unlike the fields of a type definition, these do not include the builtin `__typename`.
+    pub(crate) fn extension_from_tokens(
+        tokens: &mut impl Tokens<'a>,
+        depth_limiter: DepthLimiter,
+    ) -> Result<Self, ParseError> {
+        Self::from_tokens_with_fields(tokens, depth_limiter, Vec::new())
+    }
+
+    fn from_tokens_with_fields(
+        tokens: &mut impl Tokens<'a>,
+        depth_limiter: DepthLimiter,
+        mut field_definitions: Vec<FieldDefinition<'a, C>>,
+    ) -> Result<Self, ParseError> {
         let open_span = tokens.expect_punctuator(PunctuatorType::OpenBrace)?;
-        let mut field_definitions: Vec<FieldDefinition<'a, C>> =
-            vec![FieldDefinition::__typename()];
         let close_span = loop {
             field_definitions.push(FieldDefinition::from_tokens(tokens, depth_limiter.bump()?)?);
             if let Some(close_span) = tokens.next_if_punctuator(PunctuatorType::CloseBrace) {
@@ -44,8 +60,12 @@ impl<'a, C: Context> FromTokens<'a> for FieldsDefinition<'a, C> {
         let span = open_span.merge(&close_span);
         Ok(Self {
             field_definitions,
-            _span: span,
+            span,
         })
+    }
+
+    pub(crate) fn span(&self) -> &Span {
+        &self.span
     }
 }
 
@@ -58,7 +78,7 @@ impl<C: Context> FieldsDefinition<'_, C> {
     pub(crate) fn __typename() -> Self {
         Self {
             field_definitions: vec![FieldDefinition::__typename()],
-            _span: Span::new(0..0),
+            span: Span::new(0..0),
         }
     }
 }
