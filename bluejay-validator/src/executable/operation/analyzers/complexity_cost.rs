@@ -21,6 +21,9 @@ pub use cost_computer::{CostComputer, DefaultCostComputer, FieldMultipliers};
 mod relay_cost_computer;
 pub use relay_cost_computer::{RelayCostComputer, RelayFieldMultipliers};
 
+#[cfg(test)]
+mod memoization_tests;
+
 pub struct ComplexityCost<
     'a,
     E: ExecutableDocument,
@@ -32,6 +35,8 @@ pub struct ComplexityCost<
     cost_computer: C,
     scopes_arena: Arena<ComplexityScope<'a, S, C::FieldMultipliers>>,
     scopes_stack: Vec<Option<NodeId>>,
+    #[cfg(test)]
+    scope_evaluations: std::cell::Cell<usize>,
 }
 
 impl<
@@ -57,6 +62,8 @@ impl<
             cost_computer: C::new(operation_definition, schema_definition, variable_values),
             scopes_arena,
             scopes_stack,
+            #[cfg(test)]
+            scope_evaluations: std::cell::Cell::new(0),
         }
     }
 
@@ -168,7 +175,7 @@ impl<
 {
     type Output = usize;
 
-    fn into_output(mut self) -> Self::Output {
+    fn into_output(self) -> Self::Output {
         self.result()
     }
 }
@@ -181,21 +188,40 @@ impl<
         C: CostComputer<'a, E, S, V>,
     > ComplexityCost<'a, E, S, V, C>
 {
-    fn result(&mut self) -> usize {
-        let root_scope = self
-            .scopes_stack
-            .first()
-            .copied()
-            .flatten()
-            .and_then(|index| self.scopes_arena.get(index))
-            .unwrap();
-        self.merged_max_complexity_for_scopes(&[root_scope])
+    fn result(&self) -> usize {
+        let root_scope = self.scopes_stack.first().copied().flatten().unwrap();
+        // Scopes are immutable now that traversal is complete. Keep the memo local
+        // to this calculation so it cannot outlive the tree it describes.
+        self.merged_max_complexity_for_scopes(vec![root_scope], &mut HashMap::new())
     }
 
     fn merged_max_complexity_for_scopes(
         &self,
-        scopes: &[&ComplexityScope<'a, S, C::FieldMultipliers>],
+        mut scope_indices: Vec<NodeId>,
+        costs_by_scopes: &mut HashMap<Vec<NodeId>, usize>,
     ) -> usize {
+        if scope_indices.is_empty() {
+            return 0;
+        }
+
+        // Abstract types can reach the same child scopes through many concrete
+        // types. Re-expanding those scopes at every level is exponential. Their
+        // merged child cost depends only on the complete set of scope identities,
+        // including any overlapping fragments, not on the type that reached them.
+        scope_indices.sort_unstable();
+        scope_indices.dedup();
+        if let Some(cost) = costs_by_scopes.get(&scope_indices) {
+            return *cost;
+        }
+
+        #[cfg(test)]
+        self.scope_evaluations.set(self.scope_evaluations.get() + 1);
+
+        let scopes = scope_indices
+            .iter()
+            .map(|index| self.scopes_arena.get(*index).unwrap())
+            .collect::<Vec<_>>();
+
         // build a set of all unique possible type definitions
         // with abstract types expanded to encompass all of their possible types
         let possible_type_names = scopes
@@ -211,7 +237,7 @@ impl<
             .unique();
 
         // calculate a maximum possible cost among possible types
-        possible_type_names
+        let cost = possible_type_names
             .map(|possible_type_name| {
                 // collect inner selections from all scopes that intersect with this possible type
                 let inner_selections = scopes
@@ -228,15 +254,19 @@ impl<
                     })
                     .collect::<Vec<_>>();
 
-                self.merged_max_complexity_for_selections(inner_selections)
+                self.merged_max_complexity_for_selections(inner_selections, costs_by_scopes)
             })
             .max()
-            .unwrap_or(0)
+            .unwrap_or(0);
+
+        costs_by_scopes.insert(scope_indices, cost);
+        cost
     }
 
     fn merged_max_complexity_for_selections(
         &self,
         inner_selections: Vec<&InnerSelection<'a>>,
+        costs_by_scopes: &mut HashMap<Vec<NodeId>, usize>,
     ) -> usize {
         // build a unique set of field keys from across inner selections.
         // the same field keys may appear in selections on different types,
@@ -257,25 +287,20 @@ impl<
                 let composite_scopes = inner_selections
                     .iter()
                     .filter_map(|inner_selection| {
-                        inner_selection
-                            .get(*field_key)
-                            .and_then(|scope_index| self.scopes_arena.get(*scope_index))
-                            .and_then(|child_scope| {
-                                // base_cost and multiplier select their maximums from across merged scopes
-                                // in case a field name has different costs in different scope types.
-                                base_cost = max(base_cost, child_scope.cost);
-                                multiplier = max(multiplier, child_scope.multiplier);
+                        let scope_index = *inner_selection.get(*field_key)?;
+                        let child_scope = self.scopes_arena.get(scope_index)?;
 
-                                if !child_scope.typed_selections.is_empty() {
-                                    Some(child_scope)
-                                } else {
-                                    None
-                                }
-                            })
+                        // base_cost and multiplier select their maximums from across merged scopes
+                        // in case a field name has different costs in different scope types.
+                        base_cost = max(base_cost, child_scope.cost);
+                        multiplier = max(multiplier, child_scope.multiplier);
+
+                        (!child_scope.typed_selections.is_empty()).then_some(scope_index)
                     })
-                    .collect::<Vec<&ComplexityScope<'a, S, C::FieldMultipliers>>>();
+                    .collect();
 
-                let children_cost = self.merged_max_complexity_for_scopes(&composite_scopes);
+                let children_cost =
+                    self.merged_max_complexity_for_scopes(composite_scopes, costs_by_scopes);
 
                 base_cost
                     .saturating_add(children_cost)
