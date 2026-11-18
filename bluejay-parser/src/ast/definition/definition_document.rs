@@ -3,7 +3,7 @@ use crate::ast::definition::{
     CustomScalarTypeDefinition, DefaultContext, DirectiveDefinition, Directives,
     EnumTypeDefinition, ExplicitSchemaDefinition, FieldsDefinition, InputObjectTypeDefinition,
     InputValueDefinition, InterfaceImplementations, InterfaceTypeDefinition, ObjectTypeDefinition,
-    SchemaDefinition, TypeDefinition, UnionTypeDefinition,
+    SchemaDefinition, TypeDefinition, TypeSystemExtension, UnionTypeDefinition,
 };
 use crate::ast::{DepthLimiter, FromTokens, Parse, ParseDetails, ParseError, Tokens};
 use bluejay_core::definition::{prelude::*, HasDirectives};
@@ -21,6 +21,7 @@ pub struct DefinitionDocument<'a, C: Context = DefaultContext> {
     schema_definitions: Vec<ExplicitSchemaDefinition<'a, C>>,
     directive_definitions: Vec<DirectiveDefinition<'a, C>>,
     type_definitions: Vec<TypeDefinition<'a, C>>,
+    type_system_extensions: Vec<TypeSystemExtension<'a, C>>,
 }
 
 #[derive(Debug)]
@@ -117,6 +118,15 @@ impl<'a, C: Context> Parse<'a> for DefinitionDocument<'a, C> {
                         max_depth,
                     )
                 }
+                Some(TypeSystemExtension::<C>::EXTEND_IDENTIFIER) => {
+                    Self::parse_definition::<_, TypeSystemExtension<C>>(
+                        &mut instance.type_system_extensions,
+                        &mut tokens,
+                        &mut errors,
+                        &mut last_pass_had_error,
+                        max_depth,
+                    )
+                }
                 _ => {
                     if let Some(token) = tokens.next() {
                         if !last_pass_had_error {
@@ -173,6 +183,7 @@ impl<'a, C: Context> DefinitionDocument<'a, C> {
             schema_definitions: Vec::new(),
             directive_definitions: Vec::with_capacity(8),
             type_definitions,
+            type_system_extensions: Vec::new(),
         }
     }
 
@@ -274,6 +285,7 @@ impl<'a, C: Context> DefinitionDocument<'a, C> {
             .filter(|dd| !dd.is_builtin())
             .count()
             + self.schema_definitions.len()
+            + self.type_system_extensions.len()
             + self
                 .type_definitions
                 .iter()
@@ -281,8 +293,27 @@ impl<'a, C: Context> DefinitionDocument<'a, C> {
                 .count()
     }
 
+    /// A valid schema has at most one.
+    pub fn schema_definitions(&self) -> &[ExplicitSchemaDefinition<'a, C>] {
+        &self.schema_definitions
+    }
+
+    /// Includes the builtin directive definitions that the document does not define. Their
+    /// spans are in Bluejay's own definition source, not in this document.
     pub fn directive_definitions(&self) -> &[DirectiveDefinition<'a, C>] {
         &self.directive_definitions
+    }
+
+    /// Includes the builtin introspection types, and the builtin scalars that the document does
+    /// not define. Use `is_builtin` to tell them apart.
+    pub fn type_definitions(&self) -> &[TypeDefinition<'a, C>] {
+        &self.type_definitions
+    }
+
+    /// In source order. They are not applied to the definitions they extend, and a schema
+    /// definition cannot be built from a document that contains them.
+    pub fn type_system_extensions(&self) -> &[TypeSystemExtension<'a, C>] {
+        &self.type_system_extensions
     }
 
     fn index_directive_definitions(
@@ -506,8 +537,13 @@ impl<'a, C: Context> DefinitionDocument<'a, C> {
     ) {
         indexed_type_definitions
             .values()
-            .for_each(|type_definition| match type_definition {
+            .for_each(|&type_definition| match type_definition {
                 TypeDefinition::Object(otd) => {
+                    if otd.fields_definition().iter().all(|fd| fd.is_builtin()) {
+                        errors.push(DefinitionDocumentError::EmptyTypeDefinition {
+                            definition: type_definition,
+                        });
+                    }
                     Self::resolve_fields_definition_types_and_directives(
                         indexed_type_definitions,
                         indexed_directive_definitions,
@@ -524,6 +560,11 @@ impl<'a, C: Context> DefinitionDocument<'a, C> {
                     Self::resolve_directive_definitions(indexed_directive_definitions, otd, errors);
                 }
                 TypeDefinition::Interface(itd) => {
+                    if itd.fields_definition().iter().all(|fd| fd.is_builtin()) {
+                        errors.push(DefinitionDocumentError::EmptyTypeDefinition {
+                            definition: type_definition,
+                        });
+                    }
                     Self::resolve_fields_definition_types_and_directives(
                         indexed_type_definitions,
                         indexed_directive_definitions,
@@ -540,6 +581,11 @@ impl<'a, C: Context> DefinitionDocument<'a, C> {
                     Self::resolve_directive_definitions(indexed_directive_definitions, itd, errors);
                 }
                 TypeDefinition::Union(utd) => {
+                    if utd.union_member_types().is_empty() {
+                        errors.push(DefinitionDocumentError::EmptyTypeDefinition {
+                            definition: type_definition,
+                        });
+                    }
                     Self::resolve_fields_definition_types_and_directives(
                         indexed_type_definitions,
                         indexed_directive_definitions,
@@ -564,6 +610,11 @@ impl<'a, C: Context> DefinitionDocument<'a, C> {
                     Self::resolve_directive_definitions(indexed_directive_definitions, utd, errors);
                 }
                 TypeDefinition::InputObject(iotd) => {
+                    if iotd.input_field_definitions().is_empty() {
+                        errors.push(DefinitionDocumentError::EmptyTypeDefinition {
+                            definition: type_definition,
+                        });
+                    }
                     Self::resolve_input_types_and_directives(
                         indexed_type_definitions,
                         indexed_directive_definitions,
@@ -581,6 +632,11 @@ impl<'a, C: Context> DefinitionDocument<'a, C> {
                     Self::resolve_directive_definitions(indexed_directive_definitions, cstd, errors)
                 }
                 TypeDefinition::Enum(etd) => {
+                    if etd.enum_value_definitions().is_empty() {
+                        errors.push(DefinitionDocumentError::EmptyTypeDefinition {
+                            definition: type_definition,
+                        });
+                    }
                     Self::resolve_directive_definitions(indexed_directive_definitions, etd, errors);
                     etd.enum_value_definitions().iter().for_each(|evd| {
                         Self::resolve_directive_definitions(
@@ -716,7 +772,14 @@ impl<'a, C: Context> TryFrom<&'a DefinitionDocument<'a, C>> for SchemaDefinition
     type Error = Vec<DefinitionDocumentError<'a, C>>;
 
     fn try_from(definition_document: &'a DefinitionDocument<'a, C>) -> Result<Self, Self::Error> {
-        let mut errors = Vec::new();
+        // The spec allows tools that only build schemas to reject type system extensions, with
+        // a descriptive error. Bluejay does not apply extensions, so it rejects them rather than
+        // build a schema that differs from the document.
+        let mut errors: Vec<_> = definition_document
+            .type_system_extensions
+            .iter()
+            .map(|extension| DefinitionDocumentError::TypeSystemExtensionNotSupported { extension })
+            .collect();
 
         let indexed_type_definitions = definition_document.index_type_definitions(&mut errors);
 
@@ -739,7 +802,7 @@ impl<'a, C: Context> TryFrom<&'a DefinitionDocument<'a, C>> for SchemaDefinition
             return Ok(Self::new(
                 indexed_type_definitions,
                 indexed_directive_definitions,
-                explicit.description(),
+                explicit.description_token(),
                 query,
                 mutation,
                 subscription,

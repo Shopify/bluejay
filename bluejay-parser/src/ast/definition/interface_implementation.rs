@@ -37,6 +37,10 @@ impl<'a, C: Context> InterfaceImplementation<'a, C> {
     pub(crate) fn interface_name(&self) -> &Name<'a> {
         &self.name
     }
+
+    pub fn name_token(&self) -> &Name<'a> {
+        &self.name
+    }
 }
 
 impl<'a, C: Context> FromTokens<'a> for InterfaceImplementation<'a, C> {

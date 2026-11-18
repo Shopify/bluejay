@@ -1,0 +1,13 @@
+type Query {
+  a: Int
+}
+
+type Empty
+
+interface Node
+
+union SearchResult
+
+enum Status
+
+input ProductInput

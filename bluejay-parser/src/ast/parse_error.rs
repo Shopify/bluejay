@@ -30,6 +30,13 @@ pub enum ParseError {
         span: Span,
         limit: usize,
     },
+    TypeSystemExtensionWithDescription {
+        span: Span,
+    },
+    EmptyTypeSystemExtension {
+        span: Span,
+        expected: &'static [&'static str],
+    },
 }
 
 impl From<ParseError> for Error {
@@ -81,6 +88,25 @@ impl From<ParseError> for Error {
                 "Max tokens exceeded",
                 Some(Annotation::new(
                     format!("Maximum token limit of {limit} exceeded"),
+                    span,
+                )),
+                Vec::new(),
+            ),
+            ParseError::EmptyTypeSystemExtension { span, expected } => Self::new(
+                "Parse error",
+                Some(Annotation::new(
+                    format!(
+                        "A type system extension must add at least one of: {}",
+                        expected.join(", "),
+                    ),
+                    span,
+                )),
+                Vec::new(),
+            ),
+            ParseError::TypeSystemExtensionWithDescription { span } => Self::new(
+                "Parse error",
+                Some(Annotation::new(
+                    "A type system extension cannot have a description",
                     span,
                 )),
                 Vec::new(),

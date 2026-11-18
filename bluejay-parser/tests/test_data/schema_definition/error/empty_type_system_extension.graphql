@@ -1,0 +1,9 @@
+type Query {
+  a: Int
+}
+
+extend type Query
+
+type Other {
+  b: Int
+}

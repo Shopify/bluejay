@@ -6,4 +6,5 @@ mod span;
 
 pub use ast::ParseDetails;
 pub use error::Error;
+pub use lexical_token::{Name, StringValue};
 pub use span::{HasSpan, Span};

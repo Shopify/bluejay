@@ -41,6 +41,18 @@ impl<C: Context> FieldDefinition<'_, C> {
     }
 }
 
+impl<'a, C: Context> FieldDefinition<'a, C> {
+    /// For a builtin field (`__typename`, `__schema`, `__type`), the span is in Bluejay's own
+    /// definition source, not in the parsed document.
+    pub fn name_token(&self) -> &Name<'a> {
+        &self.name
+    }
+
+    pub fn description_token(&self) -> Option<&StringValue<'a>> {
+        self.description.as_ref()
+    }
+}
+
 impl<'a, C: Context> CoreFieldDefinition for FieldDefinition<'a, C> {
     type SchemaDefinition = SchemaDefinition<'a, C>;
 
