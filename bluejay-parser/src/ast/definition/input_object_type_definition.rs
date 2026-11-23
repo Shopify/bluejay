@@ -67,7 +67,7 @@ impl<'a, C: Context> FromTokens<'a> for InputObjectTypeDefinition<'a, C> {
             .map_or(input_identifier_span, |description| *description.span());
         let end = input_fields_definition
             .as_ref()
-            .map(|input_fields_definition| *input_fields_definition.span())
+            .and_then(|input_fields_definition| input_fields_definition.span().copied())
             .or_else(|| {
                 directives
                     .as_ref()

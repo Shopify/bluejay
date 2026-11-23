@@ -8,7 +8,7 @@ use bluejay_core::AsIter;
 #[derive(Debug)]
 pub struct FieldsDefinition<'a, C: Context> {
     field_definitions: Vec<FieldDefinition<'a, C>>,
-    span: Span,
+    span: Option<Span>,
 }
 
 impl<'a, C: Context> AsIter for FieldsDefinition<'a, C> {
@@ -57,15 +57,15 @@ impl<'a, C: Context> FieldsDefinition<'a, C> {
                 break close_span;
             }
         };
-        let span = open_span.merge(&close_span);
+        let span = Some(open_span.merge(&close_span));
         Ok(Self {
             field_definitions,
             span,
         })
     }
 
-    pub(crate) fn span(&self) -> &Span {
-        &self.span
+    pub(crate) fn span(&self) -> Option<&Span> {
+        self.span.as_ref()
     }
 }
 
@@ -78,7 +78,7 @@ impl<C: Context> FieldsDefinition<'_, C> {
     pub(crate) fn __typename() -> Self {
         Self {
             field_definitions: vec![FieldDefinition::__typename()],
-            span: Span::new(0..0),
+            span: None,
         }
     }
 }

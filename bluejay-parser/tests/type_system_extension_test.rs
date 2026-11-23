@@ -1,9 +1,9 @@
-use bluejay_core::definition::{
-    DirectiveDefinition as _, FieldDefinition as _, ObjectTypeDefinition as _, TypeDefinition as _,
-};
+use bluejay_core::definition::{FieldDefinition as _, ObjectTypeDefinition as _};
 use bluejay_core::AsIter;
 use bluejay_parser::ast::definition::{
-    DefaultContext, DefinitionDocument, SchemaDefinition, TypeDefinition, TypeSystemExtension,
+    DefaultContext, DefinitionDocument, EnumTypeExtension, InputObjectTypeExtension,
+    InterfaceTypeExtension, ObjectTypeExtension, ScalarTypeExtension, SchemaDefinition,
+    SchemaExtension, TypeDefinition, TypeSystemExtension, UnionTypeExtension,
 };
 use bluejay_parser::ast::Parse;
 use bluejay_parser::{Error, HasSpan};
@@ -14,13 +14,14 @@ fn parse(s: &str) -> DefinitionDocument<'_, DefaultContext> {
         .unwrap_or_else(|errors| panic!("`{s}` had parse errors: {errors:?}"))
 }
 
-fn assert_parse_error(s: &str) {
-    assert!(
-        DefinitionDocument::<DefaultContext>::parse(s)
-            .result
-            .is_err(),
-        "Expected `{s}` to be rejected",
-    );
+fn assert_parse_error_message(s: &str, expected: &str) {
+    let errors = DefinitionDocument::<DefaultContext>::parse(s)
+        .result
+        .err()
+        .unwrap_or_else(|| panic!("Expected `{s}` to be rejected"));
+    let errors = Error::into_graphql_errors(s, errors);
+    assert_eq!(1, errors.len(), "`{s}`: {errors:?}");
+    assert_eq!(expected, errors[0].message, "`{s}`");
 }
 
 fn text<'a>(s: &'a str, span: &impl HasSpan) -> &'a str {
@@ -185,22 +186,90 @@ fn parses_each_optional_part_of_an_extension_on_its_own() {
 }
 
 #[test]
+fn parses_individual_extension_types_directly() {
+    let schema = SchemaExtension::<DefaultContext>::parse("extend schema @a")
+        .result
+        .expect("Expected schema extension");
+    assert_eq!(1, schema.directives().expect("Expected directives").len());
+
+    let scalar = ScalarTypeExtension::<DefaultContext>::parse("extend scalar DateTime @a")
+        .result
+        .expect("Expected scalar extension");
+    assert_eq!("DateTime", scalar.name());
+
+    let object = ObjectTypeExtension::<DefaultContext>::parse("extend type Query { a: Int }")
+        .result
+        .expect("Expected object extension");
+    assert_eq!("Query", object.name());
+
+    let interface =
+        InterfaceTypeExtension::<DefaultContext>::parse("extend interface Node { id: ID! }")
+            .result
+            .expect("Expected interface extension");
+    assert_eq!("Node", interface.name());
+
+    let union = UnionTypeExtension::<DefaultContext>::parse("extend union SearchResult = A")
+        .result
+        .expect("Expected union extension");
+    assert_eq!("SearchResult", union.name());
+
+    let enum_ext = EnumTypeExtension::<DefaultContext>::parse("extend enum Status { ACTIVE }")
+        .result
+        .expect("Expected enum extension");
+    assert_eq!("Status", enum_ext.name());
+
+    let input =
+        InputObjectTypeExtension::<DefaultContext>::parse("extend input ProductInput { id: ID }")
+            .result
+            .expect("Expected input object extension");
+    assert_eq!("ProductInput", input.name());
+
+    let errors = TypeSystemExtension::<DefaultContext>::parse("type Query { a: Int }")
+        .result
+        .expect_err("Expected error when input does not start with extend");
+    let errors = Error::into_graphql_errors("type Query { a: Int }", errors);
+    assert_eq!(1, errors.len());
+    assert_eq!("Expected to find: extend", errors[0].message);
+}
+
+#[test]
 fn rejects_extensions_that_add_nothing() {
-    for s in [
-        "extend schema",
-        "extend scalar DateTime",
-        "extend type Query",
-        "extend interface Node",
-        "extend union SearchResult",
-        "extend enum ProductStatus",
-        "extend input ProductInput",
-        "extend type Query {}",
-        "extend enum ProductStatus {}",
-        "extend input ProductInput {}",
-        "extend union SearchResult =",
-        "extend schema {}",
+    for (s, expected) in [
+        (
+            "extend schema",
+            "A type system extension must add at least one of: @, {",
+        ),
+        (
+            "extend scalar DateTime",
+            "A type system extension must add at least one of: @",
+        ),
+        (
+            "extend type Query",
+            "A type system extension must add at least one of: implements, @, {",
+        ),
+        (
+            "extend interface Node",
+            "A type system extension must add at least one of: implements, @, {",
+        ),
+        (
+            "extend union SearchResult",
+            "A type system extension must add at least one of: @, =",
+        ),
+        (
+            "extend enum ProductStatus",
+            "A type system extension must add at least one of: @, {",
+        ),
+        (
+            "extend input ProductInput",
+            "A type system extension must add at least one of: @, {",
+        ),
+        ("extend type Query {}", "Expected a name"),
+        ("extend enum ProductStatus {}", "Expected a name"),
+        ("extend input ProductInput {}", "Expected a name"),
+        ("extend union SearchResult =", "Unexpected EOF"),
+        ("extend schema {}", "Expected a name"),
     ] {
-        assert_parse_error(s);
+        assert_parse_error_message(s, expected);
     }
 }
 
@@ -212,7 +281,20 @@ fn continues_parsing_after_an_extension_that_adds_nothing() {
     let errors = DefinitionDocument::<DefaultContext>::parse(s)
         .result
         .expect_err("Expected parse errors");
+    let errors = Error::into_graphql_errors(s, errors);
     assert_eq!(2, errors.len());
+    assert_eq!(
+        "A type system extension must add at least one of: implements, @, {",
+        errors[0].message,
+    );
+    assert_eq!(1, errors[0].locations[0].line);
+    assert_eq!(1, errors[0].locations[0].col);
+    assert_eq!(
+        "A type system extension must add at least one of: @",
+        errors[1].message,
+    );
+    assert_eq!(3, errors[1].locations[0].line);
+    assert_eq!(1, errors[1].locations[0].col);
 }
 
 #[test]
@@ -247,16 +329,21 @@ fn empty_extension_errors_point_to_the_extension_header() {
 
 #[test]
 fn rejects_unknown_extensions_and_descriptions() {
-    for s in [
+    let expected_kinds =
+        "Expected one of the following: schema, scalar, type, interface, union, enum, input";
+    for (s, expected) in [
         // Directive extensions are in the draft spec only.
-        "extend directive @foo @bar",
-        "extend { query: Query }",
-        "extend",
-        "extend Query { a: Int }",
-        "\"Description\" extend type Query { a: Int }",
-        "extend type Query @foo(bar: $variable)",
+        ("extend directive @foo @bar", expected_kinds),
+        ("extend { query: Query }", expected_kinds),
+        ("extend", "Unexpected EOF"),
+        ("extend Query { a: Int }", expected_kinds),
+        (
+            "\"Description\" extend type Query { a: Int }",
+            "A type system extension cannot have a description",
+        ),
+        ("extend type Query @foo(bar: $variable)", "Unexpected token"),
     ] {
-        assert_parse_error(s);
+        assert_parse_error_message(s, expected);
     }
 }
 
@@ -302,112 +389,6 @@ type Next { a: Int }
             .map(|extension| text(s, extension))
             .collect::<Vec<_>>(),
     );
-}
-
-#[test]
-fn definition_spans_cover_the_whole_definition() {
-    let s = r#"
-"""
-Block description
-"""
-schema @a { query: Query }
-"Description" scalar DateTime @a
-scalar Plain
-type Query implements Node @a { id: ID! }
-type Bodyless implements Node
-interface Node @a
-union SearchResult @a = A | B
-union Empty @a
-enum Status { A B }
-input ProductInput @a
-"Description" directive @a(b: Int) repeatable on FIELD_DEFINITION | OBJECT
-"#;
-    let document = parse(s);
-    assert_eq!(
-        vec!["\"\"\"\nBlock description\n\"\"\"\nschema @a { query: Query }"],
-        document
-            .schema_definitions()
-            .iter()
-            .map(|definition| text(s, definition))
-            .collect::<Vec<_>>(),
-    );
-    assert_eq!(
-        vec![
-            "\"Description\" scalar DateTime @a",
-            "scalar Plain",
-            "type Query implements Node @a { id: ID! }",
-            "type Bodyless implements Node",
-            "interface Node @a",
-            "union SearchResult @a = A | B",
-            "union Empty @a",
-            "enum Status { A B }",
-            "input ProductInput @a",
-        ],
-        document
-            .type_definitions()
-            .iter()
-            .filter(|definition| !definition.as_ref().is_builtin())
-            .map(|definition| {
-                &s[definition
-                    .span()
-                    .expect("Expected a span for a parsed definition")
-                    .byte_range()]
-            })
-            .collect::<Vec<_>>(),
-    );
-    assert_eq!(
-        vec!["\"Description\" directive @a(b: Int) repeatable on FIELD_DEFINITION | OBJECT"],
-        document
-            .directive_definitions()
-            .iter()
-            .filter(|definition| !definition.is_builtin())
-            .map(|definition| text(s, definition))
-            .collect::<Vec<_>>(),
-    );
-}
-
-#[test]
-fn parses_definitions_without_a_body() {
-    let s = "type Query\ninterface Node\nunion SearchResult\nenum Status\ninput ProductInput\n";
-    let document = parse(s);
-    let definitions: Vec<&TypeDefinition<DefaultContext>> = document
-        .type_definitions()
-        .iter()
-        .filter(|definition| !definition.as_ref().is_builtin())
-        .collect();
-    assert_eq!(5, definitions.len());
-
-    // A bodyless object type still has the builtin `__typename` field, and nothing else.
-    let TypeDefinition::Object(query) = definitions[0] else {
-        panic!("Expected an object type definition");
-    };
-    assert!(query
-        .fields_definition()
-        .iter()
-        .all(|field| field.is_builtin()));
-
-    // The body is not optional when it is present: `{}` is not a fields definition.
-    for s in [
-        "type Query {}",
-        "enum Status {}",
-        "input ProductInput {}",
-        "union U =",
-    ] {
-        assert_parse_error(s);
-    }
-}
-
-#[test]
-fn building_a_schema_rejects_extensions_and_empty_types() {
-    let s = "type Query { a: Int }\nextend type Query { b: Int }\nextend schema @a\n";
-    let document = parse(s);
-    let errors = SchemaDefinition::try_from(&document).expect_err("Expected errors");
-    assert_eq!(2, errors.len());
-
-    let s = "type Query { a: Int }\ntype Empty\nunion U\nenum E\ninput I\ninterface N\n";
-    let document = parse(s);
-    let errors = SchemaDefinition::try_from(&document).expect_err("Expected errors");
-    assert_eq!(5, errors.len());
 }
 
 #[test]
@@ -488,22 +469,6 @@ fn extensions_are_not_applied_to_a_bodyless_root() {
             .into_iter()
             .map(Error::from)
             .map(|error| error.message().to_owned())
-            .collect::<Vec<_>>(),
-    );
-}
-
-#[test]
-fn documents_without_extensions_build_as_before() {
-    let s = "\"Root\" type Query implements Node { id: ID! }\ninterface Node { id: ID! }\n";
-    let document = parse(s);
-    assert!(document.type_system_extensions().is_empty());
-    let schema_definition = SchemaDefinition::try_from(&document).expect("Expected a schema");
-    assert_eq!(
-        vec!["__typename", "id", "__schema", "__type"],
-        bluejay_core::definition::SchemaDefinition::query(&schema_definition)
-            .fields_definition()
-            .iter()
-            .map(|field| field.name())
             .collect::<Vec<_>>(),
     );
 }

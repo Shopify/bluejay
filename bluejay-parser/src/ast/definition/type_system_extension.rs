@@ -95,36 +95,39 @@ impl<'a, C: Context> FromTokens<'a> for TypeSystemExtension<'a, C> {
                 span: *description.span(),
             });
         }
-        let extend_span = tokens.expect_name_value(Self::EXTEND_IDENTIFIER)?;
+        if !tokens.peek_name_matches(0, Self::EXTEND_IDENTIFIER) {
+            return Err(tokens
+                .expect_name_value(Self::EXTEND_IDENTIFIER)
+                .unwrap_err());
+        }
         let depth_limiter = depth_limiter.bump()?;
 
-        match tokens.peek_name(0).map(Name::as_str) {
+        match tokens.peek_name(1).map(Name::as_str) {
             Some(SchemaExtension::<C>::SCHEMA_IDENTIFIER) => {
-                SchemaExtension::from_tokens(tokens, depth_limiter, extend_span).map(Self::Schema)
+                SchemaExtension::from_tokens(tokens, depth_limiter).map(Self::Schema)
             }
             Some(ScalarTypeExtension::<C>::SCALAR_IDENTIFIER) => {
-                ScalarTypeExtension::from_tokens(tokens, depth_limiter, extend_span)
-                    .map(Self::Scalar)
+                ScalarTypeExtension::from_tokens(tokens, depth_limiter).map(Self::Scalar)
             }
             Some(ObjectTypeExtension::<C>::TYPE_IDENTIFIER) => {
-                ObjectTypeExtension::from_tokens(tokens, depth_limiter, extend_span)
-                    .map(Self::Object)
+                ObjectTypeExtension::from_tokens(tokens, depth_limiter).map(Self::Object)
             }
             Some(InterfaceTypeExtension::<C>::INTERFACE_IDENTIFIER) => {
-                InterfaceTypeExtension::from_tokens(tokens, depth_limiter, extend_span)
-                    .map(Self::Interface)
+                InterfaceTypeExtension::from_tokens(tokens, depth_limiter).map(Self::Interface)
             }
             Some(UnionTypeExtension::<C>::UNION_IDENTIFIER) => {
-                UnionTypeExtension::from_tokens(tokens, depth_limiter, extend_span).map(Self::Union)
+                UnionTypeExtension::from_tokens(tokens, depth_limiter).map(Self::Union)
             }
             Some(EnumTypeExtension::<C>::ENUM_IDENTIFIER) => {
-                EnumTypeExtension::from_tokens(tokens, depth_limiter, extend_span).map(Self::Enum)
+                EnumTypeExtension::from_tokens(tokens, depth_limiter).map(Self::Enum)
             }
             Some(InputObjectTypeExtension::<C>::INPUT_IDENTIFIER) => {
-                InputObjectTypeExtension::from_tokens(tokens, depth_limiter, extend_span)
-                    .map(Self::InputObject)
+                InputObjectTypeExtension::from_tokens(tokens, depth_limiter).map(Self::InputObject)
             }
-            _ => Err(expected_one_of(tokens, EXTENSION_KINDS)),
+            _ => {
+                tokens.expect_name_value(Self::EXTEND_IDENTIFIER)?;
+                Err(expected_one_of(tokens, EXTENSION_KINDS))
+            }
         }
     }
 }
@@ -171,12 +174,14 @@ impl<'a, C: Context> SchemaExtension<'a, C> {
     pub fn root_operation_type_definitions(&self) -> Option<&[RootOperationTypeDefinition<'a>]> {
         self.root_operation_type_definitions.as_deref()
     }
+}
 
+impl<'a, C: Context> FromTokens<'a> for SchemaExtension<'a, C> {
     fn from_tokens(
         tokens: &mut impl Tokens<'a>,
         depth_limiter: DepthLimiter,
-        extend_span: Span,
     ) -> Result<Self, ParseError> {
+        let extend_span = tokens.expect_name_value(TypeSystemExtension::<C>::EXTEND_IDENTIFIER)?;
         let schema_identifier_span = tokens.expect_name_value(Self::SCHEMA_IDENTIFIER)?;
         let directives = ConstDirectives::try_from_tokens(tokens, depth_limiter.bump()?)?;
         let root_operation_type_definitions =
@@ -196,7 +201,7 @@ impl<'a, C: Context> SchemaExtension<'a, C> {
                     .as_ref()
                     .and_then(|directives| directives.span().copied())
             })
-            .ok_or(ParseError::EmptyTypeSystemExtension {
+            .ok_or_else(|| ParseError::EmptyTypeSystemExtension {
                 span: extend_span.merge(&schema_identifier_span),
                 expected: SCHEMA_EXTENSION_COMPONENTS,
             })?;
@@ -246,20 +251,21 @@ impl<'a, C: Context> ScalarTypeExtension<'a, C> {
     pub fn directives(&self) -> &Directives<'a, C> {
         &self.directives
     }
+}
 
+impl<'a, C: Context> FromTokens<'a> for ScalarTypeExtension<'a, C> {
     fn from_tokens(
         tokens: &mut impl Tokens<'a>,
         depth_limiter: DepthLimiter,
-        extend_span: Span,
     ) -> Result<Self, ParseError> {
+        let extend_span = tokens.expect_name_value(TypeSystemExtension::<C>::EXTEND_IDENTIFIER)?;
         tokens.expect_name_value(Self::SCALAR_IDENTIFIER)?;
         let name = tokens.expect_name()?;
-        let directives = ConstDirectives::try_from_tokens(tokens, depth_limiter.bump()?)?.ok_or(
-            ParseError::EmptyTypeSystemExtension {
+        let directives = ConstDirectives::try_from_tokens(tokens, depth_limiter.bump()?)?
+            .ok_or_else(|| ParseError::EmptyTypeSystemExtension {
                 span: extend_span.merge(name.span()),
                 expected: SCALAR_EXTENSION_COMPONENTS,
-            },
-        )?;
+            })?;
         // A parsed directive list is never empty, so it always has a span.
         let end = directives.span().copied().unwrap_or(*name.span());
         Ok(Self {
@@ -296,8 +302,10 @@ impl<'a, C: Context> FieldsTypeExtensionParts<'a, C> {
     fn from_tokens(
         tokens: &mut impl Tokens<'a>,
         depth_limiter: DepthLimiter,
-        extend_span: Span,
+        type_identifier: &str,
     ) -> Result<Self, ParseError> {
+        let extend_span = tokens.expect_name_value(TypeSystemExtension::<C>::EXTEND_IDENTIFIER)?;
+        tokens.expect_name_value(type_identifier)?;
         let name = tokens.expect_name()?;
         let interface_implementations =
             InterfaceImplementations::try_from_tokens(tokens, depth_limiter.bump()?)?;
@@ -312,7 +320,7 @@ impl<'a, C: Context> FieldsTypeExtensionParts<'a, C> {
         };
         let end = fields_definition
             .as_ref()
-            .map(|fields_definition| *fields_definition.span())
+            .and_then(|fields_definition| fields_definition.span().copied())
             .or_else(|| {
                 directives
                     .as_ref()
@@ -323,7 +331,7 @@ impl<'a, C: Context> FieldsTypeExtensionParts<'a, C> {
                     .as_ref()
                     .and_then(InterfaceImplementations::span)
             })
-            .ok_or(ParseError::EmptyTypeSystemExtension {
+            .ok_or_else(|| ParseError::EmptyTypeSystemExtension {
                 span: extend_span.merge(name.span()),
                 expected: OBJECT_OR_INTERFACE_EXTENSION_COMPONENTS,
             })?;
@@ -371,20 +379,20 @@ impl<'a, C: Context> ObjectTypeExtension<'a, C> {
     pub fn fields_definition(&self) -> Option<&FieldsDefinition<'a, C>> {
         self.fields_definition.as_ref()
     }
+}
 
+impl<'a, C: Context> FromTokens<'a> for ObjectTypeExtension<'a, C> {
     fn from_tokens(
         tokens: &mut impl Tokens<'a>,
         depth_limiter: DepthLimiter,
-        extend_span: Span,
     ) -> Result<Self, ParseError> {
-        tokens.expect_name_value(Self::TYPE_IDENTIFIER)?;
         let FieldsTypeExtensionParts {
             name,
             interface_implementations,
             directives,
             fields_definition,
             span,
-        } = FieldsTypeExtensionParts::from_tokens(tokens, depth_limiter, extend_span)?;
+        } = FieldsTypeExtensionParts::from_tokens(tokens, depth_limiter, Self::TYPE_IDENTIFIER)?;
         Ok(Self {
             name,
             interface_implementations,
@@ -443,20 +451,24 @@ impl<'a, C: Context> InterfaceTypeExtension<'a, C> {
     pub fn fields_definition(&self) -> Option<&FieldsDefinition<'a, C>> {
         self.fields_definition.as_ref()
     }
+}
 
+impl<'a, C: Context> FromTokens<'a> for InterfaceTypeExtension<'a, C> {
     fn from_tokens(
         tokens: &mut impl Tokens<'a>,
         depth_limiter: DepthLimiter,
-        extend_span: Span,
     ) -> Result<Self, ParseError> {
-        tokens.expect_name_value(Self::INTERFACE_IDENTIFIER)?;
         let FieldsTypeExtensionParts {
             name,
             interface_implementations,
             directives,
             fields_definition,
             span,
-        } = FieldsTypeExtensionParts::from_tokens(tokens, depth_limiter, extend_span)?;
+        } = FieldsTypeExtensionParts::from_tokens(
+            tokens,
+            depth_limiter,
+            Self::INTERFACE_IDENTIFIER,
+        )?;
         Ok(Self {
             name,
             interface_implementations,
@@ -509,12 +521,14 @@ impl<'a, C: Context> UnionTypeExtension<'a, C> {
     pub fn union_member_types(&self) -> Option<&UnionMemberTypes<'a, C>> {
         self.union_member_types.as_ref()
     }
+}
 
+impl<'a, C: Context> FromTokens<'a> for UnionTypeExtension<'a, C> {
     fn from_tokens(
         tokens: &mut impl Tokens<'a>,
         depth_limiter: DepthLimiter,
-        extend_span: Span,
     ) -> Result<Self, ParseError> {
+        let extend_span = tokens.expect_name_value(TypeSystemExtension::<C>::EXTEND_IDENTIFIER)?;
         tokens.expect_name_value(Self::UNION_IDENTIFIER)?;
         let name = tokens.expect_name()?;
         let directives = ConstDirectives::try_from_tokens(tokens, depth_limiter.bump()?)?;
@@ -534,7 +548,7 @@ impl<'a, C: Context> UnionTypeExtension<'a, C> {
                     .as_ref()
                     .and_then(|directives| directives.span().copied())
             })
-            .ok_or(ParseError::EmptyTypeSystemExtension {
+            .ok_or_else(|| ParseError::EmptyTypeSystemExtension {
                 span: extend_span.merge(name.span()),
                 expected: UNION_EXTENSION_COMPONENTS,
             })?;
@@ -589,12 +603,14 @@ impl<'a, C: Context> EnumTypeExtension<'a, C> {
     pub fn enum_value_definitions(&self) -> Option<&EnumValueDefinitions<'a, C>> {
         self.enum_value_definitions.as_ref()
     }
+}
 
+impl<'a, C: Context> FromTokens<'a> for EnumTypeExtension<'a, C> {
     fn from_tokens(
         tokens: &mut impl Tokens<'a>,
         depth_limiter: DepthLimiter,
-        extend_span: Span,
     ) -> Result<Self, ParseError> {
+        let extend_span = tokens.expect_name_value(TypeSystemExtension::<C>::EXTEND_IDENTIFIER)?;
         tokens.expect_name_value(Self::ENUM_IDENTIFIER)?;
         let name = tokens.expect_name()?;
         let directives = ConstDirectives::try_from_tokens(tokens, depth_limiter.bump()?)?;
@@ -609,13 +625,13 @@ impl<'a, C: Context> EnumTypeExtension<'a, C> {
         };
         let end = enum_value_definitions
             .as_ref()
-            .map(|enum_value_definitions| *enum_value_definitions.span())
+            .and_then(|enum_value_definitions| enum_value_definitions.span().copied())
             .or_else(|| {
                 directives
                     .as_ref()
                     .and_then(|directives| directives.span().copied())
             })
-            .ok_or(ParseError::EmptyTypeSystemExtension {
+            .ok_or_else(|| ParseError::EmptyTypeSystemExtension {
                 span: extend_span.merge(name.span()),
                 expected: ENUM_OR_INPUT_OBJECT_EXTENSION_COMPONENTS,
             })?;
@@ -670,12 +686,14 @@ impl<'a, C: Context> InputObjectTypeExtension<'a, C> {
     pub fn input_field_definitions(&self) -> Option<&InputFieldsDefinition<'a, C>> {
         self.input_fields_definition.as_ref()
     }
+}
 
+impl<'a, C: Context> FromTokens<'a> for InputObjectTypeExtension<'a, C> {
     fn from_tokens(
         tokens: &mut impl Tokens<'a>,
         depth_limiter: DepthLimiter,
-        extend_span: Span,
     ) -> Result<Self, ParseError> {
+        let extend_span = tokens.expect_name_value(TypeSystemExtension::<C>::EXTEND_IDENTIFIER)?;
         tokens.expect_name_value(Self::INPUT_IDENTIFIER)?;
         let name = tokens.expect_name()?;
         let directives = ConstDirectives::try_from_tokens(tokens, depth_limiter.bump()?)?;
@@ -690,13 +708,13 @@ impl<'a, C: Context> InputObjectTypeExtension<'a, C> {
             };
         let end = input_fields_definition
             .as_ref()
-            .map(|input_fields_definition| *input_fields_definition.span())
+            .and_then(|input_fields_definition| input_fields_definition.span().copied())
             .or_else(|| {
                 directives
                     .as_ref()
                     .and_then(|directives| directives.span().copied())
             })
-            .ok_or(ParseError::EmptyTypeSystemExtension {
+            .ok_or_else(|| ParseError::EmptyTypeSystemExtension {
                 span: extend_span.merge(name.span()),
                 expected: ENUM_OR_INPUT_OBJECT_EXTENSION_COMPONENTS,
             })?;

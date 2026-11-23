@@ -172,7 +172,7 @@ impl<'a, C: Context> FromTokens<'a> for ObjectTypeDefinition<'a, C> {
             .map_or(type_identifier_span, |description| *description.span());
         let end = fields_definition
             .as_ref()
-            .map(|fields_definition| *fields_definition.span())
+            .and_then(|fields_definition| fields_definition.span().copied())
             .or_else(|| {
                 directives
                     .as_ref()

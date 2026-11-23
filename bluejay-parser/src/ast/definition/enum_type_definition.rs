@@ -121,7 +121,7 @@ impl<'a, C: Context> FromTokens<'a> for EnumTypeDefinition<'a, C> {
             .map_or(enum_identifier_span, |description| *description.span());
         let end = enum_value_definitions
             .as_ref()
-            .map(|enum_value_definitions| *enum_value_definitions.span())
+            .and_then(|enum_value_definitions| enum_value_definitions.span().copied())
             .or_else(|| {
                 directives
                     .as_ref()
