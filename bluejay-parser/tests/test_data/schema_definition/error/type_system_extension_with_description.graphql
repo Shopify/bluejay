@@ -1,0 +1,8 @@
+type Query {
+  a: Int
+}
+
+"Description"
+extend type Query {
+  b: Int
+}

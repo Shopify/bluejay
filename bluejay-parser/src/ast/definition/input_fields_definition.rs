@@ -8,7 +8,7 @@ use bluejay_core::AsIter;
 #[derive(Debug)]
 pub struct InputFieldsDefinition<'a, C: Context> {
     input_field_definitions: Vec<InputValueDefinition<'a, C>>,
-    _span: Span,
+    span: Option<Span>,
 }
 
 impl<'a, C: Context> AsIter for InputFieldsDefinition<'a, C> {
@@ -43,10 +43,23 @@ impl<'a, C: Context> FromTokens<'a> for InputFieldsDefinition<'a, C> {
                 break close_span;
             }
         };
-        let span = open_span.merge(&close_span);
+        let span = Some(open_span.merge(&close_span));
         Ok(Self {
             input_field_definitions,
-            _span: span,
+            span,
         })
+    }
+}
+
+impl<C: Context> InputFieldsDefinition<'_, C> {
+    pub(crate) fn empty() -> Self {
+        Self {
+            input_field_definitions: Vec::new(),
+            span: None,
+        }
+    }
+
+    pub(crate) fn span(&self) -> Option<&Span> {
+        self.span.as_ref()
     }
 }

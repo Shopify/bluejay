@@ -1,0 +1,12 @@
+---
+source: bluejay-parser/tests/schema_definition_integration_test.rs
+expression: formatted_errors
+input_file: bluejay-parser/tests/test_data/schema_definition/error/empty_type_system_extension.graphql
+---
+Error: Parse error
+   ╭─[ empty_type_system_extension.graphql:5:1 ]
+   │
+ 5 │ extend type Query
+   │ ────────┬────────  
+   │         ╰────────── A type system extension must add at least one of: implements, @, {
+───╯

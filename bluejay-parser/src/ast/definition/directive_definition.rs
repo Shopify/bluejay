@@ -1,7 +1,7 @@
 use crate::ast::definition::{ArgumentsDefinition, Context, SchemaDefinition};
 use crate::ast::{DepthLimiter, FromTokens, Parse, ParseError, Tokens, TryFromTokens};
 use crate::lexical_token::{Name, PunctuatorType, StringValue};
-use crate::Span;
+use crate::{HasSpan, Span};
 use bluejay_core::definition::{
     DirectiveDefinition as CoreDirectiveDefinition, DirectiveLocation as CoreDirectiveLocation,
 };
@@ -58,6 +58,7 @@ pub struct DirectiveDefinition<'a, C: Context> {
     is_repeatable: bool,
     locations: DirectiveLocations,
     is_builtin: bool,
+    span: Span,
 }
 
 impl<'a, C: Context> CoreDirectiveDefinition for DirectiveDefinition<'a, C> {
@@ -94,8 +95,13 @@ impl<'a, C: Context> DirectiveDefinition<'a, C> {
     const REPEATABLE_IDENTIFIER: &'static str = "repeatable";
     const ON_IDENTIFIER: &'static str = "on";
 
-    pub(crate) fn name_token(&self) -> &Name<'a> {
+    /// Without the leading `@`.
+    pub fn name_token(&self) -> &Name<'a> {
         &self.name
+    }
+
+    pub fn description_token(&self) -> Option<&StringValue<'a>> {
+        self.description.as_ref()
     }
 
     pub(crate) fn name(&self) -> &'a str {
@@ -109,7 +115,7 @@ impl<'a, C: Context> FromTokens<'a> for DirectiveDefinition<'a, C> {
         depth_limiter: DepthLimiter,
     ) -> Result<Self, ParseError> {
         let description = tokens.next_if_string_value();
-        tokens.expect_name_value(Self::DIRECTIVE_IDENTIFIER)?;
+        let directive_identifier_span = tokens.expect_name_value(Self::DIRECTIVE_IDENTIFIER)?;
         tokens.expect_punctuator(PunctuatorType::At)?;
         let name = tokens.expect_name()?;
         let arguments_definition =
@@ -119,6 +125,10 @@ impl<'a, C: Context> FromTokens<'a> for DirectiveDefinition<'a, C> {
             .is_some();
         tokens.expect_name_value(Self::ON_IDENTIFIER)?;
         let locations = DirectiveLocations::from_tokens(tokens, depth_limiter.bump()?)?;
+        let start = description
+            .as_ref()
+            .map_or(directive_identifier_span, |description| *description.span());
+        let span = start.merge(locations.last_span());
         Ok(Self {
             description,
             name,
@@ -126,14 +136,21 @@ impl<'a, C: Context> FromTokens<'a> for DirectiveDefinition<'a, C> {
             is_repeatable,
             locations,
             is_builtin: false,
+            span,
         })
+    }
+}
+
+impl<C: Context> HasSpan for DirectiveDefinition<'_, C> {
+    fn span(&self) -> &Span {
+        &self.span
     }
 }
 
 #[derive(Debug)]
 pub struct DirectiveLocation {
     inner: CoreDirectiveLocation,
-    _span: Span,
+    span: Span,
 }
 
 impl<'a> FromTokens<'a> for DirectiveLocation {
@@ -142,7 +159,7 @@ impl<'a> FromTokens<'a> for DirectiveLocation {
             |name| match CoreDirectiveLocation::from_str(name.as_ref()) {
                 Ok(inner) => Ok(Self {
                     inner,
-                    _span: name.into(),
+                    span: name.into(),
                 }),
                 Err(_) => Err(ParseError::ExpectedOneOf {
                     span: name.into(),
@@ -192,5 +209,12 @@ impl<'a> FromTokens<'a> for DirectiveLocations {
             )?);
         }
         Ok(Self(directive_locations))
+    }
+}
+
+impl DirectiveLocations {
+    /// A directive definition always has at least one location.
+    fn last_span(&self) -> &Span {
+        &self.0[self.0.len() - 1].span
     }
 }

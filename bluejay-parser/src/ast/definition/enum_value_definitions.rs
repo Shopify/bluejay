@@ -8,7 +8,7 @@ use bluejay_core::AsIter;
 #[derive(Debug)]
 pub struct EnumValueDefinitions<'a, C: Context> {
     enum_value_definitions: Vec<EnumValueDefinition<'a, C>>,
-    _span: Span,
+    span: Option<Span>,
 }
 
 impl<'a, C: Context> AsIter for EnumValueDefinitions<'a, C> {
@@ -43,10 +43,23 @@ impl<'a, C: Context> FromTokens<'a> for EnumValueDefinitions<'a, C> {
                 break close_span;
             }
         };
-        let span = open_span.merge(&close_span);
+        let span = Some(open_span.merge(&close_span));
         Ok(Self {
             enum_value_definitions,
-            _span: span,
+            span,
         })
+    }
+}
+
+impl<C: Context> EnumValueDefinitions<'_, C> {
+    pub(crate) fn empty() -> Self {
+        Self {
+            enum_value_definitions: Vec::new(),
+            span: None,
+        }
+    }
+
+    pub(crate) fn span(&self) -> Option<&Span> {
+        self.span.as_ref()
     }
 }

@@ -1,6 +1,7 @@
 use crate::ast::definition::{Context, SchemaDefinition, UnionMemberType};
 use crate::ast::{DepthLimiter, FromTokens, ParseError, Tokens};
 use crate::lexical_token::PunctuatorType;
+use crate::{HasSpan, Span};
 use bluejay_core::definition::UnionMemberTypes as CoreUnionMemberTypes;
 use bluejay_core::AsIter;
 
@@ -37,5 +38,19 @@ impl<'a, C: Context> FromTokens<'a> for UnionMemberTypes<'a, C> {
             union_member_types.push(UnionMemberType::from_tokens(tokens, depth_limiter.bump()?)?);
         }
         Ok(Self { union_member_types })
+    }
+}
+
+impl<C: Context> UnionMemberTypes<'_, C> {
+    pub(crate) fn empty() -> Self {
+        Self {
+            union_member_types: Vec::new(),
+        }
+    }
+
+    pub(crate) fn span(&self) -> Option<Span> {
+        let first = self.union_member_types.first()?.name().span();
+        let last = self.union_member_types.last()?.name().span();
+        Some(first.merge(last))
     }
 }

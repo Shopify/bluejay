@@ -3,7 +3,7 @@ use crate::ast::{
     ConstDirectives, DepthLimiter, FromTokens, ParseError, Tokens, TryFromTokens,
 };
 use crate::lexical_token::{Name, PunctuatorType, StringValue};
-use crate::Span;
+use crate::{HasSpan, Span};
 use bluejay_core::OperationType;
 use std::str::FromStr;
 
@@ -14,20 +14,21 @@ pub struct ExplicitSchemaDefinition<'a, C: Context> {
     directives: Option<Directives<'a, C>>,
     root_operation_type_definitions: Vec<RootOperationTypeDefinition<'a>>,
     root_operation_type_definitions_span: Span,
+    span: Span,
 }
 
 impl<'a, C: Context> ExplicitSchemaDefinition<'a, C> {
     pub(crate) const SCHEMA_IDENTIFIER: &'static str = "schema";
 
-    pub(crate) fn description(&self) -> Option<&StringValue<'_>> {
+    pub fn description_token(&self) -> Option<&StringValue<'a>> {
         self.description.as_ref()
     }
 
-    pub(crate) fn root_operation_type_definitions(&self) -> &[RootOperationTypeDefinition<'a>] {
+    pub fn root_operation_type_definitions(&self) -> &[RootOperationTypeDefinition<'a>] {
         &self.root_operation_type_definitions
     }
 
-    pub(crate) fn directives(&self) -> Option<&Directives<'a, C>> {
+    pub fn directives(&self) -> Option<&Directives<'a, C>> {
         self.directives.as_ref()
     }
 
@@ -51,21 +52,13 @@ impl<'a, C: Context> FromTokens<'a> for ExplicitSchemaDefinition<'a, C> {
 
         let directives = ConstDirectives::try_from_tokens(tokens, depth_limiter.bump()?)?;
 
-        let mut root_operation_type_definitions = Vec::new();
+        let (root_operation_type_definitions, root_operation_type_definitions_span) =
+            RootOperationTypeDefinition::list_from_tokens(tokens, depth_limiter)?;
 
-        let open_span = tokens.expect_punctuator(PunctuatorType::OpenBrace)?;
-
-        let close_span = loop {
-            root_operation_type_definitions.push(RootOperationTypeDefinition::from_tokens(
-                tokens,
-                depth_limiter.bump()?,
-            )?);
-            if let Some(close_span) = tokens.next_if_punctuator(PunctuatorType::CloseBrace) {
-                break close_span;
-            }
-        };
-
-        let root_operation_type_definitions_span = open_span.merge(&close_span);
+        let span = description
+            .as_ref()
+            .map_or(&schema_identifier_span, HasSpan::span)
+            .merge(&root_operation_type_definitions_span);
 
         Ok(Self {
             description,
@@ -73,7 +66,14 @@ impl<'a, C: Context> FromTokens<'a> for ExplicitSchemaDefinition<'a, C> {
             directives: directives.map(Directives::from),
             root_operation_type_definitions,
             root_operation_type_definitions_span,
+            span,
         })
+    }
+}
+
+impl<C: Context> HasSpan for ExplicitSchemaDefinition<'_, C> {
+    fn span(&self) -> &Span {
+        &self.span
     }
 }
 
@@ -84,16 +84,36 @@ pub struct RootOperationTypeDefinition<'a> {
 }
 
 impl<'a> RootOperationTypeDefinition<'a> {
-    pub(crate) fn operation_type(&self) -> OperationType {
+    pub fn operation_type(&self) -> OperationType {
         self.operation_type
     }
 
-    pub(crate) fn name_token(&self) -> &Name<'a> {
+    pub fn name_token(&self) -> &Name<'a> {
         &self.name
     }
 
-    pub(crate) fn name(&self) -> &str {
-        self.name.as_ref()
+    pub fn name(&self) -> &'a str {
+        self.name.as_str()
+    }
+
+    /// `depth_limiter` belongs to the enclosing schema definition or extension. Each root
+    /// operation type bumps it.
+    pub(crate) fn list_from_tokens(
+        tokens: &mut impl Tokens<'a>,
+        depth_limiter: DepthLimiter,
+    ) -> Result<(Vec<Self>, Span), ParseError> {
+        let open_span = tokens.expect_punctuator(PunctuatorType::OpenBrace)?;
+        let mut root_operation_type_definitions = Vec::new();
+        let close_span = loop {
+            root_operation_type_definitions.push(Self::from_tokens(tokens, depth_limiter.bump()?)?);
+            if let Some(close_span) = tokens.next_if_punctuator(PunctuatorType::CloseBrace) {
+                break close_span;
+            }
+        };
+        Ok((
+            root_operation_type_definitions,
+            open_span.merge(&close_span),
+        ))
     }
 }
 
