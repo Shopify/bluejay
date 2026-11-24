@@ -978,5 +978,29 @@ mod tests {
             ]),
             builtin_types,
         );
+
+        // Verify builtin introspection fields added in the September 2025 spec exist.
+        let type_def = schema_definition
+            .get_type_definition("__Type")
+            .expect("__Type exists")
+            .into_object()
+            .expect("__Type is an object");
+        assert!(type_def
+            .fields_definition()
+            .iter()
+            .any(|fd| fd.name() == "isOneOf"));
+
+        let iv_def = schema_definition
+            .get_type_definition("__InputValue")
+            .expect("__InputValue exists")
+            .into_object()
+            .expect("__InputValue is an object");
+        let iv_fields: HashSet<&str> = iv_def
+            .fields_definition()
+            .iter()
+            .map(|fd| fd.name())
+            .collect();
+        assert!(iv_fields.contains("isDeprecated"));
+        assert!(iv_fields.contains("deprecationReason"));
     }
 }

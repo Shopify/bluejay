@@ -71,6 +71,8 @@ impl<'a, C: Context> ObjectTypeDefinition<'a, C> {
         ofType: __Type
         # may be non-null for custom SCALAR, otherwise null.
         specifiedByURL: String
+        # must be non-null for INPUT_OBJECT, otherwise null.
+        isOneOf: Boolean
     }";
     const __FIELD_DEFINITION: &'static str = "type __Field {
         name: String!
@@ -85,6 +87,8 @@ impl<'a, C: Context> ObjectTypeDefinition<'a, C> {
         description: String
         type: __Type!
         defaultValue: String
+        isDeprecated: Boolean!
+        deprecationReason: String
     }";
     const __ENUM_VALUE_DEFINITION: &'static str = "type __EnumValue {
         name: String!
