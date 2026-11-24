@@ -50,8 +50,9 @@ pub use output_type::{BaseOutputType, OutputType};
 pub use schema_definition::SchemaDefinition;
 pub use type_definition::TypeDefinition;
 pub use type_system_extension::{
-    EnumTypeExtension, InputObjectTypeExtension, InterfaceTypeExtension, ObjectTypeExtension,
-    ScalarTypeExtension, SchemaExtension, TypeSystemExtension, UnionTypeExtension,
+    DirectiveExtension, EnumTypeExtension, InputObjectTypeExtension, InterfaceTypeExtension,
+    ObjectTypeExtension, ScalarTypeExtension, SchemaExtension, TypeSystemExtension,
+    UnionTypeExtension,
 };
 pub use union_member_type::UnionMemberType;
 pub use union_member_types::UnionMemberTypes;

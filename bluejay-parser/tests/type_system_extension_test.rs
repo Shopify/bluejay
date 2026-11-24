@@ -1,9 +1,9 @@
 use bluejay_core::definition::{FieldDefinition as _, ObjectTypeDefinition as _};
-use bluejay_core::AsIter;
+use bluejay_core::{AsIter, Directive as _};
 use bluejay_parser::ast::definition::{
-    DefaultContext, DefinitionDocument, EnumTypeExtension, InputObjectTypeExtension,
-    InterfaceTypeExtension, ObjectTypeExtension, ScalarTypeExtension, SchemaDefinition,
-    SchemaExtension, TypeDefinition, TypeSystemExtension, UnionTypeExtension,
+    DefaultContext, DefinitionDocument, DirectiveExtension, EnumTypeExtension,
+    InputObjectTypeExtension, InterfaceTypeExtension, ObjectTypeExtension, ScalarTypeExtension,
+    SchemaDefinition, SchemaExtension, TypeDefinition, TypeSystemExtension, UnionTypeExtension,
 };
 use bluejay_parser::ast::Parse;
 use bluejay_parser::{Error, HasSpan};
@@ -54,12 +54,14 @@ fn parses_every_kind_of_extension_in_source_order() {
         extend input ProductInput @inputDirective {
             title: String
         }
+
+        extend directive @legacy @deprecated(reason: "Use `@modern`.")
     "#;
 
     let document = parse(s);
     let extensions = document.type_system_extensions();
-    assert_eq!(7, extensions.len());
-    assert_eq!(7, document.definition_count());
+    assert_eq!(8, extensions.len());
+    assert_eq!(8, document.definition_count());
 
     assert_eq!(
         vec![
@@ -70,6 +72,7 @@ fn parses_every_kind_of_extension_in_source_order() {
             Some("SearchResult"),
             Some("ProductStatus"),
             Some("ProductInput"),
+            Some("legacy"),
         ],
         extensions
             .iter()
@@ -159,6 +162,19 @@ fn parses_every_kind_of_extension_in_source_order() {
             .expect("Expected input fields")
             .len()
     );
+
+    let TypeSystemExtension::Directive(directive) = &extensions[7] else {
+        panic!("Expected a directive extension");
+    };
+    assert_eq!("legacy", directive.name());
+    assert_eq!(
+        vec!["deprecated"],
+        directive
+            .directives()
+            .iter()
+            .map(|directive| directive.name())
+            .collect::<Vec<_>>(),
+    );
 }
 
 #[test]
@@ -180,6 +196,7 @@ fn parses_each_optional_part_of_an_extension_on_its_own() {
         "extend enum ProductStatus { UNLISTED }",
         "extend input ProductInput @inputDirective",
         "extend input ProductInput { title: String }",
+        "extend directive @legacy @deprecated",
     ] {
         assert_eq!(1, parse(s).type_system_extensions().len(), "`{s}`");
     }
@@ -224,6 +241,12 @@ fn parses_individual_extension_types_directly() {
             .expect("Expected input object extension");
     assert_eq!("ProductInput", input.name());
 
+    let directive = DirectiveExtension::<DefaultContext>::parse("extend directive @legacy @a @b")
+        .result
+        .expect("Expected directive extension");
+    assert_eq!("legacy", directive.name());
+    assert_eq!(2, directive.directives().len());
+
     let errors = TypeSystemExtension::<DefaultContext>::parse("type Query { a: Int }")
         .result
         .expect_err("Expected error when input does not start with extend");
@@ -262,6 +285,10 @@ fn rejects_extensions_that_add_nothing() {
         (
             "extend input ProductInput",
             "A type system extension must add at least one of: @, {",
+        ),
+        (
+            "extend directive @legacy",
+            "A type system extension must add at least one of: @",
         ),
         ("extend type Query {}", "Expected a name"),
         ("extend enum ProductStatus {}", "Expected a name"),
@@ -307,6 +334,7 @@ fn empty_extension_errors_point_to_the_extension_header() {
         ("extend union SearchResult", "@, ="),
         ("extend enum ProductStatus", "@, {"),
         ("extend input ProductInput", "@, {"),
+        ("extend directive @legacy", "@"),
     ] {
         for suffix in ["", "\ntype Other { b: Int }\n"] {
             let s = format!("type Query {{ a: Int }}\n  {header}{suffix}");
@@ -330,10 +358,8 @@ fn empty_extension_errors_point_to_the_extension_header() {
 #[test]
 fn rejects_unknown_extensions_and_descriptions() {
     let expected_kinds =
-        "Expected one of the following: schema, scalar, type, interface, union, enum, input";
+        "Expected one of the following: schema, scalar, type, interface, union, enum, input, directive";
     for (s, expected) in [
-        // Directive extensions are in the draft spec only.
-        ("extend directive @foo @bar", expected_kinds),
         ("extend { query: Query }", expected_kinds),
         ("extend", "Unexpected EOF"),
         ("extend Query { a: Int }", expected_kinds),
@@ -365,6 +391,7 @@ extend enum Status @a
 extend enum Status { A B }
 extend input ProductInput @a
 extend input ProductInput { title: String = "x" @a }
+extend directive @legacy @a @b(c: 1)
 type Next { a: Int }
 "#;
     let document = parse(s);
@@ -382,6 +409,7 @@ type Next { a: Int }
             "extend enum Status { A B }",
             "extend input ProductInput @a",
             "extend input ProductInput { title: String = \"x\" @a }",
+            "extend directive @legacy @a @b(c: 1)",
         ],
         document
             .type_system_extensions()
@@ -400,7 +428,8 @@ fn extension_rejection_graphql_errors_are_descriptive() {
         extend interface Node { id: ID! }\n\
         extend union SearchResult = Query\n\
         extend enum ProductStatus { UNLISTED }\n\
-        extend input ProductInput { title: String }\n";
+        extend input ProductInput { title: String }\n\
+        extend directive @legacy @a\n";
     let document = parse(s);
     let errors = SchemaDefinition::try_from(&document).expect_err("Expected errors");
     let errors = Error::into_graphql_errors(s, errors);
@@ -413,6 +442,7 @@ fn extension_rejection_graphql_errors_are_descriptive() {
             "Extension of `SearchResult` is not supported when building a schema",
             "Extension of `ProductStatus` is not supported when building a schema",
             "Extension of `ProductInput` is not supported when building a schema",
+            "Extension of `@legacy` is not supported when building a schema",
         ],
         errors
             .iter()

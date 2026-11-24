@@ -244,11 +244,14 @@ impl<C: Context> From<DefinitionDocumentError<'_, C>> for Error {
             DefinitionDocumentError::TypeSystemExtensionNotSupported { extension } => Error::new(
                 "Type system extensions are not supported when building a schema",
                 Some(Annotation::new(
-                    match extension.name() {
-                        Some(name) => {
+                    match (extension, extension.name()) {
+                        (TypeSystemExtension::Directive(_), Some(name)) => format!(
+                            "Extension of `@{name}` is not supported when building a schema"
+                        ),
+                        (_, Some(name)) => {
                             format!("Extension of `{name}` is not supported when building a schema")
                         }
-                        None => {
+                        (_, None) => {
                             "Schema extensions are not supported when building a schema".to_string()
                         }
                     },

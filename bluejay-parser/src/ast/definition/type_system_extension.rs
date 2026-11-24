@@ -20,12 +20,14 @@ const EXTENSION_KINDS: &[&str] = &[
     "union",
     "enum",
     "input",
+    "directive",
 ];
 const SCHEMA_EXTENSION_COMPONENTS: &[&str] = &["@", "{"];
 const SCALAR_EXTENSION_COMPONENTS: &[&str] = &["@"];
 const OBJECT_OR_INTERFACE_EXTENSION_COMPONENTS: &[&str] = &["implements", "@", "{"];
 const UNION_EXTENSION_COMPONENTS: &[&str] = &["@", "="];
 const ENUM_OR_INPUT_OBJECT_EXTENSION_COMPONENTS: &[&str] = &["@", "{"];
+const DIRECTIVE_EXTENSION_COMPONENTS: &[&str] = &["@"];
 
 #[derive(Debug)]
 pub enum TypeSystemExtension<'a, C: Context> {
@@ -36,6 +38,7 @@ pub enum TypeSystemExtension<'a, C: Context> {
     Union(UnionTypeExtension<'a, C>),
     Enum(EnumTypeExtension<'a, C>),
     InputObject(InputObjectTypeExtension<'a, C>),
+    Directive(DirectiveExtension<'a, C>),
 }
 
 impl<'a, C: Context> TypeSystemExtension<'a, C> {
@@ -50,9 +53,11 @@ impl<'a, C: Context> TypeSystemExtension<'a, C> {
             Self::Union(extension) => Some(extension.name_token()),
             Self::Enum(extension) => Some(extension.name_token()),
             Self::InputObject(extension) => Some(extension.name_token()),
+            Self::Directive(extension) => Some(extension.name_token()),
         }
     }
 
+    /// The name of the extended type or directive, without the leading `@` of a directive.
     pub fn name(&self) -> Option<&'a str> {
         self.name_token().map(Name::as_str)
     }
@@ -66,10 +71,11 @@ impl<'a, C: Context> TypeSystemExtension<'a, C> {
             Self::Union(extension) => extension.directives(),
             Self::Enum(extension) => extension.directives(),
             Self::InputObject(extension) => extension.directives(),
+            Self::Directive(extension) => Some(extension.directives()),
         }
     }
 
-    /// From `extend` to the type name (or `schema`), so that diagnostics do not mark the whole
+    /// From `extend` to the type or directive name (or `schema`), so that diagnostics do not mark the whole
     /// extension, which can be long.
     pub(crate) fn header_span(&self) -> Span {
         let end = match self {
@@ -80,6 +86,7 @@ impl<'a, C: Context> TypeSystemExtension<'a, C> {
             Self::Union(extension) => extension.name.span(),
             Self::Enum(extension) => extension.name.span(),
             Self::InputObject(extension) => extension.name.span(),
+            Self::Directive(extension) => extension.name.span(),
         };
         Span::new(self.span().byte_range().start..end.byte_range().end)
     }
@@ -124,6 +131,9 @@ impl<'a, C: Context> FromTokens<'a> for TypeSystemExtension<'a, C> {
             Some(InputObjectTypeExtension::<C>::INPUT_IDENTIFIER) => {
                 InputObjectTypeExtension::from_tokens(tokens, depth_limiter).map(Self::InputObject)
             }
+            Some(DirectiveExtension::<C>::DIRECTIVE_IDENTIFIER) => {
+                DirectiveExtension::from_tokens(tokens, depth_limiter).map(Self::Directive)
+            }
             _ => {
                 tokens.expect_name_value(Self::EXTEND_IDENTIFIER)?;
                 Err(expected_one_of(tokens, EXTENSION_KINDS))
@@ -142,6 +152,7 @@ impl<C: Context> HasSpan for TypeSystemExtension<'_, C> {
             Self::Union(extension) => extension.span(),
             Self::Enum(extension) => extension.span(),
             Self::InputObject(extension) => extension.span(),
+            Self::Directive(extension) => extension.span(),
         }
     }
 }
@@ -750,5 +761,69 @@ fn expected_one_of<'a>(
     match tokens.peek_span(0) {
         Some(span) => ParseError::ExpectedOneOf { span, values },
         None => tokens.unexpected_eof(),
+    }
+}
+
+/// `extend directive @ Name Directives[Const]`.
+#[derive(Debug)]
+pub struct DirectiveExtension<'a, C: Context> {
+    name: Name<'a>,
+    directives: Directives<'a, C>,
+    span: Span,
+}
+
+impl<'a, C: Context> DirectiveExtension<'a, C> {
+    pub(crate) const DIRECTIVE_IDENTIFIER: &'static str = "directive";
+
+    /// Without the leading `@`.
+    pub fn name_token(&self) -> &Name<'a> {
+        &self.name
+    }
+
+    /// Without the leading `@`.
+    pub fn name(&self) -> &'a str {
+        self.name.as_str()
+    }
+
+    pub fn directives(&self) -> &Directives<'a, C> {
+        &self.directives
+    }
+}
+
+impl<'a, C: Context> FromTokens<'a> for DirectiveExtension<'a, C> {
+    fn from_tokens(
+        tokens: &mut impl Tokens<'a>,
+        depth_limiter: DepthLimiter,
+    ) -> Result<Self, ParseError> {
+        let extend_span = tokens.expect_name_value(TypeSystemExtension::<C>::EXTEND_IDENTIFIER)?;
+        tokens.expect_name_value(Self::DIRECTIVE_IDENTIFIER)?;
+        tokens.expect_punctuator(PunctuatorType::At)?;
+        let name = tokens.expect_name()?;
+        let directives = ConstDirectives::try_from_tokens(tokens, depth_limiter.bump()?)?
+            .ok_or_else(|| ParseError::EmptyTypeSystemExtension {
+                span: extend_span.merge(name.span()),
+                expected: DIRECTIVE_EXTENSION_COMPONENTS,
+            })?;
+        // A parsed directive list is never empty, so it always has a span.
+        let end = directives.span().copied().unwrap_or(*name.span());
+        Ok(Self {
+            name,
+            directives: Directives::from(directives),
+            span: extend_span.merge(&end),
+        })
+    }
+}
+
+impl<C: Context> HasSpan for DirectiveExtension<'_, C> {
+    fn span(&self) -> &Span {
+        &self.span
+    }
+}
+
+impl<'a, C: Context> HasDirectives for DirectiveExtension<'a, C> {
+    type Directives = Directives<'a, C>;
+
+    fn directives(&self) -> Option<&Self::Directives> {
+        Some(&self.directives)
     }
 }
