@@ -1003,4 +1003,41 @@ mod tests {
         assert!(iv_fields.contains("isDeprecated"));
         assert!(iv_fields.contains("deprecationReason"));
     }
+
+    #[test]
+    fn builtin_arguments_with_defaults_are_non_null() {
+        use bluejay_core::definition::prelude::*;
+
+        let document: DefinitionDocument = DefinitionDocument::parse("type Query { foo: String }")
+            .result
+            .expect("Document had parse errors");
+        let schema_definition = SchemaDefinition::try_from(&document)
+            .expect("Could not convert document to schema definition");
+
+        for (type_name, field_name) in [
+            ("__Type", "fields"),
+            ("__Type", "enumValues"),
+            ("__Type", "inputFields"),
+            ("__Field", "args"),
+            ("__Directive", "args"),
+        ] {
+            let include_deprecated = schema_definition
+                .get_type_definition(type_name)
+                .and_then(|td| td.into_object().ok())
+                .and_then(|otd| otd.fields_definition().get(field_name))
+                .and_then(|fd| fd.arguments_definition())
+                .and_then(|ad| ad.get("includeDeprecated"))
+                .unwrap_or_else(|| panic!("{type_name}.{field_name}(includeDeprecated:) exists"));
+            assert_eq!("Boolean!", include_deprecated.r#type().display_name());
+            assert!(!include_deprecated.is_required());
+        }
+
+        let reason = schema_definition
+            .get_directive_definition("deprecated")
+            .and_then(|dd| dd.arguments_definition())
+            .and_then(|ad| ad.get("reason"))
+            .expect("@deprecated(reason:) exists");
+        assert_eq!("String!", reason.r#type().display_name());
+        assert!(!reason.is_required());
+    }
 }
