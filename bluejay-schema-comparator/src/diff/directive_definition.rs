@@ -91,7 +91,7 @@ impl<'a, S: SchemaDefinition + 'a> DirectiveDefinitionDiff<'a, S> {
             self.old_directive_definition,
             self.new_directive_definition,
             DirectiveLocation::DirectiveDefinition,
-            self.new_directive_definition.name(),
+            self.old_directive_definition.name(),
             changes,
         );
     }

@@ -23,11 +23,10 @@ const EXTENSION_KINDS: &[&str] = &[
     "directive",
 ];
 const SCHEMA_EXTENSION_COMPONENTS: &[&str] = &["@", "{"];
-const SCALAR_EXTENSION_COMPONENTS: &[&str] = &["@"];
+const SCALAR_OR_DIRECTIVE_EXTENSION_COMPONENTS: &[&str] = &["@"];
 const OBJECT_OR_INTERFACE_EXTENSION_COMPONENTS: &[&str] = &["implements", "@", "{"];
 const UNION_EXTENSION_COMPONENTS: &[&str] = &["@", "="];
 const ENUM_OR_INPUT_OBJECT_EXTENSION_COMPONENTS: &[&str] = &["@", "{"];
-const DIRECTIVE_EXTENSION_COMPONENTS: &[&str] = &["@"];
 
 #[derive(Debug)]
 pub enum TypeSystemExtension<'a, C: Context> {
@@ -275,7 +274,7 @@ impl<'a, C: Context> FromTokens<'a> for ScalarTypeExtension<'a, C> {
         let directives = ConstDirectives::try_from_tokens(tokens, depth_limiter.bump()?)?
             .ok_or_else(|| ParseError::EmptyTypeSystemExtension {
                 span: extend_span.merge(name.span()),
-                expected: SCALAR_EXTENSION_COMPONENTS,
+                expected: SCALAR_OR_DIRECTIVE_EXTENSION_COMPONENTS,
             })?;
         // A parsed directive list is never empty, so it always has a span.
         let end = directives.span().copied().unwrap_or(*name.span());
@@ -752,18 +751,6 @@ impl<'a, C: Context> HasDirectives for InputObjectTypeExtension<'a, C> {
     }
 }
 
-/// Does not consume the token, so that the document parser can continue at it: it is often the
-/// start of the next definition.
-fn expected_one_of<'a>(
-    tokens: &mut impl Tokens<'a>,
-    values: &'static [&'static str],
-) -> ParseError {
-    match tokens.peek_span(0) {
-        Some(span) => ParseError::ExpectedOneOf { span, values },
-        None => tokens.unexpected_eof(),
-    }
-}
-
 /// `extend directive @ Name Directives[Const]`.
 #[derive(Debug)]
 pub struct DirectiveExtension<'a, C: Context> {
@@ -802,7 +789,7 @@ impl<'a, C: Context> FromTokens<'a> for DirectiveExtension<'a, C> {
         let directives = ConstDirectives::try_from_tokens(tokens, depth_limiter.bump()?)?
             .ok_or_else(|| ParseError::EmptyTypeSystemExtension {
                 span: extend_span.merge(name.span()),
-                expected: DIRECTIVE_EXTENSION_COMPONENTS,
+                expected: SCALAR_OR_DIRECTIVE_EXTENSION_COMPONENTS,
             })?;
         // A parsed directive list is never empty, so it always has a span.
         let end = directives.span().copied().unwrap_or(*name.span());
@@ -825,5 +812,17 @@ impl<'a, C: Context> HasDirectives for DirectiveExtension<'a, C> {
 
     fn directives(&self) -> Option<&Self::Directives> {
         Some(&self.directives)
+    }
+}
+
+/// Does not consume the token, so that the document parser can continue at it: it is often the
+/// start of the next definition.
+fn expected_one_of<'a>(
+    tokens: &mut impl Tokens<'a>,
+    values: &'static [&'static str],
+) -> ParseError {
+    match tokens.peek_span(0) {
+        Some(span) => ParseError::ExpectedOneOf { span, values },
+        None => tokens.unexpected_eof(),
     }
 }

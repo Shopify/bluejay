@@ -2,6 +2,10 @@ directive @meta on DIRECTIVE_DEFINITION
 
 directive @old @deprecated(reason: "Use `@special` instead.") @meta repeatable on FIELD_DEFINITION
 
+directive @oldWithArgs(
+  arg: Int
+) @deprecated(reason: "Use `@special` instead.") @meta repeatable on FIELD_DEFINITION
+
 directive @special on FIELD_DEFINITION
 
 type Query {

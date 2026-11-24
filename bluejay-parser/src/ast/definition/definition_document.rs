@@ -1128,5 +1128,18 @@ mod tests {
             ),
             "{errors:?}"
         );
+
+        for invalid in [
+            "directive @legacy repeatable @meta on FIELD_DEFINITION",
+            "directive @legacy @meta(x: 1) (a: Int) on FIELD_DEFINITION",
+            "directive @legacy @meta(a: $var) on FIELD_DEFINITION",
+        ] {
+            assert!(
+                DefinitionDocument::<super::DefaultContext>::parse(invalid)
+                    .result
+                    .is_err(),
+                "Expected parse error for `{invalid}`",
+            );
+        }
     }
 }

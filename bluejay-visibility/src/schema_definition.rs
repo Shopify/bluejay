@@ -9,7 +9,7 @@ use crate::{
 use bluejay_core::definition::{
     self, prelude::*, DirectiveLocation, HasDirectives, TypeDefinitionReference,
 };
-use bluejay_core::{AsIter, Directive as _};
+use bluejay_core::AsIter;
 use elsa::FrozenMap;
 use once_cell::unsync::OnceCell;
 use std::collections::{
@@ -419,14 +419,7 @@ impl<'a, 'b, S: definition::SchemaDefinition, W: Warden<SchemaDefinition = S>>
     fn visit_directives(&mut self, directives: Option<&'a Directives<'a, S, W>>) {
         if let Some(directives) = directives {
             directives.iter().for_each(|directive| {
-                // if this is `None` it means that the schema is invalid, but that is not the responsibility of this visitor
-                // and should be added to `bluejay-validator`
-                if let Some(directive_definition) = self
-                    .schema_definition
-                    .get_directive_definition(directive.name())
-                {
-                    self.visit_directive_definition(directive_definition);
-                }
+                self.visit_directive_definition(directive.definition());
             })
         }
     }

@@ -290,6 +290,14 @@ fn rejects_extensions_that_add_nothing() {
             "extend directive @legacy",
             "A type system extension must add at least one of: @",
         ),
+        (
+            "extend directive @legacy repeatable on FIELD",
+            "A type system extension must add at least one of: @",
+        ),
+        (
+            "extend directive @legacy(a: Int) @a",
+            "A type system extension must add at least one of: @",
+        ),
         ("extend type Query {}", "Expected a name"),
         ("extend enum ProductStatus {}", "Expected a name"),
         ("extend input ProductInput {}", "Expected a name"),
@@ -367,7 +375,16 @@ fn rejects_unknown_extensions_and_descriptions() {
             "\"Description\" extend type Query { a: Int }",
             "A type system extension cannot have a description",
         ),
+        (
+            "\"Description\" extend directive @legacy @a",
+            "A type system extension cannot have a description",
+        ),
         ("extend type Query @foo(bar: $variable)", "Unexpected token"),
+        ("extend directive legacy @a", "Expected to find: @"),
+        (
+            "extend directive @legacy @a(b: $variable)",
+            "Unexpected token",
+        ),
     ] {
         assert_parse_error_message(s, expected);
     }

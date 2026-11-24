@@ -202,3 +202,140 @@ fn test_fields_definition_get() {
         "Expected field to be visible",
     );
 }
+
+#[test]
+fn test_directive_definition_directives_hidden_and_cyclic() {
+    struct HideNamedDirectiveWarden<'a>(&'a str);
+
+    impl<'a> Warden for HideNamedDirectiveWarden<'a> {
+        type SchemaDefinition = ParserSchemaDefinition<'a>;
+        type TypeDefinitionsForName<'b>
+            = std::option::IntoIter<TypeDefinitionReference<'b, Self::SchemaDefinition>>
+        where
+            Self: 'b;
+
+        fn is_field_definition_visible(
+            &self,
+            _: &<Self::SchemaDefinition as bluejay_core::definition::SchemaDefinition>::FieldDefinition,
+        ) -> bool {
+            true
+        }
+
+        fn is_input_value_definition_visible(
+            &self,
+            _: &<Self::SchemaDefinition as bluejay_core::definition::SchemaDefinition>::InputValueDefinition,
+        ) -> bool {
+            true
+        }
+
+        fn is_enum_value_definition_visible(
+            &self,
+            _: &<Self::SchemaDefinition as bluejay_core::definition::SchemaDefinition>::EnumValueDefinition,
+        ) -> bool {
+            true
+        }
+
+        fn is_union_member_type_visible(
+            &self,
+            _: &<Self::SchemaDefinition as bluejay_core::definition::SchemaDefinition>::UnionMemberType,
+        ) -> bool {
+            true
+        }
+
+        fn is_interface_implementation_visible(
+            &self,
+            _: &<Self::SchemaDefinition as bluejay_core::definition::SchemaDefinition>::InterfaceImplementation,
+        ) -> bool {
+            true
+        }
+
+        fn is_directive_definition_visible(
+            &self,
+            directive_definition: &<Self::SchemaDefinition as bluejay_core::definition::SchemaDefinition>::DirectiveDefinition,
+        ) -> bool {
+            directive_definition.name() != self.0
+        }
+
+        fn is_custom_scalar_type_definition_visible(
+            &self,
+            _: &<Self::SchemaDefinition as bluejay_core::definition::SchemaDefinition>::CustomScalarTypeDefinition,
+        ) -> bool {
+            true
+        }
+
+        fn is_enum_type_definition_visible(
+            &self,
+            _: &<Self::SchemaDefinition as bluejay_core::definition::SchemaDefinition>::EnumTypeDefinition,
+        ) -> bool {
+            true
+        }
+
+        fn is_input_object_type_definition_visible(
+            &self,
+            _: &<Self::SchemaDefinition as bluejay_core::definition::SchemaDefinition>::InputObjectTypeDefinition,
+        ) -> bool {
+            true
+        }
+
+        fn is_interface_type_definition_visible(
+            &self,
+            _: &<Self::SchemaDefinition as bluejay_core::definition::SchemaDefinition>::InterfaceTypeDefinition,
+        ) -> bool {
+            true
+        }
+
+        fn is_object_type_definition_visible(
+            &self,
+            _: &<Self::SchemaDefinition as bluejay_core::definition::SchemaDefinition>::ObjectTypeDefinition,
+        ) -> bool {
+            true
+        }
+
+        fn is_union_type_definition_visible(
+            &self,
+            _: &<Self::SchemaDefinition as bluejay_core::definition::SchemaDefinition>::UnionTypeDefinition,
+        ) -> bool {
+            true
+        }
+
+        fn type_definitions_for_name<'b>(
+            &self,
+            schema_definition: &'b Self::SchemaDefinition,
+            type_name: &str,
+        ) -> Self::TypeDefinitionsForName<'b> {
+            schema_definition.get_type_definition(type_name).into_iter()
+        }
+    }
+
+    let schema = r#"
+        directive @hidden on DIRECTIVE_DEFINITION
+        directive @exec @hidden repeatable on FIELD
+        directive @cycleA @cycleB on FIELD
+        directive @cycleB @cycleA on DIRECTIVE_DEFINITION
+
+        type Query {
+            field: String
+        }
+    "#;
+
+    let document: DefinitionDocument = DefinitionDocument::parse(schema).result.unwrap();
+    let inner_schema = ParserSchemaDefinition::try_from(&document).unwrap();
+    let cache = Cache::new(HideNamedDirectiveWarden("hidden"), &inner_schema);
+    let scoped = SchemaDefinition::new(&cache).unwrap();
+
+    let printed = SchemaDefinitionPrinter::to_string(&scoped);
+    assert_eq!(
+        printed,
+        "directive @cycleA @cycleB on FIELD\n\n\
+         directive @cycleB @cycleA on DIRECTIVE_DEFINITION\n\n\
+         directive @exec repeatable on FIELD\n\n\
+         type Query {\n  field: String\n}\n",
+    );
+
+    let custom_directive_names: Vec<&str> = scoped
+        .directive_definitions()
+        .filter(|dd| !dd.is_builtin())
+        .map(|dd| dd.name())
+        .collect();
+    assert_eq!(vec!["cycleA", "cycleB", "exec"], custom_directive_names);
+}

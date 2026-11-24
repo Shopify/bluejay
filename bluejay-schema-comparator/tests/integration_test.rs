@@ -283,6 +283,8 @@ fn test_directive_definition_directives_compare() {
         directive @legacy on FIELD_DEFINITION
 
         directive @other @meta on FIELD
+
+        directive @changing @deprecated(reason: "Old") on FIELD
     "#;
 
     let new_schema = r#"
@@ -295,6 +297,8 @@ fn test_directive_definition_directives_compare() {
         directive @legacy @deprecated(reason: "Use `@modern`.") on FIELD_DEFINITION
 
         directive @other on FIELD
+
+        directive @changing @deprecated(reason: "New") on FIELD
     "#;
 
     let document_a: DefinitionDocument = DefinitionDocument::parse(old_schema).result.unwrap();
@@ -305,18 +309,32 @@ fn test_directive_definition_directives_compare() {
 
     let result = compare(&schema_definition_a, &schema_definition_b);
 
-    let mut change_messages: Vec<String> = result
+    let mut changes: Vec<(String, String, bool)> = result
         .changes
         .iter()
-        .map(|change| change.message().to_string())
+        .map(|change| (change.message(), change.path(), change.breaking()))
         .collect();
-    change_messages.sort();
+    changes.sort();
 
     assert_eq!(
         vec![
-            "Directive `deprecated` was added to directive `legacy`",
-            "Directive `meta` was removed from directive `other`",
+            (
+                "Directive `deprecated` was added to directive `legacy`".to_string(),
+                "deprecated".to_string(),
+                false,
+            ),
+            (
+                "Directive `meta` was removed from directive `other`".to_string(),
+                "meta".to_string(),
+                true,
+            ),
+            (
+                "Value for argument `reason` on directive `deprecated` changed from \"Old\" to \"New\""
+                    .to_string(),
+                "@deprecated.reason".to_string(),
+                false,
+            ),
         ],
-        change_messages,
+        changes,
     );
 }
