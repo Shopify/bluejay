@@ -58,24 +58,26 @@ impl<'a, C: Context> ObjectTypeDefinition<'a, C> {
         name: String
         description: String
         # must be non-null for OBJECT and INTERFACE, otherwise null.
-        fields(includeDeprecated: Boolean = false): [__Field!]
+        fields(includeDeprecated: Boolean! = false): [__Field!]
         # must be non-null for OBJECT and INTERFACE, otherwise null.
         interfaces: [__Type!]
         # must be non-null for INTERFACE and UNION, otherwise null.
         possibleTypes: [__Type!]
         # must be non-null for ENUM, otherwise null.
-        enumValues(includeDeprecated: Boolean = false): [__EnumValue!]
+        enumValues(includeDeprecated: Boolean! = false): [__EnumValue!]
         # must be non-null for INPUT_OBJECT, otherwise null.
-        inputFields(includeDeprecated: Boolean = false): [__InputValue!]
+        inputFields(includeDeprecated: Boolean! = false): [__InputValue!]
         # must be non-null for NON_NULL and LIST, otherwise null.
         ofType: __Type
         # may be non-null for custom SCALAR, otherwise null.
         specifiedByURL: String
+        # must be non-null for INPUT_OBJECT, otherwise null.
+        isOneOf: Boolean
     }";
     const __FIELD_DEFINITION: &'static str = "type __Field {
         name: String!
         description: String
-        args(includeDeprecated: Boolean = false): [__InputValue!]!
+        args(includeDeprecated: Boolean! = false): [__InputValue!]!
         type: __Type!
         isDeprecated: Boolean!
         deprecationReason: String
@@ -85,6 +87,8 @@ impl<'a, C: Context> ObjectTypeDefinition<'a, C> {
         description: String
         type: __Type!
         defaultValue: String
+        isDeprecated: Boolean!
+        deprecationReason: String
     }";
     const __ENUM_VALUE_DEFINITION: &'static str = "type __EnumValue {
         name: String!
@@ -96,7 +100,7 @@ impl<'a, C: Context> ObjectTypeDefinition<'a, C> {
         name: String!
         description: String
         locations: [__DirectiveLocation!]!
-        args(includeDeprecated: Boolean = false): [__InputValue!]!
+        args(includeDeprecated: Boolean! = false): [__InputValue!]!
         isRepeatable: Boolean!
     }";
 

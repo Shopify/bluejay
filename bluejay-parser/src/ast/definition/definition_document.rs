@@ -978,5 +978,66 @@ mod tests {
             ]),
             builtin_types,
         );
+
+        // Verify builtin introspection fields added in the September 2025 spec exist.
+        let type_def = schema_definition
+            .get_type_definition("__Type")
+            .expect("__Type exists")
+            .into_object()
+            .expect("__Type is an object");
+        assert!(type_def
+            .fields_definition()
+            .iter()
+            .any(|fd| fd.name() == "isOneOf"));
+
+        let iv_def = schema_definition
+            .get_type_definition("__InputValue")
+            .expect("__InputValue exists")
+            .into_object()
+            .expect("__InputValue is an object");
+        let iv_fields: HashSet<&str> = iv_def
+            .fields_definition()
+            .iter()
+            .map(|fd| fd.name())
+            .collect();
+        assert!(iv_fields.contains("isDeprecated"));
+        assert!(iv_fields.contains("deprecationReason"));
+    }
+
+    #[test]
+    fn builtin_arguments_with_defaults_are_non_null() {
+        use bluejay_core::definition::prelude::*;
+
+        let document: DefinitionDocument = DefinitionDocument::parse("type Query { foo: String }")
+            .result
+            .expect("Document had parse errors");
+        let schema_definition = SchemaDefinition::try_from(&document)
+            .expect("Could not convert document to schema definition");
+
+        for (type_name, field_name) in [
+            ("__Type", "fields"),
+            ("__Type", "enumValues"),
+            ("__Type", "inputFields"),
+            ("__Field", "args"),
+            ("__Directive", "args"),
+        ] {
+            let include_deprecated = schema_definition
+                .get_type_definition(type_name)
+                .and_then(|td| td.into_object().ok())
+                .and_then(|otd| otd.fields_definition().get(field_name))
+                .and_then(|fd| fd.arguments_definition())
+                .and_then(|ad| ad.get("includeDeprecated"))
+                .unwrap_or_else(|| panic!("{type_name}.{field_name}(includeDeprecated:) exists"));
+            assert_eq!("Boolean!", include_deprecated.r#type().display_name());
+            assert!(!include_deprecated.is_required());
+        }
+
+        let reason = schema_definition
+            .get_directive_definition("deprecated")
+            .and_then(|dd| dd.arguments_definition())
+            .and_then(|ad| ad.get("reason"))
+            .expect("@deprecated(reason:) exists");
+        assert_eq!("String!", reason.r#type().display_name());
+        assert!(!reason.is_required());
     }
 }
