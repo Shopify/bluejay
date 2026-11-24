@@ -51,7 +51,7 @@ impl<'a, C: Context> ObjectTypeDefinition<'a, C> {
         queryType: __Type!
         mutationType: __Type
         subscriptionType: __Type
-        directives: [__Directive!]!
+        directives(includeDeprecated: Boolean! = false): [__Directive!]!
     }";
     const __TYPE_DEFINITION: &'static str = "type __Type {
         kind: __TypeKind!
@@ -102,6 +102,8 @@ impl<'a, C: Context> ObjectTypeDefinition<'a, C> {
         locations: [__DirectiveLocation!]!
         args(includeDeprecated: Boolean! = false): [__InputValue!]!
         isRepeatable: Boolean!
+        isDeprecated: Boolean!
+        deprecationReason: String
     }";
 
     pub(crate) fn name(&self) -> &Name<'a> {

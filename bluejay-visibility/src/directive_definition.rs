@@ -1,11 +1,12 @@
-use crate::{ArgumentsDefinition, Cache, Warden};
-use bluejay_core::definition::{self, SchemaDefinition};
+use crate::{ArgumentsDefinition, Cache, Directives, Warden};
+use bluejay_core::definition::{self, HasDirectives, SchemaDefinition};
 use once_cell::unsync::OnceCell;
 
 pub struct DirectiveDefinition<'a, S: SchemaDefinition, W: Warden<SchemaDefinition = S>> {
     inner: &'a S::DirectiveDefinition,
     cache: &'a Cache<'a, S, W>,
     arguments_definition: OnceCell<Option<ArgumentsDefinition<'a, S, W>>>,
+    directives: Option<Directives<'a, S, W>>,
 }
 
 impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> DirectiveDefinition<'a, S, W> {
@@ -17,6 +18,7 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> DirectiveDef
                 inner,
                 cache,
                 arguments_definition: OnceCell::new(),
+                directives: inner.directives().map(|d| Directives::new(d, cache)),
             })
     }
 
@@ -64,5 +66,15 @@ impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> definition::
 
     fn locations(&self) -> &Self::DirectiveLocations {
         self.inner.locations()
+    }
+}
+
+impl<'a, S: SchemaDefinition + 'a, W: Warden<SchemaDefinition = S>> HasDirectives
+    for DirectiveDefinition<'a, S, W>
+{
+    type Directives = Directives<'a, S, W>;
+
+    fn directives(&self) -> Option<&Self::Directives> {
+        self.directives.as_ref()
     }
 }

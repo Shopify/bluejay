@@ -443,6 +443,7 @@ impl<'a, 'b, S: definition::SchemaDefinition, W: Warden<SchemaDefinition = S>>
             if let Some(arguments_definition) = directive_definition.arguments_definition() {
                 self.visit_arguments_definition(arguments_definition);
             }
+            self.visit_directives(directive_definition.directives());
         }
     }
 

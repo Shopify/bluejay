@@ -68,6 +68,7 @@ impl<'a, C: Context> EnumTypeDefinition<'a, C> {
         ENUM_VALUE
         INPUT_OBJECT
         INPUT_FIELD_DEFINITION
+        DIRECTIVE_DEFINITION
     }";
 
     pub(crate) fn name(&self) -> &Name<'a> {
