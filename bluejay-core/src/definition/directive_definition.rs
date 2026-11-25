@@ -1,4 +1,4 @@
-use crate::definition::SchemaDefinition;
+use crate::definition::{HasDirectives, SchemaDefinition};
 use crate::AsIter;
 use strum::{AsRefStr, Display, EnumIter, EnumString, VariantNames};
 
@@ -26,6 +26,7 @@ pub enum DirectiveLocation {
     EnumValue,
     InputObject,
     InputFieldDefinition,
+    DirectiveDefinition,
 }
 
 impl DirectiveLocation {
@@ -46,7 +47,9 @@ impl DirectiveLocation {
     }
 }
 
-pub trait DirectiveDefinition {
+pub trait DirectiveDefinition:
+    HasDirectives<Directives = <Self::SchemaDefinition as SchemaDefinition>::Directives>
+{
     type SchemaDefinition: SchemaDefinition;
     type DirectiveLocations: AsIter<Item = DirectiveLocation>;
 

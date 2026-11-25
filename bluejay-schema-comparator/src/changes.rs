@@ -1343,6 +1343,7 @@ fn is_change_safe_for_input_value<S: SchemaDefinition>(
 fn directive_location_name(location: &DirectiveLocation) -> &'static str {
     match location {
         DirectiveLocation::ArgumentDefinition => "argument",
+        DirectiveLocation::DirectiveDefinition => "directive",
         DirectiveLocation::EnumValue => "enum value",
         DirectiveLocation::FieldDefinition => "field",
         DirectiveLocation::InputFieldDefinition => "input field",

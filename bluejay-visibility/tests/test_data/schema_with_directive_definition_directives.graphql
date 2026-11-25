@@ -1,0 +1,9 @@
+directive @visible on FIELD_DEFINITION | OBJECT
+
+directive @meta on DIRECTIVE_DEFINITION
+
+directive @executableDirective @meta on FIELD
+
+type Query @visible {
+  field: String @visible
+}

@@ -270,3 +270,71 @@ fn test_schema_compare() {
 
     assert_eq!(expected_paths, change_paths);
 }
+
+#[test]
+fn test_directive_definition_directives_compare() {
+    let old_schema = r#"
+        type Query {
+            a: String
+        }
+
+        directive @meta on DIRECTIVE_DEFINITION
+
+        directive @legacy on FIELD_DEFINITION
+
+        directive @other @meta on FIELD
+
+        directive @changing @deprecated(reason: "Old") on FIELD
+    "#;
+
+    let new_schema = r#"
+        type Query {
+            a: String
+        }
+
+        directive @meta on DIRECTIVE_DEFINITION
+
+        directive @legacy @deprecated(reason: "Use `@modern`.") on FIELD_DEFINITION
+
+        directive @other on FIELD
+
+        directive @changing @deprecated(reason: "New") on FIELD
+    "#;
+
+    let document_a: DefinitionDocument = DefinitionDocument::parse(old_schema).result.unwrap();
+    let document_b: DefinitionDocument = DefinitionDocument::parse(new_schema).result.unwrap();
+
+    let schema_definition_a = SchemaDefinition::try_from(&document_a).unwrap();
+    let schema_definition_b = SchemaDefinition::try_from(&document_b).unwrap();
+
+    let result = compare(&schema_definition_a, &schema_definition_b);
+
+    let mut changes: Vec<(String, String, bool)> = result
+        .changes
+        .iter()
+        .map(|change| (change.message(), change.path(), change.breaking()))
+        .collect();
+    changes.sort();
+
+    assert_eq!(
+        vec![
+            (
+                "Directive `deprecated` was added to directive `legacy`".to_string(),
+                "deprecated".to_string(),
+                false,
+            ),
+            (
+                "Directive `meta` was removed from directive `other`".to_string(),
+                "meta".to_string(),
+                true,
+            ),
+            (
+                "Value for argument `reason` on directive `deprecated` changed from \"Old\" to \"New\""
+                    .to_string(),
+                "@deprecated.reason".to_string(),
+                false,
+            ),
+        ],
+        changes,
+    );
+}

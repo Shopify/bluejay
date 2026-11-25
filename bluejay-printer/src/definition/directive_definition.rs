@@ -1,5 +1,5 @@
 use crate::{
-    definition::arguments_definition::ArgumentsDefinitionPrinter,
+    definition::arguments_definition::ArgumentsDefinitionPrinter, directive::DirectivesPrinter,
     string_value::BlockStringValuePrinter,
 };
 use bluejay_core::{definition::DirectiveDefinition, AsIter};
@@ -28,6 +28,10 @@ impl<D: DirectiveDefinition> Display for DirectiveDefinitionPrinter<'_, D> {
                 "{}",
                 ArgumentsDefinitionPrinter::new(arguments_definition, 0)
             )?;
+        }
+
+        if let Some(directives) = directive_definition.directives() {
+            write!(f, "{}", DirectivesPrinter::new(directives))?;
         }
 
         if directive_definition.is_repeatable() {

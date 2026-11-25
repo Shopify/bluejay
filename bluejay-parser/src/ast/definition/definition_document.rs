@@ -651,7 +651,7 @@ impl<'a, C: Context> DefinitionDocument<'a, C> {
 
         indexed_directive_definitions
             .values()
-            .for_each(|directive_definition| {
+            .for_each(|&directive_definition| {
                 if let Some(arguments_definition) = directive_definition.arguments_definition() {
                     Self::resolve_input_types_and_directives(
                         indexed_type_definitions,
@@ -660,6 +660,11 @@ impl<'a, C: Context> DefinitionDocument<'a, C> {
                         errors,
                     );
                 }
+                Self::resolve_directive_definitions(
+                    indexed_directive_definitions,
+                    directive_definition,
+                    errors,
+                );
             })
     }
 
@@ -1020,6 +1025,7 @@ mod tests {
             ("__Type", "inputFields"),
             ("__Field", "args"),
             ("__Directive", "args"),
+            ("__Schema", "directives"),
         ] {
             let include_deprecated = schema_definition
                 .get_type_definition(type_name)
@@ -1039,5 +1045,101 @@ mod tests {
             .expect("@deprecated(reason:) exists");
         assert_eq!("String!", reason.r#type().display_name());
         assert!(!reason.is_required());
+    }
+
+    #[test]
+    fn directive_definitions_accept_directives() {
+        use bluejay_core::definition::{prelude::*, DirectiveLocation};
+        use bluejay_core::Directive as _;
+
+        let s = r#"
+        directive @meta on DIRECTIVE_DEFINITION
+
+        directive @legacy @deprecated(reason: "Use `@modern`.") @meta on FIELD_DEFINITION
+
+        type Query {
+            foo: String @legacy
+        }
+        "#;
+        let document: DefinitionDocument = DefinitionDocument::parse(s)
+            .result
+            .expect("Document had parse errors");
+        let schema_definition = SchemaDefinition::try_from(&document)
+            .expect("Could not convert document to schema definition");
+
+        let legacy = schema_definition
+            .get_directive_definition("legacy")
+            .expect("@legacy exists");
+        assert_eq!(
+            vec!["deprecated", "meta"],
+            legacy
+                .directives()
+                .expect("@legacy has directives")
+                .iter()
+                .map(|directive| directive.name())
+                .collect::<Vec<_>>(),
+        );
+
+        let deprecated = schema_definition
+            .get_directive_definition("deprecated")
+            .expect("@deprecated exists");
+        assert!(deprecated
+            .locations()
+            .iter()
+            .any(|location| *location == DirectiveLocation::DirectiveDefinition));
+
+        let directive_type = schema_definition
+            .get_type_definition("__Directive")
+            .and_then(|td| td.into_object().ok())
+            .expect("__Directive is an object");
+        let directive_fields: HashSet<&str> = directive_type
+            .fields_definition()
+            .iter()
+            .map(|fd| fd.name())
+            .collect();
+        assert!(directive_fields.contains("isDeprecated"));
+        assert!(directive_fields.contains("deprecationReason"));
+
+        let directive_location = schema_definition
+            .get_type_definition("__DirectiveLocation")
+            .and_then(|td| td.into_enum().ok())
+            .expect("__DirectiveLocation is an enum");
+        assert!(directive_location
+            .enum_value_definitions()
+            .iter()
+            .any(|evd| evd.name() == "DIRECTIVE_DEFINITION"));
+    }
+
+    #[test]
+    fn directive_definition_directives_must_be_defined() {
+        use bluejay_core::Directive as _;
+
+        let document: DefinitionDocument = DefinitionDocument::parse(
+            "directive @legacy @missing on FIELD_DEFINITION\ntype Query { foo: String }",
+        )
+        .result
+        .expect("Document had parse errors");
+        let errors = SchemaDefinition::try_from(&document).expect_err("Expected errors");
+        assert!(
+            matches!(
+                errors.as_slice(),
+                [super::DefinitionDocumentError::ReferencedDirectiveDoesNotExist { directive }]
+                    if directive.name() == "missing"
+            ),
+            "{errors:?}"
+        );
+
+        for invalid in [
+            "directive @legacy repeatable @meta on FIELD_DEFINITION",
+            "directive @legacy @meta(x: 1) (a: Int) on FIELD_DEFINITION",
+            "directive @legacy @meta(a: $var) on FIELD_DEFINITION",
+        ] {
+            assert!(
+                DefinitionDocument::<super::DefaultContext>::parse(invalid)
+                    .result
+                    .is_err(),
+                "Expected parse error for `{invalid}`",
+            );
+        }
     }
 }

@@ -1,4 +1,5 @@
 use crate::changes::Change;
+use crate::diff::directive::diff_directives_into;
 use crate::diff::directive_definition_argument::DirectiveDefinitionArgumentDiff;
 use bluejay_core::definition::{
     DirectiveDefinition as _, DirectiveLocation, InputValueDefinition, SchemaDefinition,
@@ -85,6 +86,14 @@ impl<'a, S: SchemaDefinition + 'a> DirectiveDefinitionDiff<'a, S> {
                     }
                 },
             );
+
+        diff_directives_into::<S, _>(
+            self.old_directive_definition,
+            self.new_directive_definition,
+            DirectiveLocation::DirectiveDefinition,
+            self.old_directive_definition.name(),
+            changes,
+        );
     }
 
     fn location_removals(&self) -> impl Iterator<Item = &'a DirectiveLocation> {

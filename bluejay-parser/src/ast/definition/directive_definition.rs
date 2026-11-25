@@ -1,9 +1,12 @@
-use crate::ast::definition::{ArgumentsDefinition, Context, SchemaDefinition};
-use crate::ast::{DepthLimiter, FromTokens, Parse, ParseError, Tokens, TryFromTokens};
+use crate::ast::definition::{ArgumentsDefinition, Context, Directives, SchemaDefinition};
+use crate::ast::{
+    ConstDirectives, DepthLimiter, FromTokens, Parse, ParseError, Tokens, TryFromTokens,
+};
 use crate::lexical_token::{Name, PunctuatorType, StringValue};
 use crate::{HasSpan, Span};
 use bluejay_core::definition::{
     DirectiveDefinition as CoreDirectiveDefinition, DirectiveLocation as CoreDirectiveLocation,
+    HasDirectives,
 };
 use bluejay_core::AsIter;
 use std::str::FromStr;
@@ -24,7 +27,7 @@ impl BuiltinDirectiveDefinition {
         "directive @skip(if: Boolean!) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT";
     const INCLUDE_DEFINITION: &'static str =
         "directive @include(if: Boolean!) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT";
-    const DEPRECATED_DEFINITION: &'static str = "directive @deprecated(reason: String! = \"No longer supported\") on FIELD_DEFINITION | ARGUMENT_DEFINITION | INPUT_FIELD_DEFINITION | ENUM_VALUE";
+    const DEPRECATED_DEFINITION: &'static str = "directive @deprecated(reason: String! = \"No longer supported\") on FIELD_DEFINITION | ARGUMENT_DEFINITION | INPUT_FIELD_DEFINITION | ENUM_VALUE | DIRECTIVE_DEFINITION";
     const SPECIFIED_BY_DEFINITION: &'static str = "directive @specifiedBy(url: String!) on SCALAR";
     const ONE_OF_DEFINITION: &'static str = "directive @oneOf on INPUT_OBJECT";
 
@@ -55,6 +58,7 @@ pub struct DirectiveDefinition<'a, C: Context> {
     description: Option<StringValue<'a>>,
     name: Name<'a>,
     arguments_definition: Option<ArgumentsDefinition<'a, C>>,
+    directives: Option<Directives<'a, C>>,
     is_repeatable: bool,
     locations: DirectiveLocations,
     is_builtin: bool,
@@ -90,6 +94,14 @@ impl<'a, C: Context> CoreDirectiveDefinition for DirectiveDefinition<'a, C> {
     }
 }
 
+impl<'a, C: Context> HasDirectives for DirectiveDefinition<'a, C> {
+    type Directives = Directives<'a, C>;
+
+    fn directives(&self) -> Option<&Self::Directives> {
+        self.directives.as_ref()
+    }
+}
+
 impl<'a, C: Context> DirectiveDefinition<'a, C> {
     pub(crate) const DIRECTIVE_IDENTIFIER: &'static str = "directive";
     const REPEATABLE_IDENTIFIER: &'static str = "repeatable";
@@ -120,6 +132,7 @@ impl<'a, C: Context> FromTokens<'a> for DirectiveDefinition<'a, C> {
         let name = tokens.expect_name()?;
         let arguments_definition =
             ArgumentsDefinition::try_from_tokens(tokens, depth_limiter.bump()?)?;
+        let directives = ConstDirectives::try_from_tokens(tokens, depth_limiter.bump()?)?;
         let is_repeatable = tokens
             .next_if_name_matches(Self::REPEATABLE_IDENTIFIER)
             .is_some();
@@ -133,6 +146,7 @@ impl<'a, C: Context> FromTokens<'a> for DirectiveDefinition<'a, C> {
             description,
             name,
             arguments_definition,
+            directives: directives.map(Directives::from),
             is_repeatable,
             locations,
             is_builtin: false,
